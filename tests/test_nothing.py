@@ -1,4 +1,4 @@
-import package_name
+import necst
 
 
 def test_nothing():

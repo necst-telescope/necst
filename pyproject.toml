@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "package-name"
+name = "necst"
 version = "0.1.0"
-description = "TEMPLATE"
+description = "New Controll System for Telescope"
 license = "MIT"
 readme = "README.md"
-authors = ["KaoruNishikawa <k.nishikawa@a.phys.nagoya-u.ac.jp>"]
-homepage = "https://github.com/necst-telescope/Package-Name"
-repository = "https://github.com/necst-telescope/Package-Name"
+authors = ["KaoruNishikawa <k.nishikawa@a.phys.nagoya-u.ac.jp>", "RinYamada <yamada@a.phys.nagoya-u.ac.jp>", "necst developpers in NANTEN2 and OPU-1.85m team"]
+homepage = "https://github.com/necst-telescope/necst"
+repository = "https://github.com/necst-telescope/necst"
 
 [tool.poetry.dependencies]
 python = "^3.6"
