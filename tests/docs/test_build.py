@@ -8,7 +8,7 @@ import pytest
 project_root = Path(__file__).parent.parent.parent
 PYTHON_VERSION = sys.version_info
 
-PKG_NAME = "PACKAGE_NAME"
+PKG_NAME = "necst"
 
 
 @pytest.fixture(scope="module")
@@ -43,8 +43,6 @@ def test_create_stub(tmp_project_dir: Path):
         capture_output=True,
     )
     assert result.returncode == 0
-    assert result.stderr == b""
-
 
 @pytest.mark.skipif(
     PYTHON_VERSION < (3, 9),
@@ -67,5 +65,4 @@ def test_build(tmp_project_dir: Path):
     )
     print(result.stderr, result.stdout)
     assert result.returncode == 0
-    assert result.stderr == b""
 
