@@ -65,4 +65,3 @@ def test_build(tmp_project_dir: Path):
     )
     print(result.stderr, result.stdout)
     assert result.returncode == 0
-
