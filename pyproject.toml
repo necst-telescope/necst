@@ -10,6 +10,7 @@ repository = "https://github.com/necst-telescope/necst"
 
 [tool.poetry.dependencies]
 python = "^3.6"
+importlib-metadata = { version = "^4.4", python = "<3.8" }
 numpy = "^1.19"
 
 [tool.poetry.dev-dependencies]
