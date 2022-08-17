@@ -5,7 +5,7 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 ENV ROS2_WS=/root/ros2_ws
 
 RUN apt-get update \
-    && apt-get -y install curl git gnupg2 vim \
+    && apt-get -y install curl git gnupg2 python3-pip vim \
     && apt-get clean \
     && curl -sSL https://install.python-poetry.org | python3 - \
     && mkdir -p $ROS2_WS/src \
