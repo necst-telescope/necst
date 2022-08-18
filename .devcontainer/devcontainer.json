@@ -3,7 +3,7 @@
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
-	"postCreateCommand": "( cd /root/ros2_ws/src/necst && poetry install ) && git config --global --add safe.directory '*'",
+	"postCreateCommand": "( cd /home/user/ros2_ws/src/necst && poetry install ) && git config --global --add safe.directory '*'",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -28,6 +28,6 @@
 			}
 		}
 	},
-	"workspaceMount": "source=${localWorkspaceFolder},target=/root/ros2_ws/src/necst,type=bind",
-	"workspaceFolder": "/root/ros2_ws/src/necst"
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/user/ros2_ws/src/necst,type=bind",
+	"workspaceFolder": "/home/user/ros2_ws/src/necst"
 }
