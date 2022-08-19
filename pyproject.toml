@@ -10,7 +10,8 @@ repository = "https://github.com/necst-telescope/necst"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-neclib = "^0.9.0"
+docker-launch = "^0.2.0"
+neclib = "^0.10.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3"
