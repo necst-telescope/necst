@@ -9,15 +9,16 @@ homepage = "https://github.com/necst-telescope/necst"
 repository = "https://github.com/necst-telescope/necst"
 
 [tool.poetry.dependencies]
-python = "^3.6"
-numpy = "^1.19"
+python = "^3.9"
+docker-launch = "^0.2.0"
+neclib = "^0.10.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3"
 flake8 = "^3.8"
 ipykernel = "^6.3"
 jupyter = "^1.0"
-m2r2 = "^0.2"
+myst-parser = "^0.18.0"
 notebook = "^6.4"
 pydata-sphinx-theme = "^0.7"
 pytest = "^5.2"

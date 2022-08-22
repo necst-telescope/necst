@@ -1,2 +1,11 @@
-__version__ = "0.1.0"
-__author__ = "NECST Developers"
+from importlib.metadata import version
+
+import neclib
+
+
+try:
+    __version__ = version("necst")
+except:  # noqa: E722
+    __version__ = "0.0.0"
+
+config = neclib.config
