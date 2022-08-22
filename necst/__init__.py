@@ -8,4 +8,6 @@ try:
 except:  # noqa: E722
     __version__ = "0.0.0"
 
-config = neclib.config
+#config = neclib.config
+
+from .tempos import *

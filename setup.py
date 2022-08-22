@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            f"start={package_name}.TestPublisher:main"
+            f"start={package_name}.ros2_string_pub:main"
         ],
     },
 )

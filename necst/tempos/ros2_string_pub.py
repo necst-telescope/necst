@@ -1,3 +1,4 @@
+__all__ = ['ros2_string_pub']
 import rclpy
 
 from rclpy.node import Node
@@ -17,12 +18,12 @@ class TestPublisher(Node):
         self.get_logger().info(f'Publishing: {msg.data}s')
         self.i += 1
 
-if __name__ == "__main__":
-    rclpy.init(args=args)
-    minimal_publisher = MinimalPublisher()
-
-    while minimal_publisher.i < 20
-        rclpy.spin(minimal_publisher)  
-    
-    minimal_publisher.destroy_node()
+def main():
+    test_publisher = TestPublisher()
+    while test_publisher.i < 20:
+        rclpy.spin(test_publisher)  
+    test_publisher.destroy_node()
     rclpy.shutdown() 
+
+if __name__ == "__main__":
+    main()
