@@ -11,7 +11,7 @@ release = version = necst.__version__
 # -- General configuration ---------------------------------------------------
 
 extensions = [
-    "m2r2",
+    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
