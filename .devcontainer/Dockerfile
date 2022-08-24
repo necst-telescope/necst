@@ -12,14 +12,15 @@ ENV ROS2_WS=/home/$USERNAME/ros2_ws
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
-USER $USERNAME
-
 RUN apt-get update \
     && apt-get install -y curl git gnupg2 openssh-client python3-pip sudo vim \
     && apt-get clean \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME \
-    && pip3 install \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+USER $USERNAME
+
+RUN pip3 install \
         "docker-launch>=0.2.0" \
         "neclib>=0.10.2" \
     && pip3 install \
