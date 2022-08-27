@@ -1,8 +1,8 @@
 from neclib.controllers import PIDController
 from rclpy.node import Node
 from necst_msgs.msg import CoordMsg
-from typing import Literal
-
+from typing import Dict, Literal, Tuple
+import time
 
 Last = -2
 Now = -1
@@ -42,8 +42,28 @@ class Antenna_device(Node):
         self._ang.get_speed(dummy, dummy, stop=True)
         self._command(0, "ang")
 
-        speed_ang = target_speed + (p_coeff * error) + (i_coeff * error_integral) + (d_coeff * error_derivative)
+    def set_pid_param(self, param: Dict[Literal["altaz"], Tuple[float, float, float]]
+    ) -> None:
+        self.ang.k_p, self.ang.k_i, self.ang.k_d = param["altaz"]
 
+    def move_ang(self, ang_arcsec: float, enc_ang: float,
+        pid_param: Dict[str, Tuple[float, float]] = None,
+        m_bStop: Literal["FALSE", "TRUE"] = "FALSE",
+        ) -> Tuple[float, ...]:
+        if pid_param is not None:
+            self.set_pid_param(pid_param)
+
+        if m_bStop == "FALSE":
+            stop = False
+        elif m_bStop == "TRUE":
+            stop = True
+
+    def emergency_stop(self) -> None:
+        dummy = 0
+        for _ in range(5):
+            self.command(0, 'altaz')
+            _ = self.command_ang_speed(dummy, dummy, stop=True)
+            time.sleep(0.05)
 
 def calc_pid(self):
         calculator = PIDController(pid_param=[p_coeff, i_coeff, d_coeff])
