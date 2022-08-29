@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            f"start={package_name}.tempos.ros2_string_pub:main"
+            f"pub={package_name}.tempos.ros2_string_pub:main",
+            f"sub={package_name}.tempos.subscriber_member_function:main",
         ],
     },
 )
