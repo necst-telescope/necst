@@ -2,6 +2,7 @@ __all__ = ['ros2_string_pub']
 import rclpy
 
 from rclpy.node import Node
+from std_msgs import msg
 from std_msgs.msg import String
 
 class TestPublisher(Node):
@@ -13,17 +14,19 @@ class TestPublisher(Node):
         self.i = 0
 
     def timer_callback(self):
-        msg.data =f'Hello World {i}'
-        self.publisher_.publish(msg)
-        self.get_logger().info(f'Publishing: {msg.data}s')
-        self.i += 1
+        while (self.i < 20):
+            msg = String()
+            self.i += 1
+            msg.data = f"Hello World {self.i}"
+            self.publisher_.publish(msg)
+            self.get_logger().info(f'Publishing: {msg.data}s')
 
 def main():
+    rclpy.init()
     test_publisher = TestPublisher()
-    while test_publisher.i < 20:
-        rclpy.spin(test_publisher)  
+    rclpy.spin(test_publisher)
     test_publisher.destroy_node()
-    rclpy.shutdown() 
+    rclpy.shutdown()
 
 if __name__ == "__main__":
     main()
