@@ -23,12 +23,12 @@ class Authorizer(Node):
     def authorize(
         self, request: AuthoritySrv.Request, response: AuthoritySrv.Response
     ) -> AuthoritySrv.Response:
-        response.approval = (request.requester)
+        response.approval = request.requester
         return response
 
     def check_singleton(self):
         ...
 
     def destroy_this(self, msg) -> NoReturn:
-        self.logger.error(f"")
+        self.logger.error(f"Authority server is already running ({msg.identity})")
         self.destroy_node()
