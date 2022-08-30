@@ -1,7 +1,7 @@
 from neclib.controllers import PIDController
 import rclpy
 from rclpy.node import Node
-from necst_msgs.msg.PIDMsg import CoordMsg
+from necst_msgs.msg import PIDMsg
 import time
 
 
@@ -11,11 +11,11 @@ class Antenna_device(Node):
 
     def __init__(self, frequency: float) -> None:
         self.controller = PIDController()
-        self.create_subscription_ang(CoordMsg, "altaz", self.init_ang)
-        self.create_subscription_enc(CoordMsg, "encorder", self.init_ang)
-        self.publisher = self.create_publisher(necst_msgs.msg.PIDMsg, "speed", init_speed)
+        self.create_subscription_ang(PIDMsg, "altaz", self.init_ang)
+        self.create_subscription_enc(PIDMsg, "encorder", self.init_ang)
+        self.publisher = self.create_publisher(PIDMsg, "speed", self.init_speed)
         self.create_timer(frequency, self.calc_pid)
-        self.create_subscription_param(necst_msgs.msg.PIDMsg, "pid_param",
+        self.create_subscription_param(PIDMsg, "pid_param",
                                        self.change_pid_param)
 
     def calc_pid(self):
@@ -36,9 +36,9 @@ class Antenna_device(Node):
         self.command(0, "ang")
 
     def change_pid_param(self, msg):
-        self.controller.k_p = msg.k_p(necst_mags.msg.PIDMsg)
-        self.controller.k_i = msg.k_i
-        self.controller.k_d = msg.k_d
+        self.controller.k_p = msg.k_p(PIDMsg)
+        self.controller.k_i = msg.k_i(PIDMsg)
+        self.controller.k_d = msg.k_d(PIDMsg)
 
     def emergency_stop(self) -> None:
         dummy = 0
