@@ -7,7 +7,7 @@ from rclpy.client import Client
 from rclpy.node import Node
 
 from necst import config
-from necst_msgs.msg import AuthoritySrv
+from necst_msgs.srv import AuthoritySrv
 
 
 class PrivilegeManager(Node):
