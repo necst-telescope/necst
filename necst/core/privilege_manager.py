@@ -35,19 +35,36 @@ class PrivilegeManager(Node):
         self.logger.error("Couldn't connect to authority server.")
 
     def request_privilege(self) -> bool:
-        _ = self._wait_for_service_to_come_up(self.cli)
-
         request = AuthoritySrv.Request(requester=self.identity)
-        self.future = self.cli.call_async(request)
-        rclpy.spin_until_future_complete(self, self.future)
+        result = self._send_request(request)
 
-        if self.future.result().approval:
+        if result.approval:
             self.logger.info("Request approved")
             self.have_privilege = True
         else:
             self.logger.info("Request declined")
             self.have_privilege = False
         return self.have_privilege
+
+    def release_privilege(self) -> bool:
+        request = AuthoritySrv.Request(requester="")
+        result = self._send_request(request)
+
+        if result.approval:
+            self.logger.info("Request approved")
+            self.have_privilege = False
+        else:
+            self.logger.info("Request declined")
+            self.have_privilege = True
+        return self.have_privilege
+
+    def _send_request(self, request: AuthoritySrv.Request) -> AuthoritySrv.Response:
+        _ = self._wait_for_server_to_come_up(self.cli)
+
+        self.future = self.cli.call_async(request)
+        rclpy.spin_until_future_complete(self, self.future)
+
+        return self.future.result()
 
     def require_privilege(
         self, callable_obj: Callable[[Any], Any]
