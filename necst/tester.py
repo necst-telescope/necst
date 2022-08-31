@@ -16,27 +16,33 @@ class Tester(PrivilegedNode):
         self.create_timer(5, self.b)
 
     def a(self) -> None:
+        self.logger.info("A is called")
         msg = String(data="a")
         self.pub_a.publish(msg)
 
     @PrivilegedNode.require_privilege
     def b(self) -> None:
+        self.logger.info("B (privileged) is called")
         msg = String(data="b")
         self.pub_b.publish(msg)
 
 
 def main(args=None):
     from .core import Authorizer
+    from rclpy.executors import MultiThreadedExecutor
 
     rclpy.init(args=args)
     node = Tester()
     server = Authorizer()
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+    executor.add_node(server)
     try:
-        node.request_privilege()
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
+        executor.shutdown()
         node.destroy_node()
         server.destroy_node()
 
