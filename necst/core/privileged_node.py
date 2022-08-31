@@ -76,8 +76,11 @@ class PrivilegedNode(Node):
     def require_privilege(callable_obj: Callable[[Any], Any]) -> Callable[[Any], Any]:
         @functools.wraps(callable_obj)
         def run_with_privilege_check(self, *args, **kwargs):
+            self.request_privilege()
             if self.have_privilege:
-                return callable_obj(self, *args, **kwargs)
+                ret = callable_obj(self, *args, **kwargs)
+                self.release_privilege()
+                return ret
 
             self.logger.error(
                 "This operation require privilege, but this node doesn't have one."
