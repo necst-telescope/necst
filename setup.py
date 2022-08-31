@@ -18,6 +18,8 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [],
+        "console_scripts": [
+            f"tester={package_name}.tester:main",
+        ],
     },
 )
