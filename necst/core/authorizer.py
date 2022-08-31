@@ -52,7 +52,7 @@ class Authorizer(Node):
         else:
             self.logger.info(f"Privilege is granted for {request.requester}")
             self.__approved = request.requester
-            response.privileged = True
+            response.privilege = True
 
         return response
 
