@@ -41,4 +41,4 @@ RUN mkdir -p $ROS2_WS/src \
     && echo ". /opt/ros/${DISTRO}/setup.sh" >> /home/$USERNAME/.bashrc \
     && echo ". $ROS2_WS/install/setup.sh" >> /home/$USERNAME/.bashrc \
     && curl -o /home/$USERNAME/.bashgit https://raw.githubusercontent.com/oyvindstegard/bashgit/master/.bashgit \
-    && echo 'if [ -f /home/$USERNAME/.bashgit ]; then . ~/.bashgit; fi' >> /home/$USERNAME/.bashrc
+    && echo "if [ -f /home/$USERNAME/.bashgit ]; then . ~/.bashgit; fi" >> /home/$USERNAME/.bashrc
