@@ -6,25 +6,25 @@ import uuid
 from typing import Any, Callable, Optional
 
 import rclpy
-from necst_msgs.srv import AuthoritySrv
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.client import Client
-from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 
 from necst import config
+from necst_msgs.srv import AuthoritySrv
 
 
 class PrivilegedNode(Node):
 
-    NodeName = "manager"  # Fallback, would be replaced in subclass.
     Namespace = f"/necst/{config.observatory}/core/auth"
 
-    def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
+    def __init__(self, node_name: str, **kwargs) -> None:
+        super().__init__(node_name, **kwargs)
         self.logger = self.get_logger()
         self.cli = self.create_client(
-            AuthoritySrv, "request", callback_group=ReentrantCallbackGroup()
+            AuthoritySrv,
+            f"{self.Namespace}/request",
+            callback_group=MutuallyExclusiveCallbackGroup(),
         )
 
         # User-defined ROS node name + universally unique identifier of computer system
@@ -42,29 +42,29 @@ class PrivilegedNode(Node):
             return client
         self.logger.error("Couldn't connect to authority server.")
 
-    @property
-    def _service_is_deadlock_safe(self) -> bool:
-        if isinstance(self.executor, MultiThreadedExecutor):
-            return True
+    # @property
+    # def _service_is_deadlock_safe(self) -> bool:
+    #     if isinstance(self.executor, MultiThreadedExecutor):
+    #         return True
 
-        clients, services = set(), set()
-        for node in self.executor.get_nodes():
-            clients |= {cli.srv_name for cli in node.clients}
-            services |= {srv.srv_name for srv in node.services}
-        intersection = clients & services
-        if intersection:
-            self.logger.warning(
-                f"Both service and client for {intersection} is running on the same"
-                "single-threaded executor, which will cause deadlock."
-            )
-        return len(intersection) == 0
+    #     clients, services = set(), set()
+    #     for node in self.executor.get_nodes():
+    #         clients |= {cli.srv_name for cli in node.clients}
+    #         services |= {srv.srv_name for srv in node.services}
+    #     intersection = clients & services
+    #     if intersection:
+    #         self.logger.warning(
+    #             f"Both service and client for {intersection} is running on the same"
+    #             "single-threaded executor, which will cause deadlock."
+    #         )
+    #     return len(intersection) == 0
 
     def _send_request(self, request: AuthoritySrv.Request) -> AuthoritySrv.Response:
         _ = self._wait_for_server_to_pick_up(self.cli)
 
-        if not self._service_is_deadlock_safe:
-            self.destroy_node()
-            rclpy.shutdown()
+        # if not self._service_is_deadlock_safe:
+        #     self.destroy_node()
+        #     rclpy.shutdown()
 
         future = self.cli.call_async(request)
         rclpy.spin_until_future_complete(self, future, self.executor)

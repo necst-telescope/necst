@@ -3,7 +3,7 @@ __all__ = ["Authorizer"]
 from typing import Final, Optional
 
 import rclpy
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.node import Node
 
 from necst import config
@@ -15,8 +15,8 @@ class Authorizer(Node):
     NodeName: Final[str] = "authorizer"
     Namespace = f"/necst/{config.observatory}/core/auth"
 
-    def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(self.NodeName, namespace=self.Namespace, **kwargs)
         self.logger = self.get_logger()
         self._check_singleton()
 
@@ -26,7 +26,7 @@ class Authorizer(Node):
             AuthoritySrv,
             "request",
             self._authorize,
-            callback_group=ReentrantCallbackGroup(),
+            callback_group=MutuallyExclusiveCallbackGroup(),
         )
 
     @property
