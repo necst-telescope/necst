@@ -3,6 +3,7 @@ __all__ = ["Authorizer"]
 from typing import Final, Optional
 
 import rclpy
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
 
 from necst import config
@@ -21,7 +22,12 @@ class Authorizer(Node):
 
         self.__approved: Optional[str] = None
 
-        self.srv = self.create_service(AuthoritySrv, "request", self._authorize)
+        self.srv = self.create_service(
+            AuthoritySrv,
+            "request",
+            self._authorize,
+            callback_group=ReentrantCallbackGroup(),
+        )
 
     @property
     def approved(self) -> Optional[str]:
@@ -38,7 +44,7 @@ class Authorizer(Node):
             self.logger.warning("Got request from anonymous node, ignoring...")
             response.privilege = False
         elif removal_request and request_from_privileged_node:
-            self.logger.info(f"Unregistered privileged node {request.requester}")
+            self.logger.info(f"Unregistered privileged node '{request.requester}'")
             self.__approved = None
             response.privilege = False
         elif removal_request:
@@ -47,10 +53,10 @@ class Authorizer(Node):
             )
             response.privilege = False
         elif self.approved is not None:
-            self.logger.info(f"Decline privilege request from {request.requester}")
+            self.logger.info(f"Decline privilege request from '{request.requester}'")
             response.privilege = False
         else:
-            self.logger.info(f"Privilege is granted for {request.requester}")
+            self.logger.info(f"Privilege is granted for '{request.requester}'")
             self.__approved = request.requester
             response.privilege = True
 
