@@ -49,7 +49,7 @@ class PrivilegedNode(Node):
 
         return future.result()
 
-    def request_privilege(self) -> bool:
+    def get_privilege(self) -> bool:
         if self.have_privilege:
             self.logger.info("This node already has privilege")
             return self.have_privilege
@@ -65,7 +65,7 @@ class PrivilegedNode(Node):
             self.logger.info("Request declined")
         return self.have_privilege
 
-    def release_privilege(self) -> bool:
+    def quit_privilege(self) -> bool:
         if not self.have_privilege:
             self.logger.info("This node doesn't have privilege")
             return self.have_privilege
