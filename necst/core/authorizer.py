@@ -41,7 +41,7 @@ class Authorizer(Node):
         removal_request = request.remove
 
         if anonymous_request:
-            self.logger.warning("Got request from anonymous node, ignoring...")
+            self.logger.warning("Decline privilege request (anonymous request)")
             response.privilege = False
         elif removal_request and request_from_privileged_node:
             self.logger.info(f"Unregistered privileged node '{request.requester}'")
@@ -49,11 +49,14 @@ class Authorizer(Node):
             response.privilege = False
         elif removal_request:
             self.logger.warning(
-                "Got privilege removal request from unprivileged node, ignoring..."
+                "Decline privilege unregister request (request from unprivileged node)"
             )
             response.privilege = False
         elif self.approved is not None:
-            self.logger.info(f"Decline privilege request from '{request.requester}'")
+            self.logger.info(
+                f"Decline privilege request from '{request.requester}' "
+                "(other node has privilege)"
+            )
             response.privilege = False
         else:
             self.logger.info(f"Privilege is granted for '{request.requester}'")
