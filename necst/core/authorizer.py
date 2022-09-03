@@ -11,6 +11,24 @@ from necst_msgs.srv import AuthoritySrv
 
 
 class Authorizer(Node):
+    """Singleton privilege server.
+
+    To interact with this server, subclass `PrivilegeNode`.
+
+    This server doesn't authenticate the client, i.e. any node who describes itself as
+    privileged node (by identity string) can have access to privileged operations.
+
+    Attributes
+    ----------
+    srv: rclpy.service.Service
+        ROS 2 service server for communicate with other nodes.
+
+    Examples
+    --------
+    >>> server = necst.core.Authorizer()
+    >>> rclpy.spin(server)
+
+    """
 
     NodeName: Final[str] = "authorizer"
     Namespace = f"/necst/{config.observatory}/core/auth"
@@ -31,6 +49,7 @@ class Authorizer(Node):
 
     @property
     def approved(self) -> Optional[str]:
+        """Identity string of currently privileged node."""
         return self.__approved
 
     def _authorize(
@@ -94,11 +113,7 @@ def main(args=None) -> None:
         pass
     finally:
         node.destroy_node()
-
-        try:
-            rclpy.shutdown()
-        except:  # noqa: E722
-            pass
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":

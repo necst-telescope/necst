@@ -18,7 +18,18 @@ from necst_msgs.srv import AuthoritySrv
 class PrivilegedNode(Node):
     r"""Manage privilege for conflict-unsafe operations.
 
-    Using this privilege client requires communication with running `Authorizer` node.
+    Using this privilege client requires communication with running ``Authorizer`` node.
+
+    Attributes
+    ----------
+    identity: str
+        Unique identity of this privilege client instance.
+    have_privilege: bool
+        Whether this client has privilege or not.
+    cli: rclpy.client.Client
+        ROS 2 service client to communicate with privilege server.
+    signal_handler: function
+        Function to finalize the node releasing the privilege.
 
     Examples
     --------
@@ -70,7 +81,7 @@ class PrivilegedNode(Node):
         self._setup_signal_handler()
 
     def _setup_signal_handler(self) -> None:
-        """Ensure 'quit_privilege' to be called on shutdown.
+        """Ensure ``quit_privilege`` to be called on shutdown.
 
         ROS 2 'Context' will shutdown immediately after a signal was received.
         This disables any shutdown process which relies on ROS communication (topic or
@@ -79,7 +90,7 @@ class PrivilegedNode(Node):
         https://github.com/ros2/rclpy/issues/532
 
         To realize the functionality, this node will run with ROS default signal handler
-        disabled. On signal event, run 'quit_privilege' then load the default handler,
+        disabled. On signal event, run ``quit_privilege`` then load the default handler,
         and delegate the rest of signal handling to it.
 
         """
@@ -120,6 +131,14 @@ class PrivilegedNode(Node):
         return future.result()
 
     def get_privilege(self) -> bool:
+        """Request for privilege.
+
+        Returns
+        -------
+        privileged: bool
+            ``True`` if successfully acquired privilege.
+
+        """
         if self.have_privilege:
             self.logger.info("This node already has privilege")
             return self.have_privilege
@@ -136,6 +155,14 @@ class PrivilegedNode(Node):
         return self.have_privilege
 
     def quit_privilege(self) -> bool:
+        """Give up privilege.
+
+        Returns
+        -------
+        privileged: bool
+            ``False`` if successfully released the privilege.
+
+        """
         if not self.have_privilege:
             self.logger.info("This node doesn't have privilege")
             return self.have_privilege
@@ -153,8 +180,29 @@ class PrivilegedNode(Node):
 
     @staticmethod
     def require_privilege(callable_obj: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        """Decorator to mark conflict-unsafe functions.
+
+        Use ``@PrivilegedNode.require_privilege``. Other form of reference including
+        ``@super().require_privilege`` and
+        ``client = PrivilegedNode(); @client.require_privilege`` won't work.
+
+        Examples
+        --------
+        >>> @necst.core.PrivilegedNode.require_privilege
+        ... def some_unsafe_operation(*args):
+        ...     ...
+
+        """
+
         @functools.wraps(callable_obj)
         def run_with_privilege_check(self, *args, **kwargs):
+            """Run the function if privilege is granted for this client.
+
+            The implementation is collection of workarounds, and is inspired by the
+            following StackOverflow answer.
+            https://stackoverflow.com/a/59157026
+
+            """
             if self.have_privilege:
                 return callable_obj(self, *args, **kwargs)
 
