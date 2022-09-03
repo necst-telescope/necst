@@ -9,11 +9,14 @@ class Tester(PrivilegedNode):
     NodeName = "tester"
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(self.NodeName)
         self.pub_a = self.create_publisher(String, "/test_a", 1)
         self.pub_b = self.create_publisher(String, "/test_b", 1)
-        self.create_timer(3, self.a)
-        self.create_timer(5, self.b)
+        self.create_timer(1, self.a)
+        self.create_timer(1, self.b)
+        self.create_subscription(
+            String, "/test_s", lambda msg: self.logger.info(msg.data), 1
+        )
 
     def a(self) -> None:
         self.logger.info("A is called")
@@ -28,28 +31,29 @@ class Tester(PrivilegedNode):
 
 
 def main(args=None):
+    import traceback
     from .core import Authorizer
-    from rclpy.executors import MultiThreadedExecutor
+    from rclpy.executors import SingleThreadedExecutor
 
     rclpy.init(args=args)
     node = Tester()
     server = Authorizer()
-    executor = MultiThreadedExecutor()
+    executor = SingleThreadedExecutor()
     executor.add_node(node)
     executor.add_node(server)
+
     try:
+        assert node.get_privilege(), "privilege isn't granted"
         executor.spin()
     except KeyboardInterrupt:
-        pass
+        node.logger.info("Exiting, due to shutdown signal.")
+    except AssertionError:
+        node.logger.warning(f"Exiting, due to :\n{traceback.format_exc()}")
     finally:
+        [n.destroy_node() for n in executor.get_nodes()]
         executor.shutdown()
-        node.destroy_node()
-        server.destroy_node()
 
-        try:
-            rclpy.shutdown()
-        except:  # noqa: E722
-            pass
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":
