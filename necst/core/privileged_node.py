@@ -5,7 +5,6 @@ import uuid
 
 from typing import Any, Callable, Optional
 
-import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.client import Client
 from rclpy.node import Node
@@ -42,32 +41,11 @@ class PrivilegedNode(Node):
             return client
         self.logger.error("Couldn't connect to authority server.")
 
-    # @property
-    # def _service_is_deadlock_safe(self) -> bool:
-    #     if isinstance(self.executor, MultiThreadedExecutor):
-    #         return True
-
-    #     clients, services = set(), set()
-    #     for node in self.executor.get_nodes():
-    #         clients |= {cli.srv_name for cli in node.clients}
-    #         services |= {srv.srv_name for srv in node.services}
-    #     intersection = clients & services
-    #     if intersection:
-    #         self.logger.warning(
-    #             f"Both service and client for {intersection} is running on the same"
-    #             "single-threaded executor, which will cause deadlock."
-    #         )
-    #     return len(intersection) == 0
-
     def _send_request(self, request: AuthoritySrv.Request) -> AuthoritySrv.Response:
         _ = self._wait_for_server_to_pick_up(self.cli)
 
-        # if not self._service_is_deadlock_safe:
-        #     self.destroy_node()
-        #     rclpy.shutdown()
-
         future = self.cli.call_async(request)
-        rclpy.spin_until_future_complete(self, future, self.executor)
+        self.executor.spin_until_future_complete(future)
 
         return future.result()
 
