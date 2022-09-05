@@ -2,12 +2,11 @@ __all__ = ["PrivilegedNode"]
 
 import functools
 import uuid
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Final
 
 import rclpy
-import rclpy.signals
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.client import Client
+from rclpy.executors import SingleThreadedExecutor, MultiThreadedExecutor
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
@@ -25,12 +24,14 @@ class PrivilegedNode(Node):
     ----------
     identity: str
         Unique identity of this privilege client instance.
-    have_privilege: bool
+    has_privilege: bool
         Whether this client has privilege or not.
-    cli: rclpy.client.Client
-        ROS 2 service client to communicate with privilege server.
+    request_cli: rclpy.client.Client
+        ROS 2 service client, to send privilege request.
     signal_handler: function
         Function to finalize the node releasing the privilege.
+    ping_srv: rclpy.service.Service or None
+        ROS 2 service server, to respond to status check by ``Authorizer``.
 
     Examples
     --------
@@ -63,16 +64,18 @@ class PrivilegedNode(Node):
 
     """
 
-    Namespace = f"/necst/{config.observatory}/core/auth"
+    Namespace: Final[str] = f"/necst/{config.observatory}/core/auth"
 
     def __init__(self, node_name: str, **kwargs) -> None:
         super().__init__(node_name, **kwargs)
         self.logger = self.get_logger()
-        self.cli = self.create_client(
+
+        self.request_cli = self.create_client(
             AuthoritySrv,
             f"{self.Namespace}/request",
-            callback_group=MutuallyExclusiveCallbackGroup(),  # Avoid deadlock.
+            callback_group=MutuallyExclusiveCallbackGroup(),
         )
+        self.ping_srv = None
 
         # User-defined ROS node name + universally unique identifier of computer system
         # + memory address of this node
@@ -81,39 +84,39 @@ class PrivilegedNode(Node):
         self._set_privilege(False)
 
     @property
-    def have_privilege(self) -> bool:
-        return self.__have_privilege
+    def has_privilege(self) -> bool:
+        """``True`` if privilege is granted for this node."""
+        return self.__has_privilege
 
-    def _set_privilege(self, have_privilege: bool):
-        self.__have_privilege = have_privilege
-        if have_privilege:
-            self.srv = self.create_service(
+    def _set_privilege(self, has_privilege: bool):
+        self.__has_privilege = has_privilege
+        if has_privilege:
+            self.ping_srv = self.create_service(
                 Empty,
-                "ping",
-                utils.respond_ping,
+                f"{self.Namespace}/ping",
+                utils.respond_to_ping,
                 callback_group=MutuallyExclusiveCallbackGroup(),
             )
         else:
-            ... if self.srv is None else self.srv.destroy()
-            self.srv = None
-
-    def _wait_for_server_to_pick_up(self, client: Client) -> Optional[Client]:
-        if client.service_is_ready():
-            return client
-
-        self.logger.info("Waiting for authority server to pick up this node...")
-        if client.wait_for_service(timeout_sec=config.ros_service_timeout_sec):
-            self.logger.info("Server is now active.")
-            return client
-        self.logger.error("Couldn't connect to authority server.")
+            if self.ping_srv is not None:
+                self.ping_srv.destroy()
+            self.ping_srv = None
 
     def _send_request(self, request: AuthoritySrv.Request) -> AuthoritySrv.Response:
-        if self._wait_for_server_to_pick_up(self.cli) is None:
+        if not utils.wait_for_server_to_pick_up(self.request_cli):
             return AuthoritySrv.Response(privilege=False)
 
-        future = self.cli.call_async(request)
-        rclpy.spin_until_future_complete(self, future, self.executor)
-        # self.executor.spin_until_future_complete(future)
+        executor = self.executor
+        if self.executor is None:
+            executor = MultiThreadedExecutor()
+            # Executing on global executor somehow causes deadlock
+            executor.add_node(self)
+
+        future = self.request_cli.call_async(request)
+        self.logger.info("future created")
+
+        self.executor.spin_until_future_complete(future, 5)
+        self.logger.info("future completed")
         # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock.
 
@@ -128,20 +131,21 @@ class PrivilegedNode(Node):
             ``True`` if successfully acquired privilege.
 
         """
-        if self.have_privilege:
+        if self.has_privilege:
             self.logger.info("This node already has privilege")
-            return self.have_privilege
+            return self.has_privilege
 
+        self.logger.info("request")
         request = AuthoritySrv.Request(requester=self.identity)
         response = self._send_request(request)
 
-        self.have_privilege = response.privilege
+        self._set_privilege(response.privilege)
 
-        if response.privilege:
+        if self.has_privilege:
             self.logger.info("Request approved, now this node has privilege")
         else:
             self.logger.info("Request declined")
-        return self.have_privilege
+        return self.has_privilege
 
     def quit_privilege(self) -> bool:
         """Give up privilege.
@@ -152,20 +156,20 @@ class PrivilegedNode(Node):
             ``False`` if successfully released the privilege.
 
         """
-        if not self.have_privilege:
+        if not self.has_privilege:
             self.logger.info("This node doesn't have privilege")
-            return self.have_privilege
+            return self.has_privilege
 
         request = AuthoritySrv.Request(requester=self.identity, remove=True)
         response = self._send_request(request)
 
-        self.have_privilege = response.privilege
+        self._set_privilege(response.privilege)
 
-        if not response.privilege:
+        if not self.has_privilege:
             self.logger.info("Successfully released privilege")
         else:
             self.logger.info("Request declined")
-        return self.have_privilege
+        return self.has_privilege
 
     @staticmethod
     def require_privilege(callable_obj: Callable[[Any], Any]) -> Callable[[Any], Any]:
@@ -192,7 +196,7 @@ class PrivilegedNode(Node):
             https://stackoverflow.com/a/59157026
 
             """
-            if self.have_privilege:
+            if self.has_privilege:
                 return callable_obj(self, *args, **kwargs)
 
             self.logger.error(
@@ -205,18 +209,13 @@ class PrivilegedNode(Node):
 
 
 def main(args=None):
-    from rclpy.executors import SingleThreadedExecutor
-
     rclpy.init(args=args)
     node = PrivilegedNode("node_name")
-    e = SingleThreadedExecutor()
-    e.add_node(node)
     try:
-        # breakpoint()
-        # rclpy.spin(node)
-        e.spin()
+        node.get_privilege()
+        rclpy.spin(node)
     except KeyboardInterrupt:
-        node.logger.info("ctrl-c")
+        pass
     finally:
         node.destroy_node()
         rclpy.try_shutdown()
