@@ -1,4 +1,4 @@
-__all__ = ["coord_msg_clbk", "respond_ping"]
+__all__ = ["coord_msg_clbk", "respond_to_ping"]
 
 from types import SimpleNamespace
 
@@ -24,5 +24,6 @@ def coord_msg_clbk(msg: CoordMsg) -> SimpleNamespace:
     return attrs
 
 
-def respond_ping(request: Empty.Request, response: Empty.Response) -> Empty.Response:
+def respond_to_ping(request: Empty.Request, response: Empty.Response) -> Empty.Response:
+    """Callback function for ping server, which uses ``std_srvs.srv.Empty``."""
     return response
