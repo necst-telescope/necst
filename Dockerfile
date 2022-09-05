@@ -20,8 +20,8 @@ COPY package.xml $ROS2_WS/src/necst/package.xml
 COPY poetry.lock $ROS2_WS/src/necst/poetry.lock
 COPY pyproject.toml $ROS2_WS/src/necst/pyproject.toml
 COPY README.md $ROS2_WS/src/necst/README.md
-COPY setup.cfg $ROS2_WS/src/necst/setup.cfg
 COPY setup.py $ROS2_WS/src/necst/setup.py
+COPY setup.cfg $ROS2_WS/src/necst/setup.cfg
 
 RUN ( cd $ROS2_WS/src/necst && poetry install )
 
