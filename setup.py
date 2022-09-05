@@ -19,7 +19,9 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
+            f"authorizer={package_name}.core.authorizer:main",
             f"tester={package_name}.tester:main",
+            f"cli={package_name}.core.privileged_node:main",
         ],
     },
 )
