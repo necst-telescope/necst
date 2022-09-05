@@ -1,8 +1,7 @@
 __all__ = ["Authorizer"]
 
-from typing import Final, Optional
+from typing import Optional
 
-import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.node import Node
 
@@ -11,26 +10,8 @@ from necst_msgs.srv import AuthoritySrv
 
 
 class Authorizer(Node):
-    """Singleton privilege server.
 
-    To interact with this server, subclass `PrivilegeNode`.
-
-    This server doesn't authenticate the client, i.e. any node who describes itself as
-    privileged node (by identity string) can have access to privileged operations.
-
-    Attributes
-    ----------
-    srv: rclpy.service.Service
-        ROS 2 service server for communicate with other nodes.
-
-    Examples
-    --------
-    >>> server = necst.core.Authorizer()
-    >>> rclpy.spin(server)
-
-    """
-
-    NodeName: Final[str] = "authorizer"
+    NodeName = "aithorizer"
     Namespace = f"/necst/{config.observatory}/core/auth"
 
     def __init__(self, **kwargs) -> None:
@@ -46,11 +27,14 @@ class Authorizer(Node):
             self._authorize,
             callback_group=MutuallyExclusiveCallbackGroup(),
         )
+        self.cli = None
 
     @property
     def approved(self) -> Optional[str]:
-        """Identity string of currently privileged node."""
         return self.__approved
+
+    def _ping(self) -> bool:
+        ...
 
     def _authorize(
         self, request: AuthoritySrv.Request, response: AuthoritySrv.Response
@@ -63,20 +47,25 @@ class Authorizer(Node):
             self.logger.warning("Decline privilege request (anonymous request)")
             response.privilege = False
         elif removal_request and request_from_privileged_node:
-            self.logger.info(f"Unregistered privileged node '{request.requester}'")
+            self.logger.info(f"Privilege is removed from '{request.requester}'")
             self.__approved = None
             response.privilege = False
         elif removal_request:
             self.logger.warning(
-                "Decline privilege unregister request (request from unprivileged node)"
+                "Decline privilege removal request (request from unprivileged node)"
             )
             response.privilege = False
         elif self.approved is not None:
-            self.logger.info(
-                f"Decline privilege request from '{request.requester}' "
-                "(other node has privilege)"
-            )
-            response.privilege = False
+            current_privileged_node_is_responsive = self._ping()
+            if current_privileged_node_is_responsive:
+                self.logger.warning(
+                    f"Decline privilege request from '{request.requester}' (other node has privilege)"
+                )
+                response.privilege = False
+            else:
+                self.logger.info(f"Privilege is granted for '{request.requester}'")
+                self.__approved = request.requester
+                response.privilege = True
         else:
             self.logger.info(f"Privilege is granted for '{request.requester}'")
             self.__approved = request.requester
@@ -84,37 +73,13 @@ class Authorizer(Node):
 
         return response
 
-    def _check_singleton(self) -> bool:
-        detected_nodes = self.get_node_names_and_namespaces()
-
-        def condition(name, namespace) -> bool:
-            same_node_name = name.find(self.NodeName) != -1
-            not_me = name != self.get_name()
-            same_namespace = namespace == self.Namespace
-            return same_node_name and not_me and same_namespace
-
+    def _check_singleton(self) -> None:
+        reachable_nodes = self.get_node_names_and_namespaces()
         match = [
-            name for name, namespace in detected_nodes if condition(name, namespace)
+            nodename
+            for nodename, namespace in reachable_nodes
+            if (nodename == self.NodeName) and (namespace == self.Namespace)
         ]
-        if len(match) > 0:
-            self.logger.error(
-                f"Authority server is already running ({match}), destroying this..."
-            )
+        if len(match) > 1:
+            self.logger.error("Authority server is already running. Destroying this...")
             self.destroy_node()
-        return True
-
-
-def main(args=None) -> None:
-    rclpy.init(args=args)
-    node = Authorizer()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
-
-
-if __name__ == "__main__":
-    main()

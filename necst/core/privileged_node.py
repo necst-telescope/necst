@@ -1,16 +1,17 @@
 __all__ = ["PrivilegedNode"]
 
 import functools
-import signal
 import uuid
-from types import FrameType
-from typing import Any, Callable, NoReturn, Optional
+from typing import Any, Callable, Optional
 
+import rclpy
 import rclpy.signals
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.client import Client
 from rclpy.node import Node
+from std_srvs.srv import Empty
 
+from .. import utils
 from necst import config
 from necst_msgs.srv import AuthoritySrv
 
@@ -70,44 +71,31 @@ class PrivilegedNode(Node):
         self.cli = self.create_client(
             AuthoritySrv,
             f"{self.Namespace}/request",
-            callback_group=MutuallyExclusiveCallbackGroup(),
+            callback_group=MutuallyExclusiveCallbackGroup(),  # Avoid deadlock.
         )
 
         # User-defined ROS node name + universally unique identifier of computer system
         # + memory address of this node
-        self.identity = f"{self.NodeName}-{uuid.uuid1()}-{id(self)}"
-        self.have_privilege: bool = False
+        self.identity = f"{node_name}-{uuid.uuid1()}-{id(self)}"
 
-        self._setup_signal_handler()
+        self._set_privilege(False)
 
-    def _setup_signal_handler(self) -> None:
-        """Ensure ``quit_privilege`` to be called on shutdown.
+    @property
+    def have_privilege(self) -> bool:
+        return self.__have_privilege
 
-        ROS 2 'Context' will shutdown immediately after a signal was received.
-        This disables any shutdown process which relies on ROS communication (topic or
-        service), and that is what this node want to do on shutdown; release privilege
-        via ROS 'Service'.
-        https://github.com/ros2/rclpy/issues/532
-
-        To realize the functionality, this node will run with ROS default signal handler
-        disabled. On signal event, run ``quit_privilege`` then load the default handler,
-        and delegate the rest of signal handling to it.
-
-        """
-        rclpy.signals.uninstall_signal_handlers()
-
-        def handler(signal_num: int, stack_frame: Optional[FrameType]) -> NoReturn:
-            self.executor.spin_once(timeout_sec=0.1)
-            # NOTE: Complete currently running callback. Omitting this will cause
-            # `ValueError: generator already executing` for `SingleThreadedExecutor`.
-
-            self.quit_privilege()
-
-            self.have_privilege and self.logger.fatal("Failed to release privilege")
-            rclpy.signals.install_signal_handlers()
-            raise KeyboardInterrupt
-
-        self.signal_handler = signal.signal(signal.SIGINT, handler)
+    def _set_privilege(self, have_privilege: bool):
+        self.__have_privilege = have_privilege
+        if have_privilege:
+            self.srv = self.create_service(
+                Empty,
+                "ping",
+                utils.respond_ping,
+                callback_group=MutuallyExclusiveCallbackGroup(),
+            )
+        else:
+            ... if self.srv is None else self.srv.destroy()
+            self.srv = None
 
     def _wait_for_server_to_pick_up(self, client: Client) -> Optional[Client]:
         if client.service_is_ready():
@@ -124,7 +112,8 @@ class PrivilegedNode(Node):
             return AuthoritySrv.Response(privilege=False)
 
         future = self.cli.call_async(request)
-        self.executor.spin_until_future_complete(future)
+        rclpy.spin_until_future_complete(self, future, self.executor)
+        # self.executor.spin_until_future_complete(future)
         # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock.
 
@@ -213,3 +202,25 @@ class PrivilegedNode(Node):
             return
 
         return run_with_privilege_check
+
+
+def main(args=None):
+    from rclpy.executors import SingleThreadedExecutor
+
+    rclpy.init(args=args)
+    node = PrivilegedNode("node_name")
+    e = SingleThreadedExecutor()
+    e.add_node(node)
+    try:
+        # breakpoint()
+        # rclpy.spin(node)
+        e.spin()
+    except KeyboardInterrupt:
+        node.logger.info("ctrl-c")
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()
