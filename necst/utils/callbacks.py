@@ -1,6 +1,8 @@
-__all__ = ["coord_msg_clbk"]
+__all__ = ["coord_msg_clbk", "respond_ping"]
 
 from types import SimpleNamespace
+
+from std_srvs.srv import Empty
 
 from necst_msgs.msg import CoordMsg
 
@@ -20,3 +22,7 @@ def coord_msg_clbk(msg: CoordMsg) -> SimpleNamespace:
     else:
         del attrs.name
     return attrs
+
+
+def respond_ping(request: Empty.Request, response: Empty.Response) -> Empty.Response:
+    return response
