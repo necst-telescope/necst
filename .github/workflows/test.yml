@@ -7,11 +7,11 @@ on:
     branches: [ main ]
 
 jobs:
+  runs-on: ubuntu-latest
   compile:
     name: ROSPackagePythonTesting
+    uses: ./.github/workflows/setup-necst.yml
     steps:
-      - name: Set-up NECST environment
-        uses: ./.github/workflows/setup-necst.yml
       - name: python testing
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
