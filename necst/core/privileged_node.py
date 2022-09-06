@@ -6,7 +6,6 @@ from typing import Any, Callable, Final
 
 import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.executors import SingleThreadedExecutor, MultiThreadedExecutor
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
@@ -103,24 +102,28 @@ class PrivilegedNode(Node):
             self.ping_srv = None
 
     def _send_request(self, request: AuthoritySrv.Request) -> AuthoritySrv.Response:
+        default_response = AuthoritySrv.Response(privilege=False)
+
         if not utils.wait_for_server_to_pick_up(self.request_cli):
-            return AuthoritySrv.Response(privilege=False)
+            return default_response
 
         executor = self.executor
         if self.executor is None:
-            executor = MultiThreadedExecutor()
-            # Executing on global executor somehow causes deadlock
+            executor = rclpy.get_global_executor()
             executor.add_node(self)
 
         future = self.request_cli.call_async(request)
-        self.logger.info("future created")
-
-        self.executor.spin_until_future_complete(future, 5)
-        self.logger.info("future completed")
+        self.executor.spin_until_future_complete(future, config.ros_service_timeout_sec)
         # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock.
 
-        return future.result()
+        result = future.result()
+        if result is None:
+            self.logger.error(
+                "Authority server not responding. Make sure it's running via `spin`."
+            )
+            return default_response
+        return result
 
     def get_privilege(self) -> bool:
         """Request for privilege.
@@ -135,7 +138,6 @@ class PrivilegedNode(Node):
             self.logger.info("This node already has privilege")
             return self.has_privilege
 
-        self.logger.info("request")
         request = AuthoritySrv.Request(requester=self.identity)
         response = self._send_request(request)
 
