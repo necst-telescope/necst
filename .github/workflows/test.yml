@@ -41,4 +41,4 @@ jobs:
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
           cd ros2_ws/src/necst
-          python3 -m pytest tests
+          python3 -m pytest -v tests
