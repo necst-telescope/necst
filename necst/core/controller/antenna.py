@@ -1,7 +1,7 @@
 from neclib.controllers import PIDController
 import rclpy
 from rclpy.node import Node
-from necst_msgs.msg import PIDMsg
+from necst_msgs.msg import CoordMsg, PIDMsg, TimedFloat64
 import time
 
 
@@ -11,11 +11,11 @@ class Antenna_device(Node):
 
     def __init__(self, frequency: float) -> None:
         self.controller = PIDController()
-        self.create_subscription_ang(PIDMsg, "altaz", self.init_ang)
-        self.create_subscription_enc(PIDMsg, "encorder", self.init_ang)
+        self.create_subscription(CoordMsg, "altaz", self.init_ang)
+        self.create_subscription(CoordMsg, "encorder", self.init_enc)
         self.publisher = self.create_publisher(PIDMsg, "speed", self.init_speed)
         self.create_timer(frequency, self.calc_pid)
-        self.create_subscription_param(PIDMsg, "pid_param",
+        self.create_subscription_param(TimeFloat64, "pid_param",
                                        self.change_pid_param)
 
     def calc_pid(self):
@@ -27,8 +27,10 @@ class Antenna_device(Node):
         self.publisher.publish()
 
     def init_ang(self):
-        self.create_subscription_amg.append("altaz")
-        self.create_subscription_enc.append("encorder")
+        self.create_subscription.append("altaz")
+     
+    def init_enc(self):
+        self.create_subscription.append("encorder")
 
     def init_speed(self) -> None:
         dummy = 0
