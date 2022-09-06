@@ -28,9 +28,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip3 install \
-            "myst-parser>=0.18" \
-            "pydata-sphinx-theme>=0.7" \
-            "sphinx>=4.4"
+            "myst-parser==0.18.0" \
+            "pydata-sphinx-theme==0.7.2" \
+            "sphinx==4.5.0" \
+            ${{ env.PACKAGE_PATH }}
       - name: Build docs
         working-directory: ${{ env.PACKAGE_PATH }}
         run: |
