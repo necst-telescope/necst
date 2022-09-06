@@ -4,7 +4,7 @@ from rclpy.executors import Executor
 
 from necst.core import Authorizer, PrivilegedNode
 from necst.utils import get_absolute_name
-from ..conftest import TesterNode, executor_type
+from ..conftest import TesterNode, executor_type, spinning
 
 
 class TestAuthority(TesterNode):
@@ -43,48 +43,51 @@ class TestAuthority(TesterNode):
         auth_server = Authorizer()
         my_node = MyNode()
 
-        assert auth_server.approved is None
-        assert my_node.get_privilege() is True
-        assert auth_server.approved == my_node.identity
+        with spinning(auth_server):
+            assert auth_server.approved is None
+            assert my_node.get_privilege() is True
+            assert auth_server.approved == my_node.identity
 
-        assert my_node.some_operation(100) == 100
+            assert my_node.some_operation(100) == 100
 
         auth_server.destroy_node()
         my_node.destroy_node()
 
-    # def test_unauthorized_execution(self):
-    #     class MyNode(PrivilegedNode):
-    #         def __init__(self):
-    #             super().__init__("test_node")
+    def test_unauthorized_execution(self):
+        class MyNode(PrivilegedNode):
+            def __init__(self):
+                super().__init__("test_node")
 
-    #         @PrivilegedNode.require_privilege
-    #         def some_operation(self, num: int):
-    #             return num
+            @PrivilegedNode.require_privilege
+            def some_operation(self, num: int):
+                return num
 
-    #     auth_server = Authorizer()
-    #     my_node = MyNode()
+        auth_server = Authorizer()
+        my_node = MyNode()
 
-    #     assert auth_server.approved is None
+        with spinning(auth_server):
+            assert auth_server.approved is None
 
-    #     assert my_node.some_operation(100) is None
+            assert my_node.some_operation(100) is None
 
-    #     auth_server.destroy_node()
-    #     my_node.destroy_node()
+        auth_server.destroy_node()
+        my_node.destroy_node()
 
-    # def test_not_allow_multiple_privileged_nodes(self):
-    #     auth_server = Authorizer()
-    #     initial = PrivilegedNode("test_node")
-    #     secondary = PrivilegedNode("test_node" + "_")
+    def test_not_allow_multiple_privileged_nodes(self):
+        auth_server = Authorizer()
+        initial = PrivilegedNode("test_node")
+        secondary = PrivilegedNode("test_node" + "_")
 
-    #     assert initial.get_privilege() is True
-    #     assert auth_server.approved == initial.identity
+        with spinning(auth_server):
+            assert initial.get_privilege() is True
+            assert auth_server.approved == initial.identity
 
-    #     assert secondary.get_privilege is False
-    #     assert auth_server.approved == initial.identity
+            assert secondary.get_privilege is False
+            assert auth_server.approved == initial.identity
 
-    #     auth_server.destroy_node()
-    #     initial.destroy_node()
-    #     secondary.destroy_node()
+        auth_server.destroy_node()
+        initial.destroy_node()
+        secondary.destroy_node()
 
     # def test_quit_privilege(self):
     #     auth_server = Authorizer()
