@@ -20,6 +20,8 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
       - name: Set-up NECST
         uses: ./.github/actions/setup-necst
       - name: python testing
