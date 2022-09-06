@@ -34,6 +34,8 @@ jobs:
       - name: Build docs
         working-directory: ${{ env.PACKAGE_PATH }}
         run: |
+          . /opt/ros/$ROS_DISTRO/setup.bash
+          . ../../install/setup.bash
           sphinx-apidoc -efTM -t docs/_templates/apidoc -o docs/_source ${{ env.PACKAGE_NAME }}
           sphinx-build -a docs docs/_build
       - name: Deploy docs
