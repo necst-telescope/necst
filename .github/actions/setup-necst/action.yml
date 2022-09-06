@@ -3,14 +3,11 @@ description: Set-up environment for running NECST
 
 runs:
   using: composite
-  env:
-    PACKAGE_NAME: necst
-    PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
   steps:
     - name: Checkout the repository
       uses: actions/checkout@v3
       with:
-        path: ${{ env.PACKAGE_PATH }}
+        path: ros2_ws/src/${{ github.event.repository.name }}
 
     - name: Build ROS package
       run: |
