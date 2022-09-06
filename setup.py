@@ -22,8 +22,5 @@ setup(
             f"pub={package_name}.tempos.ros2_string_pub:main",
             f"sub={package_name}.tempos.subscriber_member_function:main",
         ],
-=======
-        "console_scripts": [],
-
     },
 )
