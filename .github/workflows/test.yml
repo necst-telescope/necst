@@ -9,9 +9,6 @@ on:
 jobs:
   compile:
     name: ROSPackagePythonTesting
-    runs-on: ubuntu-latest
-    container:
-      image: ...
     steps:
       - name: Set-up NECST environment
         uses: ./.github/workflows/setup-necst.yml
