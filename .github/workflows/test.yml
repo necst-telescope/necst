@@ -13,7 +13,7 @@ jobs:
     container:
       image: ros:humble-ros-base
     env:
-      PACKAGE_NAME: necst_msgs
+      PACKAGE_NAME: necst
       ROS_DISTRO: humble
       PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
     defaults:
@@ -33,4 +33,5 @@ jobs:
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
       - name: python_testing
-        python3 -m pytest tests
+        run: |
+          python3 -m pytest tests
