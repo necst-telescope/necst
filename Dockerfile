@@ -7,8 +7,6 @@ RUN apt-get update \
     && apt-get clean \
     && curl -sSL https://install.python-poetry.org | python3 -
 
-ENV PATH=$PATH:/root/.local/bin
-ENV POETRY_VIRTUALENVS_CREATE=false
 ENV ROS2_WS=/root/ros2_ws
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
@@ -17,13 +15,11 @@ COPY resource $ROS2_WS/src/necst/resource
 COPY tests $ROS2_WS/src/necst/tests
 COPY LICENSE $ROS2_WS/src/necst/LICENSE
 COPY package.xml $ROS2_WS/src/necst/package.xml
-COPY poetry.lock $ROS2_WS/src/necst/poetry.lock
-COPY pyproject.toml $ROS2_WS/src/necst/pyproject.toml
 COPY README.md $ROS2_WS/src/necst/README.md
 COPY setup.py $ROS2_WS/src/necst/setup.py
 COPY setup.cfg $ROS2_WS/src/necst/setup.cfg
 
-RUN ( cd $ROS2_WS/src/necst && poetry install )
+RUN ( cd $ROS2_WS/src/necst && pip install "neclib>=0.10.2" )
 
 RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
     && . /opt/ros/humble/setup.sh \

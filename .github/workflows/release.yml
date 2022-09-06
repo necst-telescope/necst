@@ -9,7 +9,7 @@ jobs:
   build-and-publish-image:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
     env:
       REGISTRY: ghcr.io
