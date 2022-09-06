@@ -36,8 +36,9 @@ jobs:
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
           (apt-get update) && (apt-get upgrade)
-          apt-get python3-pip
+          apt-get curl
+          curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+          python get-pip.py
           pip3 install neclib
-          ls
           cd ros2_ws/src/necst
           python3 -m pytest tests
