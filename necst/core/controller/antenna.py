@@ -11,8 +11,8 @@ class Antenna_device(Node):
 
     def __init__(self, frequency: float) -> None:
         self.controller = PIDController()
-        self.create_subscription(CoordMsg, "altaz", self.init_ang)
-        self.create_subscription(CoordMsg, "encorder", self.init_enc)
+        self.create_subscription_ang(CoordMsg, "altaz", self.init_ang)
+        self.create_subscription_enc(CoordMsg, "encorder", self.init_enc)
         self.publisher = self.create_publisher(PIDMsg, "speed", self.init_speed)
         self.create_timer(frequency, self.calc_pid)
         self.create_subscription_param(TimeFloat64, "pid_param",
@@ -24,23 +24,23 @@ class Antenna_device(Node):
         calculator.cmd_coord.push
         calculator.enc_coord.push
         calculator.error.push
-        self.publisher.publish()
+        self.publisher.publish(TimeFloat64())
 
     def init_ang(self):
-        self.create_subscription.append("altaz")
+        self.create_subscription_ang.append("altaz")
      
     def init_enc(self):
-        self.create_subscription.append("encorder")
+        self.create_subscription_enc.append("encorder")
 
     def init_speed(self) -> None:
         dummy = 0
         self.get_speed(dummy, dummy, stop=True)
-        self.command(0, "ang")
+        self.command(0, "altaz")
 
     def change_pid_param(self, msg):
-        self.controller.k_p = msg.k_p(PIDMsg)
-        self.controller.k_i = msg.k_i(PIDMsg)
-        self.controller.k_d = msg.k_d(PIDMsg)
+        self.controller.k_p = msg.k_p
+        self.controller.k_i = msg.k_i
+        self.controller.k_d = msg.k_d
 
     def emergency_stop(self) -> None:
         dummy = 0
