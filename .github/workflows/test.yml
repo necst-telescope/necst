@@ -32,11 +32,12 @@ jobs:
           cd ros2_ws
           colcon build --symlink-install
 
-      - name: python_testing
+      - name: Set python environment
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
           (apt-get update) && (apt-get upgrade)
           apt-get -y install python3-pip
           pip3 install neclib
+      - name: python testing
           cd ros2_ws/src/necst
           python3 -m pytest tests
