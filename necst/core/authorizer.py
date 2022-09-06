@@ -112,6 +112,13 @@ class Authorizer(Node):
         return response
 
     def _check_singleton(self) -> None:
+        """Check if this server node is duplicated.
+
+        If this node isn't singleton, creating service server in ``__init__`` will fail,
+        so this method isn't necessarily required. This method just issues error message
+        to the console.
+
+        """
         reachable_nodes = self.get_node_names_and_namespaces()
         match = [
             nodename

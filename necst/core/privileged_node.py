@@ -6,6 +6,7 @@ from typing import Any, Callable, Final
 
 import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.exceptions import InvalidHandle
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
@@ -30,7 +31,7 @@ class PrivilegedNode(Node):
     signal_handler: function
         Function to finalize the node releasing the privilege.
     ping_srv: rclpy.service.Service or None
-        ROS 2 service server, to respond to status check by ``Authorizer``.
+        ROS 2 service server, to respond to status check from ``Authorizer``.
 
     Examples
     --------
@@ -48,6 +49,7 @@ class PrivilegedNode(Node):
     ...     logger = node.get_logger()
     ...     try:
     ...         assert node.get_privilege(), "Privilege isn't granted"
+    ...         # `Authorizer` should be running somewhere, to get privilege.
     ...         rclpy.spin(node)
     ...     except KeyboardInterrupt:
     ...         pass
@@ -87,15 +89,21 @@ class PrivilegedNode(Node):
         """``True`` if privilege is granted for this node."""
         return self.__has_privilege
 
-    def _set_privilege(self, has_privilege: bool):
-        self.__has_privilege = has_privilege
-        if has_privilege:
-            self.ping_srv = self.create_service(
-                Empty,
-                f"{self.Namespace}/ping",
-                utils.respond_to_ping,
-                callback_group=MutuallyExclusiveCallbackGroup(),
-            )
+    def _set_privilege(self, privileged: bool):
+        self.__has_privilege = privileged
+        if privileged:
+            try:
+                self.ping_srv = self.create_service(
+                    Empty,
+                    f"{self.Namespace}/ping",
+                    utils.respond_to_ping,
+                    callback_group=MutuallyExclusiveCallbackGroup(),
+                )
+            except InvalidHandle:
+                self.logger.error(
+                    "Failed to verify privilege, it may be granted to other node."
+                )
+                self._set_privilege(False)
         else:
             if self.ping_srv is not None:
                 self.ping_srv.destroy()
@@ -115,7 +123,7 @@ class PrivilegedNode(Node):
         future = self.request_cli.call_async(request)
         self.executor.spin_until_future_complete(future, config.ros_service_timeout_sec)
         # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
-        # will cause deadlock.
+        # will cause deadlock. Reason unknown.
 
         result = future.result()
         if result is None:
@@ -208,6 +216,19 @@ class PrivilegedNode(Node):
             return
 
         return run_with_privilege_check
+
+    def destroy_node(self) -> None:
+        """Add minimal privilege removal procedure.
+
+        More "formal" privilege removal i.e. ``quit_privilege`` cannot be invoked, when
+        Ctrl-C is detected. This method doesn't interfere with the behavior, instead
+        make intra-node privilege check (``require_privilege``) can detect the removal.
+
+        The server will recognize the state change via its own ``_ping`` method.
+
+        """
+        self._set_privilege(False)
+        super().destroy_node()
 
 
 def main(args=None):
