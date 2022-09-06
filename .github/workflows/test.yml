@@ -38,4 +38,5 @@ jobs:
       - name: python_testing
         run: |
           pwd
+          ls
           python3 -m pytest tests
