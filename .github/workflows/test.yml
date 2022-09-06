@@ -40,5 +40,7 @@ jobs:
           pip3 install neclib
       - name: python testing
         run: |
+          . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+          ls
           cd ros2_ws/src/necst
           python3 -m pytest tests
