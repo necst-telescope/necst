@@ -7,12 +7,21 @@ on:
     branches: [ main ]
 
 jobs:
-  setup:
-    uses: ./.github/workflows/setup-necst.yml
-  test:
-    runs-on: ubuntu-latest
+  compile:
     name: ROSPackagePythonTesting
+    runs-on: ubuntu-latest
+    container:
+      image: ros:humble-ros-base
+    env:
+      PACKAGE_NAME: necst
+      ROS_DISTRO: humble
+      PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
+    defaults:
+      run:
+        shell: bash
     steps:
+      - name: Set-up NECST
+        uses: ./.github/actions/setup-necst
       - name: python testing
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
