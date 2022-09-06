@@ -22,6 +22,8 @@ setup(
             f"authorizer={package_name}.core.authorizer:main",
             f"tester={package_name}.tester:main",
             f"cli={package_name}.core.privileged_node:main",
+            f"pub={package_name}.tempos.ros2_string_pub:main",
+            f"sub={package_name}.tempos.subscriber_member_function:main",
         ],
     },
 )

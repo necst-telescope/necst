@@ -11,3 +11,5 @@ except:  # noqa: E722
 
 logger = get_logger("necst")
 config = neclib.config
+
+from .tempos import ros2_string_pub  # noqa: F401, E402
