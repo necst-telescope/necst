@@ -7,29 +7,30 @@ on:
     branches: [ main ]
 
 jobs:
-  job:
-    name: Test
+  compile:
+    name: ROSPackagePythonTesting
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.9, "3.10"]
+    container:
+      image: ros:humble-ros-base
     env:
-      PACKAGE_NAME: necst
+      PACKAGE_NAME: necst_msgs
+      ROS_DISTRO: humble
+      PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Checkout the repository
+        uses: actions/checkout@v3
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+          path: ${{ env.PACKAGE_PATH }}
+      - name: Build ROS package
         run: |
-          pip3 install poetry
-          poetry install
-          poetry run pip3 install 'setuptools==59.6'  # Workaround, poetry 1.1.x removes this.
-      - name: Lint by Flake8 
-        run: poetry run flake8 tests ${PACKAGE_NAME}
-      - name: Format by Black
-        run: poetry run black --check tests ${PACKAGE_NAME}
-      - name: Test by pytest
-        run: poetry run pytest -v tests ${PACKAGE_NAME}
-
+          . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+          ( cd ros2_ws && colcon build --symlink-install )
+      - name: Check if all interface definitions have been built
+        working-directory: ${{ env.PACKAGE_PATH }}
+        run: |
+          . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+      - name: python_testing
+        python3 -m pytest tests
