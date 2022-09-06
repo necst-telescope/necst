@@ -1,17 +1,19 @@
 from typing import Type
 
+import pytest
+from rclpy.exceptions import InvalidHandle
 from rclpy.executors import Executor
 
 from necst.core import Authorizer, PrivilegedNode
 from necst.utils import get_absolute_name
-from ..conftest import TesterNode, executor_type, spinning
+from ..conftest import TesterNode, executor_type, is_destroyed, spinning
 
 
 class TestAuthority(TesterNode):
 
     NodeName = "test_authority"
 
-    def test_communication(self):
+    def test_communicable(self):
         auth_server = Authorizer()
         auth_client = PrivilegedNode("test_node")
 
@@ -30,6 +32,8 @@ class TestAuthority(TesterNode):
 
         auth_server.destroy_node()
         auth_client.destroy_node()
+        assert is_destroyed(auth_server)
+        assert is_destroyed(auth_client)
 
     def test_authorized_execution(self):
         class MyNode(PrivilegedNode):
@@ -52,6 +56,8 @@ class TestAuthority(TesterNode):
 
         auth_server.destroy_node()
         my_node.destroy_node()
+        assert is_destroyed(auth_server)
+        assert is_destroyed(my_node)
 
     def test_unauthorized_execution(self):
         class MyNode(PrivilegedNode):
@@ -72,6 +78,8 @@ class TestAuthority(TesterNode):
 
         auth_server.destroy_node()
         my_node.destroy_node()
+        assert is_destroyed(auth_server)
+        assert is_destroyed(my_node)
 
     def test_not_allow_multiple_privileged_nodes(self):
         auth_server = Authorizer()
@@ -82,99 +90,131 @@ class TestAuthority(TesterNode):
             assert initial.get_privilege() is True
             assert auth_server.approved == initial.identity
 
-            assert secondary.get_privilege is False
+            assert secondary.get_privilege() is False
             assert auth_server.approved == initial.identity
 
         auth_server.destroy_node()
         initial.destroy_node()
         secondary.destroy_node()
+        assert is_destroyed(auth_server)
+        assert is_destroyed(initial)
+        assert is_destroyed(secondary)
 
-    # def test_quit_privilege(self):
-    #     auth_server = Authorizer()
-    #     auth_client = PrivilegedNode("test_node")
+    def test_quit_privilege(self):
+        auth_server = Authorizer()
+        auth_client = PrivilegedNode("test_node")
 
-    #     assert auth_client.get_privilege() is True
-    #     assert auth_server.approved == auth_client.identity
+        with spinning(auth_server):
+            assert auth_client.get_privilege() is True
+            assert auth_server.approved == auth_client.identity
 
-    #     assert auth_client.quit_privilege() is False
-    #     assert auth_server.approved is None
+            assert auth_client.quit_privilege() is False
+            assert auth_server.approved is None
 
-    #     auth_server.destroy_node()
-    #     auth_client.destroy_node()
+        auth_server.destroy_node()
+        auth_client.destroy_node()
+        assert is_destroyed(auth_server)
+        assert is_destroyed(auth_client)
 
-    # def test_quit_privilege_on_destroy_node(self):
-    #     auth_server = Authorizer()
-    #     auth_client = PrivilegedNode("test_node")
+    def test_quit_privilege_on_destroy_node(self):
+        auth_server = Authorizer()
+        auth_client = PrivilegedNode("test_node")
 
-    #     assert auth_client.get_privilege() is True
-    #     assert auth_server.approved == auth_client.identity
+        with spinning(auth_server):
+            assert auth_client.get_privilege() is True
+            assert auth_server.approved == auth_client.identity
 
-    #     auth_server.destroy_node()
-    #     auth_client.destroy_node()
+        auth_server.destroy_node()
+        auth_client.destroy_node()
+        assert is_destroyed(auth_server)
+        assert is_destroyed(auth_client)
 
-    #     assert auth_client.have_privilege is False
-    #     assert auth_server.approved is None
+        assert auth_client.has_privilege is False
+        with pytest.raises(AssertionError):
+            assert auth_server.approved is None, "Cannot communicate after Ctrl-C"
 
-    # def test_server_singleton(self):
-    #     initial = Authorizer()
-    #     secondary = Authorizer()
+    def test_ignore_unresponsive_privileged_node(self):
+        auth_server = Authorizer()
+        initial = PrivilegedNode("initial")
+        secondary = PrivilegedNode("secondary")
 
-    #     assert list(initial.services)
-    #     assert not list(secondary.services)
+        with spinning(auth_server):
+            assert initial.get_privilege() is True
+            assert auth_server.approved == initial.identity
 
-    #     auth_client = PrivilegedNode("test_node")
-    #     auth_client.get_privilege()
+            initial.destroy_node()
+            assert is_destroyed(initial)
 
-    #     assert auth_client.have_privilege is True
-    #     assert initial.approved == auth_client.identity
-    #     assert secondary.approved is None
+            secondary.get_privilege() is True
+            assert auth_server.approved == secondary.identity
 
-    #     initial.destroy_node()
-    #     secondary.destroy_node()
-    #     auth_client.destroy_node()
+        auth_server.destroy_node()
+        secondary.destroy_node()
+        assert is_destroyed(auth_server)
+        assert is_destroyed(secondary)
 
-    # @executor_type
-    # def test_no_deadlock_when_server_only(self, executor_type: Type[Executor]):
-    #     auth_server = Authorizer()
+    def test_server_singleton(self):
+        initial = Authorizer()
+        with pytest.raises(InvalidHandle):
+            Authorizer()
 
-    #     executor = executor_type()
-    #     executor.add_node(auth_server)
+        with spinning([initial]):
+            auth_client = PrivilegedNode("test_node")
+            auth_client.get_privilege()
 
-    #     for _ in range(100):
-    #         executor.spin_once(timeout_sec=0)
-    #     assert auth_server.approved is None
+            assert auth_client.has_privilege is True
+            assert initial.approved == auth_client.identity
 
-    #     [n.destroy_node() for n in executor.get_nodes()]
-    #     executor.shutdown()
+        initial.destroy_node()
+        auth_client.destroy_node()
+        assert is_destroyed(initial)
+        assert is_destroyed(auth_client)
 
-    # @executor_type
-    # def test_no_deadlock_when_client_only(self, executor_type: Type[Executor]):
-    #     auth_client = PrivilegedNode("test_node")
+    @executor_type
+    def test_no_deadlock_when_server_only(self, executor_type: Type[Executor]):
+        auth_server = Authorizer()
 
-    #     executor = executor_type()
-    #     executor.add_node(auth_client)
+        executor = executor_type()
+        executor.add_node(auth_server)
 
-    #     for _ in range(100):
-    #         executor.spin_once(timeout_sec=0)
-    #     assert auth_client.get_privilege() is False
-    #     assert auth_client.quit_privilege() is False
+        for _ in range(100):
+            executor.spin_once(timeout_sec=0)
+        assert auth_server.approved is None
 
-    #     [n.destroy_node() for n in executor.get_nodes()]
-    #     executor.shutdown()
+        [n.destroy_node() for n in executor.get_nodes()]
+        [executor.remove_node(n) for n in executor.get_nodes()]
+        executor.shutdown()
 
-    # @executor_type
-    # def test_no_deadlock(self, executor_type: Type[Executor]):
-    #     auth_server = Authorizer()
-    #     auth_client = PrivilegedNode("test_node")
+    @executor_type
+    def test_no_deadlock_when_client_only(self, executor_type: Type[Executor]):
+        auth_client = PrivilegedNode("test_node")
 
-    #     executor = executor_type(timeout_sec=0)
-    #     executor.add_node(auth_server)
-    #     executor.add_node(auth_client)
+        executor = executor_type()
+        executor.add_node(auth_client)
 
-    #     for _ in range(100):
-    #         executor.spin_once(timeout_sec=0)
-    #     assert auth_client.get_privilege() is True
-    #     assert auth_client.quit_privilege() is False
+        for _ in range(100):
+            executor.spin_once(timeout_sec=0)
+        assert auth_client.get_privilege() is False
+        assert auth_client.quit_privilege() is False
 
-    #     [n.destroy_node() for n in executor.get_nodes()]
-    #     executor.shutdown()
+        [n.destroy_node() for n in executor.get_nodes()]
+        [executor.remove_node(n) for n in executor.get_nodes()]
+        executor.shutdown()
+
+    @executor_type
+    def test_no_deadlock(self, executor_type: Type[Executor]):
+        auth_server = Authorizer()
+        auth_client = PrivilegedNode("test_node")
+
+        executor = executor_type()
+        executor.add_node(auth_server)
+        executor.add_node(auth_client)
+
+        for _ in range(100):
+            executor.spin_once(timeout_sec=0)
+        assert auth_client.get_privilege() is True
+        assert auth_client.quit_privilege() is False
+
+        [n.destroy_node() for n in executor.get_nodes()]
+        [executor.remove_node(n) for n in executor.get_nodes()]
+        executor.shutdown()

@@ -4,6 +4,7 @@ from typing import Sequence, Union
 
 import pytest
 import rclpy
+from rclpy.exceptions import InvalidHandle
 from rclpy.executors import SingleThreadedExecutor, MultiThreadedExecutor
 from rclpy.node import Node
 
@@ -39,13 +40,13 @@ executor_type = pytest.mark.parametrize(
 
 @contextmanager
 def spinning(node: Union[Node, Sequence[Node]]) -> None:
-    """
+    """Run tests with spinning some nodes.
 
     Examples
     --------
     >>> with spinning(node) as e:
-    ...     ...
-    ...     e.shutdown()
+    ...     assert my_node.subscribed_parameter is not None
+
     """
     node = [node] if isinstance(node, Node) else node
     executor = rclpy.get_global_executor()
@@ -62,4 +63,12 @@ def spinning(node: Union[Node, Sequence[Node]]) -> None:
     finally:
         ex.shutdown(cancel_futures=True)
         _ = [n.destroy_node() for n in executor.get_nodes()]
-        executor.shutdown()
+        _ = [executor.remove_node(n) for n in executor.get_nodes()]
+
+
+def is_destroyed(node: Node):
+    try:
+        node.get_name()
+        return False
+    except InvalidHandle:
+        return True
