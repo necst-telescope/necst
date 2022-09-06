@@ -7,10 +7,11 @@ on:
     branches: [ main ]
 
 jobs:
-  runs-on: ubuntu-latest
-  compile:
-    name: ROSPackagePythonTesting
+  setup:
     uses: ./.github/workflows/setup-necst.yml
+  test:
+    runs-on: ubuntu-latest
+    name: ROSPackagePythonTesting
     steps:
       - name: python testing
         run: |
