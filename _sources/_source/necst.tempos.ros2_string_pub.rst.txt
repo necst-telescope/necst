@@ -1,0 +1,7 @@
+necst.tempos.ros2\_string\_pub
+==============================
+
+.. automodule:: necst.tempos.ros2_string_pub
+   :members:
+   :undoc-members:
+   :show-inheritance:

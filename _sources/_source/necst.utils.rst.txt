@@ -1,0 +1,33 @@
+
+
+
+necst.utils
+===========
+
+
+
+
+.. automodule:: necst.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+Submodules
+----------
+
+.. autosummary::
+
+   necst.utils.callbacks
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.utils.callbacks

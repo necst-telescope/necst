@@ -1,0 +1,7 @@
+necst.tempos.subscriber\_member\_function
+=========================================
+
+.. automodule:: necst.tempos.subscriber_member_function
+   :members:
+   :undoc-members:
+   :show-inheritance:

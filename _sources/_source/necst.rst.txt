@@ -1,0 +1,42 @@
+
+
+
+necst
+=====
+
+
+
+
+.. automodule:: necst
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+Subpackages
+-----------
+
+.. autosummary::
+
+   necst.core
+   necst.ctrl
+   necst.rx
+   necst.tempos
+   necst.utils
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.core
+   necst.ctrl
+   necst.rx
+   necst.tempos
+   necst.utils
+
+
+
+
