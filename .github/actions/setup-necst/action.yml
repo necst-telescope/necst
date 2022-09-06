@@ -1,0 +1,27 @@
+name: Setup NECST
+description: Set-up environment for running NECST
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v3
+      with:
+        path: ros2_ws/src/${{ github.event.repository.name }}
+
+    - name: Build ROS package
+      shell: bash
+      run: |
+        . /opt/ros/$ROS_DISTRO/setup.bash
+        cd ros2_ws/src/
+        git clone https://github.com/necst-telescope/necst-msgs.git
+        cd ../
+        colcon build --symlink-install
+
+    - name: Set python environment
+      shell: bash
+      run: |
+        . /opt/ros/$ROS_DISTRO/setup.bash
+        apt-get update
+        apt-get -y install python3-pip
+        pip3 install neclib

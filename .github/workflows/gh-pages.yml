@@ -4,24 +4,31 @@ on:
   release:
     types:
       - created
+  workflow_dispatch:
+
 
 jobs:
-  job:
-    name: Documentation
+  compile:
+    name: BuildAndPublishDocumentation
     runs-on: ubuntu-latest
+    container:
+      image: ros:humble-ros-base
     env:
       PACKAGE_NAME: necst
+      PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+      - name: Set-up NECST
+        uses: ./.github/actions/setup-necst
       - name: Install dependencies
         run: |
-          pip3 install poetry
-          poetry install
-          poetry run pip3 install 'setuptools==59.6'  # Workaround, poetry 1.1.x removes this.
+          pip3 install sphinx
       - name: Build docs
+        working-directory: ${{ env.PACKAGE_PATH }}
         run: |
           poetry run sphinx-apidoc -efTM -t docs/_templates/apidoc -o docs/_source ${{ env.PACKAGE_NAME }}
           poetry run sphinx-build -a docs docs/_build
