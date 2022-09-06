@@ -30,7 +30,7 @@ def test_create_stub(tmp_project_dir: Path):
 
     result = subprocess.run(
         [
-            "/usr/local/bin/sphinx-apidoc",
+            "sphinx-apidoc",
             "-efTM",
             "-t",
             f"{str(tmp_project_dir)}/docs/_templates/apidoc",
@@ -52,7 +52,7 @@ def test_build(tmp_project_dir: Path):
     assert (tmp_project_dir / "docs" / "conf.py").exists()
     result = subprocess.run(
         [
-            "/usr/local/bin/sphinx-build",
+            "sphinx-build",
             "-W",
             "-a",
             f"{str(tmp_project_dir)}/docs",

@@ -23,6 +23,12 @@ jobs:
         uses: actions/checkout@v3
       - name: Set-up NECST
         uses: ./.github/actions/setup-necst
+      - name: Install test dependency
+        run: |
+          pip install \
+            "myst-parser==0.18.0" \
+            "pydata-sphinx-theme==0.7.2" \
+            "sphinx==4.5.0" \
       - name: python testing
         run: |
           . /opt/ros/$ROS_DISTRO/setup.bash
