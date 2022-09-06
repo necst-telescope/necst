@@ -40,7 +40,7 @@ jobs:
       - name: python_testing
         run: |
           apt-get python3-pip
-          pip install neclib
+          pip3 install neclib
           ls
           cd ros2_ws/src/necst
           python3 -m pytest tests
