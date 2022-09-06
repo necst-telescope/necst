@@ -4,8 +4,6 @@ on:
   release:
     types:
       - created
-  pull_request:
-    branches: [ main ]
 
 jobs:
   compile:
@@ -43,6 +41,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ${{ env.PACKAGE_PATH }}/docs/_build
-      - if: ${{ always() }}
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 30
