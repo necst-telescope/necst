@@ -10,6 +10,7 @@ runs:
         path: ros2_ws/src/${{ github.event.repository.name }}
 
     - name: Build ROS package
+      shell: bash
       run: |
         . /opt/ros/$ROS_DISTRO/setup.bash
         cd ros2_ws/src/
@@ -18,6 +19,7 @@ runs:
         colcon build --symlink-install
 
     - name: Set python environment
+      shell: bash
       run: |
         . /opt/ros/$ROS_DISTRO/setup.bash
         apt-get update
