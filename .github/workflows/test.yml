@@ -39,6 +39,7 @@ jobs:
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
       - name: python_testing
         run: |
+          (apt-get update) && (apt-get upgrade)
           apt-get python3-pip
           pip3 install neclib
           ls
