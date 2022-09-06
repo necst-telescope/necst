@@ -27,7 +27,6 @@ jobs:
 
       - name: Build ROS package
         run: |
-          echo ${{ env.ROS_DISTRO }}
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
           cd ros2_ws
           colcon build --symlink-install
@@ -41,6 +40,5 @@ jobs:
       - name: python testing
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          ls
           cd ros2_ws/src/necst
           python3 -m pytest tests
