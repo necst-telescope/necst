@@ -39,7 +39,7 @@ jobs:
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
       - name: python_testing
         run: |
-          apt install pip
+          apt install python3-pip
           pip install neclib
           ls
           cd ros2_ws/src/necst
