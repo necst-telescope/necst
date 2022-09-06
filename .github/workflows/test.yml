@@ -38,5 +38,5 @@ jobs:
       - name: python_testing
         run: |
           pwd
-          ls
+          cd ros2_ws/src/necst
           python3 -m pytest tests
