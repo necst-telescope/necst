@@ -28,7 +28,9 @@ jobs:
       - name: Build ROS package
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          cd ros2_ws
+          cd ros2_ws/src/
+          git clone https://github.com/necst-telescope/necst-msgs.git
+          cd ../
           colcon build --symlink-install
 
       - name: Set python environment
@@ -37,10 +39,10 @@ jobs:
           (apt-get update) && (apt-get upgrade)
           apt-get -y install python3-pip
           pip3 install neclib
-          cd ros2_ws/src/
-          git clone https://github.com/necst-telescope/necst-msgs.git
       - name: python testing
         run: |
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-          cd ros2_ws/src/necst
+          cd ros2_ws
+          . install/setup.bash
+          cd necst
           python3 -m pytest -v tests
