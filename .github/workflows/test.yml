@@ -34,6 +34,8 @@ jobs:
       - name: Check if all interface definitions have been built
         working-directory: ${{ env.PACKAGE_PATH }}
         run: |
+          cd /opt/ros/${{ env.ROS_DISTRO }}/
+          ls
           . /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
       - name: python_testing
         run: |
