@@ -9,7 +9,7 @@ class Antenna_device(Node):
 
     node_name = "pid"
 
-    def __init__(self, frequency: float) -> None:
+    def __init__(self, frequency: float = 50):
         self.controller = PIDController()
         self.create_subscription_ang(CoordMsg, "altaz", self.init_ang, 1)
         self.create_subscription_enc(CoordMsg, "encorder", self.init_enc, 1)
