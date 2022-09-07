@@ -11,31 +11,25 @@ class Antenna_device(Node):
 
     def __init__(self, frequency: float) -> None:
         self.controller = PIDController()
-        self.create_subscription_ang(CoordMsg, "altaz", self.init_ang)
-        self.create_subscription_enc(CoordMsg, "encorder", self.init_enc)
-        self.publisher = self.create_publisher(PIDMsg, "speed", self.init_speed)
+        self.create_subscription_ang(CoordMsg, "altaz", self.init_ang, 1)
+        self.create_subscription_enc(CoordMsg, "encorder", self.init_enc, 1)
+        self.publisher = self.create_publisher(TimedFloat64, "speed", histry depth, 1)
         self.create_timer(frequency, self.calc_pid)
-        self.create_subscription_param(TimeFloat64, "pid_param",
-                                       self.change_pid_param)
+        self.create_subscription_param(PIDMsg, "pid_param",
+                                       self.change_pid_param, 1)
 
     def calc_pid(self):
-        calculator = PIDController(pid_param=[self.k_p, self.k_i, self.k_d])
-        calculator.time.push
-        calculator.cmd_coord.push
-        calculator.enc_coord.push
-        calculator.error.push
-        self.publisher.publish(TimeFloat64())
+        self.publisher.publish(TimeFloat64(speed, time.time()))
 
-    def init_ang(self):
-        self.create_subscription_ang.append("altaz")
+    def init_ang(self, msg):
+        self.az = msg.lon
+        self.el = msg.lat
+        self.t = msg.time
      
-    def init_enc(self):
-        self.create_subscription_enc.append("encorder")
-
-    def init_speed(self) -> None:
-        dummy = 0
-        self.get_speed(dummy, dummy, stop=True)
-        self.command(0, "altaz")
+    def init_enc(self, msg):
+        self.az = msg.lon
+        self.el = msg.lat
+        self.t = msg.time
 
     def change_pid_param(self, msg):
         self.controller.k_p = msg.k_p
@@ -45,8 +39,6 @@ class Antenna_device(Node):
     def emergency_stop(self) -> None:
         dummy = 0
         for _ in range(5):
-            self.command(0, 'altaz')
-            _ = self.command_ang_speed(dummy, dummy, stop=True)
             time.sleep(0.05)
 
 
