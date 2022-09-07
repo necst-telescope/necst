@@ -13,13 +13,13 @@ class Antenna_device(Node):
         self.controller = PIDController()
         self.create_subscription_ang(CoordMsg, "altaz", self.init_ang, 1)
         self.create_subscription_enc(CoordMsg, "encorder", self.init_enc, 1)
-        self.publisher = self.create_publisher(TimedFloat64, "speed", histry depth, 1)
+        self.publisher = self.create_publisher(TimedFloat64, "speed", "histry depth", 1)
         self.create_timer(1/frequency, self.calc_pid)
         self.create_subscription_param(PIDMsg, "pid_param",
                                        self.change_pid_param, 1)
 
     def calc_pid(self):
-        self.publisher.publish(TimeFloat64(speed, time.time()))
+        self.publisher.publish(TimedFloat64(speed, time.time()))
 
     def init_ang(self, msg):
         self.az = msg.lon
