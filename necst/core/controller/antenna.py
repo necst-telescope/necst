@@ -19,7 +19,7 @@ class Antenna_device(Node):
                                        self.change_pid_param, 1)
 
     def calc_pid(self):
-        self.publisher.publish(TimedFloat64(speed(), time.time()))
+        self.publisher.publish(TimedFloat64(self.speed(), time.time()))
         
     def speed(self):
         self.speed = target_speed 
