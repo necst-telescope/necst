@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedFloat64
 import time
+import history depth
 
 
 class Antenna_device(Node):
@@ -11,9 +12,9 @@ class Antenna_device(Node):
 
     def __init__(self, frequency: float = 50):
         self.controller = PIDController()
-        self.create_subscription_ang(CoordMsg, "altaz", self.init_ang, 1)
-        self.create_subscription_enc(CoordMsg, "encorder", self.init_enc, 1)
-        self.publisher = self.create_publisher(TimedFloat64, "speed", "histry depth", 1)
+        self.create_subscription(CoordMsg, "altaz", self.init_ang, 1)
+        self.create_subscription(CoordMsg, "encorder", self.init_enc, 1)
+        self.publisher = self.create_publisher(TimedFloat64, "speed", QoSProfile, 1)
         self.create_timer(1/frequency, self.calc_pid)
         self.create_subscription_param(PIDMsg, "pid_param",
                                        self.change_pid_param, 1)
@@ -27,9 +28,9 @@ class Antenna_device(Node):
         self.t = msg.time
      
     def init_enc(self, msg):
-        self.az = msg.lon_enc
-        self.el = msg.lat_enc
-        self.t = msg.time_enc
+        self.az_enc = msg.lon_enc
+        self.el_enc = msg.lat_enc
+        self.t_enc = msg.time_enc
 
     def change_pid_param(self, msg):
         self.controller.k_p = msg.k_p
