@@ -17,8 +17,8 @@ def tmp_project_dir(tmp_path_factory) -> Path:
 
 
 @pytest.mark.skipif(
-    PYTHON_VERSION < (3, 9),
-    PYTHON_VERSION >= (3, 10),
+    PYTHON_VERSION < (3, 10),
+    PYTHON_VERSION >= (3, 11),
     reason="No need to support that wide versions for documentation building",
 )
 def test_create_stub(tmp_project_dir: Path):
@@ -30,8 +30,6 @@ def test_create_stub(tmp_project_dir: Path):
 
     result = subprocess.run(
         [
-            "poetry",
-            "run",
             "sphinx-apidoc",
             "-efTM",
             "-t",
@@ -44,17 +42,16 @@ def test_create_stub(tmp_project_dir: Path):
     )
     assert result.returncode == 0
 
+
 @pytest.mark.skipif(
-    PYTHON_VERSION < (3, 9),
-    PYTHON_VERSION >= (3, 10),
+    PYTHON_VERSION < (3, 10),
+    PYTHON_VERSION >= (3, 11),
     reason="No need to support that wide versions for documentation building",
 )
 def test_build(tmp_project_dir: Path):
     assert (tmp_project_dir / "docs" / "conf.py").exists()
     result = subprocess.run(
         [
-            "poetry",
-            "run",
             "sphinx-build",
             "-W",
             "-a",

@@ -6,6 +6,9 @@ ARG USERNAME=user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
+SHELL ["/bin/bash", "-c"]
+ENV SHELL=/bin/bash
+
 ENV PATH=$PATH:/home/$USERNAME/.local/bin
 ENV ROS2_WS=/home/$USERNAME/ros2_ws
 
@@ -28,17 +31,17 @@ RUN pip3 install \
         "flake8>=3.8" \
         "ipykernel>=6.3" \
         "jupyter>=1.0" \
-        "myst-parser>=0.18" \
+        "myst-parser==0.18.0" \
         "notebook>=6.4" \
-        "pydata-sphinx-theme>=0.7" \
+        "pydata-sphinx-theme==0.7.2" \
         "pytest>=5.2" \
-        "sphinx>=4.4"
+        "sphinx==4.5.0"
 
 RUN mkdir -p $ROS2_WS/src \
     && git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
-    && . /opt/ros/${DISTRO}/setup.sh \
+    && . /opt/ros/${DISTRO}/setup.bash \
     && ( cd $ROS2_WS && colcon build --symlink-install ) \
-    && echo ". /opt/ros/${DISTRO}/setup.sh" >> /home/$USERNAME/.bashrc \
-    && echo ". $ROS2_WS/install/setup.sh" >> /home/$USERNAME/.bashrc \
+    && echo ". /opt/ros/${DISTRO}/setup.bash" >> /home/$USERNAME/.bashrc \
+    && echo ". $ROS2_WS/install/setup.bash" >> /home/$USERNAME/.bashrc \
     && curl -o /home/$USERNAME/.bashgit https://raw.githubusercontent.com/oyvindstegard/bashgit/master/.bashgit \
-    && echo 'if [ -f /home/$USERNAME/.bashgit ]; then . ~/.bashgit; fi' >> /home/$USERNAME/.bashrc
+    && echo "if [ -f /home/$USERNAME/.bashgit ]; then . ~/.bashgit; fi" >> /home/$USERNAME/.bashrc
