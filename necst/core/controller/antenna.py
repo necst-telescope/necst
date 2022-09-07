@@ -16,7 +16,7 @@ class Antenna_device(Node):
         }
         self.create_subscription(CoordMsg, "altaz", self.init_ang, 1)
         self.create_subscription(CoordMsg, "encorder", self.init_enc, 1)
-        self.publisher = self.create_publisher(TimedAzElFloat64, "speed", 1)
+        self.publisher = self.create_publisher(TimedAzElFloat64, "speed", int, 1)
         self.create_timer(1/frequency, self.calc_pid)
         self.create_subscription_param(PIDMsg, "pid_param",
                                        self.change_pid_param, 1)
