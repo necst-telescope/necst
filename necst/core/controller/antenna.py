@@ -19,7 +19,7 @@ class Antenna_device(Node):
                                        self.change_pid_param, 1)
 
     def calc_pid(self):
-        self.publisher.publish(TimedFloat64(speed, time.time()))
+        self.publisher.publish(TimedFloat64('speed', time.time()))
 
     def init_ang(self, msg):
         self.az = msg.lon
@@ -27,19 +27,14 @@ class Antenna_device(Node):
         self.t = msg.time
      
     def init_enc(self, msg):
-        self.az = msg.lon
-        self.el = msg.lat
-        self.t = msg.time
+        self.az = msg.lon_enc
+        self.el = msg.lat_enc
+        self.t = msg.time_enc
 
     def change_pid_param(self, msg):
         self.controller.k_p = msg.k_p
         self.controller.k_i = msg.k_i
         self.controller.k_d = msg.k_d
-
-    def emergency_stop(self) -> None:
-        dummy = 0
-        for _ in range(5):
-            time.sleep(0.05)
 
 
 def main(args=None):
