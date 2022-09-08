@@ -5,9 +5,10 @@ from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 import time
 
 
-class Antenna_device(Node):
+class config_PID(Node):
 
-    node_name = "pid"
+    NodeName = "authorizer_pid"
+    Namespace = f"/necst/{config.observatory}/core/controller"
 
     def __init__(self, frequency: float = 50):
         self.controller = {
@@ -46,7 +47,7 @@ class Antenna_device(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = Antenna_device()
+    node = config_PID()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
