@@ -1,1 +1,1 @@
-from core import antenna
+from necst.core import antenna
