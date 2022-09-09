@@ -5,7 +5,7 @@
   <version>0.1.0</version>
   <description>NEw Control System for Telescope</description>
   <maintainer email="k.nishikawa@a.phys.nagoya-u.ac.jp">Kaoru Nishikawa</maintainer>
-  <license>MIt</license>
+  <license>MIT</license>
 
   <depend>std_msgs</depend>
   <depend>rclpy</depend>
