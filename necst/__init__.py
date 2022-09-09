@@ -1,4 +1,4 @@
-import AntennaController
+from necst import AntennaController
 from importlib.metadata import version
 
 import neclib
