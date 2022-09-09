@@ -17,6 +17,7 @@ class Commander(Node):
             "coord": self.create_publisher(CoordMsg, "raw_coord", 1),
         }
 
+
     def antenna(
         self,
         cmd: Literal["stop", "drive"],
@@ -29,16 +30,24 @@ class Commander(Node):
         name: str = None,
         tracking_check: bool = True,
     ) -> None:
-        if name != None:
-            msg = CoordMsg(time, name)
-            self.publisher["coord"].publish(msg)
+
+        if cmd == 'stop':
+            def send_cmd(msg: CoordMsg) -> None:
+                self.publisher["coord"].publish(msg)
+            subs_enc = self.create_subscription(CoordMsg, "encoder", send_cmd)
+            subs_enc.destroy()
 
         else:
-            msg = CoordMsg(lon, lat, unit, frame, time)
-            self.publisher["coord"].publish(msg)
+            if name != None:
+                msg = CoordMsg(time = time, name = name)
+                self.publisher["coord"].publish(msg)
 
-        if tracking_check:
-            self.tracking_check("antenna")
+            else:
+                msg = CoordMsg(lon = lon, lat = lat, unit = unit, frame = frame, time = time)
+                self.publisher["coord"].publish(msg)
+
+            if tracking_check:
+                self.tracking_check("antenna")
 
     def tracking_check(self, target: Literal["antenna"]) -> bool:
         enc_az = enc_el = cmd_az = cmd_el = None
@@ -55,8 +64,13 @@ class Commander(Node):
         subs_cmd = self.create_subscription(CoordMsg, "altaz", cmd_update)
 
         Condition = Checker(enc_az, enc_el, cmd_az, cmd_el)
+        counter = 0
 
-        while Condition.Check():
+        while counter == 10:
+            if Condition.Check():
+                counter += 1
+            else:
+                counter = 0
             time.sleep(0.05)
 
         subs_enc.destroy()
