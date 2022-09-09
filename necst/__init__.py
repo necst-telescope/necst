@@ -1,4 +1,4 @@
-from .core import AntennaController
+from .core import controller
 from importlib.metadata import version
 
 import neclib
