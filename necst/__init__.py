@@ -1,4 +1,4 @@
-from core import controller #AntennaControllerでもいいのかな
+from .core import AntennaController
 from importlib.metadata import version
 
 import neclib
