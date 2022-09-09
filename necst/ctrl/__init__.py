@@ -1,1 +1,1 @@
-from .core import AntennaController
+from core import AntennaController
