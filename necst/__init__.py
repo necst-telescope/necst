@@ -1,4 +1,4 @@
-from .core import controller
+import controller
 from importlib.metadata import version
 
 import neclib
