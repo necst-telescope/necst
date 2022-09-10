@@ -17,7 +17,6 @@ class Commander(Node):
             "coord": self.create_publisher(CoordMsg, "raw_coord", 1),
         }
 
-
     def antenna(
         self,
         cmd: Literal["stop", "drive"],
