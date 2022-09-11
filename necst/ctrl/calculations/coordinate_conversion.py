@@ -1,3 +1,5 @@
+import time
+
 import rclpy
 from neclib.coordinates import CoordCalculator
 from rclpy.node import Node
@@ -20,8 +22,12 @@ class HorizontalCoord(Node):
         self.converter = CoordCalculator(config.location, config.pointing_param_path)
         # TODO: Handle weather data.
 
+    def _check_time_order(self, due_time: float) -> bool:
+        return time.time() < due_time
+
     def convert(self, msg: CoordMsg) -> None:
         name_query = bool(msg.name)
+        due_time = msg.time
         if name_query:
             az, el = self.converter.get_altaz_by_name(msg.name, msg.time)
         else:
@@ -29,14 +35,15 @@ class HorizontalCoord(Node):
                 msg.lon, msg.lat, msg.frame, unit=msg.unit, obstime=msg.time
             )
 
-        converted = CoordMsg(
-            lon=az.to("deg").value,
-            lat=el.to("deg").value,
-            unit="deg",
-            frame="altaz",
-            time=msg.time,
-        )
-        self.publisher.publish(converted)
+        if self._check_time_order(due_time):
+            converted = CoordMsg(
+                lon=az.to("deg").value,
+                lat=el.to("deg").value,
+                unit="deg",
+                frame="altaz",
+                time=due_time,
+            )
+            self.publisher.publish(converted)
 
 
 def main(args=None):
