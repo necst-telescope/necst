@@ -1,3 +1,5 @@
+__all__ = ["HorizontalCoord"]
+
 import time
 
 import rclpy
@@ -11,7 +13,7 @@ from necst_msgs.msg import CoordMsg
 
 class HorizontalCoord(Node):
 
-    NodeName = "coord_altaz"
+    NodeName = "altaz_coord"
     Namespace = f"/necst/{config.observatory}/ctrl/antenna"
 
     def __init__(self) -> None:
