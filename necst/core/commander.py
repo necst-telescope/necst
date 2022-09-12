@@ -37,7 +37,7 @@ class Commander(Node):
             subs_enc.destroy()
 
         else:
-            if name != None:
+            if name is not None:
                 msg = CoordMsg(time = time, name = name)
                 self.publisher["coord"].publish(msg)
 
@@ -62,10 +62,11 @@ class Commander(Node):
         subs_enc = self.create_subscription(CoordMsg, "encoder", enc_update)
         subs_cmd = self.create_subscription(CoordMsg, "altaz", cmd_update)
 
-        Condition = Checker(enc_az, enc_el, cmd_az, cmd_el)
+
         counter = 0
 
         while counter == 10:
+            Condition = Checker(enc_az, enc_el, cmd_az, cmd_el)
             if Condition.Check():
                 counter += 1
             else:
