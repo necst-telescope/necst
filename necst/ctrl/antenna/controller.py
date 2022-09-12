@@ -5,7 +5,7 @@ from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 import time
 
 
-class AntennaController(Node, Authorizer):
+class AntennaController(Node):
 
     NodeName = "pid"
     Namespace = f"/necst/{config.observatory}/core/pid"
