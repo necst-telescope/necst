@@ -7,29 +7,32 @@ on:
     branches: [ main ]
 
 jobs:
-  job:
-    name: Test
+  compile:
+    name: ROSPackagePythonTesting
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
+    container:
+      image: ros:humble-ros-base
     env:
       PACKAGE_NAME: necst
+      PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+      - name: Set-up NECST
+        uses: ./.github/actions/setup-necst
+      - name: Install test dependency
         run: |
-          pip3 install poetry
-          poetry install
-          poetry run pip3 install 'setuptools==59.6'  # Workaround, poetry 1.1.x removes this.
-      - name: Lint by Flake8 
-        run: poetry run flake8 tests ${PACKAGE_NAME}
-      - name: Format by Black
-        run: poetry run black --check tests ${PACKAGE_NAME}
-      - name: Test by pytest
-        run: poetry run pytest -v tests ${PACKAGE_NAME}
-
+          pip install \
+            "myst-parser==0.18.0" \
+            "pydata-sphinx-theme==0.7.2" \
+            "sphinx==4.5.0" \
+      - name: python testing
+        run: |
+          . /opt/ros/$ROS_DISTRO/setup.bash
+          cd ros2_ws
+          . install/setup.bash
+          cd src/necst
+          python3 -m pytest -v tests
