@@ -4,15 +4,17 @@ from rclpy.node import Node
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 import necst
 import time
+from necst import config
 # TimedAzElFloat64 は未実装 {az: float64, el: float64, time: float64}
 
 
 class Commander(Node):
 
     node_name = "commander"
+    Namespace = f"/necst/{config.observatory}/core"
 
     def __init__(self):
-        super().__init__(node_name)
+        super().__init__(self.node_name, namespace = self.Namespace)
         self.publisher = {
             "coord": self.create_publisher(CoordMsg, "raw_coord", 1),
         }
