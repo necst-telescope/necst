@@ -40,18 +40,17 @@ class TestHorizontalCoord(TesterNode):
                 msg = CoordMsg(lon=lon, **cmd, time=time.time() + 1)
                 raw_cmd.publish(msg)
 
-                timelimit = time.time() + 1
+                timelimit = time.time() + 2
                 while not subscribed:
                     if time.time() > timelimit:
                         break
                     time.sleep(0.02)
-            assert subscribed is True, "AltAz coordinate not published in 1s"
+            assert subscribed is True, "AltAz coordinate not published in 2s"
 
         destroy(converter)
         destroy([raw_cmd, converted], self.node)
 
     def test_name_to_coordinate(self):
-        # [print(n.topic_name) for n in self.node.subscriptions]
         converter = HorizontalCoord()
 
         subscribed = False
