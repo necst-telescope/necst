@@ -1,5 +1,5 @@
 import threading
-from typing import Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import pytest
 import rclpy
@@ -78,3 +78,34 @@ def is_destroyed(node: Node):
         return False
     except InvalidHandle:
         return True
+
+
+def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
+    from rclpy.client import Client
+    from rclpy.guard_condition import GuardCondition
+    from rclpy.publisher import Publisher
+    from rclpy.service import Service
+    from rclpy.subscription import Subscription
+    from rclpy.timer import Rate, Timer
+
+    def _destroy(obj: Any, n: Node = None):
+        handle = {
+            Node: lambda node, _: node.destroy_node(),
+            Client: lambda cli, node: node.destroy_client(cli),
+            Service: lambda srv, node: node.destroy_service(srv),
+            Publisher: lambda pub, node: node.destroy_publisher(pub),
+            Subscription: lambda sub, node: node.destroy_subscription(sub),
+            Timer: lambda timer, node: node.destroy_timer(timer),
+            Rate: lambda rate, node: node.destroy_rate(rate),
+            GuardCondition: lambda gc, node: node.destroy_guard_condition(gc),
+        }
+        if (not isinstance(obj, Node)) and (node is None):
+            raise TypeError(f"{type(obj)} cannot cleanly be destroyed without node obj")
+        for k in handle.keys():
+            if isinstance(obj, k):
+                handle[k](obj, n)
+                return
+        raise ValueError()
+
+    ros_obj = ros_obj if isinstance(ros_obj, Sequence) else [ros_obj]
+    _ = [_destroy(obj, node) for obj in ros_obj]
