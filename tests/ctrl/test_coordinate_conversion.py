@@ -1,7 +1,8 @@
+import time
+
 from necst.ctrl.calculations import HorizontalCoord
 from necst_msgs.msg import CoordMsg
-
-from ..conftest import TesterNode, is_destroyed
+from ..conftest import TesterNode, is_destroyed, spinning
 
 
 class TestHorizontalCoord(TesterNode):
@@ -19,21 +20,135 @@ class TestHorizontalCoord(TesterNode):
     def test_coordinate_frame_conversion(self):
         converter = HorizontalCoord()
 
-        az = el = None
+        subscribed = False
 
         def update(msg: CoordMsg) -> None:
-            nonlocal az, el
-            az = msg.lon
-            el = msg.lat
+            nonlocal subscribed
+            assert msg.lat > 0
             assert msg.unit == "deg"
             assert msg.frame == "altaz"
+            subscribed = True
 
         ns = converter.get_namespace()
         raw_cmd = self.node.create_publisher(CoordMsg, f"{ns}/raw_coord", 1)
         converted = self.node.create_subscription(CoordMsg, f"{ns}/altaz", update, 1)
 
-    def test_name_to_coordinate(self):
-        ...
+        with spinning([converter, self.node]):
+            cmd = {"lat": 80.0, "unit": "deg", "frame": "fk5"}
+            for lon in [45.0 * i for i in range(8)]:
+                msg = CoordMsg(lon=lon, **cmd, time=time.time() + 1)
+                raw_cmd.publish(msg)
 
-    def test_outdated_query(self):
-        ...
+                timelimit = time.time() + 1
+                while not subscribed:
+                    if time.time() > timelimit:
+                        break
+                    time.sleep(0.02)
+            assert subscribed is True, "AltAz coordinate not published in 1s"
+
+        converter.destroy_node()
+        assert is_destroyed(converter)
+        raw_cmd.destroy()
+        converted.destroy()
+
+    def test_name_to_coordinate(self):
+        converter = HorizontalCoord()
+
+        subscribed = False
+
+        def update(msg: CoordMsg) -> None:
+            nonlocal subscribed
+            assert msg.lat > 0
+            assert msg.unit == "deg"
+            assert msg.frame == "altaz"
+            subscribed = True
+
+        ns = converter.get_namespace()
+        raw_cmd = self.node.create_publisher(CoordMsg, f"{ns}/raw_coord", 1)
+        converted = self.node.create_subscription(CoordMsg, f"{ns}/altaz", update, 1)
+
+        with spinning([converter, self.node]):
+            targets = ["Spica", "IRC+10216", "Procyon", "M42", "M33", "M2", "M22"]
+            for name in targets:
+                msg = CoordMsg(name=name, time=time.time() + 2)
+                raw_cmd.publish(msg)
+
+                timelimit = time.time() + 2
+                while not subscribed:
+                    if time.time() > timelimit:
+                        break
+                    time.sleep(0.02)
+            assert subscribed is True, "AltAz coordinate not published in 2s"
+
+        converter.destroy_node()
+        assert is_destroyed(converter)
+        raw_cmd.destroy()
+        converted.destroy()
+
+    # def test_outdated_query(self):
+    #     converter = HorizontalCoord()
+
+    #     subscribed = False
+
+    #     def update(msg: CoordMsg) -> None:
+    #         nonlocal subscribed
+    #         assert msg.lat > 0
+    #         assert msg.unit == "deg"
+    #         assert msg.frame == "altaz"
+    #         subscribed = True
+
+    #     ns = converter.get_namespace()
+    #     raw_cmd = self.node.create_publisher(CoordMsg, f"{ns}/raw_coord", 1)
+    #     converted = self.node.create_subscription(CoordMsg, f"{ns}/altaz", update, 1)
+
+    #     with spinning([converter, self.node]):
+    #         cmd = {"lat": 80.0, "unit": "deg", "frame": "fk5"}
+    #         for lon in [45.0 * i for i in range(8)]:
+    #             msg = CoordMsg(lon=lon, **cmd, time=time.time() - 1)
+    #             raw_cmd.publish(msg)
+
+    #             timelimit = time.time() + 1
+    #             while not subscribed:
+    #                 if time.time() > timelimit:
+    #                     break
+    #                 time.sleep(0.02)
+    #         assert subscribed is False, "AltAz coordinate accidentally published in 1s"
+
+    #     converter.destroy_node()
+    #     assert is_destroyed(converter)
+    #     raw_cmd.destroy()
+    #     converted.destroy()
+
+    # def test_out_of_drive_range(self):
+    #     converter = HorizontalCoord()
+
+    #     subscribed = False
+
+    #     def update(msg: CoordMsg) -> None:
+    #         nonlocal subscribed
+    #         assert msg.lat > 0
+    #         assert msg.unit == "deg"
+    #         assert msg.frame == "altaz"
+    #         subscribed = True
+
+    #     ns = converter.get_namespace()
+    #     raw_cmd = self.node.create_publisher(CoordMsg, f"{ns}/raw_coord", 1)
+    #     converted = self.node.create_subscription(CoordMsg, f"{ns}/altaz", update, 1)
+
+    #     with spinning([converter, self.node]):
+    #         msg = CoordMsg(
+    #             lon=45.0, lat=-90.0, unit="deg", frame="fk5", time=time.time() + 1
+    #         )
+    #         raw_cmd.publish(msg)
+
+    #         timelimit = time.time() + 1
+    #         while not subscribed:
+    #             if time.time() > timelimit:
+    #                 break
+    #             time.sleep(0.02)
+    #         assert subscribed is False, "AltAz coordinate accidentally published in 1s"
+
+    #     converter.destroy_node()
+    #     assert is_destroyed(converter)
+    #     raw_cmd.destroy()
+    #     converted.destroy()
