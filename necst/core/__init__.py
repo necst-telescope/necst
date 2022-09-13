@@ -1,1 +1,1 @@
-from .commander import Commander
+from .commander import Commander  # noqa: F401
