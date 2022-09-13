@@ -1,33 +1,34 @@
 {
-	"name": "NECST Development",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
-	"postCreateCommand": "( cd /home/user/ros2_ws/src/necst && poetry install ) && git config --global --add safe.directory '*'",
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"Gruntfuggly.todo-tree",
-				"ms-python.python",
-				"streetsidesoftware.code-spell-checker",
-				"tamasfe.even-better-toml"
-			],
-			"settings": {
-				"editor.rulers": [
-					72,
-					79,
-					88
-				],
-				"files.insertFinalNewline": true,
-				"files.trimTrailingWhitespace": true,
-				"python.formatting.provider": "black",
-				"[python]": {
-					"editor.formatOnSave": true,
-					"editor.tabSize": 4
-				}
-			}
-		}
-	},
-	"workspaceMount": "source=${localWorkspaceFolder},target=/home/user/ros2_ws/src/necst,type=bind",
-	"workspaceFolder": "/home/user/ros2_ws/src/necst"
+    "name": "NECST Development",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "postCreateCommand": "git config --global --add safe.directory '*'",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "Gruntfuggly.todo-tree",
+                "ms-python.python",
+                "streetsidesoftware.code-spell-checker",
+                "tamasfe.even-better-toml"
+            ],
+            "settings": {
+                "editor.rulers": [
+                    72,
+                    79,
+                    88
+                ],
+                "editor.renderWhitespace": "all",
+                "files.insertFinalNewline": true,
+                "files.trimTrailingWhitespace": true,
+                "python.formatting.provider": "black",
+                "[python]": {
+                    "editor.formatOnSave": true,
+                    "editor.tabSize": 4
+                }
+            }
+        }
+    },
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/user/ros2_ws/src/necst,type=bind",
+    "workspaceFolder": "/home/user/ros2_ws/src/necst"
 }
