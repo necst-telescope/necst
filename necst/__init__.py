@@ -1,3 +1,4 @@
+from ctrl import AntennaController
 from importlib.metadata import version
 
 import neclib
