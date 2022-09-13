@@ -1,9 +1,9 @@
 import time
 from typing import Tuple
 
-import AntennaController
+from necst.ctrl import AntennaController
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
-from ..conftest import TesterNode, is_destroyed, spinning
+from ..conftest import TesterNode, destroy, spinning
 
 
 class TestAntennaController(TesterNode):
@@ -15,8 +15,7 @@ class TestAntennaController(TesterNode):
         assert "ctrl/antenna" in controller.get_namespace()
         assert "controller" in controller.get_name()
 
-        controller.destroy_node()
-        assert is_destroyed(controller)
+        destroy(controller)
 
     def test_speed_is_published(self):
         controller = AntennaController()
@@ -46,11 +45,8 @@ class TestAntennaController(TesterNode):
                     break
                 time.sleep(0.02)
 
-        controller.destroy_node()
-        assert is_destroyed(controller)
-        cmd.destroy()
-        enc.destroy()
-        sub.destroy()
+        destroy(controller)
+        destroy([cmd, enc, sub], self.node)
 
     def test_change_pid_parameter(self):
         def get_pid_param(ctrl, axis) -> Tuple[float, float, float]:
@@ -79,6 +75,5 @@ class TestAntennaController(TesterNode):
                     break
                 time.sleep(0.05)
 
-        controller.destroy_node()
-        assert is_destroyed(controller)
-        pub_pid.destroy()
+        destroy(controller)
+        destroy(pub_pid, self.node)
