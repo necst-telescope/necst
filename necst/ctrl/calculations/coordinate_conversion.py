@@ -26,8 +26,9 @@ class HorizontalCoord(Node):
 
         self.enc_az = self.enc_el = None
 
-        self.converter = CoordCalculator(config.location, config.pointing_param_path)
-        # TODO: Handle weather data.
+        self.converter = CoordCalculator(
+            config.location, config.pointing_parameter_path
+        )  # TODO: Handle weather data.
 
     def _update_encoder_reading(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
@@ -46,15 +47,15 @@ class HorizontalCoord(Node):
             az = optimum_angle(
                 enc_az,
                 az,
-                [v.to_value("deg") for v in config.antenna_drive_range.az],
+                [v.to_value("deg") for v in config.antenna_drive_range_az],
                 10,
                 unit="deg",
             )
             el = optimum_angle(
                 enc_el,
                 el,
-                [v.to_value("deg") for v in config.antenna_drive_range.el],
-                10,
+                [v.to_value("deg") for v in config.antenna_drive_range_el],
+                10,  # TODO: Read from config.
                 unit="deg",
             )
             return az, el

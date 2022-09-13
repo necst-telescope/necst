@@ -22,6 +22,10 @@ class TesterNode:
 
     @classmethod
     def setup_class(cls) -> None:
+        import neclib
+
+        neclib.configure()
+
         rclpy.init()
         cls.node = rclpy.create_node(cls.NodeName)
 
