@@ -27,24 +27,34 @@ class Commander(Node):
         lat: float = None,
         unit: str = None,
         frame: str = None,
-        time: float = None,
+        obstime: float = None,
         name: str = None,
         tracking_check: bool = True,
     ) -> None:
 
         if cmd == 'stop':
+            recv = False
             def send_cmd(msg: CoordMsg) -> None:
+                nonlocal recv
                 self.publisher["coord"].publish(msg)
-            subs_enc = self.create_subscription(CoordMsg, "encoder", send_cmd)
+                recv = True
+            subs_enc = self.create_subscription(CoordMsg, "encoder", send_cmd,1)
+
+            rep_time = 0
+            while not recv:
+                time.sleep(0.02)
+                rep_time += 0.02
+
+
             subs_enc.destroy()
 
         else:
             if name is not None:
-                msg = CoordMsg(time = time, name = name)
+                msg = CoordMsg(time = obstime, name = name)
                 self.publisher["coord"].publish(msg)
 
             else:
-                msg = CoordMsg(lon = lon, lat = lat, unit = unit, frame = frame, time = time)
+                msg = CoordMsg(lon = lon, lat = lat, unit = unit, frame = frame, time = obstime)
                 self.publisher["coord"].publish(msg)
 
             if tracking_check:
@@ -61,30 +71,38 @@ class Commander(Node):
             cmd_az = msg.lon
             cmd_el = msg.lat
 
-        subs_enc = self.create_subscription(CoordMsg, "encoder", enc_update)
-        subs_cmd = self.create_subscription(CoordMsg, "altaz", cmd_update)
+        subs_enc = self.create_subscription(CoordMsg, "encoder", enc_update, 1)
+        subs_cmd = self.create_subscription(CoordMsg, "altaz", cmd_update, 1)
 
 
         counter = 0
 
-        while counter == 10:
+        while True:
             Condition = Checker(enc_az, enc_el, cmd_az, cmd_el)
             if Condition.Check():
                 counter += 1
             else:
                 counter = 0
+            if counter > 10:
+                return Condition.Check()
+
             time.sleep(0.05)
 
         subs_enc.destroy()
         subs_cmd.destroy()
 
-        return Condition.Check()
+
 
 class Checker:
     def __init__(self, enc_az, enc_el, cmd_az, cmd_el) -> float:
-        self.condition = (cmd_az - enc_az)**2 + (cmd_el - enc_el)**2
-        self.threshold = necst.config.antenna_pointing_accuracy
+        self.threshold = necst.config.antenna_pointing_accuracy.to("deg").value
+        try:
+            self.condition = (cmd_az - enc_az)**2 + (cmd_el - enc_el)**2
+        except TypeError:
+            self.condition = self.threshold + 1
+
 
     def Check(self):
-        self.condition < self.threshold.to("deg").value
+        return self.condition < self.threshold
+
 
