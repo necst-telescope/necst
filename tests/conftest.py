@@ -1,6 +1,5 @@
 import threading
 from typing import Any, Optional, Sequence, Union
-# from typing import Optional, Sequence, Union
 
 import pytest
 import rclpy
@@ -79,6 +78,7 @@ def is_destroyed(node: Node):
         return False
     except InvalidHandle:
         return True
+
 
 def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
     from rclpy.client import Client
