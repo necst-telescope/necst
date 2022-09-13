@@ -1,1 +1,1 @@
-from necst.ctrl.antenna import AntennaController
+from .antenna import AntennaController
