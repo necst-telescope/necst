@@ -1,7 +1,7 @@
 import time
 from typing import Tuple
 
-from necst.ctrl import AntennaController
+from necst.ctrl.antenna import AntennaController
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 from ..conftest import TesterNode, is_destroyed, spinning
 
