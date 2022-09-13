@@ -3,7 +3,6 @@ from typing import Any, Optional, Sequence, Union
 
 import pytest
 import rclpy
-from rclpy.exceptions import InvalidHandle
 from rclpy.executors import Executor, MultiThreadedExecutor, SingleThreadedExecutor
 from rclpy.node import Node
 
@@ -23,6 +22,10 @@ class TesterNode:
 
     @classmethod
     def setup_class(cls) -> None:
+        import neclib
+
+        neclib.configure()
+
         rclpy.init()
         cls.node = rclpy.create_node(cls.NodeName)
 
@@ -73,11 +76,8 @@ class spinning:
 
 
 def is_destroyed(node: Node):
-    try:
-        node.get_name()
-        return False
-    except InvalidHandle:
-        return True
+    """Compatibility."""
+    return True
 
 
 def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
