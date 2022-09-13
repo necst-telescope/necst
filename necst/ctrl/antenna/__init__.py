@@ -1,1 +1,1 @@
-from controller_PID import AntennaController
+from .controller import AntennaController  # noqa: F401
