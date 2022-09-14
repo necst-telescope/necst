@@ -1,6 +1,6 @@
 import time
 
-from necst.ctrl.calculations import HorizontalCoord
+from necst.ctrl import HorizontalCoord
 from necst_msgs.msg import CoordMsg
 from ..conftest import TesterNode, destroy, spinning
 
