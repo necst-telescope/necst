@@ -9,5 +9,3 @@ except:  # noqa: E722
     __version__ = "0.0.0"
 
 config = neclib.config
-
-from .tempos import ros2_string_pub
