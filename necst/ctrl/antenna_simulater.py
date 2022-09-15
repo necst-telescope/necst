@@ -1,8 +1,7 @@
 import rclpy
 from neclib.simulators.antenna import AntennaEncoderEmulator
-from neclib.controllers import PIDController
 from rclpy.node import Node
-from necst_msgs.msg import CoordMsg TimedAzElFloat64
+from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 import time
 
 
@@ -13,9 +12,7 @@ class AntennaSimulater(Node):
 
     def __init__(self):  # はじめに実行される関数。配信や購読、タイマーを生成する。
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.publisher = self.create_publisher(
-            CoordMsg, "encorder", 1
-        )
+        self.publisher = self.create_publisher(CoordMsg, "encorder", 1)
         self.create_subscription(TimedAzElFloat64, "speed", self.antenna_simulater, 1)
         self.enc = AntennaEncoderEmulator()
 
@@ -25,8 +22,11 @@ class AntennaSimulater(Node):
         encorder = self.enc.read()
         az_msg = encorder.az
         el_msg = encorder.el
-        msg = CoordMsg(lon=az_msg, lat=el_msg, unit="deg", frame="altaz", time=time.time())
+        msg = CoordMsg(
+            lon=az_msg, lat=el_msg, unit="deg", frame="altaz", time=time.time()
+        )
         self.publisher.publish(msg)
+
 
 def main(args=None):
     rclpy.init(args=args)
