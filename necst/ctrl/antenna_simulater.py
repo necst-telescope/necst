@@ -14,7 +14,7 @@ class AntennaSimulator(Node):
     def __init__(self):  # はじめに実行される関数。配信や購読、タイマーを生成する。
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = self.create_publisher(CoordMsg, "encorder", 1)
-        self.create_subscription(TimedAzElFloat64, "speed", self.antenna_simulater, 1)
+        self.create_subscription(TimedAzElFloat64, "speed", self.antenna_simulator, 1)
         self.enc = AntennaEncoderEmulator()
 
     def antenna_simulator(self, msg):
