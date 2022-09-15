@@ -72,12 +72,12 @@ class TestHorizontalCoord(TesterNode):
                 msg = CoordMsg(name=name, time=time.time() + 2)
                 raw_cmd.publish(msg)
 
-                timelimit = time.time() + 2
+                timelimit = time.time() + 3
                 while not subscribed:
                     if time.time() > timelimit:
                         break
                     time.sleep(0.02)
-            assert subscribed is True, "AltAz coordinate not published in 2s"
+            assert subscribed is True, "AltAz coordinate not published in 3s"
 
         destroy(converter)
         destroy([raw_cmd, converted], self.node)
