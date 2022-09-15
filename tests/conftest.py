@@ -54,7 +54,10 @@ class spinning:
     """
 
     def __init__(
-        self, node: Union[Node, Sequence[Node]], *, executor: Optional[Executor] = None
+        self,
+        node: Union[Node, Sequence[Node]] = [],
+        *,
+        executor: Optional[Executor] = None,
     ) -> None:
         self.executor = executor or rclpy.get_global_executor()
         self.nodes = [node] if isinstance(node, Node) else node
@@ -73,11 +76,6 @@ class spinning:
         self._stop.set()
         self._thread.join()
         _ = [self.executor.remove_node(n) for n in self.nodes]
-
-
-def is_destroyed(node: Node):
-    """Compatibility."""
-    return True
 
 
 def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
