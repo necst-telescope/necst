@@ -1,7 +1,7 @@
 import time
 from typing import Tuple
 
-from necst.ctrl import AntennaController
+from necst.ctrl import AntennaPIDController
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
 
@@ -11,14 +11,14 @@ class TestAntennaController(TesterNode):
     NodeName = "test_antenna"
 
     def test_node_info(self):
-        controller = AntennaController()
+        controller = AntennaPIDController()
         assert "ctrl/antenna" in controller.get_namespace()
         assert "controller" in controller.get_name()
 
         destroy(controller)
 
     def test_speed_is_published(self):
-        controller = AntennaController()
+        controller = AntennaPIDController()
 
         speed_az = speed_el = None
 
@@ -53,7 +53,7 @@ class TestAntennaController(TesterNode):
             pid_controller = ctrl.controller[axis]
             return (pid_controller.k_p, pid_controller.k_i, pid_controller.k_d)
 
-        controller = AntennaController()
+        controller = AntennaPIDController()
         ns = controller.get_namespace()
         pub_pid = self.node.create_publisher(PIDMsg, f"{ns}/pid_param", 1)
 
