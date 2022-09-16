@@ -19,6 +19,7 @@
                     88
                 ],
                 "editor.renderWhitespace": "all",
+                "editor.wordWrap": "on",
                 "files.insertFinalNewline": true,
                 "files.trimTrailingWhitespace": true,
                 "python.formatting.provider": "black",

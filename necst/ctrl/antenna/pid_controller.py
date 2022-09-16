@@ -3,14 +3,14 @@ import time
 from neclib.controllers import PIDController
 from rclpy.node import Node
 
-from necst import config
+from necst import namespace
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 
-class AntennaController(Node):
+class AntennaPIDController(Node):
 
     NodeName = "controller"
-    Namespace = f"/necst/{config.observatory}/ctrl/antenna"
+    Namespace = namespace.antenna
 
     def __init__(self, frequency: float = 50, **kwargs):
         super().__init__(self.NodeName, namespace=self.Namespace, **kwargs)
@@ -29,10 +29,11 @@ class AntennaController(Node):
 
     def calc_pid(self) -> None:
         if any(param is None for param in [self.az, self.el, self.az_enc, self.el_enc]):
-            self.logger.warning("Necessary parameter not set, skipping calculation...")
-            return
-        az_speed = self.controller["az"].get_speed(self.az, self.az_enc)
-        el_speed = self.controller["el"].get_speed(self.el, self.el_enc)
+            az_speed = 0.0
+            el_speed = 0.0
+        else:
+            az_speed = self.controller["az"].get_speed(self.az, self.az_enc)
+            el_speed = self.controller["el"].get_speed(self.el, self.el_enc)
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=time.time())
         self.publisher.publish(msg)
 
@@ -57,7 +58,7 @@ def main(args=None):
     import rclpy
 
     rclpy.init(args=args)
-    node = AntennaController()
+    node = AntennaPIDController()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

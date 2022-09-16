@@ -2,6 +2,7 @@ import time
 
 import pytest
 
+from necst import namespace
 from necst.core import Commander
 from necst_msgs.msg import CoordMsg
 from ..conftest import TesterNode, destroy, spinning
@@ -26,7 +27,7 @@ class TestCommander(TesterNode):
             "lat": 45.0,
             "unit": "deg",
             "frame": "fk5",
-            "obstime": time.time(),
+            "time": time.time(),
         }
         checked = False
 
@@ -36,18 +37,18 @@ class TestCommander(TesterNode):
             assert msg.lat == cmd["lat"]
             assert msg.unit == cmd["unit"]
             assert msg.frame == cmd["frame"]
-            assert msg.time == cmd["obstime"]
+            assert msg.time == cmd["time"]
             checked = True
 
-        ns = com.get_namespace()
+        ns = namespace.antenna
         sub = self.node.create_subscription(CoordMsg, f"{ns}/raw_coord", check, 1)
 
-        timelimit = time.time() + 1
+        timelimit = time.time() + 2
         with spinning([com, self.node]):
             com.antenna("drive", **cmd, tracking_check=False)
 
             while not checked:
-                assert time.time() < timelimit, "Coordinate command not published in 1s"
+                assert time.time() < timelimit, "Coordinate command not published in 2s"
                 time.sleep(0.02)
 
         destroy(com)
@@ -65,7 +66,7 @@ class TestCommander(TesterNode):
             "lat": 45.0,
             "unit": "deg",
             "frame": "fk5",
-            "obstime": time.time(),
+            "time": time.time(),
         }
         enc = {"lon": 10.0, "lat": 15.0, "unit": "deg", "frame": "altaz"}
         checked = False
@@ -78,17 +79,17 @@ class TestCommander(TesterNode):
             assert msg.frame == enc["frame"]
             checked = True
 
-        ns = com.get_namespace()
+        ns = namespace.antenna
         sub = self.node.create_subscription(CoordMsg, f"{ns}/raw_coord", check, 1)
         pub_enc = self.node.create_publisher(CoordMsg, f"{ns}/encoder", 1)
         timer = self.node.create_timer(0.01, lambda: pub_enc.publish(CoordMsg(**enc)))
 
-        timelimit = time.time() + 1
+        timelimit = time.time() + 2
         with spinning([com, self.node]):
             com.antenna("stop", **cmd)
 
             while not checked:
-                assert time.time() < timelimit, "Coordinate command not published in 1s"
+                assert time.time() < timelimit, "Coordinate command not published in 2s"
                 time.sleep(0.02)
 
         destroy(com)

@@ -8,14 +8,16 @@ from neclib.coordinates import CoordCalculator
 from neclib.utils import optimum_angle
 from rclpy.node import Node
 
-from necst import config
+from necst import config, namespace
 from necst_msgs.msg import CoordMsg
+
+# TODO: 直近の指示値を publish し続ける
 
 
 class HorizontalCoord(Node):
 
     NodeName = "altaz_coord"
-    Namespace = f"/necst/{config.observatory}/ctrl/antenna"
+    Namespace = namespace.antenna
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
@@ -68,6 +70,12 @@ class HorizontalCoord(Node):
     def convert(self, msg: CoordMsg) -> None:
         name_query = bool(msg.name)
         due_time = msg.time
+        if due_time < time.time() + 2:
+            self.logger.warning("Got outdated command, rescheduling...")
+            due_time = time.time() + 2
+            # TODO: Not reschedule, but recognize command with no time specification
+            # and auto-schedule it
+
         if name_query:
             az, el = self.converter.get_altaz_by_name(msg.name, msg.time)
         else:
@@ -82,8 +90,6 @@ class HorizontalCoord(Node):
                 lon=az, lat=el, unit="deg", frame="altaz", time=due_time
             )
             self.publisher.publish(converted)
-            return
-        self.logger.warning("Got outdated command, ignoring...")
 
 
 def main(args=None):

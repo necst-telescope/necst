@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from importlib.metadata import version
 
 import neclib
@@ -10,4 +11,13 @@ except:  # noqa: E722
 
 config = neclib.config
 
-from .tempos import ros2_string_pub
+
+@dataclass
+class namespace:
+    root: str = f"/necst/{config.observatory}"
+
+    ctrl: str = f"{root}/ctrl"
+    antenna: str = f"{ctrl}/antenna"
+
+    core: str = f"{root}/core"
+    auth: str = f"{core}/auth"

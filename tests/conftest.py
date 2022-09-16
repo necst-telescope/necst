@@ -54,7 +54,10 @@ class spinning:
     """
 
     def __init__(
-        self, node: Union[Node, Sequence[Node]], *, executor: Optional[Executor] = None
+        self,
+        node: Union[Node, Sequence[Node]] = [],
+        *,
+        executor: Optional[Executor] = None,
     ) -> None:
         self.executor = executor or rclpy.get_global_executor()
         self.nodes = [node] if isinstance(node, Node) else node
@@ -75,11 +78,6 @@ class spinning:
         _ = [self.executor.remove_node(n) for n in self.nodes]
 
 
-def is_destroyed(node: Node):
-    """Compatibility."""
-    return True
-
-
 def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
     from rclpy.client import Client
     from rclpy.guard_condition import GuardCondition
@@ -98,8 +96,9 @@ def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
             Timer: lambda timer, node: node.destroy_timer(timer),
             Rate: lambda rate, node: node.destroy_rate(rate),
             GuardCondition: lambda gc, node: node.destroy_guard_condition(gc),
+            Executor: lambda executor, _: executor.shutdown(),
         }
-        if (not isinstance(obj, Node)) and (node is None):
+        if (not isinstance(obj, (Node, Executor))) and (n is None):
             raise TypeError(f"{type(obj)} cannot cleanly be destroyed without node obj")
         for k in handle.keys():
             if isinstance(obj, k):
