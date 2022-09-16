@@ -41,7 +41,9 @@ class Commander(Node):
                 self.publisher["coord"].publish(msg)
                 recv = True
 
-            subs_enc = self.create_subscription(CoordMsg, "encoder", send_cmd, 1)
+            subs_enc = self.create_subscription(
+                CoordMsg, f"{namespace.antenna}/encoder", send_cmd, 1
+            )
 
             while not recv:
                 pytime.sleep(0.02)
