@@ -96,8 +96,9 @@ def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
             Timer: lambda timer, node: node.destroy_timer(timer),
             Rate: lambda rate, node: node.destroy_rate(rate),
             GuardCondition: lambda gc, node: node.destroy_guard_condition(gc),
+            Executor: lambda executor, _: executor.shutdown(),
         }
-        if (not isinstance(obj, Node)) and (node is None):
+        if (not isinstance(obj, (Node, Executor))) and (n is None):
             raise TypeError(f"{type(obj)} cannot cleanly be destroyed without node obj")
         for k in handle.keys():
             if isinstance(obj, k):
