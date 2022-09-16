@@ -42,12 +42,12 @@ class TestCommander(TesterNode):
         ns = com.get_namespace()
         sub = self.node.create_subscription(CoordMsg, f"{ns}/raw_coord", check, 1)
 
-        timelimit = time.time() + 1
+        timelimit = time.time() + 3
         with spinning([com, self.node]):
             com.antenna("drive", **cmd, tracking_check=False)
 
             while not checked:
-                assert time.time() < timelimit, "Coordinate command not published in 1s"
+                assert time.time() < timelimit, "Coordinate command not published in 3s"
                 time.sleep(0.02)
 
         destroy(com)
@@ -83,12 +83,12 @@ class TestCommander(TesterNode):
         pub_enc = self.node.create_publisher(CoordMsg, f"{ns}/encoder", 1)
         timer = self.node.create_timer(0.01, lambda: pub_enc.publish(CoordMsg(**enc)))
 
-        timelimit = time.time() + 1
+        timelimit = time.time() + 3
         with spinning([com, self.node]):
             com.antenna("stop", **cmd)
 
             while not checked:
-                assert time.time() < timelimit, "Coordinate command not published in 1s"
+                assert time.time() < timelimit, "Coordinate command not published in 3s"
                 time.sleep(0.02)
 
         destroy(com)
