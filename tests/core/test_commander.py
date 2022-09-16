@@ -26,7 +26,7 @@ class TestCommander(TesterNode):
             "lat": 45.0,
             "unit": "deg",
             "frame": "fk5",
-            "obstime": time.time(),
+            "time": time.time(),
         }
         checked = False
 
@@ -36,7 +36,7 @@ class TestCommander(TesterNode):
             assert msg.lat == cmd["lat"]
             assert msg.unit == cmd["unit"]
             assert msg.frame == cmd["frame"]
-            assert msg.time == cmd["obstime"]
+            assert msg.time == cmd["time"]
             checked = True
 
         ns = com.get_namespace()
@@ -65,7 +65,7 @@ class TestCommander(TesterNode):
             "lat": 45.0,
             "unit": "deg",
             "frame": "fk5",
-            "obstime": time.time(),
+            "time": time.time(),
         }
         enc = {"lon": 10.0, "lat": 15.0, "unit": "deg", "frame": "altaz"}
         checked = False
