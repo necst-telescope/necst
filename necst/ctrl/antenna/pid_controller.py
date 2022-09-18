@@ -3,7 +3,7 @@ import time
 from neclib.controllers import PIDController
 from rclpy.node import Node
 
-from necst import namespace
+from necst import namespace, qos
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 
@@ -19,11 +19,15 @@ class AntennaPIDController(Node):
             "az": PIDController(),
             "el": PIDController(),
         }
-        self.create_subscription(CoordMsg, "altaz", self.update_command, 1)
-        self.create_subscription(CoordMsg, "encoder", self.update_encoder_reading, 1)
-        self.publisher = self.create_publisher(TimedAzElFloat64, "speed", 1)
+        self.create_subscription(CoordMsg, "altaz", self.update_command, qos.realtime)
+        self.create_subscription(
+            CoordMsg, "encoder", self.update_encoder_reading, qos.realtime
+        )
+        self.publisher = self.create_publisher(TimedAzElFloat64, "speed", qos.realtime)
         self.create_timer(1 / frequency, self.calc_pid)
-        self.create_subscription(PIDMsg, "pid_param", self.change_pid_param, 1)
+        self.create_subscription(
+            PIDMsg, "pid_param", self.change_pid_param, qos.reliable
+        )
 
         self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
 

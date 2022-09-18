@@ -8,7 +8,7 @@ from neclib.coordinates import CoordCalculator
 from neclib.utils import optimum_angle
 from rclpy.node import Node
 
-from necst import config, namespace
+from necst import config, namespace, qos
 from necst_msgs.msg import CoordMsg
 
 # TODO: 直近の指示値を publish し続ける
@@ -22,14 +22,16 @@ class HorizontalCoord(Node):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
-        self.publisher = self.create_publisher(CoordMsg, "altaz", 1)
-        self.create_subscription(CoordMsg, "raw_coord", self.convert, 1)
-        self.create_subscription(CoordMsg, "encoder", self._update_encoder_reading, 1)
+        self.publisher = self.create_publisher(CoordMsg, "altaz", qos.realtime)
+        self.create_subscription(CoordMsg, "raw_coord", self.convert, qos.reliable)
+        self.create_subscription(
+            CoordMsg, "encoder", self._update_encoder_reading, qos.realtime
+        )
 
         self.enc_az = self.enc_el = None
 
         self.converter = CoordCalculator(
-            config.location, config.pointing_parameter_path
+            config.location, config.antenna_pointing_parameter_path
         )  # TODO: Handle weather data.
 
     def _update_encoder_reading(self, msg: CoordMsg) -> None:
