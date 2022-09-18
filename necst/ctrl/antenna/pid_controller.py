@@ -3,7 +3,7 @@ import time
 from neclib.controllers import PIDController
 from rclpy.node import Node
 
-from necst import namespace, qos
+from necst import config, namespace, qos
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 
@@ -12,7 +12,7 @@ class AntennaPIDController(Node):
     NodeName = "controller"
     Namespace = namespace.antenna
 
-    def __init__(self, frequency: float = 50, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(self.NodeName, namespace=self.Namespace, **kwargs)
         self.logger = self.get_logger()
         self.controller = {
@@ -24,7 +24,7 @@ class AntennaPIDController(Node):
             CoordMsg, "encoder", self.update_encoder_reading, qos.realtime
         )
         self.publisher = self.create_publisher(TimedAzElFloat64, "speed", qos.realtime)
-        self.create_timer(1 / frequency, self.calc_pid)
+        self.create_timer(1 / config.antenna_command_frequency, self.calc_pid)
         self.create_subscription(
             PIDMsg, "pid_param", self.change_pid_param, qos.reliable
         )
