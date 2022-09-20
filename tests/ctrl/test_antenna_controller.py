@@ -1,6 +1,7 @@
 import time
 from typing import Tuple
 
+from necst import qos
 from necst.ctrl import AntennaPIDController
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
@@ -28,9 +29,11 @@ class TestAntennaController(TesterNode):
             speed_el = msg.el
 
         ns = controller.get_namespace()
-        cmd = self.node.create_publisher(CoordMsg, f"{ns}/altaz", 1)
-        enc = self.node.create_publisher(CoordMsg, f"{ns}/encoder", 1)
-        sub = self.node.create_subscription(TimedAzElFloat64, f"{ns}/speed", update, 1)
+        cmd = self.node.create_publisher(CoordMsg, f"{ns}/altaz", qos.realtime)
+        enc = self.node.create_publisher(CoordMsg, f"{ns}/encoder", qos.realtime)
+        sub = self.node.create_subscription(
+            TimedAzElFloat64, f"{ns}/speed", update, qos.realtime
+        )
 
         with spinning([controller, self.node]):
             cmd.publish(CoordMsg(lon=30.0, lat=45.0))
@@ -55,7 +58,7 @@ class TestAntennaController(TesterNode):
 
         controller = AntennaPIDController()
         ns = controller.get_namespace()
-        pub_pid = self.node.create_publisher(PIDMsg, f"{ns}/pid_param", 1)
+        pub_pid = self.node.create_publisher(PIDMsg, f"{ns}/pid_param", qos.reliable)
 
         default_az_parameters = get_pid_param(controller, "az")
         with spinning(controller):

@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from necst import namespace
+from necst import namespace, qos
 from necst.core import Commander
 from necst.ctrl.exec_antenna_sim import configure_executor
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
@@ -43,22 +43,22 @@ class TestAntenna(TesterNode):
                 responded = True
 
         raw_coord = self.node.create_subscription(
-            CoordMsg, f"{namespace.antenna}/raw_coord", raw_coord_clbk, 1
+            CoordMsg, f"{namespace.antenna}/raw_coord", raw_coord_clbk, qos.reliable
         )
         altaz = self.node.create_subscription(
-            CoordMsg, f"{namespace.antenna}/altaz", altaz_clbk, 1
+            CoordMsg, f"{namespace.antenna}/altaz", altaz_clbk, qos.realtime
         )
         speed = self.node.create_subscription(
-            TimedAzElFloat64, f"{namespace.antenna}/speed", speed_clbk, 1
+            TimedAzElFloat64, f"{namespace.antenna}/speed", speed_clbk, qos.realtime
         )
         encoder = self.node.create_subscription(
-            CoordMsg, f"{namespace.antenna}/encoder", encoder_clbk, 1
+            CoordMsg, f"{namespace.antenna}/encoder", encoder_clbk, qos.realtime
         )
 
         executor = configure_executor()
         with spinning(executor=executor), spinning([self.node, com]):
             com.antenna(
-                "drive",
+                "point",
                 lon=target_az,
                 lat=target_el,
                 unit="deg",
