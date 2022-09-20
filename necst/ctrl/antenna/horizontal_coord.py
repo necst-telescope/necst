@@ -68,16 +68,20 @@ class HorizontalCoord(Node):
                     break
 
         if cmd:
-            self.publisher.publish(
+            msg = CoordMsg(
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
             )
+            self.publisher.publish(msg)
 
     def convert(self) -> None:
+        if self.cmd is None:
+            return
+
         name_query = bool(self.cmd.name)
         obstime = self.cmd.time
-        if isinstance(obstime, float) and (obstime == 0.0):
+        if obstime == 0.0:
             obstime = None
-        if obstime < time.time() + config.antenna_command_offset_sec:
+        elif obstime < time.time() + config.antenna_command_offset_sec:
             self.logger.warning("Got outdated command, ignoring...")
             return
 
@@ -93,8 +97,9 @@ class HorizontalCoord(Node):
             )
 
         az, el = self._validate_drive_range(az, el)
+        # self.logger.warning(f"{az}")
         for _az, _el, _t in zip(az, el, t):
-            cmd = (float(_az), float(_el), _t)
+            cmd = (float(_az.to_value("deg")), float(_el.to_value("deg")), _t)
             self.result_queue.put(cmd)
 
     def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
@@ -103,10 +108,6 @@ class HorizontalCoord(Node):
 
         _az = self.optimizer["az"].optimize(enc_az, az.to_value("deg"), unit="deg")
         _el = self.optimizer["el"].optimize(enc_el, el.to_value("deg"), unit="deg")
-        if (_az is None) or (_el is None):
-            _limits = config.antenna_drive_critical_limit
-            self.logger.warning(
-                f"Command coordinate ({az, el}) out of drive range "
-                f"({_limits.az, _limits.el})."
-            )
-        return _az, _el
+
+        if (_az is not None) and (_el is not None):
+            return _az, _el
