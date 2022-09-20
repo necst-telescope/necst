@@ -91,6 +91,9 @@ class Commander(Node):
         checker = ConditionChecker(10, reset_on_failure=True)
         threshold = config.antenna_pointing_accuracy.to_value("deg")
         while True:
+            if any(p is None for p in [enc_az, enc_el, cmd_az, cmd_el]):
+                pytime.sleep(0.05)
+                continue
             error_az = enc_az - cmd_az
             error_el = enc_el - cmd_el
             if checker.check(error_az**2 + error_el**2 < threshold**2):
