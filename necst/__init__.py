@@ -45,7 +45,18 @@ class qos:
     __latch = {"durability": DurabilityPolicy.TRANSIENT_LOCAL}
     __nolatch = {"durability": DurabilityPolicy.VOLATILE}
 
+    __lowest = {
+        "deadline": Duration(),  # Default value.
+        "history": HistoryPolicy.KEEP_LAST,
+        "lifespan": Duration(),  # Default value.
+        "liveliness": LivelinessPolicy.AUTOMATIC,
+        "liveliness_lease_duration": Duration(),  # Default value.
+        "reliability": ReliabilityPolicy.BEST_EFFORT,
+        "durability": DurabilityPolicy.VOLATILE,
+    }
+
     reliable = QoSProfile(**__default, **__reliable, **__nolatch)
     realtime = QoSProfile(**__default, **__realtime, **__nolatch)
     reliable_latched = QoSProfile(**__default, **__reliable, **__latch)
     realtime_latched = QoSProfile(**__default, **__realtime, **__latch)
+    lowest = QoSProfile(depth=10, **__lowest)
