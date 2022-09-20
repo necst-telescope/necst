@@ -68,12 +68,12 @@ class TestAntenna(TesterNode):
             timelimit = time.time() + 3
             while not commanded:
                 assert time.time() < timelimit, "Command not published in 3s"
-            timelimit += 3
+            timelimit += 5
             while not converted:
-                assert time.time() < timelimit, "Coordinate command not completed in 6s"
+                assert time.time() < timelimit, "Coordinate command not completed in 8s"
             while not pid_cmd:
-                assert time.time() < timelimit, "Speed command not published in 6s"
-            timelimit += 14
+                assert time.time() < timelimit, "Speed command not published in 8s"
+            timelimit += 12
             while not responded:
                 assert time.time() < timelimit, "Motor not responded to command in 20s"
 
