@@ -7,7 +7,7 @@ from necst_msgs.msg import CoordMsg
 from ... import config, namespace, qos
 
 
-class EncoderDevice(Node):
+class AntennaEncoder(Node):
 
     NodeName = "encoder_readout"
     Namespace = namespace.antenna
@@ -33,7 +33,7 @@ def main(args=None):
     import rclpy
 
     rclpy.init(args=args)
-    node = EncoderDevice()
+    node = AntennaEncoder()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
