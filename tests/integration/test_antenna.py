@@ -4,7 +4,7 @@ import pytest
 
 from necst import namespace
 from necst.core import Commander
-from necst.ctrl.exec_antenna import configure_executor
+from necst.ctrl.exec_antenna_sim import configure_executor
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
 
