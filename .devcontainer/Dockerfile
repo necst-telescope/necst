@@ -24,8 +24,8 @@ RUN apt-get update \
 USER $USERNAME
 
 RUN pip3 install \
-        "docker-launch>=0.2.0" \
-        "neclib>=0.10.2" \
+        "docker-launch>=0.2.1" \
+        "neclib>=0.12.1" \
     && pip3 install \
         "black>=22.3" \
         "flake8>=3.8" \
