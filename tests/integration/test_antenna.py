@@ -2,9 +2,9 @@ import time
 
 import pytest
 
-from necst import namespace
+from necst import namespace, qos
 from necst.core import Commander
-from necst.ctrl.exec_antenna import configure_executor
+from necst.ctrl.exec_antenna_sim import configure_executor
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
 
@@ -43,22 +43,22 @@ class TestAntenna(TesterNode):
                 responded = True
 
         raw_coord = self.node.create_subscription(
-            CoordMsg, f"{namespace.antenna}/raw_coord", raw_coord_clbk, 1
+            CoordMsg, f"{namespace.antenna}/raw_coord", raw_coord_clbk, qos.reliable
         )
         altaz = self.node.create_subscription(
-            CoordMsg, f"{namespace.antenna}/altaz", altaz_clbk, 1
+            CoordMsg, f"{namespace.antenna}/altaz", altaz_clbk, qos.realtime
         )
         speed = self.node.create_subscription(
-            TimedAzElFloat64, f"{namespace.antenna}/speed", speed_clbk, 1
+            TimedAzElFloat64, f"{namespace.antenna}/speed", speed_clbk, qos.realtime
         )
         encoder = self.node.create_subscription(
-            CoordMsg, f"{namespace.antenna}/encoder", encoder_clbk, 1
+            CoordMsg, f"{namespace.antenna}/encoder", encoder_clbk, qos.realtime
         )
 
         executor = configure_executor()
         with spinning(executor=executor), spinning([self.node, com]):
             com.antenna(
-                "drive",
+                "point",
                 lon=target_az,
                 lat=target_el,
                 unit="deg",
@@ -68,14 +68,16 @@ class TestAntenna(TesterNode):
             timelimit = time.time() + 3
             while not commanded:
                 assert time.time() < timelimit, "Command not published in 3s"
-            timelimit += 3
+            timelimit += 15
             while not converted:
-                assert time.time() < timelimit, "Coordinate command not completed in 6s"
+                assert (
+                    time.time() < timelimit
+                ), "Coordinate command not completed in 18s"
             while not pid_cmd:
-                assert time.time() < timelimit, "Speed command not published in 6s"
-            timelimit += 14
+                assert time.time() < timelimit, "Speed command not published in 18s"
+            timelimit += 12
             while not responded:
-                assert time.time() < timelimit, "Motor not responded to command in 20s"
+                assert time.time() < timelimit, "Motor not responded to command in 30s"
 
         destroy(executor)
         destroy(com)

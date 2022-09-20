@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from necst import namespace
+from necst import namespace, qos
 from necst.core import Commander
 from necst_msgs.msg import CoordMsg
 from ..conftest import TesterNode, destroy, spinning
@@ -19,7 +19,7 @@ class TestCommander(TesterNode):
 
         destroy(com)
 
-    def test_antenna_drive(self):
+    def test_antenna_point(self):
         com = Commander()
 
         cmd = {
@@ -41,11 +41,13 @@ class TestCommander(TesterNode):
             checked = True
 
         ns = namespace.antenna
-        sub = self.node.create_subscription(CoordMsg, f"{ns}/raw_coord", check, 1)
+        sub = self.node.create_subscription(
+            CoordMsg, f"{ns}/raw_coord", check, qos.reliable
+        )
 
         timelimit = time.time() + 2
         with spinning([com, self.node]):
-            com.antenna("drive", **cmd, tracking_check=False)
+            com.antenna("point", **cmd, tracking_check=False)
 
             while not checked:
                 assert time.time() < timelimit, "Coordinate command not published in 2s"
@@ -55,7 +57,7 @@ class TestCommander(TesterNode):
         destroy(sub, self.node)
 
     @pytest.mark.skip(reason="Method not established")
-    def test_antenna_drive_with_tracking_check(self):
+    def test_antenna_point_with_tracking_check(self):
         ...
 
     def test_antenna_stop(self):
@@ -80,8 +82,10 @@ class TestCommander(TesterNode):
             checked = True
 
         ns = namespace.antenna
-        sub = self.node.create_subscription(CoordMsg, f"{ns}/raw_coord", check, 1)
-        pub_enc = self.node.create_publisher(CoordMsg, f"{ns}/encoder", 1)
+        sub = self.node.create_subscription(
+            CoordMsg, f"{ns}/raw_coord", check, qos.reliable
+        )
+        pub_enc = self.node.create_publisher(CoordMsg, f"{ns}/encoder", qos.realtime)
         timer = self.node.create_timer(0.01, lambda: pub_enc.publish(CoordMsg(**enc)))
 
         timelimit = time.time() + 2

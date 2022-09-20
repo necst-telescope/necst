@@ -4,19 +4,21 @@ import rclpy
 from neclib.simulators.antenna import AntennaEncoderEmulator
 from rclpy.node import Node
 
-from necst import namespace
+from necst import namespace, qos
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 
 
-class AntennaDriver(Node):
+class AntennaDeviceSimulator(Node):
 
     NodeName = "antenna_simulator"
     Namespace = namespace.antenna
 
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.publisher = self.create_publisher(CoordMsg, "encoder", 1)
-        self.create_subscription(TimedAzElFloat64, "speed", self.antenna_simulator, 1)
+        self.publisher = self.create_publisher(CoordMsg, "encoder", qos.realtime)
+        self.create_subscription(
+            TimedAzElFloat64, "speed", self.antenna_simulator, qos.realtime
+        )
         self.enc = AntennaEncoderEmulator()
 
     def antenna_simulator(self, msg):
@@ -33,7 +35,7 @@ class AntennaDriver(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = AntennaDriver()
+    node = AntennaDeviceSimulator()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
