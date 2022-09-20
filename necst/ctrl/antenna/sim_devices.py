@@ -8,7 +8,7 @@ from necst import namespace, qos
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 
 
-class AntennaDriver(Node):
+class AntennaDeviceSimulator(Node):
 
     NodeName = "antenna_simulator"
     Namespace = namespace.antenna
@@ -35,7 +35,7 @@ class AntennaDriver(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = AntennaDriver()
+    node = AntennaDeviceSimulator()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
