@@ -8,8 +8,8 @@ ENV SHELL=/bin/bash
 RUN apt-get update \
     && apt-get -y install curl git python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp \
     && apt-get clean \
-    && apt-get install emacs \
-    && apt-get install vim
+    && apt-get -y install emacs \
+    && apt-get -y install vim
 
 ENV ROS2_WS=/root/ros2_ws
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
