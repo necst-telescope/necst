@@ -3,7 +3,7 @@ import time
 from neclib.devices import antenna_motor
 from rclpy.node import Node
 
-from necst_msgs.msg import TimedAzElFloat64
+from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
 from ... import config, namespace, qos
 
 
@@ -19,18 +19,19 @@ class AntennaMotor(Node):
                 TimedAzElFloat64, "actual_speed", qos.realtime
             ),
             "step": self.create_publisher(
-                TimedAzElFloat64, "actual_step", qos.realtime
+                TimedAzElInt64, "actual_step", qos.realtime
             ),
         }
-        self.create_subscription(TimedAzElFloat64, "speed", self.command, qos.realtime)
+        self.create_subscription(TimedAzElFloat64, "speed", self.speed_command, qos.realtime)
         self.create_timer(1 / config.antenna_command_frequency, self.stream_speed)
-        #self.create_timer(1 / config.antenna_command_frequency, self.stream_step)
+        self.create_timer(1 / config.antenna_command_frequency, self.stream_step)
 
         self.motor = antenna_motor()
+        self.motor.io.output_do([1, 1, 0, 0])
 
-    def command(self, msg: TimedAzElFloat64) -> None:
+    def speed_command(self, msg: TimedAzElFloat64) -> None:
         now = time.time()
-        if msg.time < now:
+        if msg.time < now - 0.05:
             return
         while msg.time > time.time():
             time.sleep(1e-5)
@@ -46,7 +47,7 @@ class AntennaMotor(Node):
     def stream_step(self) -> None:
         readout_az = self.motor.get_step("az")
         readout_el = self.motor.get_step("el")
-        step_msg = TimedAzElFloat64(az=readout_az, el=readout_el, time=time.time())
+        step_msg = TimedAzElInt64(az=readout_az, el=readout_el, time=time.time())
         self.publisher["step"].publish(step_msg)
 
 
@@ -60,6 +61,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        node.motor.io.output_do([0, 0, 0, 0])
         node.destroy_node()
         rclpy.try_shutdown()
 
