@@ -1,7 +1,0 @@
-necst.utils.callbacks
-=====================
-
-.. automodule:: necst.utils.callbacks
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -23,7 +23,6 @@ Subpackages
    necst.core
    necst.ctrl
    necst.rx
-   necst.tempos
    necst.utils
 
 .. toctree::
@@ -34,7 +33,6 @@ Subpackages
    necst.core
    necst.ctrl
    necst.rx
-   necst.tempos
    necst.utils
 
 

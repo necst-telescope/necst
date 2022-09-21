@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.tempos.subscriber_member_function &#8212; necst 0.1.0 documentation</title>
+    <title>necst.ctrl.exec_antenna_sim &#8212; necst 0.2.0 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.1.0</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.2.0</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -145,57 +145,40 @@
               
               <div>
                 
-  <h1>Source code for necst.tempos.subscriber_member_function</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Copyright 2016 Open Source Robotics Foundation, Inc.</span>
-<span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="c1"># you may not use this file except in compliance with the License.</span>
-<span class="c1"># You may obtain a copy of the License at</span>
-<span class="c1">#</span>
-<span class="c1">#       http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="c1">#</span>
-<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="c1"># See the License for the specific language governing permissions and</span>
-<span class="c1"># limitations under the License.</span>
+  <h1>Source code for necst.ctrl.exec_antenna_sim</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">rclpy</span>
+<span class="kn">from</span> <span class="nn">rclpy.executors</span> <span class="kn">import</span> <span class="n">MultiThreadedExecutor</span>
 
-<span class="kn">import</span> <span class="nn">rclpy</span>
-<span class="kn">from</span> <span class="nn">rclpy.node</span> <span class="kn">import</span> <span class="n">Node</span>
-
-<span class="kn">from</span> <span class="nn">std_msgs.msg</span> <span class="kn">import</span> <span class="n">String</span>
+<span class="kn">from</span> <span class="nn">.antenna</span> <span class="kn">import</span> <span class="n">AntennaDeviceSimulator</span><span class="p">,</span> <span class="n">AntennaPIDController</span><span class="p">,</span> <span class="n">HorizontalCoord</span>
 
 
-<div class="viewcode-block" id="MinimalSubscriber"><a class="viewcode-back" href="../../../_source/necst.tempos.subscriber_member_function.html#necst.tempos.subscriber_member_function.MinimalSubscriber">[docs]</a><span class="k">class</span> <span class="nc">MinimalSubscriber</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;minimal_subscriber&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">subscription</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_subscription</span><span class="p">(</span>
-            <span class="n">String</span><span class="p">,</span>
-            <span class="s1">&#39;topic&#39;</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">listener_callback</span><span class="p">,</span>
-            <span class="mi">10</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">subscription</span>  <span class="c1"># prevent unused variable warning</span>
-
-<div class="viewcode-block" id="MinimalSubscriber.listener_callback"><a class="viewcode-back" href="../../../_source/necst.tempos.subscriber_member_function.html#necst.tempos.subscriber_member_function.MinimalSubscriber.listener_callback">[docs]</a>    <span class="k">def</span> <span class="nf">listener_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;I heard: &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">)</span></div></div>
+<div class="viewcode-block" id="configure_executor"><a class="viewcode-back" href="../../../_source/necst.ctrl.exec_antenna_sim.html#necst.ctrl.exec_antenna_sim.configure_executor">[docs]</a><span class="k">def</span> <span class="nf">configure_executor</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">MultiThreadedExecutor</span><span class="p">:</span>
+    <span class="n">executor</span> <span class="o">=</span> <span class="n">MultiThreadedExecutor</span><span class="p">()</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">AntennaPIDController</span><span class="p">(),</span>
+        <span class="n">HorizontalCoord</span><span class="p">(),</span>
+        <span class="n">AntennaDeviceSimulator</span><span class="p">(),</span>
+    <span class="p">]</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">executor</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">executor</span></div>
 
 
-<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../_source/necst.tempos.subscriber_member_function.html#necst.tempos.subscriber_member_function.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../_source/necst.ctrl.exec_antenna_sim.html#necst.ctrl.exec_antenna_sim.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">rclpy</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
 
-    <span class="n">minimal_subscriber</span> <span class="o">=</span> <span class="n">MinimalSubscriber</span><span class="p">()</span>
+    <span class="n">executor</span> <span class="o">=</span> <span class="n">configure_executor</span><span class="p">()</span>
 
-    <span class="n">rclpy</span><span class="o">.</span><span class="n">spin</span><span class="p">(</span><span class="n">minimal_subscriber</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">executor</span><span class="o">.</span><span class="n">spin</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">executor</span><span class="o">.</span><span class="n">get_nodes</span><span class="p">()]</span>
+        <span class="n">rclpy</span><span class="o">.</span><span class="n">try_shutdown</span><span class="p">()</span></div>
 
-    <span class="c1"># Destroy the node explicitly</span>
-    <span class="c1"># (optional - otherwise it will be done automatically</span>
-    <span class="c1"># when the garbage collector destroys the node object)</span>
-    <span class="n">minimal_subscriber</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span>
-    <span class="n">rclpy</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
 
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

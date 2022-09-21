@@ -1,0 +1,7 @@
+necst.core.recorder
+===================
+
+.. automodule:: necst.core.recorder
+   :members:
+   :undoc-members:
+   :show-inheritance:

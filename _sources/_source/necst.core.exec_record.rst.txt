@@ -1,0 +1,7 @@
+necst.core.exec\_record
+=======================
+
+.. automodule:: necst.core.exec_record
+   :members:
+   :undoc-members:
+   :show-inheritance:

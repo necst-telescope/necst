@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.utils.callbacks &#8212; necst 0.1.0 documentation</title>
+    <title>necst.core.exec_record &#8212; necst 0.2.0 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.1.0</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.2.0</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -145,29 +145,39 @@
               
               <div>
                 
-  <h1>Source code for necst.utils.callbacks</h1><div class="highlight"><pre>
-<span></span><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;coord_msg_clbk&quot;</span><span class="p">]</span>
+  <h1>Source code for necst.core.exec_record</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">rclpy</span>
+<span class="kn">from</span> <span class="nn">rclpy.executors</span> <span class="kn">import</span> <span class="n">SingleThreadedExecutor</span>
 
-<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">SimpleNamespace</span>
-
-<span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">CoordMsg</span>
-
-
-<span class="k">def</span> <span class="nf">_get_all_attrs</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
-    <span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">msg</span><span class="o">.</span><span class="n">get_fields_and_field_types</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
-    <span class="k">return</span> <span class="n">SimpleNamespace</span><span class="p">(</span><span class="o">**</span><span class="n">attrs</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">Recorder</span>
 
 
-<div class="viewcode-block" id="coord_msg_clbk"><a class="viewcode-back" href="../../../_source/necst.utils.callbacks.html#necst.utils.callbacks.coord_msg_clbk">[docs]</a><span class="k">def</span> <span class="nf">coord_msg_clbk</span><span class="p">(</span><span class="n">msg</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
-    <span class="n">attrs</span> <span class="o">=</span> <span class="n">_get_all_attrs</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
-        <span class="k">del</span> <span class="n">attrs</span><span class="o">.</span><span class="n">lon</span>
-        <span class="k">del</span> <span class="n">attrs</span><span class="o">.</span><span class="n">lat</span>
-        <span class="k">del</span> <span class="n">attrs</span><span class="o">.</span><span class="n">frame</span>
-        <span class="k">del</span> <span class="n">attrs</span><span class="o">.</span><span class="n">unit</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">del</span> <span class="n">attrs</span><span class="o">.</span><span class="n">name</span>
-    <span class="k">return</span> <span class="n">attrs</span></div>
+<div class="viewcode-block" id="configure_executor"><a class="viewcode-back" href="../../../_source/necst.core.exec_record.html#necst.core.exec_record.configure_executor">[docs]</a><span class="k">def</span> <span class="nf">configure_executor</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">SingleThreadedExecutor</span><span class="p">:</span>
+    <span class="n">executor</span> <span class="o">=</span> <span class="n">SingleThreadedExecutor</span><span class="p">()</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Recorder</span><span class="p">(),</span>
+    <span class="p">]</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">executor</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">executor</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../_source/necst.core.exec_record.html#necst.core.exec_record.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">rclpy</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="n">executor</span> <span class="o">=</span> <span class="n">configure_executor</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">executor</span><span class="o">.</span><span class="n">spin</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">executor</span><span class="o">.</span><span class="n">get_nodes</span><span class="p">()]</span>
+        <span class="n">rclpy</span><span class="o">.</span><span class="n">try_shutdown</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
 </pre></div>
 
               </div>

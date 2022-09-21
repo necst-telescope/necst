@@ -1,0 +1,7 @@
+necst.ctrl.antenna.motor
+========================
+
+.. automodule:: necst.ctrl.antenna.motor
+   :members:
+   :undoc-members:
+   :show-inheritance:

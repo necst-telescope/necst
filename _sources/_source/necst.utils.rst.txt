@@ -17,17 +17,3 @@ necst.utils
 
 
 
-
-Submodules
-----------
-
-.. autosummary::
-
-   necst.utils.callbacks
-
-.. toctree::
-   :maxdepth: 4
-   :titlesonly:
-   :hidden:
-
-   necst.utils.callbacks
