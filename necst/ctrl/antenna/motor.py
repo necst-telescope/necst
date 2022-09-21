@@ -24,7 +24,7 @@ class AntennaMotor(Node):
         }
         self.create_subscription(TimedAzElFloat64, "speed", self.command, qos.realtime)
         self.create_timer(1 / config.antenna_command_frequency, self.stream_speed)
-        self.create_timer(1 / config.antenna_command_frequency, self.stream_step)
+        #self.create_timer(1 / config.antenna_command_frequency, self.stream_step)
 
         self.motor = antenna_motor()
 
