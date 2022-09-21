@@ -17,7 +17,8 @@ RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/nec
     && . /opt/ros/humble/setup.sh \
     && ( cd $ROS2_WS && colcon build ) \
     && echo ". /opt/ros/humble/setup.sh" >> /root/.bashrc \
-    && echo ". $ROS2_WS/install/setup.sh" >> /root/.bashrc
+    && echo ". $ROS2_WS/install/setup.sh" >> /root/.bashrc \
+    && . $ROS2_WS/install/setup.sh 
 
 ENTRYPOINT [ "/ros_entrypoint.sh" ]
 CMD ["bash"]
