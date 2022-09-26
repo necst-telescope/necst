@@ -2,29 +2,29 @@ ARG DISTRO=humble
 FROM ros:${DISTRO}-ros-base
 ARG DISTRO
 
+SHELL ["/bin/bash", "-c"]
+ENV SHELL=/bin/bash
+
 RUN apt-get update \
-    && apt-get -y install curl git python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp \
+    && apt-get -y install curl git pciutils python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp \
     && apt-get clean \
-    && curl -sSL https://install.python-poetry.org | python3 -
+    && apt-get -y install emacs vim
 
 ENV ROS2_WS=/root/ros2_ws
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
-COPY necst $ROS2_WS/src/necst/necst
-COPY resource $ROS2_WS/src/necst/resource
-COPY tests $ROS2_WS/src/necst/tests
-COPY LICENSE $ROS2_WS/src/necst/LICENSE
-COPY package.xml $ROS2_WS/src/necst/package.xml
-COPY README.md $ROS2_WS/src/necst/README.md
-COPY setup.py $ROS2_WS/src/necst/setup.py
-COPY setup.cfg $ROS2_WS/src/necst/setup.cfg
+COPY . $ROS2_WS/src/necst/
 
-RUN ( cd $ROS2_WS/src/necst && pip install "neclib>=0.10.2" )
+RUN ( cd $ROS2_WS/src/necst && pip install "neclib>=0.12.1" && pip install ipython )
 
 RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
-    && . /opt/ros/humble/setup.sh \
-    && ( cd $ROS2_WS && colcon build ) \
-    && echo ". /opt/ros/humble/setup.sh" >> /root/.bashrc \
-    && echo ". $ROS2_WS/install/setup.sh" >> /root/.bashrc
+    && . /opt/ros/humble/setup.bash \
+    && ( cd $ROS2_WS && colcon build --symlink-install ) \
+    && . $ROS2_WS/install/setup.bash \
+    && echo ". /opt/ros/humble/setup.bash" >> /root/.bashrc \
+    && echo ". $ROS2_WS/install/setup.bash" >> /root/.bashrc \
+    && echo -e ". $ROS2_WS/install/setup.bash\n. /ros_entrypoint.sh $@" > /entrypoint.sh \
+    && chmod +x /entrypoint.sh
 
-ENTRYPOINT [ "/ros_entrypoint.sh" ]
+ENTRYPOINT [ "bash", "/entrypoint.sh" ]
+CMD ["bash"]

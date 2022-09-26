@@ -24,18 +24,18 @@ RUN apt-get update \
 USER $USERNAME
 
 RUN pip3 install \
-        "docker-launch>=0.2.0" \
-        "neclib>=0.10.2" \
+        "docker-launch>=0.2.1" \
+        "neclib>=0.12.1" \
     && pip3 install \
         "black>=22.3" \
         "flake8>=3.8" \
         "ipykernel>=6.3" \
         "jupyter>=1.0" \
-        "myst-parser>=0.18" \
+        "myst-parser==0.18.0" \
         "notebook>=6.4" \
-        "pydata-sphinx-theme>=0.7" \
+        "pydata-sphinx-theme==0.7.2" \
         "pytest>=5.2" \
-        "sphinx>=4.4"
+        "sphinx==4.5.0"
 
 RUN mkdir -p $ROS2_WS/src \
     && git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
