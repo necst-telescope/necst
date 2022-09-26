@@ -6,10 +6,9 @@ SHELL ["/bin/bash", "-c"]
 ENV SHELL=/bin/bash
 
 RUN apt-get update \
-    && apt-get -y install curl git python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp \
+    && apt-get -y install curl git pciutils python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp \
     && apt-get clean \
-    && apt-get -y install emacs \
-    && apt-get -y install vim
+    && apt-get -y install emacs vim
 
 ENV ROS2_WS=/root/ros2_ws
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -23,7 +22,7 @@ RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/nec
     && ( cd $ROS2_WS && colcon build --symlink-install ) \
     && . $ROS2_WS/install/setup.bash \
     && echo ". /opt/ros/humble/setup.bash" >> /root/.bashrc \
-    && echo ". $ROS2_WS/install/setup.bash" >> /root/.bashrc \ 
+    && echo ". $ROS2_WS/install/setup.bash" >> /root/.bashrc \
     && echo -e ". $ROS2_WS/install/setup.bash\n. /ros_entrypoint.sh $@" > /entrypoint.sh \
     && chmod +x /entrypoint.sh
 
