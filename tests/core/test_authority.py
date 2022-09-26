@@ -6,7 +6,7 @@ from rclpy.executors import Executor
 
 from necst.core import Authorizer, PrivilegedNode
 from necst.utils import get_absolute_name
-from ..conftest import TesterNode, executor_type, is_destroyed, spinning
+from ..conftest import TesterNode, destroy, executor_type, spinning
 
 
 class TestAuthority(TesterNode):
@@ -30,10 +30,7 @@ class TestAuthority(TesterNode):
         intersection = set(server_communicate_with) & set(client_communicate_with)
         assert auth_server.Namespace + "/request" in intersection
 
-        auth_server.destroy_node()
-        auth_client.destroy_node()
-        assert is_destroyed(auth_server)
-        assert is_destroyed(auth_client)
+        destroy([auth_server, auth_client])
 
     def test_authorized_execution(self):
         class MyNode(PrivilegedNode):
@@ -54,10 +51,7 @@ class TestAuthority(TesterNode):
 
             assert my_node.some_operation(100) == 100
 
-        auth_server.destroy_node()
-        my_node.destroy_node()
-        assert is_destroyed(auth_server)
-        assert is_destroyed(my_node)
+        destroy([auth_server, my_node])
 
     def test_unauthorized_execution(self):
         class MyNode(PrivilegedNode):
@@ -76,10 +70,7 @@ class TestAuthority(TesterNode):
 
             assert my_node.some_operation(100) is None
 
-        auth_server.destroy_node()
-        my_node.destroy_node()
-        assert is_destroyed(auth_server)
-        assert is_destroyed(my_node)
+        destroy([auth_server, my_node])
 
     def test_not_allow_multiple_privileged_nodes(self):
         auth_server = Authorizer()
@@ -93,12 +84,7 @@ class TestAuthority(TesterNode):
             assert secondary.get_privilege() is False
             assert auth_server.approved == initial.identity
 
-        auth_server.destroy_node()
-        initial.destroy_node()
-        secondary.destroy_node()
-        assert is_destroyed(auth_server)
-        assert is_destroyed(initial)
-        assert is_destroyed(secondary)
+        destroy([auth_server, initial, secondary])
 
     def test_quit_privilege(self):
         auth_server = Authorizer()
@@ -111,10 +97,7 @@ class TestAuthority(TesterNode):
             assert auth_client.quit_privilege() is False
             assert auth_server.approved is None
 
-        auth_server.destroy_node()
-        auth_client.destroy_node()
-        assert is_destroyed(auth_server)
-        assert is_destroyed(auth_client)
+        destroy([auth_server, auth_client])
 
     def test_quit_privilege_on_destroy_node(self):
         auth_server = Authorizer()
@@ -124,10 +107,7 @@ class TestAuthority(TesterNode):
             assert auth_client.get_privilege() is True
             assert auth_server.approved == auth_client.identity
 
-        auth_server.destroy_node()
-        auth_client.destroy_node()
-        assert is_destroyed(auth_server)
-        assert is_destroyed(auth_client)
+        destroy([auth_server, auth_client])
 
         assert auth_client.has_privilege is False
         with pytest.raises(AssertionError):
@@ -142,16 +122,12 @@ class TestAuthority(TesterNode):
             assert initial.get_privilege() is True
             assert auth_server.approved == initial.identity
 
-            initial.destroy_node()
-            assert is_destroyed(initial)
+            destroy(initial)
 
             secondary.get_privilege() is True
             assert auth_server.approved == secondary.identity
 
-        auth_server.destroy_node()
-        secondary.destroy_node()
-        assert is_destroyed(auth_server)
-        assert is_destroyed(secondary)
+        destroy([auth_server, secondary])
 
     def test_server_singleton(self):
         initial = Authorizer()
@@ -165,10 +141,7 @@ class TestAuthority(TesterNode):
             assert auth_client.has_privilege is True
             assert initial.approved == auth_client.identity
 
-        initial.destroy_node()
-        auth_client.destroy_node()
-        assert is_destroyed(initial)
-        assert is_destroyed(auth_client)
+        destroy([initial, auth_client])
 
     @executor_type
     def test_no_deadlock_when_server_only(self, executor_type: Type[Executor]):
