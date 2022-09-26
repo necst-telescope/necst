@@ -22,12 +22,13 @@ class AntennaMotor(Node):
                 TimedAzElInt64, "actual_step", qos.realtime
             ),
         }
-        self.create_subscription(TimedAzElFloat64, "speed", self.speed_command, qos.realtime)
+        self.create_subscription(
+            TimedAzElFloat64, "speed", self.speed_command, qos.realtime
+        )
         self.create_timer(1 / config.antenna_command_frequency, self.stream_speed)
         self.create_timer(1 / config.antenna_command_frequency, self.stream_step)
 
         self.motor = antenna_motor()
-        self.motor.io.output_do([1, 1, 0, 0])
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
         now = time.time()
