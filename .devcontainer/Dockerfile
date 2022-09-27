@@ -35,6 +35,7 @@ RUN pip3 install \
         "notebook>=6.4" \
         "pydata-sphinx-theme==0.7.2" \
         "pytest>=5.2" \
+        "pytest-cov==3.0.0" \
         "sphinx==4.5.0"
 
 RUN mkdir -p $ROS2_WS/src \
