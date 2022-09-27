@@ -38,5 +38,7 @@ jobs:
           cd src/necst
           python3 -m pytest -v --cov tests
       - name: Upload code coverage report
-        working-directory: ${{ env.PACKAGE_PATH }}
         uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
+          working-directory: ${{ env.PACKAGE_PATH }}
