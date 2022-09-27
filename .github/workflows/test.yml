@@ -42,3 +42,4 @@ jobs:
         with:
           fail_ci_if_error: true
           working-directory: ${{ env.PACKAGE_PATH }}
+          token: ${{ secrets.CODECOV_TOKEN }}
