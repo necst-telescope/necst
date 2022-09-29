@@ -25,7 +25,7 @@ USER $USERNAME
 
 RUN pip3 install \
         "docker-launch>=0.2.1" \
-        "neclib>=0.12.1" \
+        "git+https://github.com/necst-telescope/neclib.git" \
     && pip3 install \
         "black>=22.3" \
         "flake8>=3.8" \
