@@ -205,6 +205,8 @@ class PrivilegedNode(Node):
             https://stackoverflow.com/a/59157026
 
             """
+            if not self.has_privilege:
+                self.get_privilege()
             if self.has_privilege:
                 return callable_obj(self, *args, **kwargs)
 

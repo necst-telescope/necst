@@ -2,13 +2,13 @@ import time as pytime
 from typing import Literal
 
 from neclib.utils import ConditionChecker
-from rclpy.node import Node
 
-from necst import config, namespace, qos
+from .. import config, namespace, qos
+from .privileged_node import PrivilegedNode
 from necst_msgs.msg import CoordMsg
 
 
-class Commander(Node):
+class Commander(PrivilegedNode):
 
     NodeName = "commander"
     Namespace = namespace.core
@@ -21,6 +21,7 @@ class Commander(Node):
             ),
         }
 
+    @PrivilegedNode.require_privilege
     def antenna(
         self,
         cmd: Literal["stop", "point", "scan", "jog"],
@@ -31,7 +32,7 @@ class Commander(Node):
         frame: str = None,
         time: float = 0.0,
         name: str = None,
-        tracking_check: bool = True,
+        wait: bool = True,
     ) -> None:
         if cmd.lower() == "stop":
             # TODO: Consider using alert.
@@ -58,17 +59,22 @@ class Commander(Node):
                 )
                 self.publisher["coord"].publish(msg)
 
-            if tracking_check:
+            if wait:
                 self.tracking_check("antenna")
         else:
             raise NotImplementedError(f"Command '{cmd}' isn't implemented yet.")
 
     def tracking_check(
-        self, target: Literal["antenna", "dome"], timeout_sec: float = 10
+        self, target: Literal["antenna", "dome"], timeout_sec: float = None
     ) -> bool:
+        # TODO: Implement as independent node.
         topic_name = {
             "antenna": [f"{namespace.antenna}/encoder", f"{namespace.antenna}/altaz"],
             "dome": ["", ""],  # TODO: Implement.
+        }
+        threshold = {
+            "antenna": config.antenna_pointing_accuracy.to_value("deg"),
+            "dome": ...,
         }
         enc_az = enc_el = cmd_az = cmd_el = None
 
@@ -81,25 +87,24 @@ class Commander(Node):
             cmd_az, cmd_el = msg.lon, msg.lat
 
         subs_enc = self.create_subscription(
-            CoordMsg, topic_name[target.lower()][0], enc_update, qos.realtime
+            CoordMsg, topic_name[target][0], enc_update, qos.realtime
         )
         subs_cmd = self.create_subscription(
-            CoordMsg, topic_name[target.lower()][1], cmd_update, qos.realtime
+            CoordMsg, topic_name[target][1], cmd_update, qos.realtime
         )
 
-        timelimit = pytime.time() + timeout_sec
+        timelimit = None if timeout_sec is None else pytime.time() + timeout_sec
         checker = ConditionChecker(10, reset_on_failure=True)
-        threshold = config.antenna_pointing_accuracy.to_value("deg")
         while True:
             if any(p is None for p in [enc_az, enc_el, cmd_az, cmd_el]):
                 pytime.sleep(0.05)
                 continue
             error_az = enc_az - cmd_az
             error_el = enc_el - cmd_el
-            if checker.check(error_az**2 + error_el**2 < threshold**2):
+            if checker.check(error_az**2 + error_el**2 < threshold[target] ** 2):
                 self.destroy_subscription(subs_enc)
                 self.destroy_subscription(subs_cmd)
                 return True
-            if pytime.time() > timelimit:
+            if (timelimit is not None) and (pytime.time() > timelimit):
                 return False
             pytime.sleep(0.05)
