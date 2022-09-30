@@ -19,7 +19,6 @@ class TestHorizontalCoord(TesterNode):
 
         destroy(converter)
 
-    @pytest.mark.skip
     def test_coordinate_frame_conversion(self):
         converter = HorizontalCoord()
 
@@ -43,7 +42,7 @@ class TestHorizontalCoord(TesterNode):
             for lon in [45.0 * i for i in range(8)]:
                 if subscribed:
                     break
-                msg = CoordMsg(lon=lon, **cmd, time=time.time() + 1)
+                msg = CoordMsg(lon=lon, **cmd)
                 raw_cmd.publish(msg)
 
                 timelimit = time.time() + 5

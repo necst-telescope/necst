@@ -1,4 +1,9 @@
-import necst
+import sys
+
+# This package will build documentation without virtualenv nor installing itself.
+sys.path.append("../")
+
+import necst  # noqa: E402
 
 
 # -- Project information -----------------------------------------------------
