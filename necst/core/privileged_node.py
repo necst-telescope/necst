@@ -2,7 +2,7 @@ __all__ = ["PrivilegedNode"]
 
 import functools
 import uuid
-from typing import Any, Callable, Final
+from typing import Any, Callable
 
 import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
@@ -10,8 +10,7 @@ from rclpy.exceptions import InvalidHandle
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
-from .. import utils
-from necst import config
+from .. import config, namespace, utils
 from necst_msgs.srv import AuthoritySrv
 
 
@@ -65,7 +64,7 @@ class PrivilegedNode(Node):
 
     """
 
-    Namespace: Final[str] = f"/necst/{config.observatory}/core/auth"
+    Namespace: str = namespace.auth
 
     def __init__(self, node_name: str, **kwargs) -> None:
         super().__init__(node_name, **kwargs)
@@ -73,7 +72,7 @@ class PrivilegedNode(Node):
 
         self.request_cli = self.create_client(
             AuthoritySrv,
-            f"{self.Namespace}/request",
+            f"{namespace.auth}/request",
             callback_group=MutuallyExclusiveCallbackGroup(),
         )
         self.ping_srv = None
@@ -95,7 +94,7 @@ class PrivilegedNode(Node):
             try:
                 self.ping_srv = self.create_service(
                     Empty,
-                    f"{self.Namespace}/ping",
+                    f"{namespace.auth}/ping",
                     utils.respond_to_ping,
                     callback_group=MutuallyExclusiveCallbackGroup(),
                 )

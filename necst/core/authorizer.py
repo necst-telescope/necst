@@ -7,8 +7,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
-from .. import utils
-from necst import config
+from .. import config, namespace, utils
 from necst_msgs.srv import AuthoritySrv
 
 
@@ -35,7 +34,7 @@ class Authorizer(Node):
     """
 
     NodeName = "authorizer"
-    Namespace = f"/necst/{config.observatory}/core/auth"
+    Namespace = namespace.auth
 
     def __init__(self, **kwargs) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace, **kwargs)
