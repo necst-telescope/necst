@@ -1,4 +1,3 @@
-from base64 import encode
 import time
 
 import pytest
@@ -37,3 +36,19 @@ class TestAntennaDeviceSimulator(TesterNode):
         sub = self.node.create_subscription(
             TimedAzElFloat64, f"{ns}/encoder", update, qos.realtime
         )
+
+        with spinning([encoder, self.node]):
+            cmd.publish(CoordMsg(lon=30.0, lat=45.0))
+            enc.publish(CoordMsg(lon=25.0, lat=45.0))
+
+            timelimit = time.time() + 1
+            while True:
+                assert time.time() < timelimit, "Encoder command not published in 1s"
+                az_condition = (encoder_az is not None) and (encoder > 0)
+                el_condition = (encoder_el is not None) and (encoder == 0)
+                if az_condition and el_condition:
+                    break
+                time.sleep(0.02)
+
+        destroy(encoder)
+        destroy([cmd, enc, sub], self.node)
