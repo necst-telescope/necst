@@ -97,8 +97,9 @@ class HorizontalCoord(Node):
             )
 
         az, el = self._validate_drive_range(az, el)
-        # self.logger.warning(f"{az}")
         for _az, _el, _t in zip(az, el, t):
+            if any(x is None for x in [_az, _el, _t]):
+                continue
             cmd = (float(_az.to_value("deg")), float(_el.to_value("deg")), _t)
             self.result_queue.put(cmd)
 
