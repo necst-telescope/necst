@@ -6,23 +6,15 @@ class Recv_cmd(Node):
     NodeName = "recv_cmd"
     Namespace = namespace.core
     
-    def __init__(self , msg.lon , msg.lat , msg.time):
+    def __init__(self, cmd_az: float, cmd_el: float, msg.time: float):
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.cmd_az = msg.lon
-        self.cmd_el = msg.lat
-        self.cmd_time = msg.time
-        cmd = [msg.time, msg.lon, msg.lat] 
+        self.msg.time = cmd_time
+        cmd = [cmd_time, cmd_az, cmd_el] 
         
         if cmd[0].time > time.time():
-           
-    def cmd_az(self) -> float:
-        return self.cmd_az
-    
-    def cmd_el(self) -> float:
-        return self.cmd_el
-    
-    def cmd_time(self) -> float:
-        return self.cmd_time
+             
+    def cmd_time(self):
+        return self.msg.time
     
 
 def main(args=None):
