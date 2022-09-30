@@ -18,10 +18,6 @@ def tmp_project_dir(tmp_path_factory) -> Path:
     return project_dir
 
 
-@pytest.mark.skipif(
-    python_version[:2] != (3, 9),
-    reason="Documentation will be built using Python 3.9",
-)
 class TestBuildDocs:
 
     COMMAND = {
