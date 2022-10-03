@@ -27,8 +27,8 @@ class TestAntennaDeviceSimulator(TesterNode):
 
         def update(msg):
             nonlocal encoder_az, encoder_el
-            encoder_az = msg.az
-            encoder_el = msg.el
+            encoder_az = msg.lon
+            encoder_el = msg.lat
 
         enc = AntennaEncoderEmulator()
         enc_az = enc.command(10.0, "az")
