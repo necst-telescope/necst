@@ -4,6 +4,7 @@ import pytest
 from necst import qos
 from necst.ctrl import HorizontalCoord
 from necst.ctrl.antenna.sim_devices import AntennaDeviceSimulator
+from neclib.simulators.antenna import AntennaEncoderEmulator
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
 
@@ -29,6 +30,10 @@ class TestAntennaDeviceSimulator(TesterNode):
             encoder_az = msg.az
             encoder_el = msg.el
 
+        enc = AntennaEncoderEmulator()
+        enc_az = enc.command(10.0, "az")
+        enc_el = enc.command(10.0, "el")
+
         ns = encoder.get_namespace()
         cmd = self.node.create_publisher(TimedAzElFloat64, f"{ns}/speed", qos.realtime)
         sub = self.node.create_subscription(
@@ -41,8 +46,12 @@ class TestAntennaDeviceSimulator(TesterNode):
             timelimit = time.time() + 1
             while True:
                 assert time.time() < timelimit, "Encoder command not published in 1s"
-                az_condition = (encoder_az is not None) and (encoder_az == 0)
-                el_condition = (encoder_el is not None) and (encoder_el == 0)
+                az_condition = (encoder_az is not None) and (
+                    enc_az - 1 < encoder_az < enc_az + 1
+                )
+                el_condition = (encoder_el is not None) and (
+                    enc_el - 1 < encoder_el < enc_el + 1
+                )
                 if az_condition and el_condition:
                     break
                 time.sleep(0.02)
