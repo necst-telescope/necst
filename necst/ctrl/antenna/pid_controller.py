@@ -27,11 +27,8 @@ class AntennaPIDController(Node):
         self.create_timer(1 / config.antenna_command_frequency, self.calc_pid)
         self.create_subscription(
             PIDMsg, "pid_param", self.change_pid_param, qos.reliable
-        )
-        cmd = [time, self.az, self.el] 
-        if cmd[0].time > time.time():
-            
-         self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
+        )   
+        self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
 
     def calc_pid(self) -> None:
         if any(param is None for param in [self.az, self.el, self.az_enc, self.el_enc]):
@@ -42,7 +39,10 @@ class AntennaPIDController(Node):
             el_speed = self.controller["el"].get_speed(self.el, self.el_enc)
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=time.time())
         self.publisher.publish(msg)
-
+        
+        cmd = TimedAzElFloat64[time.time(), self.az, self.el] 
+        if cmd[0].time > time.time():
+            
     def update_command(self, msg: CoordMsg) -> None:
         self.az = msg.lon
         self.el = msg.lat
