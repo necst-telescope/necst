@@ -28,8 +28,10 @@ class AntennaPIDController(Node):
         self.create_subscription(
             PIDMsg, "pid_param", self.change_pid_param, qos.reliable
         )
-
-        self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
+        cmd = [time, self.az, self.el] 
+        if cmd[0].time > time.time():
+            
+         self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
 
     def calc_pid(self) -> None:
         if any(param is None for param in [self.az, self.el, self.az_enc, self.el_enc]):
