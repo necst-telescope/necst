@@ -1,4 +1,5 @@
 import time
+from pyrsistent import l
 import pytest
 
 from necst import qos
@@ -23,33 +24,37 @@ class TestAntennaDeviceSimulator(TesterNode):
     def test_encoder_is_published(self):
         encoder = AntennaDeviceSimulator()
 
-        encoder_az0 = encoder_el0 = encoder_az1 = encoder_el1 = None
+        encoder_az = encoder_el = None
+        l_az = []
+        l_el = []
 
-        def update0(msg):
-            nonlocal encoder_az0, encoder_el0
-            encoder_az0 = msg.lon
-            encoder_el0 = msg.lat
-
-        def update1(msg):
-            nonlocal encoder_az1, encoder_el1
-            encoder_az1 = msg.lon
-            encoder_el1 = msg.lat
+        def update(msg):
+            nonlocal encoder_az, encoder_el
+            encoder_az = msg.lon
+            encoder_el = msg.lat
+            l_az.append(encoder_az)
+            l_el.append(encoder_el)
 
         ns = encoder.get_namespace()
         cmd = self.node.create_publisher(TimedAzElFloat64, f"{ns}/speed", qos.realtime)
         sub = self.node.create_subscription(
-            CoordMsg, f"{ns}/encoder", update0, qos.realtime
+            CoordMsg, f"{ns}/encoder", update, qos.realtime
         )
 
         with spinning([encoder, self.node]):
-            cmd.publish(TimedAzElFloat64(az=10.0, el=10.0))
-            sub
+            cmd.publish(TimedAzElFloat64(az=2.0, el=2.0))
 
-            timelimit = time.time() + 1
+            timelimit = time.time() + 2
+            time.sleep(1.0)
+
             while True:
                 assert time.time() < timelimit, "Encoder command not published in 1s"
-                az_condition = (encoder_az0 is not None) and (encoder_az0 < encoder_az1)
-                el_condition = (encoder_el0 is not None) and (encoder_el0 < encoder_el1)
+                az_condition = (encoder_az is not None) and (
+                    l_az[0] < l_az[len(l_az) - 1]
+                )
+                el_condition = (encoder_el is not None) and (
+                    l_el[0] < l_el[len(l_el) - 1]
+                )
                 if az_condition and el_condition:
                     break
                 time.sleep(0.02)
