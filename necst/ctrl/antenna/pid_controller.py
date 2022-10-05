@@ -42,12 +42,12 @@ class AntennaPIDController(Node):
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=time.time())
         self.publisher.publish(msg)
         
-    def make_list(self, time.time(), msg.lon, msg.lat):
+    def make_list(self, time, msg.lon, msg.lat):
         self.list.append(msg.lon)
         self.list.append(msg.lat)
         self.list.append(time.time())
         if self.list[0] > 0:
-            time.time()
+            time = time.time()
         else:
             print('no data')         
     def update_command(self, msg: CoordMsg) -> None:
