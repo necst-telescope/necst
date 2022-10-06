@@ -1,5 +1,4 @@
 import time
-from pyrsistent import l
 import pytest
 
 from necst import qos
@@ -44,8 +43,8 @@ class TestAntennaDeviceSimulator(TesterNode):
         with spinning([encoder, self.node]):
             cmd.publish(TimedAzElFloat64(az=2.0, el=2.0))
 
-            timelimit = time.time() + 2
             time.sleep(1.0)
+            timelimit = time.time() + 1
 
             while True:
                 assert time.time() < timelimit, "Encoder command not published in 1s"
