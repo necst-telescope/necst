@@ -2,9 +2,7 @@ import time
 import pytest
 
 from necst import qos
-from necst.ctrl import HorizontalCoord
 from necst.ctrl.antenna.sim_devices import AntennaDeviceSimulator
-from neclib.simulators.antenna import AntennaEncoderEmulator
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
 
@@ -23,37 +21,37 @@ class TestAntennaDeviceSimulator(TesterNode):
     def test_encoder_is_published(self):
         encoder = AntennaDeviceSimulator()
 
-        encoder_az = encoder_el = None
         l_az = []
         l_el = []
 
         def update(msg):
-            nonlocal encoder_az, encoder_el
-            encoder_az = msg.lon
-            encoder_el = msg.lat
-            l_az.append(encoder_az)
-            l_el.append(encoder_el)
+            l_az.append(msg.lon)
+            l_el.append(msg.lat)
+
+        # def test_speed_is_published(msg):
+        #    print(msg)
 
         ns = encoder.get_namespace()
-        cmd = self.node.create_publisher(TimedAzElFloat64, f"{ns}/speed", qos.realtime)
-        sub = self.node.create_subscription(
-            CoordMsg, f"{ns}/encoder", update, qos.realtime
-        )
+        cmd = self.node.create_publisher(TimedAzElFloat64, f"{ns}/speed", 1)
+        sub = self.node.create_subscription(CoordMsg, f"{ns}/encoder", update, 1)
+        # sub2 = self.node.create_subscription(
+        #    TimedAzElFloat64,
+        #    "test_encoder_is_published/speed",
+        #    test_speed_is_published,
+        #    1,
+        # )
 
         with spinning([encoder, self.node]):
             cmd.publish(TimedAzElFloat64(az=2.0, el=2.0))
 
             time.sleep(1.0)
-            timelimit = time.time() + 1
+            timelimit = time.time() + 10
 
             while True:
-                assert time.time() < timelimit, "Encoder command not published in 1s"
-                az_condition = (encoder_az is not None) and (
-                    l_az[0] < l_az[len(l_az) - 1]
-                )
-                el_condition = (encoder_el is not None) and (
-                    l_el[0] < l_el[len(l_el) - 1]
-                )
+                assert time.time() < timelimit, "Encoder command not published in 10s"
+                print(l_az[len(l_az) - 1])
+                az_condition = (len(l_az) != 0) and (l_az[0] < l_az[len(l_az) - 1])
+                el_condition = (len(l_el) != 0) and (l_el[0] < l_el[len(l_el) - 1])
                 if az_condition and el_condition:
                     break
                 time.sleep(0.02)

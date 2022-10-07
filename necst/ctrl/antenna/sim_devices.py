@@ -15,15 +15,17 @@ class AntennaDeviceSimulator(Node):
 
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.publisher = self.create_publisher(CoordMsg, "encoder", qos.realtime)
-        self.create_subscription(
-            TimedAzElFloat64, "speed", self.antenna_simulator, qos.realtime
-        )
+        self.publisher = self.create_publisher(CoordMsg, "encoder", 1)
+        self.create_subscription(TimedAzElFloat64, "speed", self.antenna_simulator, 1)
         self.enc = AntennaEncoderEmulator()
+        timer_period = 0.01
+        self.create_timer(timer_period, self.stream)
 
     def antenna_simulator(self, msg):
         self.enc.command(msg.az, "az")
         self.enc.command(msg.el, "el")
+
+    def stream(self):
         encoder = self.enc.read()
         az_msg = encoder.az
         el_msg = encoder.el
