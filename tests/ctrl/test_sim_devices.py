@@ -43,8 +43,8 @@ class TestAntennaDeviceSimulator(TesterNode):
 
             while True:
                 assert time.time() < timelimit, "Encoder command not published in 10s"
-                az_condition = (len(l_az) != 0) and (l_az[0] < l_az[len(l_az) - 1])
-                el_condition = (len(l_el) != 0) and (l_el[0] < l_el[len(l_el) - 1])
+                az_condition = (len(l_az) != 0) and (l_az[0] < l_az[-1])
+                el_condition = (len(l_el) != 0) and (l_el[0] < l_el[-1])
                 if az_condition and el_condition:
                     break
                 time.sleep(0.02)
