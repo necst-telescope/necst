@@ -28,18 +28,11 @@ class TestAntennaDeviceSimulator(TesterNode):
             l_az.append(msg.lon)
             l_el.append(msg.lat)
 
-        # def test_speed_is_published(msg):
-        #    print(msg)
-
         ns = encoder.get_namespace()
-        cmd = self.node.create_publisher(TimedAzElFloat64, f"{ns}/speed", 1)
-        sub = self.node.create_subscription(CoordMsg, f"{ns}/encoder", update, 1)
-        # sub2 = self.node.create_subscription(
-        #    TimedAzElFloat64,
-        #    "test_encoder_is_published/speed",
-        #    test_speed_is_published,
-        #    1,
-        # )
+        cmd = self.node.create_publisher(TimedAzElFloat64, f"{ns}/speed", qos.realtime)
+        sub = self.node.create_subscription(
+            CoordMsg, f"{ns}/encoder", update, qos.realtime
+        )
 
         with spinning([encoder, self.node]):
             cmd.publish(TimedAzElFloat64(az=2.0, el=2.0))
@@ -49,7 +42,6 @@ class TestAntennaDeviceSimulator(TesterNode):
 
             while True:
                 assert time.time() < timelimit, "Encoder command not published in 10s"
-                print(l_az[len(l_az) - 1])
                 az_condition = (len(l_az) != 0) and (l_az[0] < l_az[len(l_az) - 1])
                 el_condition = (len(l_el) != 0) and (l_el[0] < l_el[len(l_el) - 1])
                 if az_condition and el_condition:

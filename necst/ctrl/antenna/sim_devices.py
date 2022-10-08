@@ -4,7 +4,7 @@ import rclpy
 from neclib.simulators.antenna import AntennaEncoderEmulator
 from rclpy.node import Node
 
-from necst import namespace, qos
+from necst import namespace, qos, config
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 
 
@@ -15,11 +15,12 @@ class AntennaDeviceSimulator(Node):
 
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.publisher = self.create_publisher(CoordMsg, "encoder", 1)
-        self.create_subscription(TimedAzElFloat64, "speed", self.antenna_simulator, 1)
+        self.publisher = self.create_publisher(CoordMsg, "encoder", qos.realtime)
+        self.create_subscription(
+            TimedAzElFloat64, "speed", self.antenna_simulator, qos.realtime
+        )
         self.enc = AntennaEncoderEmulator()
-        timer_period = 0.01
-        self.create_timer(timer_period, self.stream)
+        self.create_timer(1 / config.antenna_command_frequency, self.stream)
 
     def antenna_simulator(self, msg):
         self.enc.command(msg.az, "az")
