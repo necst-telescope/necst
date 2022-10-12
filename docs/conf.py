@@ -53,7 +53,6 @@ html_theme_options = {
         },
     ],
     "navbar_start": ["navbar-logo"],
-    "navbar_end": ["navbar-icon-links"],
 }
 html_logo = "_static/logo.svg"
 html_favicon = "https://avatars.githubusercontent.com/u/106944387?s=400&u=ddc959411de05d65ed4a64cc8b871d20a05ce395&v=4"  # noqa: E501
