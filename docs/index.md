@@ -2,11 +2,9 @@
 ```
 
 ```{toctree}
----
-hidden:
-maxdepth: 2
----
+:hidden:
+:maxdepth: 2
 
 Home <self>
 API Reference <_source/necst>
-
+```
