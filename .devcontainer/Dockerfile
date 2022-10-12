@@ -33,10 +33,10 @@ RUN pip3 install \
         "jupyter>=1.0" \
         "myst-parser==0.18.0" \
         "notebook>=6.4" \
-        "pydata-sphinx-theme==0.7.2" \
+        "pydata-sphinx-theme==0.11.0" \
         "pytest>=5.2" \
         "pytest-cov==3.0.0" \
-        "sphinx==4.5.0"
+        "sphinx==5.1.1"
 
 RUN mkdir -p $ROS2_WS/src \
     && git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
