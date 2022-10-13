@@ -27,33 +27,28 @@ class AntennaPIDController(Node):
         self.create_timer(1 / config.antenna_command_frequency, self.calc_pid)
         self.create_subscription(
             PIDMsg, "pid_param", self.change_pid_param, qos.reliable
-        )   
+        )
         self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
-        
+        self.commands = []
 
     def calc_pid(self) -> None:
-        #適切な時間を選択するようなコードを書いてそのリスト内のaz,elを取り出してcmd[1]のような感じで速度を求めれれるよううにする。
+        # 適切な時間を選択するようなコードを書いてそのリスト内のaz,elを取り出してcmd[1]のような感じで速度を求められるようにする。
         if any(param is None for param in [self.az, self.el, self.az_enc, self.el_enc]):
             az_speed = 0.0
             el_speed = 0.0
         else:
-            az_speed = self.controller["az"].get_speed(cmd[1], enc[1])
-            el_speed = self.controller["el"].get_speed(cmd[2], enc[2])
+            az_speed = self.controller["az"].get_speed(msg.lon, self.az_enc)
+            el_speed = self.controller["el"].get_speed(msg.lat, self.el_enc)
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=time.time())
         self.publisher.publish(msg)
-                
+
     def update_command(self, msg: CoordMsg) -> None:
-        self.az = msg.lon
-        self.el = msg.lat
-        self.t = msg.time
-        cmd =[msg.time, msg.lon, msg.lat]
-        
+        self.commands.append(msg)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.az_enc = msg.lon
         self.el_enc = msg.lat
         self.t_enc = msg.time
-        enc = [msg.time, msg.lon, msg.lat]
 
     def change_pid_param(self, msg: PIDMsg) -> None:
         axis = msg.axis.lower()
