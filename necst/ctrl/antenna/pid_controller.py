@@ -31,18 +31,21 @@ class AntennaPIDController(Node):
         self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
         self.list = []
 
-    def calc_pid(self) -> None:
+    def get_appropriate_data(self):
         for msg in self.list:
             if msg.time >= time.time():
                 return msg.lon, msg.lat
             else:
                 pass
+
+    def calc_pid(self, self.list) -> None:
+        lon, lat = self.get_appropriate_data()
         if any(param is None for param in [self.az, self.el, self.az_enc, self.el_enc]):
             az_speed = 0.0
             el_speed = 0.0
         else:
-            az_speed = self.controller["az"].get_speed(msg.lon, self.az_enc)
-            el_speed = self.controller["el"].get_speed(msg.lat, self.el_enc)
+            az_speed = self.controller["az"].get_speed(lon, self.az_enc)
+            el_speed = self.controller["el"].get_speed(lat, self.el_enc)
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=time.time())
         self.publisher.publish(msg)
 
