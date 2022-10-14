@@ -2,7 +2,7 @@ import importlib
 from functools import partial
 from typing import Any
 
-from neclib.recorders import DBWriter
+from neclib.recorders import Recorder
 from rclpy.node import Node
 
 from .. import config, namespace, qos
@@ -18,7 +18,7 @@ class Recorder(Node):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.recorder = DBWriter(config.record_root)
+        self.recorder = Recorder(config.record_root)
 
         self.subscriber = {}
 
@@ -61,6 +61,12 @@ class Recorder(Node):
             {"key": name, "type": type_, "value": getattr(msg, name)}
             for name, type_ in fields.items()
         ]
+
+        self.recorder.add_writer(
+            neclib.recorders.NECSTDBWriter(),
+            neclib.recorders.FileWriter(),
+            neclib.recorders.ConsoleLogWriter(),
+        )
         self.recorder.append(topic_name, chunk)
 
     def destroy_node(self) -> None:
