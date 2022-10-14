@@ -29,10 +29,14 @@ class AntennaPIDController(Node):
             PIDMsg, "pid_param", self.change_pid_param, qos.reliable
         )
         self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
-        self.commands = []
+        self.list = []
 
     def calc_pid(self) -> None:
-        # 適切な時間を選択するようなコードを書いてそのリスト内のaz,elを取り出してcmd[1]のような感じで速度を求められるようにする。
+        for msg in self.list:
+            if msg.time >= time.time():
+                return msg.lon, msg.lat
+            else:
+                pass
         if any(param is None for param in [self.az, self.el, self.az_enc, self.el_enc]):
             az_speed = 0.0
             el_speed = 0.0
@@ -43,7 +47,7 @@ class AntennaPIDController(Node):
         self.publisher.publish(msg)
 
     def update_command(self, msg: CoordMsg) -> None:
-        self.commands.append(msg)
+        self.list.append(msg)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.az_enc = msg.lon
