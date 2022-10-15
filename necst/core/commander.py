@@ -4,7 +4,7 @@ from typing import Literal
 from neclib.utils import ConditionChecker
 
 from .. import config, namespace, qos
-from .privileged_node import PrivilegedNode
+from .auth.privileged_node import PrivilegedNode
 from necst_msgs.msg import CoordMsg
 
 
