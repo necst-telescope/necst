@@ -4,7 +4,7 @@ from rclpy.node import Node
 
 from necst_msgs.msg import AlertMsg
 from .guard_base import Guard
-from ... import namespace, qos
+from ... import config, namespace, qos
 
 
 class AlertHandler(Node):
@@ -18,6 +18,7 @@ class AlertHandler(Node):
         self.critical_condition = {}
 
         self.logger = self.get_logger()
+        self.create_timer(config.ros_logging_interval_sec, self.stream)
 
         self.__guards: List[Guard] = []
 
@@ -69,3 +70,11 @@ class AlertHandler(Node):
     @property
     def critical(self) -> bool:
         return any(self.critical_condition.values())
+
+    def stream(self) -> None:
+        if self.critical:
+            issuers = [k for k, v in self.critical_condition if v]
+            self.logger.fatal(f"Critical condition detected {issuers}")
+        if self.warning:
+            issuers = [k for k, v in self.warning_condition if v]
+            self.logger.warning(f"Warning condition detected {issuers}")
