@@ -31,13 +31,16 @@ class AntennaPIDController(Node):
         self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
         self.list = []
 
-    def get_data(self, current, msg: CoordMsg):
+    def get_data(self, current):
         sorted_list = sorted(self.list, key=lambda msg: msg.time)
-        while True:
+        for i in range(len(sorted_list)):
             pop_msg = sorted_list.pop(0)
-            if msg.time >= time.time():
+            if msg.time >= current:
                 return msg.lon, msg.lat
-        return msg.lon, msg.lat  # 処理が無限ループするため（後で消します）
+            elif len(sorted_list) == 0:
+                self.az_enc = None
+            else:
+                pass
 
     def calc_pid(self) -> None:
         current = time.time()
