@@ -34,13 +34,10 @@ class AntennaPIDController(Node):
     def get_data(self, current):
         sorted_list = sorted(self.list, key=lambda msg: msg.time)
         for i in range(len(sorted_list)):
-            pop_msg = sorted_list.pop(0)
+            pop_list = sorted_list.pop(0)
             if msg.time >= current:
                 return msg.lon, msg.lat
-            elif len(sorted_list) == 0:
-                self.az_enc = None
-            else:
-                pass
+        return None, None
 
     def calc_pid(self) -> None:
         current = time.time()
