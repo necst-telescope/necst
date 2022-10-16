@@ -10,7 +10,7 @@ from rclpy.exceptions import InvalidHandle
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
-from .. import config, namespace, utils
+from ... import config, namespace, utils
 from necst_msgs.srv import AuthoritySrv
 
 

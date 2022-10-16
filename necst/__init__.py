@@ -32,6 +32,7 @@ class namespace:
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
+    alert: str = f"{core}/alert"
 
 
 class qos:

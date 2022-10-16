@@ -3,6 +3,8 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/user/ros2_ws/src/necst,type=bind",
+    "workspaceFolder": "/home/user/ros2_ws/src/necst",
     "postCreateCommand": "git config --global --add safe.directory '*'",
     "customizations": {
         "vscode": {
@@ -22,6 +24,7 @@
                 "editor.wordWrap": "on",
                 "files.insertFinalNewline": true,
                 "files.trimTrailingWhitespace": true,
+                "python.analysis.autoImportCompletions": false,
                 "python.formatting.provider": "black",
                 "[python]": {
                     "editor.formatOnSave": true,
@@ -29,7 +32,5 @@
                 }
             }
         }
-    },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/home/user/ros2_ws/src/necst,type=bind",
-    "workspaceFolder": "/home/user/ros2_ws/src/necst"
+    }
 }
