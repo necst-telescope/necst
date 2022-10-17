@@ -8,7 +8,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float64
 from neclib.simulators.antenna import Thermometer  # temperture, humidity, pressureを返す関数
 
-from necst import namespace, qos
+from necst import namespace, qos, config
 
 
 class ThermometerReader(Node):
@@ -22,13 +22,16 @@ class ThermometerReader(Node):
         port = self.declare_parameter("~ondotori_usbport")
         self.ondotori = ogameasure.TandD.tr_73u(port)
 
-        self.publisher = self.create_publisher(Float64, "temperature", qos.realtime)
-        self.publisher = self.create_publisher(Float64, "humidity", qos.realtime)
-        self.publisher = self.create_publisher(Float64, "pressure", qos.realtime)
+        self.publisher = {
+            "temperature": self.create_publisher(Float64, "temperature", qos.realtime),
+            "humidity": self.create_publisher(Float64, "humidity", qos.realtime),
+            "pressure": self.create_publisher(Float64, "pressure", qos.realtime),
+        }
 
         self.thermo = Thermometer()
+        self.create_timer(1 / config.antenna_command_frequency, self.publisher)
 
-    # def termometer_reader(self, msg):
+    # def thermometer_reader(self, msg):
     # 値を与える必要がないならいらないかも
 
     def stream(self):
@@ -37,14 +40,9 @@ class ThermometerReader(Node):
         msg_hum = Float64(thermometer.hum)
         msg_press = Float64(thermometer.press)
 
-        self.publisher.publish(msg_temp)
-        self.publisher.publish(msg_hum)
-        self.publisher.publish(msg_press)
-
-    def start_thread(self):
-        th = threading.Thread(target=self.publish_data)
-        th.setDaemon(True)
-        th.start()
+        self.publisher["temperature"].publish(msg_temp)
+        self.publisher["humidity"].publish(msg_hum)
+        self.publisher["pressure"].publish(msg_press)
 
 
 def main(args=None):
