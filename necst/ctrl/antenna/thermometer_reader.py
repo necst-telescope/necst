@@ -1,7 +1,6 @@
 import time
 import struct
 import ogameasure
-import threading
 
 import rclpy
 from rclpy.node import Node
