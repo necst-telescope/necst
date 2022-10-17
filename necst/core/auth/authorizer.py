@@ -14,7 +14,7 @@ from necst_msgs.srv import AuthoritySrv
 class Authorizer(Node):
     """Singleton privilege server.
 
-    To interact with this server, subclass `PrivilegeNode`.
+    To interact with this server, subclass ``PrivilegeNode``.
 
     This server doesn't authenticate the client, i.e. any node who describes itself as
     privileged node (by identity string) can have access to privileged operations.

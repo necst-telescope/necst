@@ -137,8 +137,9 @@ class PrivilegedNode(Node):
 
         Returns
         -------
-        privileged: bool
-            ``True`` if successfully acquired privilege.
+        privileged : bool
+            Whether this node has privilege or not. ``True`` if successfully acquired
+            privilege.
 
         """
         if self.has_privilege:
@@ -162,7 +163,8 @@ class PrivilegedNode(Node):
         Returns
         -------
         privileged: bool
-            ``False`` if successfully released the privilege.
+            Whether this node has privilege or not. ``False`` if successfully released
+            the privilege.
 
         """
         if not self.has_privilege:
@@ -219,9 +221,11 @@ class PrivilegedNode(Node):
     def destroy_node(self) -> None:
         """Add minimal privilege removal procedure.
 
-        More "formal" privilege removal i.e. ``quit_privilege`` cannot be invoked, when
-        Ctrl-C is detected. This method doesn't interfere with the behavior, instead
-        make intra-node privilege check (``require_privilege``) can detect the removal.
+        More *formal* privilege removal i.e. ``quit_privilege`` cannot be invoked, when
+        Ctrl-C is detected, since ROS disables communications just after the signal.
+        This method doesn't interfere with the behavior, instead change internal state,
+        so that the intra-node privilege check (``require_privilege``) can detect the
+        removal.
 
         The server will recognize the state change via its own ``_ping`` method.
 
