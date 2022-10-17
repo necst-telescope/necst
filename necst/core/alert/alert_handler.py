@@ -1,3 +1,4 @@
+from pathlib import PurePosixPath
 from typing import List
 
 from rclpy.node import Node
@@ -37,7 +38,7 @@ class AlertHandler(Node):
             )
 
         msg_type, topic_name, qos_profile = guard.TargetTopic
-        checked_topic_name = topic_name.rstrip("/") + "/checked"
+            checked_topic_name = str(PurePosixPath(topic_name) / "checked")
         p = self.create_publisher(msg_type, checked_topic_name, qos_profile)
         self.create_subscription(
             msg_type,
