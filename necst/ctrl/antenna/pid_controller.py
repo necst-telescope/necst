@@ -33,7 +33,7 @@ class AntennaPIDController(Node):
 
     def get_data(self, current):
         sorted_list = sorted(self.list, key=lambda msg: msg.time)
-        for i in range(len(sorted_list)):
+        while len(sorted_list) > 0:
             msg = sorted_list.pop(0)
             if msg.time >= current:
                 return msg.lon, msg.lat
