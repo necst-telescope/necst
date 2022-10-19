@@ -1,8 +1,8 @@
 import importlib
 from functools import partial
 from typing import Any
-
-from neclib.recorders import Recorder
+import neclib
+from neclib.recorders import Recorder as LibRecorder
 from rclpy.node import Node
 
 from .. import config, namespace, qos
@@ -15,15 +15,20 @@ class Recorder(Node):
 
     TopicScanInterval: float = 1.0
 
-    def __init__(self) -> None:
+    def __init__(self, record_dir=None) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.recorder = Recorder(config.record_root)
+        self.recorder = LibRecorder(config.record_root)
 
         self.subscriber = {}
+        self.recorder.add_writer(
+            neclib.recorders.NECSTDBWriter(),
+            neclib.recorders.FileWriter(),
+            neclib.recorders.ConsoleLogWriter(),
+        )
 
         self.create_timer(self.TopicScanInterval, self.scan_topics)
-        self.recorder.start_recording()
+        self.recorder.start_recording(record_dir)
 
     def _get_msg_type(self, path: str) -> Any:
         module_name, msg_name = path.replace("/", ".").rsplit(".", 1)
@@ -41,6 +46,7 @@ class Recorder(Node):
 
     def scan_topics(self):
         topics = self.get_topic_names_and_types()
+        print(topics)
         for name, msg_type_str in topics:
             (msg_type_str,) = msg_type_str  # Extract only element of list
             if name not in self.subscriber.keys():
@@ -62,11 +68,6 @@ class Recorder(Node):
             for name, type_ in fields.items()
         ]
 
-        self.recorder.add_writer(
-            neclib.recorders.NECSTDBWriter(),
-            neclib.recorders.FileWriter(),
-            neclib.recorders.ConsoleLogWriter(),
-        )
         self.recorder.append(topic_name, chunk)
 
     def destroy_node(self) -> None:
