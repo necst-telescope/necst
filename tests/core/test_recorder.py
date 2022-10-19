@@ -8,6 +8,7 @@ from necst import config, qos
 from necst.core import Recorder
 from necst_msgs.msg import TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
+from neclib.recorders import NECSTDBWriter
 
 
 @pytest.fixture
@@ -186,7 +187,9 @@ class TestRecorder(TesterNode):
 
     def test_qos_compatibility(self):
         recorder = Recorder()
-        db = recorder.recorder.db
+        writers = recorder.recorder.writers
+        dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
         pub2 = self.node.create_publisher(Float64, "/test/topic2", qos.realtime)
