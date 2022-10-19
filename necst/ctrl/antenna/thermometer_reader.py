@@ -18,9 +18,6 @@ class ThermometerReader(Node):
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        port = self.declare_parameter("~ondotori_usbport")
-        self.ondotori = ogameasure.TandD.tr_73u(port)
-
         self.publisher = {
             "temperature": self.create_publisher(Float64, "temperature", qos.realtime),
             "humidity": self.create_publisher(Float64, "humidity", qos.realtime),
@@ -28,16 +25,13 @@ class ThermometerReader(Node):
         }
 
         self.thermo = Thermometer()
-        self.create_timer(1 / config.antenna_command_frequency, self.publisher)
-
-    # def thermometer_reader(self, msg):
-    # 値を与える必要がないならいらないかも
+        self.create_timer(1 / config.antenna_command_frequency, self.stream)
 
     def stream(self):
-        thermometer = self.thermo.read()
-        msg_temp = Float64(thermometer.temp)
-        msg_hum = Float64(thermometer.hum)
-        msg_press = Float64(thermometer.press)
+
+        msg_temp = Float64(self.thermo.get_temp.value)
+        msg_hum = Float64(self.thermo.get_humid.value)
+        msg_press = Float64(self.thermo.get_press.value)
 
         self.publisher["temperature"].publish(msg_temp)
         self.publisher["humidity"].publish(msg_hum)
