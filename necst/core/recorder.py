@@ -17,7 +17,7 @@ class Recorder(Node):
 
     TopicScanInterval: float = 1.0
 
-    def __init__(self, record_dir: Union[str, os.RathLike] = None) -> None:
+    def __init__(self, record_dir: Union[str, os.PathLike] = None) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.recorder = LibRecorder(config.record_root)
