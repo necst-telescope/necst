@@ -112,3 +112,4 @@ class HorizontalCoord(Node):
 
         if (_az is not None) and (_el is not None):
             return _az, _el
+        return [], []

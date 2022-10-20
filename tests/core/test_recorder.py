@@ -8,6 +8,7 @@ from necst import config, qos
 from necst.core import Recorder
 from necst_msgs.msg import TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
+from neclib.recorders import NECSTDBWriter
 
 
 @pytest.fixture
@@ -23,7 +24,9 @@ class TestRecorder(TesterNode):
 
     def test_single_topic_single_message(self):
         recorder = Recorder()
-        db = recorder.recorder.db
+        writers = recorder.recorder.writers
+        dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.realtime)
 
@@ -47,7 +50,9 @@ class TestRecorder(TesterNode):
 
     def test_single_topic_multiple_message(self):
         recorder = Recorder()
-        db = recorder.recorder.db
+        writers = recorder.recorder.writers
+        dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
 
@@ -72,7 +77,9 @@ class TestRecorder(TesterNode):
 
     def test_multiple_topic_single_message(self):
         recorder = Recorder()
-        db = recorder.recorder.db
+        writers = recorder.recorder.writers
+        dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
         pub2 = self.node.create_publisher(Int32, "/topic2", qos.reliable)
@@ -102,7 +109,9 @@ class TestRecorder(TesterNode):
 
     def test_multiple_topic_multiple_message(self):
         recorder = Recorder()
-        db = recorder.recorder.db
+        writers = recorder.recorder.writers
+        dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
         pub2 = self.node.create_publisher(Int32, "/topic2", qos.reliable)
@@ -134,7 +143,9 @@ class TestRecorder(TesterNode):
 
     def test_message_with_multiple_fields(self):
         recorder = Recorder()
-        db = recorder.recorder.db
+        writers = recorder.recorder.writers
+        dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        db = dbwriter.db
 
         pub1 = self.node.create_publisher(TimedAzElFloat64, "/test/azel", qos.reliable)
 
@@ -160,7 +171,9 @@ class TestRecorder(TesterNode):
 
     def test_not_recorded_after_destroy(self):
         recorder = Recorder()
-        db = recorder.recorder.db
+        writers = recorder.recorder.writers
+        dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
 
@@ -186,7 +199,9 @@ class TestRecorder(TesterNode):
 
     def test_qos_compatibility(self):
         recorder = Recorder()
-        db = recorder.recorder.db
+        writers = recorder.recorder.writers
+        dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
         pub2 = self.node.create_publisher(Float64, "/test/topic2", qos.realtime)
