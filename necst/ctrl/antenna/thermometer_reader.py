@@ -1,12 +1,8 @@
-import time
-import struct
-import ogameasure
-
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64
-from neclib.simulators.antenna import Thermometer  # temperture, humidity, pressureを返す関数
 
+from neclib.simulators.antenna import Thermometer
 from necst import namespace, qos, config
 
 
