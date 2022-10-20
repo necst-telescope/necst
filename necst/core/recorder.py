@@ -15,7 +15,7 @@ class Recorder(Node):
 
     TopicScanInterval: float = 1.0
 
-    def __init__(self, record_dir=None) -> None:
+    def __init__(self, record_dir: Union[str, os.RathLike] = None) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.recorder = LibRecorder(config.record_root)
@@ -46,7 +46,6 @@ class Recorder(Node):
 
     def scan_topics(self):
         topics = self.get_topic_names_and_types()
-        print(topics)
         for name, msg_type_str in topics:
             (msg_type_str,) = msg_type_str  # Extract only element of list
             if name not in self.subscriber.keys():
