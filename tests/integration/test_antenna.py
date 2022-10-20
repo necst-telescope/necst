@@ -3,7 +3,7 @@ import time
 import pytest
 
 from necst import namespace, qos
-from necst.core import Commander
+from necst.core import Authorizer, Commander
 from necst.ctrl.exec_antenna_sim import configure_executor
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 from ..conftest import TesterNode, destroy, spinning
@@ -15,6 +15,7 @@ class TestAntenna(TesterNode):
 
     def test_interact(self):
         com = Commander()
+        auth_server = Authorizer()
 
         commanded = False
         converted = False
@@ -56,31 +57,32 @@ class TestAntenna(TesterNode):
         )
 
         executor = configure_executor()
-        with spinning(executor=executor), spinning([self.node, com]):
+        with spinning(executor=executor), spinning([self.node, com, auth_server]):
+            com.get_privilege()
             com.antenna(
                 "point",
                 lon=target_az,
                 lat=target_el,
                 unit="deg",
                 frame="altaz",
-                tracking_check=False,
+                wait=False,
             )
             timelimit = time.time() + 3
             while not commanded:
                 assert time.time() < timelimit, "Command not published in 3s"
-            timelimit += 15
+            timelimit += 25
             while not converted:
                 assert (
                     time.time() < timelimit
-                ), "Coordinate command not completed in 18s"
+                ), "Coordinate command not completed in 28s"
             while not pid_cmd:
-                assert time.time() < timelimit, "Speed command not published in 18s"
+                assert time.time() < timelimit, "Speed command not published in 28s"
             timelimit += 12
             while not responded:
-                assert time.time() < timelimit, "Motor not responded to command in 30s"
+                assert time.time() < timelimit, "Motor not responded to command in 40s"
 
         destroy(executor)
-        destroy(com)
+        destroy([com, auth_server])
         destroy([raw_coord, altaz, speed, encoder], self.node)
 
     @pytest.mark.skip(reason="Control still not accurate")

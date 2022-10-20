@@ -3,7 +3,7 @@ import time
 import pytest
 
 from necst import namespace, qos
-from necst.core import Commander
+from necst.core import Authorizer, Commander
 from necst_msgs.msg import CoordMsg
 from ..conftest import TesterNode, destroy, spinning
 
@@ -21,6 +21,7 @@ class TestCommander(TesterNode):
 
     def test_antenna_point(self):
         com = Commander()
+        auth_server = Authorizer()
 
         cmd = {
             "lon": 30.0,
@@ -46,22 +47,24 @@ class TestCommander(TesterNode):
         )
 
         timelimit = time.time() + 2
-        with spinning([com, self.node]):
-            com.antenna("point", **cmd, tracking_check=False)
+        with spinning([com, self.node, auth_server]):
+            com.get_privilege()
+            com.antenna("point", **cmd, wait=False)
 
             while not checked:
                 assert time.time() < timelimit, "Coordinate command not published in 2s"
                 time.sleep(0.02)
 
-        destroy(com)
+        destroy([com, auth_server])
         destroy(sub, self.node)
 
     @pytest.mark.skip(reason="Method not established")
-    def test_antenna_point_with_tracking_check(self):
+    def test_antenna_point_with_wait(self):
         ...
 
     def test_antenna_stop(self):
         com = Commander()
+        auth_server = Authorizer()
 
         cmd = {
             "lon": 30.0,
@@ -89,20 +92,21 @@ class TestCommander(TesterNode):
         timer = self.node.create_timer(0.01, lambda: pub_enc.publish(CoordMsg(**enc)))
 
         timelimit = time.time() + 2
-        with spinning([com, self.node]):
+        with spinning([com, self.node, auth_server]):
+            com.get_privilege()
             com.antenna("stop", **cmd)
 
             while not checked:
                 assert time.time() < timelimit, "Coordinate command not published in 2s"
                 time.sleep(0.02)
 
-        destroy(com)
+        destroy([com, auth_server])
         destroy([sub, pub_enc, timer], self.node)
 
     @pytest.mark.skip(reason="Method not established")
-    def test_antenna_stop_with_tracking_check(self):
+    def test_antenna_stop_with_wait(self):
         ...
 
     @pytest.mark.skip(reason="Method not established")
-    def test_tracking_check(self):
+    def test_wait(self):
         ...
