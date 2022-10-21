@@ -1,9 +1,13 @@
+import time
+
+from pandas import Timedelta
+
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64
 
-from neclib.simulators.antenna import Thermometer
+from neclib.simulators.antenna import weather_reader
 from necst import namespace, qos, config
+from necst_msgs.msg import TimeFloat64
 
 
 class ThermometerReader(Node):
@@ -15,19 +19,23 @@ class ThermometerReader(Node):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.publisher = {
-            "temperature": self.create_publisher(Float64, "temperature", qos.realtime),
-            "humidity": self.create_publisher(Float64, "humidity", qos.realtime),
-            "pressure": self.create_publisher(Float64, "pressure", qos.realtime),
+            "temperature": self.create_publisher(
+                TimeFloat64, "temperature", qos.realtime
+            ),
+            "humidity": self.create_publisher(TimeFloat64, "humidity", qos.realtime),
+            "pressure": self.create_publisher(TimeFloat64, "pressure", qos.realtime),
         }
 
-        self.thermo = Thermometer()
+        self.thermo = weather_reader()
         self.create_timer(1 / config.antenna_command_frequency, self.stream)
 
     def stream(self):
 
-        msg_temp = Float64(self.thermo.get_temp.value)
-        msg_hum = Float64(self.thermo.get_humid.value)
-        msg_press = Float64(self.thermo.get_press.value)
+        msg_temp = TimeFloat64(data=float(self.thermo.get_temp.value), time=time.time())
+        msg_hum = TimeFloat64(data=float(self.thermo.get_humid), time=time.time())
+        msg_press = TimeFloat64(
+            data=float(self.thermo.get_press.value), time=time.time()
+        )
 
         self.publisher["temperature"].publish(msg_temp)
         self.publisher["humidity"].publish(msg_hum)
