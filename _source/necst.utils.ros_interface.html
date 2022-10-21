@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.rx &#8212; necst 0.2.3 documentation</title>
+    <title>necst.utils.ros_interface &#8212; necst 0.2.3 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.utils" href="necst.utils.html" />
-    <link rel="prev" title="necst.ctrl.exec_antenna_sim" href="necst.ctrl.exec_antenna_sim.html" />
+    <link rel="next" title="necst.tester" href="necst.tester.html" />
+    <link rel="prev" title="necst.utils.callbacks" href="necst.utils.callbacks.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -229,28 +229,28 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
   <label for="toctree-checkbox-4">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
+  <ul class="current">
    <li class="toctree-l2">
     <a class="reference internal" href="necst.utils.callbacks.html">
      necst.utils.callbacks
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.utils.ros_interface.html">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
      necst.utils.ros_interface
     </a>
    </li>
@@ -299,8 +299,78 @@
               
               <div>
                 
-  <section id="module-necst.rx">
-<span id="necst-rx"></span><h1>necst.rx<a class="headerlink" href="#module-necst.rx" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.utils.ros_interface">
+<span id="necst-utils-ros-interface"></span><h1>necst.utils.ros_interface<a class="headerlink" href="#module-necst.utils.ros_interface" title="Permalink to this headline">¶</a></h1>
+<p>General utilities around ROS interfaces (msg / srv / action).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.utils.ros_interface.interface_type_path">
+<span class="sig-name descname"><span class="pre">interface_type_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#interface_type_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.interface_type_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get interface type identifier.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">necst</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_console_path</span><span class="p">(</span><span class="n">std_msgs</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">Float64</span><span class="p">)</span>
+<span class="go">&#39;std_msgs/msg/Float64&#39;</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interface</strong> (<em>Any</em>) – </p></li>
+<li><p><strong>sep</strong> (<em>str</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.utils.ros_interface.get_absolute_name">
+<span class="sig-name descname"><span class="pre">get_absolute_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#get_absolute_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.get_absolute_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Absolute name for node, topic, service, etc.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">rclpy</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="s2">&quot;node_name&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="s2">&quot;/test&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">necst</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_absolute_name</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">node</span><span class="o">.</span><span class="n">get_namespace</span><span class="p">())</span>
+<span class="go">&#39;/test/node_name&#39;</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>S</em>) – </p></li>
+<li><p><strong>namespace</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>S</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.utils.ros_interface.wait_for_server_to_pick_up">
+<span class="sig-name descname"><span class="pre">wait_for_server_to_pick_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_sec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#wait_for_server_to_pick_up"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.wait_for_server_to_pick_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait until ROS Service server is available to client.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">rclpy</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cli</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">create_client</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">necst</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">wait_for_server_to_pick_up</span><span class="p">(</span><span class="n">cli</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cli</span><span class="o">.</span><span class="n">call_async</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client</strong> (<em>Client</em>) – </p></li>
+<li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -309,17 +379,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.ctrl.exec_antenna_sim.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.utils.callbacks.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.ctrl.exec_antenna_sim</p>
+            <p class="prev-next-title">necst.utils.callbacks</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.utils.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.tester.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.utils</p>
+        <p class="prev-next-title">necst.tester</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

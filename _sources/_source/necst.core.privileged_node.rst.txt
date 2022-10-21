@@ -1,0 +1,7 @@
+necst.core.privileged\_node
+===========================
+
+.. automodule:: necst.core.privileged_node
+   :members:
+   :undoc-members:
+   :show-inheritance:

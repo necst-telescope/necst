@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.rx &#8212; necst 0.2.3 documentation</title>
+    <title>necst.core.authorizer &#8212; necst 0.2.3 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.utils" href="necst.utils.html" />
-    <link rel="prev" title="necst.ctrl.exec_antenna_sim" href="necst.ctrl.exec_antenna_sim.html" />
+    <link rel="next" title="necst.core.commander" href="necst.core.commander.html" />
+    <link rel="prev" title="necst.core" href="necst.core.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -128,18 +128,18 @@
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
   <div class="bd-toc-item active">
     <ul class="current nav bd-sidenav">
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.core.html">
    necst.core
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.authorizer.html">
+  <ul class="current">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
      necst.core.authorizer
     </a>
    </li>
@@ -229,8 +229,8 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
  </li>
@@ -299,8 +299,50 @@
               
               <div>
                 
-  <section id="module-necst.rx">
-<span id="necst-rx"></span><h1>necst.rx<a class="headerlink" href="#module-necst.rx" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.core.authorizer">
+<span id="necst-core-authorizer"></span><h1>necst.core.authorizer<a class="headerlink" href="#module-necst.core.authorizer" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.core.authorizer.Authorizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Authorizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/authorizer.html#Authorizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.authorizer.Authorizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></p>
+<p>Singleton privilege server.</p>
+<p>To interact with this server, subclass <cite>PrivilegeNode</cite>.</p>
+<p>This server doesn’t authenticate the client, i.e. any node who describes itself as
+privileged node (by identity string) can have access to privileged operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request_srv</strong> (<em>rclpy.service.Service</em>) – ROS 2 service server, listens on privilege (removal) requests.</p></li>
+<li><p><strong>ping_cli</strong> (<em>rclpy.client.Client</em>) – ROS 2 service client, checks status of privileged nodes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">server</span> <span class="o">=</span> <span class="n">necst</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Authorizer</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rclpy</span><span class="o">.</span><span class="n">spin</span><span class="p">(</span><span class="n">server</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.core.authorizer.Authorizer.NodeName">
+<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'authorizer'</span></em><a class="headerlink" href="#necst.core.authorizer.Authorizer.NodeName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.core.authorizer.Authorizer.Namespace">
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/core/auth'</span></em><a class="headerlink" href="#necst.core.authorizer.Authorizer.Namespace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.core.authorizer.Authorizer.approved">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">approved</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#necst.core.authorizer.Authorizer.approved" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identity string of currently privileged node.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -309,17 +351,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.ctrl.exec_antenna_sim.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.core.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.ctrl.exec_antenna_sim</p>
+            <p class="prev-next-title">necst.core</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.utils.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.core.commander.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.utils</p>
+        <p class="prev-next-title">necst.core.commander</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

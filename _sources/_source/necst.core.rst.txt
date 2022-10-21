@@ -23,8 +23,10 @@ Submodules
 
 .. autosummary::
 
+   necst.core.authorizer
    necst.core.commander
    necst.core.exec_record
+   necst.core.privileged_node
    necst.core.recorder
 
 .. toctree::
@@ -32,6 +34,8 @@ Submodules
    :titlesonly:
    :hidden:
 
+   necst.core.authorizer
    necst.core.commander
    necst.core.exec_record
+   necst.core.privileged_node
    necst.core.recorder

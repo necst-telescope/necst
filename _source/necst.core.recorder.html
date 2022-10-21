@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="necst.ctrl" href="necst.ctrl.html" />
-    <link rel="prev" title="necst.core.exec_record" href="necst.core.exec_record.html" />
+    <link rel="prev" title="necst.core.privileged_node" href="necst.core.privileged_node.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -139,6 +139,11 @@
   </label>
   <ul class="current">
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.authorizer.html">
+     necst.core.authorizer
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.commander.html">
      necst.core.commander
     </a>
@@ -146,6 +151,11 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.exec_record.html">
      necst.core.exec_record
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.privileged_node.html">
+     necst.core.privileged_node
     </a>
    </li>
    <li class="toctree-l2 current active">
@@ -224,9 +234,33 @@
    necst.rx
   </a>
  </li>
- <li class="toctree-l1">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <label for="toctree-checkbox-4">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.callbacks.html">
+     necst.utils.callbacks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.ros_interface.html">
+     necst.utils.ros_interface
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.tester.html">
+   necst.tester
   </a>
  </li>
 </ul>
@@ -269,11 +303,14 @@
 <span id="necst-core-recorder"></span><h1>necst.core.recorder<a class="headerlink" href="#module-necst.core.recorder" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="necst.core.recorder.Recorder">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Recorder</span></span><a class="reference internal" href="../_modules/necst/core/recorder.html#Recorder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.recorder.Recorder" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Recorder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/recorder.html#Recorder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.recorder.Recorder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>record_dir</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>PathLike</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -286,6 +323,11 @@
 <span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/core'</span></em><a class="headerlink" href="#necst.core.recorder.Recorder.Namespace" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.core.recorder.Recorder.TopicScanInterval">
+<span class="sig-name descname"><span class="pre">TopicScanInterval</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></em><a class="headerlink" href="#necst.core.recorder.Recorder.TopicScanInterval" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.recorder.Recorder.scan_topics">
 <span class="sig-name descname"><span class="pre">scan_topics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/recorder.html#Recorder.scan_topics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.recorder.Recorder.scan_topics" title="Permalink to this definition">¶</a></dt>
@@ -293,8 +335,31 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.recorder.Recorder.append">
-<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/recorder.html#Recorder.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.recorder.Recorder.append" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/recorder.html#Recorder.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.recorder.Recorder.append" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>topic_name</strong> (<em>str</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.recorder.Recorder.destroy_node">
+<span class="sig-name descname"><span class="pre">destroy_node</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/recorder.html#Recorder.destroy_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.recorder.Recorder.destroy_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroy the node.</p>
+<p>Frees resources used by the node, including any entities created by the following methods:</p>
+<ul class="simple">
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">create_publisher()</span></code></p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">create_subscription()</span></code></p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">create_client()</span></code></p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">create_service()</span></code></p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">create_timer()</span></code></p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">create_guard_condition()</span></code></p></li>
+</ul>
+<dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>None</p>
 </dd>
@@ -316,11 +381,11 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.core.exec_record.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.core.privileged_node.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.core.exec_record</p>
+            <p class="prev-next-title">necst.core.privileged_node</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="necst.ctrl.html" title="next page">

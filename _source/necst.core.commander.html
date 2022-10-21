@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="necst.core.exec_record" href="necst.core.exec_record.html" />
-    <link rel="prev" title="necst.core" href="necst.core.html" />
+    <link rel="prev" title="necst.core.authorizer" href="necst.core.authorizer.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -138,6 +138,11 @@
    </i>
   </label>
   <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.authorizer.html">
+     necst.core.authorizer
+    </a>
+   </li>
    <li class="toctree-l2 current active">
     <a class="current reference internal" href="#">
      necst.core.commander
@@ -146,6 +151,11 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.exec_record.html">
      necst.core.exec_record
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.privileged_node.html">
+     necst.core.privileged_node
     </a>
    </li>
    <li class="toctree-l2">
@@ -224,9 +234,33 @@
    necst.rx
   </a>
  </li>
- <li class="toctree-l1">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <label for="toctree-checkbox-4">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.callbacks.html">
+     necst.utils.callbacks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.ros_interface.html">
+     necst.utils.ros_interface
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.tester.html">
+   necst.tester
   </a>
  </li>
 </ul>
@@ -270,7 +304,7 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="necst.core.commander.Commander">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Commander</span></span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="necst.core.privileged_node.html#necst.core.privileged_node.PrivilegedNode" title="necst.core.privileged_node.PrivilegedNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrivilegedNode</span></code></a></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.NodeName">
 <span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'commander'</span></em><a class="headerlink" href="#necst.core.commander.Commander.NodeName" title="Permalink to this definition">¶</a></dt>
@@ -278,23 +312,23 @@
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.Namespace">
-<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/core'</span></em><a class="headerlink" href="#necst.core.commander.Commander.Namespace" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/core'</span></em><a class="headerlink" href="#necst.core.commander.Commander.Namespace" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.antenna">
-<span class="sig-name descname"><span class="pre">antenna</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracking_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.antenna"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.antenna" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">antenna</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.antenna"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.antenna" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'stop'</em><em>, </em><em>'point'</em><em>, </em><em>'scan'</em><em>, </em><em>'jog'</em><em>]</em>) – </p></li>
-<li><p><strong>lon</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>lat</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>unit</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>frame</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>lon</strong> (<em>float</em>) – </p></li>
+<li><p><strong>lat</strong> (<em>float</em>) – </p></li>
+<li><p><strong>unit</strong> (<em>str</em>) – </p></li>
+<li><p><strong>frame</strong> (<em>str</em>) – </p></li>
 <li><p><strong>time</strong> (<em>float</em>) – </p></li>
-<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>tracking_check</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>name</strong> (<em>str</em>) – </p></li>
+<li><p><strong>wait</strong> (<em>bool</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -305,12 +339,12 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.tracking_check">
-<span class="sig-name descname"><span class="pre">tracking_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_sec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.tracking_check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.tracking_check" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">tracking_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_sec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.tracking_check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.tracking_check" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target</strong> (<em>Literal</em><em>[</em><em>'antenna'</em><em>, </em><em>'dome'</em><em>]</em>) – </p></li>
-<li><p><strong>timeout_sec</strong> (<em>float</em>) – </p></li>
+<li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -329,11 +363,11 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.core.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.core.authorizer.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.core</p>
+            <p class="prev-next-title">necst.core.authorizer</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="necst.core.exec_record.html" title="next page">

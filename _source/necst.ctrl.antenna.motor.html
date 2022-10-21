@@ -139,6 +139,11 @@
   </label>
   <ul>
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.authorizer.html">
+     necst.core.authorizer
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.commander.html">
      necst.core.commander
     </a>
@@ -146,6 +151,11 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.exec_record.html">
      necst.core.exec_record
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.privileged_node.html">
+     necst.core.privileged_node
     </a>
    </li>
    <li class="toctree-l2">
@@ -224,9 +234,33 @@
    necst.rx
   </a>
  </li>
- <li class="toctree-l1">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <label for="toctree-checkbox-4">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.callbacks.html">
+     necst.utils.callbacks
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.ros_interface.html">
+     necst.utils.ros_interface
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.tester.html">
+   necst.tester
   </a>
  </li>
 </ul>
@@ -287,8 +321,8 @@
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.motor.AntennaMotor.command">
-<span class="sig-name descname"><span class="pre">command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/motor.html#AntennaMotor.command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.motor.AntennaMotor.command" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.ctrl.antenna.motor.AntennaMotor.speed_command">
+<span class="sig-name descname"><span class="pre">speed_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/motor.html#AntennaMotor.speed_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.motor.AntennaMotor.speed_command" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>msg</strong> (<em>TimedAzElFloat64</em>) – </p>
