@@ -15,8 +15,6 @@ class Recorder(Node):
     NodeName = "recorder"
     Namespace = namespace.core
 
-    TopicScanInterval: float = 1.0
-
     def __init__(self, record_dir: Union[str, os.PathLike] = None) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
@@ -29,7 +27,7 @@ class Recorder(Node):
             neclib.recorders.ConsoleLogWriter(),
         )
 
-        self.create_timer(self.TopicScanInterval, self.scan_topics)
+        self.create_timer(config.ros_topic_scan_interval_sec, self.scan_topics)
         self.recorder.start_recording(record_dir)
 
     def _get_msg_type(self, path: str) -> Any:
