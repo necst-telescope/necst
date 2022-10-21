@@ -28,7 +28,7 @@ class AntennaPIDController(Node):
         self.create_subscription(
             PIDMsg, "pid_param", self.change_pid_param, qos.reliable
         )
-        self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
+        self.az_enc = self.el_enc = self.t_enc = None
         self.list = []
 
     def get_data(self, current):
