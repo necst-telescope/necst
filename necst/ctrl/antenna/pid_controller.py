@@ -28,23 +28,31 @@ class AntennaPIDController(Node):
         self.create_subscription(
             PIDMsg, "pid_param", self.change_pid_param, qos.reliable
         )
+        self.az_enc = self.el_enc = self.t_enc = None
+        self.list = []
 
-        self.az = self.el = self.az_enc = self.el_enc = self.t = self.t_enc = None
+    def get_data(self, current):
+        sorted_list = sorted(self.list, key=lambda msg: msg.time)
+        while len(sorted_list) > 0:
+            msg = sorted_list.pop(0)
+            if msg.time >= current:
+                return msg.lon, msg.lat
+        return None, None
 
     def calc_pid(self) -> None:
-        if any(param is None for param in [self.az, self.el, self.az_enc, self.el_enc]):
+        current = time.time()
+        lon, lat = self.get_data(current)
+        if any(param is None for param in [lon, lat, self.az_enc, self.el_enc]):
             az_speed = 0.0
             el_speed = 0.0
         else:
-            az_speed = self.controller["az"].get_speed(self.az, self.az_enc)
-            el_speed = self.controller["el"].get_speed(self.el, self.el_enc)
+            az_speed = self.controller["az"].get_speed(lon, self.az_enc)
+            el_speed = self.controller["el"].get_speed(lat, self.el_enc)
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=time.time())
         self.publisher.publish(msg)
 
     def update_command(self, msg: CoordMsg) -> None:
-        self.az = msg.lon
-        self.el = msg.lat
-        self.t = msg.time
+        self.list.append(msg)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.az_enc = msg.lon
