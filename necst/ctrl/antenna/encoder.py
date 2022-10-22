@@ -1,6 +1,6 @@
 import time
 
-from neclib.devices import antenna_encoder
+from neclib.devices import AntennaEncoder as AntennaEncoderDevice
 from rclpy.node import Node
 
 from necst_msgs.msg import CoordMsg
@@ -15,7 +15,7 @@ class AntennaEncoder(Node):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = self.create_publisher(CoordMsg, "encoder", qos.realtime)
-        self.encoder = antenna_encoder()
+        self.encoder = AntennaEncoderDevice()
         self.create_timer(1 / config.antenna_command_frequency, self.stream)
 
     def stream(self) -> None:
