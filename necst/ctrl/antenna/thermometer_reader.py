@@ -1,7 +1,5 @@
 import time
 
-from pandas import Timedelta
-
 import rclpy
 from rclpy.node import Node
 
