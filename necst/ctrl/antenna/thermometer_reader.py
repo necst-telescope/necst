@@ -5,7 +5,7 @@ from rclpy.node import Node
 
 from neclib.devices import WeatherStation
 from necst import namespace, qos, config
-from necst_msgs.msg import TimeFloat64
+from necst_msgs.msg import TimedFloat64
 
 
 class ThermometerReader(Node):
@@ -24,7 +24,7 @@ class ThermometerReader(Node):
             "pressure": self.create_publisher(TimeFloat64, "pressure", qos.realtime),
         }
 
-        self.thermo = weather_station()
+        self.thermo = WeatherStation()
         self.create_timer(1 / config.antenna_command_frequency, self.stream)
 
     def stream(self):
