@@ -18,10 +18,10 @@ class ThermometerReader(Node):
 
         self.publisher = {
             "temperature": self.create_publisher(
-                TimeFloat64, "temperature", qos.realtime
+                TimedFloat64, "temperature", qos.realtime
             ),
-            "humidity": self.create_publisher(TimeFloat64, "humidity", qos.realtime),
-            "pressure": self.create_publisher(TimeFloat64, "pressure", qos.realtime),
+            "humidity": self.create_publisher(TimedFloat64, "humidity", qos.realtime),
+            "pressure": self.create_publisher(TimedFloat64, "pressure", qos.realtime),
         }
 
         self.thermo = WeatherStation()
@@ -29,9 +29,11 @@ class ThermometerReader(Node):
 
     def stream(self):
 
-        msg_temp = TimeFloat64(data=float(self.thermo.get_temp.value), time=time.time())
-        msg_hum = TimeFloat64(data=float(self.thermo.get_humid), time=time.time())
-        msg_press = TimeFloat64(
+        msg_temp = TimedFloat64(
+            data=float(self.thermo.get_temp.value), time=time.time()
+        )
+        msg_hum = TimedFloat64(data=float(self.thermo.get_humid), time=time.time())
+        msg_press = TimedFloat64(
             data=float(self.thermo.get_press.value), time=time.time()
         )
 
