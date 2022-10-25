@@ -15,9 +15,20 @@ class AntennaPIDController(Node):
     def __init__(self, **kwargs):
         super().__init__(self.NodeName, namespace=self.Namespace, **kwargs)
         self.logger = self.get_logger()
+        pid_param = config.antenna_pid_param
+        max_speed = config.antenna_max_speed
+        max_accel = config.antenna_max_acceleration
         self.controller = {
-            "az": PIDController(),
-            "el": PIDController(),
+            "az": PIDController(
+                pid_param=pid_param.az,
+                max_speed=max_speed.az,
+                max_acceleration=max_accel.az,
+            ),
+            "el": PIDController(
+                pid_param=pid_param.el,
+                max_speed=max_speed.el,
+                max_acceleration=max_accel.el,
+            ),
         }
         self.create_subscription(CoordMsg, "altaz", self.update_command, qos.realtime)
         self.create_subscription(
