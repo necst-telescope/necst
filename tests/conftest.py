@@ -6,6 +6,8 @@ import rclpy
 from rclpy.executors import Executor, MultiThreadedExecutor, SingleThreadedExecutor
 from rclpy.node import Node
 
+from necst.core import AlertHandlerNode
+
 
 class TesterNode:
     """Test class with rclpy configuration.
@@ -24,6 +26,22 @@ class TesterNode:
     def setup_class(cls) -> None:
         rclpy.init()
         cls.node = rclpy.create_node(cls.NodeName)
+
+    @classmethod
+    def teardown_class(cls) -> None:
+        cls.node.destroy_node()
+        rclpy.shutdown()
+
+
+class TesterAlertHandlingNode:
+    """Test class with alert handling."""
+
+    NodeName: str
+
+    @classmethod
+    def setup_class(cls) -> None:
+        rclpy.init()
+        cls.node = AlertHandlerNode(cls.NodeName)
 
     @classmethod
     def teardown_class(cls) -> None:

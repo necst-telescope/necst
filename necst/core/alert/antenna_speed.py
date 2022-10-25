@@ -17,11 +17,16 @@ class AntennaSpeedAlert(Node):
         self.create_subscription(
             TimedAzElFloat64, f"{namespace.antenna}/speed", self.update, qos.realtime
         )
-        self.pub_alert = self.create_publisher(AlertMsg, namespace.alert, qos.realtime)
+        self.pub_alert_az = self.create_publisher(
+            AlertMsg, f"{namespace.alert}/antenna_speed/az", qos.realtime
+        )
+        self.pub_alert_el = self.create_publisher(
+            AlertMsg, f"{namespace.alert}/antenna_speed/el", qos.realtime
+        )
 
         self.speed_az = self.speed_el = None
-        self.max_speed_az = config.antenna_max_speed_az.to_value("deg/s")
-        self.max_speed_el = config.antenna_max_speed_el.to_value("deg/s")
+        self.max_speed_az = config.antenna_max_speed_az.to_value("deg/s").item()
+        self.max_speed_el = config.antenna_max_speed_el.to_value("deg/s").item()
 
         self.create_timer(config.alert_interval_sec, self.stream)
 
@@ -43,7 +48,7 @@ class AntennaSpeedAlert(Node):
                 critical=abs(self.speed_az) > self.Critical * self.max_speed_az,
                 issuer=f"{self.NodeName}/az",
             )
-            self.pub_alert.publish(msg)
+            self.pub_alert_az.publish(msg)
 
         if self.speed_el is not None:
             msg = AlertMsg(
@@ -53,4 +58,4 @@ class AntennaSpeedAlert(Node):
                 critical=abs(self.speed_el) > self.Critical * self.max_speed_el,
                 issuer=f"{self.NodeName}/el",
             )
-            self.pub_alert.publish(msg)
+            self.pub_alert_el.publish(msg)

@@ -4,16 +4,21 @@ from ... import config, namespace, qos
 from necst_msgs.msg import AlertMsg, CoordMsg
 
 
-class DriveRangeLimitAlert(Node):
+class AntennaDriveRangeAlert(Node):
 
-    NodeName = "drive_range_limit"
+    NodeName = "antenna_drive_range"
     Namespace = namespace.alert
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        self.pub_alert = self.create_publisher(AlertMsg, namespace.alert, qos.realtime)
+        self.pub_alert_az = self.create_publisher(
+            AlertMsg, f"{namespace.alert}/antenna_drive_range/az", qos.realtime
+        )
+        self.pub_alert_el = self.create_publisher(
+            AlertMsg, f"{namespace.alert}/antenna_drive_range/el", qos.realtime
+        )
         self.create_subscription(
             CoordMsg, f"{namespace.antenna}/encoder", self.update, qos.realtime
         )
@@ -55,7 +60,7 @@ class DriveRangeLimitAlert(Node):
                 critical=self.enc_az not in self.critical_limit_az,
                 issuer=f"{self.NodeName}/az",
             )
-            self.pub_alert.publish(msg)
+            self.pub_alert_az.publish(msg)
 
         if self.enc_el is not None:
             msg = AlertMsg(
@@ -65,4 +70,4 @@ class DriveRangeLimitAlert(Node):
                 critical=self.enc_el not in self.critical_limit_el,
                 issuer=f"{self.NodeName}/el",
             )
-            self.pub_alert.publish(msg)
+            self.pub_alert_el.publish(msg)
