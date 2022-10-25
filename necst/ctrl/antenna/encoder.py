@@ -15,7 +15,7 @@ class AntennaEncoder(Node):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = self.create_publisher(CoordMsg, "encoder", qos.realtime)
-        ports = config.antenna_encoder_port
+        ports = config.antenna_nd287_port
         self.encoder_az = antenna_encoder(ports.az)
         self.encoder_el = antenna_encoder(ports.el)
         self.create_timer(1 / config.antenna_command_frequency, self.stream)
