@@ -1,14 +1,14 @@
 import time
 
 import rclpy
-from rclpy.node import Node
-
 from neclib.devices import WeatherStation
-from necst import namespace, qos, config
+
+from ... import namespace, qos, config
+from ...core import DeviceNode
 from necst_msgs.msg import TimedFloat64
 
 
-class ThermometerReader(Node):
+class ThermometerReader(DeviceNode):
 
     NodeName = "thermometer_reader"
     Namespace = namespace.antenna

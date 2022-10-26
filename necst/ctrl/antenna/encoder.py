@@ -1,13 +1,13 @@
 import time
 
 from neclib.devices import AntennaEncoder as AntennaEncoderDevice
-from rclpy.node import Node
 
 from necst_msgs.msg import CoordMsg
 from ... import namespace, qos
+from ...core import DeviceNode
 
 
-class AntennaEncoder(Node):
+class AntennaEncoder(DeviceNode):
 
     NodeName = "encoder_readout"
     Namespace = namespace.antenna

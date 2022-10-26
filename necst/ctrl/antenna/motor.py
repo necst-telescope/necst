@@ -1,13 +1,13 @@
 import time
 
 from neclib.devices import antenna_motor
-from rclpy.node import Node
 
 from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
 from ... import config, namespace, qos
+from ...core import DeviceNode
 
 
-class AntennaMotor(Node):
+class AntennaMotor(DeviceNode):
 
     NodeName = "motor_driver"
     Namespace = namespace.antenna
