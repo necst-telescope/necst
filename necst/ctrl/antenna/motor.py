@@ -42,7 +42,7 @@ class AntennaMotor(Node):
     def stream_speed(self) -> None:
         readout_az = self.motor.get_speed("az")
         readout_el = self.motor.get_speed("el")
-        speed_msg = TimedAzElFloat64(az=readout_az, el=readout_el, time=time.time())
+        speed_msg = TimedAzElFloat64(az=float(readout_az), el=float(readout_el), time=time.time())
         self.publisher["speed"].publish(speed_msg)
 
     def stream_step(self) -> None:
