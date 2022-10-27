@@ -1,13 +1,13 @@
 import time
 
 from neclib.devices import AntennaMotor as AntennaMotorDevice
-from rclpy.node import Node
 
 from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
 from ... import config, namespace, qos
+from ...core import DeviceNode
 
 
-class AntennaMotor(Node):
+class AntennaMotor(DeviceNode):
 
     NodeName = "motor_driver"
     Namespace = namespace.antenna
@@ -40,7 +40,7 @@ class AntennaMotor(Node):
     def stream_speed(self) -> None:
         readout_az = self.motor.get_speed("az")
         readout_el = self.motor.get_speed("el")
-        speed_msg = TimedAzElFloat64(az=readout_az, el=readout_el, time=time.time())
+        speed_msg = TimedAzElFloat64(az=float(readout_az), el=float(readout_el), time=time.time())
         self.publisher["speed"].publish(speed_msg)
 
     def stream_step(self) -> None:
