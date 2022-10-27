@@ -19,10 +19,10 @@ class AntennaEncoder(DeviceNode):
         self.create_timer(1 / 50, self.stream)  # TODO: Parametrize
 
     def stream(self) -> None:
-        az_reading = self.encoder.get_reading("az").to_value("deg")
-        el_reading = self.encoder.get_reading("el").to_value("deg")
+        az_reading = self.encoder.get_reading("az").to_value("deg").item()
+        el_reading = self.encoder.get_reading("el").to_value("deg").item()
         msg = CoordMsg(
-            lon=float(az_reading), lat=float(el_reading), unit="deg", frame="altaz", time=time.time()
+            lon=az_reading, lat=el_reading, unit="deg", frame="altaz", time=time.time()
         )
         self.publisher.publish(msg)
 
