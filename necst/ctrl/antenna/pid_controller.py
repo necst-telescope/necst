@@ -76,8 +76,8 @@ class AntennaPIDController(Node):
         else:
             _az_speed = self.controller["az"].get_speed(lon, self.az_enc)
             _el_speed = self.controller["el"].get_speed(lat, self.el_enc)
-            az_speed = self.decelerate_az(self.az_enc, _az_speed)
-            el_speed = self.decelerate_el(self.el_enc, _el_speed)
+            az_speed = float(self.decelerate_az(self.az_enc, _az_speed))
+            el_speed = float(self.decelerate_el(self.el_enc, _el_speed))
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=time.time())
         self.publisher.publish(msg)
 
