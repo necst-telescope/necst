@@ -1,9 +1,10 @@
 import time
 
 from neclib.controllers import PIDController
+from neclib.safety import Decelerate
 from rclpy.node import Node
 
-from necst import config, namespace, qos
+from ... import config, namespace, qos
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 
@@ -42,6 +43,13 @@ class AntennaPIDController(Node):
         self.az_enc = self.el_enc = self.t_enc = None
         self.list = []
 
+        self.decelerate_az = Decelerate(
+            config.antenna_drive_critical_limit_az, config.antenna_max_acceleration_az
+        )
+        self.decelerate_el = Decelerate(
+            config.antenna_drive_critical_limit_el, config.antenna_max_acceleration_el
+        )
+
     def get_data(self, current):
         sorted_list = sorted(self.list, key=lambda msg: msg.time)
         while len(sorted_list) > 1:
@@ -64,8 +72,10 @@ class AntennaPIDController(Node):
             az_speed = 0.0
             el_speed = 0.0
         else:
-            az_speed = self.controller["az"].get_speed(lon, self.az_enc)
-            el_speed = self.controller["el"].get_speed(lat, self.el_enc)
+            _az_speed = self.controller["az"].get_speed(lon, self.az_enc)
+            _el_speed = self.controller["el"].get_speed(lat, self.el_enc)
+            az_speed = self.decelerate_az(self.az_enc, _az_speed)
+            el_speed = self.decelerate_el(self.el_enc, _el_speed)
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=time.time())
         self.publisher.publish(msg)
 
