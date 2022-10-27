@@ -44,10 +44,17 @@ class AntennaPIDController(Node):
 
     def get_data(self, current):
         sorted_list = sorted(self.list, key=lambda msg: msg.time)
-        while len(sorted_list) > 0:
+        while len(sorted_list) > 1:
             msg = sorted_list.pop(0)
             if msg.time >= current:
                 return msg.lon, msg.lat
+
+        if len(sorted_list) == 1:
+            # Avoid running out of commands, to prevent heuristic zero command
+            msg = sorted_list[0]
+            return msg.lon, msg.lat
+
+        # Literally no data available, just after initialization
         return None, None
 
     def calc_pid(self) -> None:
