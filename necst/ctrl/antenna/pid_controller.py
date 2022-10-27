@@ -44,10 +44,12 @@ class AntennaPIDController(Node):
         self.list = []
 
         self.decelerate_az = Decelerate(
-            config.antenna_drive_critical_limit_az, config.antenna_max_acceleration_az
+            config.antenna_drive_critical_limit_az.map(lambda x: x.to_value("deg")),
+            config.antenna_max_acceleration_az.to_value("deg/s^2"),
         )
         self.decelerate_el = Decelerate(
-            config.antenna_drive_critical_limit_el, config.antenna_max_acceleration_el
+            config.antenna_drive_critical_limit_el.map(lambda x: x.to_value("deg")),
+            config.antenna_max_acceleration_el.to_value("deg/s^2"),
         )
 
     def get_data(self, current):
