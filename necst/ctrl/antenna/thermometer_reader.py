@@ -30,11 +30,11 @@ class ThermometerReader(Node):
     def stream(self):
 
         msg_temp = TimedFloat64(
-            data=float(self.thermo.get_temp.value), time=time.time()
+            data=float(self.thermo.get_temp().value), time=time.time()
         )
-        msg_hum = TimedFloat64(data=float(self.thermo.get_humid), time=time.time())
+        msg_hum = TimedFloat64(data=float(self.thermo.get_humid()), time=time.time())
         msg_press = TimedFloat64(
-            data=float(self.thermo.get_press.value), time=time.time()
+            data=float(self.thermo.get_press().value), time=time.time()
         )
 
         self.publisher["temperature"].publish(msg_temp)
