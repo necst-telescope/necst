@@ -1,6 +1,6 @@
 import time
 
-from neclib.devices import antenna_motor
+from neclib.devices import AntennaMotor as AntennaMotorDevice
 
 from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
 from ... import config, namespace, qos
@@ -28,7 +28,7 @@ class AntennaMotor(DeviceNode):
         self.create_timer(1 / config.antenna_command_frequency, self.stream_speed)
         self.create_timer(1 / config.antenna_command_frequency, self.stream_step)
 
-        self.motor = antenna_motor()
+        self.motor = AntennaMotorDevice()
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
         now = time.time()
