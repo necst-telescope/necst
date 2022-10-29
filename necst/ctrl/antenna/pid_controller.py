@@ -75,23 +75,24 @@ class AntennaPIDController(Node):
             az_speed = 0.0
             el_speed = 0.0
         elif any(param is None for param in [lon, lat]):
-            original_Ki, original_Kd = {}, {}
+            original_Ki, original_Kd, original_alim = {}, {}, {}
             for axis in ["az", "el"]:
                 self.controller[axis].max_acceleration /= 10
                 original_Ki[axis] = self.controller[axis].k_i
                 original_Kd[axis] = self.controller[axis].k_d
+                original_alim[axis] = self.controller[axis].threshold["accel_limit_off"]
                 self.controller[axis].k_i = 0
                 self.controller[axis].k_d = 0
+                self.controller[axis].threshold["accel_limit_off"] = 0
             # Decay speed to zero
-            target_az = self.controller["az"].threshold["accel_limit_off"] * 1.01 + self.az_enc
-            target_el = self.controller["el"].threshold["accel_limit_off"] * 1.01 + self.el_enc
-            az_speed = self.controller["az"].get_speed(target_az, self.az_enc)
-            el_speed = self.controller["el"].get_speed(target_el, self.el_enc)
+            az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
+            el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
             # Reset acceleration
             for axis in ["az", "el"]:
                 self.controller[axis].max_acceleration *= 10
                 self.controller[axis].k_i = original_Ki[axis]
                 self.controller[axis].k_d = original_Kd[axis]
+                self.controller[axis].threshold["accel_limit_off"] = original_alim[axis]
         else:
             _az_speed = self.controller["az"].get_speed(lon, self.az_enc)
             _el_speed = self.controller["el"].get_speed(lat, self.el_enc)
