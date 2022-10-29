@@ -74,7 +74,7 @@ class AntennaPIDController(Node):
         if any(param is None for param in [self.az_enc, self.el_enc]):
             az_speed = 0.0
             el_speed = 0.0
-        elif any(param is None for param in [lon, lat]):
+        elif (self.t_enc < time.time() - 1) or any(param is None for param in [lon, lat]):
             original_Ki, original_Kd, original_alim = {}, {}, {}
             for axis in ["az", "el"]:
                 self.controller[axis].max_acceleration /= 10
