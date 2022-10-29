@@ -83,8 +83,10 @@ class AntennaPIDController(Node):
                 self.controller[axis].k_i = 0
                 self.controller[axis].k_d = 0
             # Decay speed to zero
-            az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
-            el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
+            target_az = self.controller["az"].threshold["accel_limit_off"] * 1.01 + self.az_enc
+            target_el = self.controller["el"].threshold["accel_limit_off"] * 1.01 + self.el_enc
+            az_speed = self.controller["az"].get_speed(target_az, self.az_enc)
+            el_speed = self.controller["el"].get_speed(target_el, self.el_enc)
             # Reset acceleration
             for axis in ["az", "el"]:
                 self.controller[axis].max_acceleration *= 10
