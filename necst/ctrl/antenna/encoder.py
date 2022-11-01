@@ -16,7 +16,7 @@ class AntennaEncoder(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = self.create_publisher(CoordMsg, "encoder", qos.realtime)
         self.encoder = AntennaEncoderDevice()
-        self.create_timer(1 / 50, self.stream)  # TODO: Parametrize
+        self.create_timer(1 / 15, self.stream)  # TODO: Parametrize
 
     def stream(self) -> None:
         az_reading = self.encoder.get_reading("az").to_value("deg").item()
