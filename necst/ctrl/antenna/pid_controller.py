@@ -71,28 +71,19 @@ class AntennaPIDController(Node):
 
     def calc_pid(self) -> None:
         lon, lat = self.get_valid_command()
-        if any(param is None for param in [self.az_enc, self.el_enc]):
+        if any(p is None for p in [self.az_enc, self.el_enc]):
+            # Encoder reading isn't available at all, no calculation can be performed
             az_speed = 0.0
             el_speed = 0.0
-        elif (self.t_enc < time.time() - 1) or any(param is None for param in [lon, lat]):
-            original_Ki, original_Kd, original_alim = {}, {}, {}
-            for axis in ["az", "el"]:
-                self.controller[axis].max_acceleration /= 10
-                original_Ki[axis] = self.controller[axis].k_i
-                original_Kd[axis] = self.controller[axis].k_d
-                original_alim[axis] = self.controller[axis].threshold["accel_limit_off"]
-                self.controller[axis].k_i = 0
-                self.controller[axis].k_d = 0
-                self.controller[axis].threshold["accel_limit_off"] = -1  # XXX: Reconsider!!!
-            # Decay speed to zero
-            az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
-            el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
-            # Reset acceleration
-            for axis in ["az", "el"]:
-                self.controller[axis].max_acceleration *= 10
-                self.controller[axis].k_i = original_Ki[axis]
-                self.controller[axis].k_d = original_Kd[axis]
-                self.controller[axis].threshold["accel_limit_off"] = original_alim[axis]
+        elif (self.t_enc < time.time() - 1) or any(p is None for p in [lon, lat]):
+            # If ncoder reading is stale, or real-time command coordinate isn't
+            # available, decelerate to 0 with `max_acceleration`.
+            with self.controller["az"].param(
+                k_i=0, k_d=0, accel_limit_off=-1
+            ), self.controller["el"].param(k_i=0, k_d=0, accel_limit_off=-1):
+                # Decay speed to zero
+                az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
+                el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
         else:
             _az_speed = self.controller["az"].get_speed(lon, self.az_enc)
             _el_speed = self.controller["el"].get_speed(lat, self.el_enc)
