@@ -1,4 +1,4 @@
-__all__ = ["PrivilegedNode"]
+__all__ = ["PrivilegedNode", "require_privilege"]
 
 import functools
 import uuid
@@ -228,6 +228,9 @@ class PrivilegedNode(Node):
         """
         self._set_privilege(False)
         super().destroy_node()
+
+
+require_privilege = PrivilegedNode.require_privilege
 
 
 def main(args=None):

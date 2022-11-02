@@ -4,7 +4,7 @@ import pytest
 from rclpy.exceptions import InvalidHandle
 from rclpy.executors import Executor
 
-from necst.core import Authorizer, PrivilegedNode
+from necst.core import Authorizer, PrivilegedNode, require_privilege
 from necst.utils import get_absolute_name
 from ..conftest import TesterNode, destroy, executor_type, spinning
 
@@ -37,7 +37,7 @@ class TestAuthority(TesterNode):
             def __init__(self):
                 super().__init__("test_node")
 
-            @PrivilegedNode.require_privilege
+            @require_privilege
             def some_operation(self, num: int):
                 return num
 

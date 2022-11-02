@@ -4,7 +4,7 @@ from typing import Literal
 from neclib.utils import ConditionChecker
 
 from .. import config, namespace, qos
-from .auth.privileged_node import PrivilegedNode
+from .auth import PrivilegedNode, require_privilege
 from necst_msgs.msg import CoordMsg
 
 
@@ -21,7 +21,7 @@ class Commander(PrivilegedNode):
             ),
         }
 
-    @PrivilegedNode.require_privilege
+    @require_privilege
     def antenna(
         self,
         cmd: Literal["stop", "point", "scan", "jog"],
@@ -63,6 +63,10 @@ class Commander(PrivilegedNode):
                 self.tracking_check("antenna")
         else:
             raise NotImplementedError(f"Command '{cmd}' isn't implemented yet.")
+
+    @require_privilege
+    def chopper(self, cmd: Literal["insert", "eject"]):
+        ...
 
     def tracking_check(
         self, target: Literal["antenna", "dome"], timeout_sec: float = None
