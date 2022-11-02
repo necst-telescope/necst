@@ -4,8 +4,9 @@ import pytest
 
 from necst import qos
 from necst.ctrl import HorizontalCoord
+from necst.utils import spinning
 from necst_msgs.msg import CoordMsg
-from ..conftest import TesterNode, destroy, spinning
+from ..conftest import TesterNode, destroy
 
 
 class TestHorizontalCoord(TesterNode):

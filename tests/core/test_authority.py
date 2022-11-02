@@ -5,8 +5,8 @@ from rclpy.exceptions import InvalidHandle
 from rclpy.executors import Executor
 
 from necst.core import Authorizer, PrivilegedNode, require_privilege
-from necst.utils import get_absolute_name
-from ..conftest import TesterNode, destroy, executor_type, spinning
+from necst.utils import get_absolute_name, spinning
+from ..conftest import TesterNode, destroy, executor_type
 
 
 class TestAuthority(TesterNode):

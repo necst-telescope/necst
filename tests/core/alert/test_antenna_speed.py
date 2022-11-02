@@ -2,8 +2,9 @@ import time
 
 from necst import config, namespace, qos
 from necst.core.alert import AntennaSpeedAlert
+from necst.utils import spinning
 from necst_msgs.msg import TimedAzElFloat64
-from ...conftest import TesterAlertHandlingNode, destroy, spinning
+from ...conftest import TesterAlertHandlingNode, destroy
 
 
 class TestAntennaSpeed(TesterAlertHandlingNode):

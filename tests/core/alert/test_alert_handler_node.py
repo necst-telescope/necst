@@ -2,8 +2,9 @@ import time
 
 from necst import config, qos
 from necst.core import AlertHandlerNode
+from necst.utils import spinning
 from necst_msgs.msg import AlertMsg
-from ...conftest import TesterNode, spinning
+from ...conftest import TesterNode
 
 
 class TestAlertHandlerNode(TesterNode):

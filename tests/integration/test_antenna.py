@@ -5,8 +5,9 @@ import pytest
 from necst import namespace, qos
 from necst.core import Authorizer, Commander
 from necst.ctrl.exec_antenna_sim import configure_executor
+from necst.utils import spinning
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
-from ..conftest import TesterNode, destroy, spinning
+from ..conftest import TesterNode, destroy
 
 
 class TestAntenna(TesterNode):

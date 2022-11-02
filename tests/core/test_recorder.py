@@ -6,8 +6,9 @@ from std_msgs.msg import Float64, Int32
 
 from necst import config, qos
 from necst.core import Recorder
+from necst.utils import spinning
 from necst_msgs.msg import TimedAzElFloat64
-from ..conftest import TesterNode, destroy, spinning
+from ..conftest import TesterNode, destroy
 from neclib.recorders import NECSTDBWriter
 
 
