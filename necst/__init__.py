@@ -64,11 +64,16 @@ class qos:
     realtime_latched = QoSProfile(**__default, **__realtime, **__latch)
     lowest = QoSProfile(depth=10, **__lowest)
 
-    @staticmethod
-    def adaptive(topicname: str, node: Node) -> QoSProfile:
+    @classmethod
+    def adaptive(cls, topicname: str, node: Node) -> QoSProfile:
         """Automatically choose suitable QoS policy to subscribe to the topic."""
         topic_info = node.get_publishers_info_by_topic(topicname)
-        qos_info = map(lambda t: t.qos_profile, topic_info)
+        if not topic_info:
+            topic_info = node.get_subscriptions_info_by_topic(topicname)
+        if not topic_info:
+            return cls.lowest
+
+        qos_info = list(map(lambda t: t.qos_profile, topic_info))
 
         reliability = (
             ReliabilityPolicy.RELIABLE
@@ -96,4 +101,6 @@ class qos:
             deadline=deadline,
             liveliness=liveliness,
             liveliness_lease_duration=lease_duration,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
         )
