@@ -10,7 +10,7 @@ from ... import config, qos
 class AlertHandlerNode(Node):
     """Node who knows system alert status.
 
-    This and subclass of this will subscribe to all alert topics so that comprehend the
+    This and subclass of this will subscribe to all alert topics, to use the alert
     status of whole system.
 
     Examples
