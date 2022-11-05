@@ -5,6 +5,8 @@ from importlib.metadata import version
 
 import neclib
 from rclpy.duration import Duration
+from rclpy.logging import get_logger
+from rclpy.node import Node
 from rclpy.qos import (
     DurabilityPolicy,
     HistoryPolicy,
@@ -12,7 +14,6 @@ from rclpy.qos import (
     QoSProfile,
     ReliabilityPolicy,
 )
-from rclpy.logging import get_logger
 
 
 try:
@@ -62,3 +63,37 @@ class qos:
     reliable_latched = QoSProfile(**__default, **__reliable, **__latch)
     realtime_latched = QoSProfile(**__default, **__realtime, **__latch)
     lowest = QoSProfile(depth=10, **__lowest)
+
+    @staticmethod
+    def adaptive(topicname: str, node: Node) -> QoSProfile:
+        """Automatically choose suitable QoS policy to subscribe to the topic."""
+        topic_info = node.get_publishers_info_by_topic(topicname)
+        qos_info = map(lambda t: t.qos_profile, topic_info)
+
+        reliability = (
+            ReliabilityPolicy.RELIABLE
+            if all(q.reliability == ReliabilityPolicy.RELIABLE for q in qos_info)
+            else ReliabilityPolicy.BEST_EFFORT
+        )
+        durability = (
+            DurabilityPolicy.TRANSIENT_LOCAL
+            if all(q.durability == DurabilityPolicy.TRANSIENT_LOCAL for q in qos_info)
+            else DurabilityPolicy.VOLATILE
+        )
+        deadline = max(qos_info, key=lambda q: q.deadline.nanoseconds).deadline
+        liveliness = (
+            LivelinessPolicy.MANUAL_BY_TOPIC
+            if all(q.liveliness == LivelinessPolicy.MANUAL_BY_TOPIC for q in qos_info)
+            else LivelinessPolicy.AUTOMATIC
+        )
+        lease_duration = max(
+            qos_info, key=lambda q: q.liveliness_lease_duration.nanoseconds
+        ).liveliness_lease_duration
+
+        return QoSProfile(
+            reliability=reliability,
+            durability=durability,
+            deadline=deadline,
+            liveliness=liveliness,
+            liveliness_lease_duration=lease_duration,
+        )
