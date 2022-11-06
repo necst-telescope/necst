@@ -72,7 +72,7 @@ class TestAuthority(TesterNode):
 
         destroy([auth_server, my_node])
 
-    def test_not_allow_multiple_privileged_nodes(self):
+    def test_reject_privilege_request_when_other_node_has_one(self):
         auth_server = Authorizer()
         initial = PrivilegedNode("test_node")
         secondary = PrivilegedNode("test_node" + "_")
@@ -83,6 +83,25 @@ class TestAuthority(TesterNode):
 
             assert secondary.get_privilege() is False
             assert auth_server.approved == initial.identity
+
+        destroy([auth_server, initial, secondary])
+
+    def test_server_responsive_after_rejecting_request(self):
+        auth_server = Authorizer()
+        initial = PrivilegedNode("test_node")
+        secondary = PrivilegedNode("test_node" + "_")
+
+        with spinning(auth_server):
+            assert initial.get_privilege() is True
+            assert auth_server.approved == initial.identity
+
+            assert secondary.get_privilege() is False
+            assert auth_server.approved == initial.identity
+
+            assert initial.quit_privilege() is False
+            assert (
+                auth_server.approved is None
+            )  # This line will catch the non-responsiveness
 
         destroy([auth_server, initial, secondary])
 

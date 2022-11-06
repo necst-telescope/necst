@@ -1,4 +1,5 @@
 import time
+from typing import List, Tuple
 
 from neclib.controllers import PIDController
 from neclib.safety import Decelerate
@@ -41,7 +42,7 @@ class AntennaPIDController(Node):
             PIDMsg, "pid_param", self.change_pid_param, qos.reliable
         )
         self.az_enc = self.el_enc = self.t_enc = None
-        self.list = []
+        self.cmd_list: List[CoordMsg] = []
 
         self.decelerate_az = Decelerate(
             config.antenna_drive_critical_limit_az.map(lambda x: x.to_value("deg")),
@@ -52,27 +53,37 @@ class AntennaPIDController(Node):
             config.antenna_max_acceleration_el.to_value("deg/s^2"),
         )
 
-    def get_data(self, current):
-        sorted_list = sorted(self.list, key=lambda msg: msg.time)
-        while len(sorted_list) > 1:
-            msg = sorted_list.pop(0)
-            if msg.time >= current:
+    def get_valid_command(self) -> Tuple[float, float]:
+        now = time.time()
+        self.cmd_list.sort(key=lambda msg: msg.time)
+        while len(self.cmd_list) > 1:
+            msg = self.cmd_list.pop(0)
+            if msg.time >= now:
                 return msg.lon, msg.lat
 
-        if len(sorted_list) == 1:
-            # Avoid running out of commands, to prevent heuristic zero command
-            msg = sorted_list[0]
+        if len(self.cmd_list) == 1:
+            # Avoid running out of commands, to prevent sporadic zero commands
+            msg = self.cmd_list[0]
+            if msg.time <= now - 1:  # For up to 1 second
+                self.cmd_list.pop(0)
             return msg.lon, msg.lat
-
-        # Literally no data available, just after initialization
         return None, None
 
     def calc_pid(self) -> None:
-        current = time.time()
-        lon, lat = self.get_data(current)
-        if any(param is None for param in [lon, lat, self.az_enc, self.el_enc]):
+        lon, lat = self.get_valid_command()
+        if any(p is None for p in [self.az_enc, self.el_enc]):
+            # Encoder reading isn't available at all, no calculation can be performed
             az_speed = 0.0
             el_speed = 0.0
+        elif (self.t_enc < time.time() - 1) or any(p is None for p in [lon, lat]):
+            # If ncoder reading is stale, or real-time command coordinate isn't
+            # available, decelerate to 0 with `max_acceleration`.
+            with self.controller["az"].param(
+                k_i=0, k_d=0, accel_limit_off=-1
+            ), self.controller["el"].param(k_i=0, k_d=0, accel_limit_off=-1):
+                # Decay speed to zero
+                az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
+                el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
         else:
             _az_speed = self.controller["az"].get_speed(lon, self.az_enc)
             _el_speed = self.controller["el"].get_speed(lat, self.el_enc)
@@ -82,7 +93,7 @@ class AntennaPIDController(Node):
         self.publisher.publish(msg)
 
     def update_command(self, msg: CoordMsg) -> None:
-        self.list.append(msg)
+        self.cmd_list.append(msg)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.az_enc = msg.lon

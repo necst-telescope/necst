@@ -65,10 +65,17 @@ class Authorizer(Node):
             self.logger.info("Ping server on current privileged node is unreachable.")
             return False
 
+        executor = self.executor
+        if executor is None:
+            executor = rclpy.get_global_executor()
+            executor.add_node(self)
+
         timeout = config.ros_service_timeout_sec if timeout_sec is None else timeout_sec
         request = Empty.Request()
         future = self.ping_cli.call_async(request)
-        rclpy.spin_until_future_complete(self, future, self.executor, timeout)
+        executor.spin_until_future_complete(future, timeout)
+        # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
+        # will cause deadlock. Reason unknown.
         return future.done()
 
     def _authorize(
