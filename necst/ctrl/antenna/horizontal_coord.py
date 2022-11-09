@@ -40,14 +40,16 @@ class HorizontalCoord(Node):
         self.publisher = self.create_publisher(CoordMsg, "altaz", qos.realtime)
         self.create_subscription(CoordMsg, "raw_coord", self._update_cmd, qos.reliable)
         self.create_subscription(CoordMsg, "encoder", self._update_enc, qos.realtime)
+
+        callback_temp = partial(self.change_weather, "temperature")
+        callback_pres = partial(self.change_weather, "pressuer")
+        callback_hum = partial(self.change_weather, "humidty")
+
         self.create_subscription(
             TimedFloat64, "temperature", callback_temp, qos.realtime
         )
         self.create_subscription(TimedFloat64, "pressuer", callback_pres, qos.realtime)
         self.create_subscription(TimedFloat64, "humidity", callback_hum, qos.realtime)
-        callback_temp = partial(self.change_weather, "temperature")
-        callback_pres = partial(self.change_weather, "pressuer")
-        callback_hum = partial(self.change_weather, "humidty")
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(1, self.convert)
