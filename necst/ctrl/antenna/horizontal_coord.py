@@ -3,12 +3,13 @@ __all__ = ["HorizontalCoord"]
 import queue
 import time
 from typing import Tuple
+from functools import partial
 
 from neclib.coordinates import CoordCalculator, DriveLimitChecker
 from rclpy.node import Node
 
 from necst import config, namespace, qos
-from necst_msgs.msg import CoordMsg
+from necst_msgs.msg import CoordMsg, TimedFloat64
 
 
 class HorizontalCoord(Node):
@@ -39,6 +40,17 @@ class HorizontalCoord(Node):
         self.publisher = self.create_publisher(CoordMsg, "altaz", qos.realtime)
         self.create_subscription(CoordMsg, "raw_coord", self._update_cmd, qos.reliable)
         self.create_subscription(CoordMsg, "encoder", self._update_enc, qos.realtime)
+
+        callback_temp = partial(self.change_weather, "temperature")
+        callback_pres = partial(self.change_weather, "pressuer")
+        callback_hum = partial(self.change_weather, "humidty")
+
+        self.create_subscription(
+            TimedFloat64, "temperature", callback_temp, qos.realtime
+        )
+        self.create_subscription(TimedFloat64, "pressuer", callback_pres, qos.realtime)
+        self.create_subscription(TimedFloat64, "humidity", callback_hum, qos.realtime)
+
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(1, self.convert)
 
@@ -113,3 +125,11 @@ class HorizontalCoord(Node):
         if (_az is not None) and (_el is not None):
             return _az, _el
         return [], []
+
+    def change_weather(self, kind: str, msg: TimedFloat64) -> None:
+        if kind == "temperature":
+            self.calculator.temperature = msg.data
+        elif kind == "pressuer":
+            self.calculator.pressure = msg.data
+        else:
+            self.calculator.relative_humidity = msg.data
