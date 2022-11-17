@@ -11,17 +11,21 @@ from necst_msgs.msg import TimedFloat64
 class ThermometerReader(DeviceNode):
 
     NodeName = "thermometer_reader"
-    Namespace = namespace.antenna
+    Namespace = namespace.ctrl
 
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.publisher = {
             "temperature": self.create_publisher(
-                TimedFloat64, "temperature", qos.realtime
+                TimedFloat64, f"{namespace.ctrl}/temperature", qos.realtime
             ),
-            "humidity": self.create_publisher(TimedFloat64, "humidity", qos.realtime),
-            "pressure": self.create_publisher(TimedFloat64, "pressure", qos.realtime),
+            "humidity": self.create_publisher(
+                TimedFloat64, f"{namespace.ctrl}/humidity", qos.realtime
+            ),
+            "pressure": self.create_publisher(
+                TimedFloat64, f"{namespace.ctrl}/pressure", qos.realtime
+            ),
         }
 
         self.thermo = WeatherStation()
