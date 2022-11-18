@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.ctrl.antenna.horizontal_coord &#8212; necst 0.3.1 documentation</title>
+    <title>necst.core.exec_auth &#8212; necst 0.3.1 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.ctrl.antenna.motor" href="necst.ctrl.antenna.motor.html" />
-    <link rel="prev" title="necst.ctrl.antenna.encoder" href="necst.ctrl.antenna.encoder.html" />
+    <link rel="next" title="necst.core.exec_record" href="necst.core.exec_record.html" />
+    <link rel="prev" title="necst.core.device_node" href="necst.core.device_node.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -128,16 +128,16 @@
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
   <div class="bd-toc-item active">
     <ul class="current nav bd-sidenav">
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.core.html">
    necst.core
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
+  <ul class="current">
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.authorizer.html">
      necst.core.authorizer
@@ -153,8 +153,8 @@
      necst.core.device_node
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_auth.html">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
      necst.core.exec_auth
     </a>
    </li>
@@ -175,33 +175,33 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 current active has-children">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.ctrl.html">
    necst.ctrl
   </a>
-  <input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
   <label for="toctree-checkbox-2">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul class="current">
-   <li class="toctree-l2 current active has-children">
+  <ul>
+   <li class="toctree-l2 has-children">
     <a class="reference internal" href="necst.ctrl.antenna.html">
      necst.ctrl.antenna
     </a>
-    <input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+    <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
     <label for="toctree-checkbox-3">
      <i class="fas fa-chevron-down">
      </i>
     </label>
-    <ul class="current">
+    <ul>
      <li class="toctree-l3">
       <a class="reference internal" href="necst.ctrl.antenna.encoder.html">
        necst.ctrl.antenna.encoder
       </a>
      </li>
-     <li class="toctree-l3 current active">
-      <a class="current reference internal" href="#">
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.antenna.horizontal_coord.html">
        necst.ctrl.antenna.horizontal_coord
       </a>
      </li>
@@ -314,63 +314,26 @@
               
               <div>
                 
-  <section id="module-necst.ctrl.antenna.horizontal_coord">
-<span id="necst-ctrl-antenna-horizontal-coord"></span><h1>necst.ctrl.antenna.horizontal_coord<a class="headerlink" href="#module-necst.ctrl.antenna.horizontal_coord" title="Permalink to this headline">¶</a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HorizontalCoord</span></span><a class="reference internal" href="../_modules/necst/ctrl/antenna/horizontal_coord.html#HorizontalCoord"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></p>
-<dl class="field-list simple">
+  <section id="module-necst.core.exec_auth">
+<span id="necst-core-exec-auth"></span><h1>necst.core.exec_auth<a class="headerlink" href="#module-necst.core.exec_auth" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.core.exec_auth.configure_executor">
+<span class="sig-name descname"><span class="pre">configure_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/exec_auth.html#configure_executor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.exec_auth.configure_executor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
+<dd class="field-odd"><p><em>SingleThreadedExecutor</em></p>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.NodeName">
-<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'altaz_coord'</span></em><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.NodeName" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+</dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.Namespace">
-<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/ctrl/antenna'</span></em><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.Namespace" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.command_realtime">
-<span class="sig-name descname"><span class="pre">command_realtime</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/horizontal_coord.html#HorizontalCoord.command_realtime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.command_realtime" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.core.exec_auth.main">
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/exec_auth.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.exec_auth.main" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.convert">
-<span class="sig-name descname"><span class="pre">convert</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/horizontal_coord.html#HorizontalCoord.convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.convert" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.change_weather">
-<span class="sig-name descname"><span class="pre">change_weather</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/horizontal_coord.html#HorizontalCoord.change_weather"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.change_weather" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>kind</strong> (<em>str</em>) – </p></li>
-<li><p><strong>msg</strong> (<em>TimedFloat64</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 </section>
@@ -381,17 +344,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.ctrl.antenna.encoder.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.core.device_node.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.ctrl.antenna.encoder</p>
+            <p class="prev-next-title">necst.core.device_node</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.ctrl.antenna.motor.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.core.exec_record.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.ctrl.antenna.motor</p>
+        <p class="prev-next-title">necst.core.exec_record</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

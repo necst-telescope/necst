@@ -25,6 +25,8 @@ Submodules
 
    necst.core.authorizer
    necst.core.commander
+   necst.core.device_node
+   necst.core.exec_auth
    necst.core.exec_record
    necst.core.privileged_node
    necst.core.recorder
@@ -36,6 +38,8 @@ Submodules
 
    necst.core.authorizer
    necst.core.commander
+   necst.core.device_node
+   necst.core.exec_auth
    necst.core.exec_record
    necst.core.privileged_node
    necst.core.recorder

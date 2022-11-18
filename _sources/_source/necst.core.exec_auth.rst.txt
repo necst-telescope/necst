@@ -1,0 +1,7 @@
+necst.core.exec\_auth
+=====================
+
+.. automodule:: necst.core.exec_auth
+   :members:
+   :undoc-members:
+   :show-inheritance:

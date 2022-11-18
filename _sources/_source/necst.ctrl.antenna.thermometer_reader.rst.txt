@@ -1,0 +1,7 @@
+necst.ctrl.antenna.thermometer\_reader
+======================================
+
+.. automodule:: necst.ctrl.antenna.thermometer_reader
+   :members:
+   :undoc-members:
+   :show-inheritance:

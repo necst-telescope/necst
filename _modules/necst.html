@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst &#8212; necst 0.2.3 documentation</title>
+    <title>necst &#8212; necst 0.3.1 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.2.3</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -153,6 +153,8 @@
 
 <span class="kn">import</span> <span class="nn">neclib</span>
 <span class="kn">from</span> <span class="nn">rclpy.duration</span> <span class="kn">import</span> <span class="n">Duration</span>
+<span class="kn">from</span> <span class="nn">rclpy.logging</span> <span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span> <span class="nn">rclpy.node</span> <span class="kn">import</span> <span class="n">Node</span>
 <span class="kn">from</span> <span class="nn">rclpy.qos</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">DurabilityPolicy</span><span class="p">,</span>
     <span class="n">HistoryPolicy</span><span class="p">,</span>
@@ -160,7 +162,6 @@
     <span class="n">QoSProfile</span><span class="p">,</span>
     <span class="n">ReliabilityPolicy</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">rclpy.logging</span> <span class="kn">import</span> <span class="n">get_logger</span>
 
 
 <span class="k">try</span><span class="p">:</span>
@@ -209,7 +210,48 @@
     <span class="n">realtime</span> <span class="o">=</span> <span class="n">QoSProfile</span><span class="p">(</span><span class="o">**</span><span class="n">__default</span><span class="p">,</span> <span class="o">**</span><span class="n">__realtime</span><span class="p">,</span> <span class="o">**</span><span class="n">__nolatch</span><span class="p">)</span>
     <span class="n">reliable_latched</span> <span class="o">=</span> <span class="n">QoSProfile</span><span class="p">(</span><span class="o">**</span><span class="n">__default</span><span class="p">,</span> <span class="o">**</span><span class="n">__reliable</span><span class="p">,</span> <span class="o">**</span><span class="n">__latch</span><span class="p">)</span>
     <span class="n">realtime_latched</span> <span class="o">=</span> <span class="n">QoSProfile</span><span class="p">(</span><span class="o">**</span><span class="n">__default</span><span class="p">,</span> <span class="o">**</span><span class="n">__realtime</span><span class="p">,</span> <span class="o">**</span><span class="n">__latch</span><span class="p">)</span>
-    <span class="n">lowest</span> <span class="o">=</span> <span class="n">QoSProfile</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="o">**</span><span class="n">__lowest</span><span class="p">)</span></div>
+    <span class="n">lowest</span> <span class="o">=</span> <span class="n">QoSProfile</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="o">**</span><span class="n">__lowest</span><span class="p">)</span>
+
+<div class="viewcode-block" id="qos.adaptive"><a class="viewcode-back" href="../_source/necst.html#necst.qos.adaptive">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">adaptive</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">topicname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QoSProfile</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Automatically choose suitable QoS policy to subscribe to the topic.&quot;&quot;&quot;</span>
+        <span class="n">topic_info</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get_publishers_info_by_topic</span><span class="p">(</span><span class="n">topicname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">topic_info</span><span class="p">:</span>
+            <span class="n">topic_info</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get_subscriptions_info_by_topic</span><span class="p">(</span><span class="n">topicname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">topic_info</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">lowest</span>
+
+        <span class="n">qos_info</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">qos_profile</span><span class="p">,</span> <span class="n">topic_info</span><span class="p">))</span>
+
+        <span class="n">reliability</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">ReliabilityPolicy</span><span class="o">.</span><span class="n">RELIABLE</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">reliability</span> <span class="o">==</span> <span class="n">ReliabilityPolicy</span><span class="o">.</span><span class="n">RELIABLE</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">qos_info</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">ReliabilityPolicy</span><span class="o">.</span><span class="n">BEST_EFFORT</span>
+        <span class="p">)</span>
+        <span class="n">durability</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">DurabilityPolicy</span><span class="o">.</span><span class="n">TRANSIENT_LOCAL</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">durability</span> <span class="o">==</span> <span class="n">DurabilityPolicy</span><span class="o">.</span><span class="n">TRANSIENT_LOCAL</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">qos_info</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">DurabilityPolicy</span><span class="o">.</span><span class="n">VOLATILE</span>
+        <span class="p">)</span>
+        <span class="n">deadline</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">qos_info</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">q</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">deadline</span><span class="o">.</span><span class="n">nanoseconds</span><span class="p">)</span><span class="o">.</span><span class="n">deadline</span>
+        <span class="n">liveliness</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">LivelinessPolicy</span><span class="o">.</span><span class="n">MANUAL_BY_TOPIC</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">liveliness</span> <span class="o">==</span> <span class="n">LivelinessPolicy</span><span class="o">.</span><span class="n">MANUAL_BY_TOPIC</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">qos_info</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">LivelinessPolicy</span><span class="o">.</span><span class="n">AUTOMATIC</span>
+        <span class="p">)</span>
+        <span class="n">lease_duration</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="n">qos_info</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">q</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">liveliness_lease_duration</span><span class="o">.</span><span class="n">nanoseconds</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">liveliness_lease_duration</span>
+
+        <span class="k">return</span> <span class="n">QoSProfile</span><span class="p">(</span>
+            <span class="n">reliability</span><span class="o">=</span><span class="n">reliability</span><span class="p">,</span>
+            <span class="n">durability</span><span class="o">=</span><span class="n">durability</span><span class="p">,</span>
+            <span class="n">deadline</span><span class="o">=</span><span class="n">deadline</span><span class="p">,</span>
+            <span class="n">liveliness</span><span class="o">=</span><span class="n">liveliness</span><span class="p">,</span>
+            <span class="n">liveliness_lease_duration</span><span class="o">=</span><span class="n">lease_duration</span><span class="p">,</span>
+            <span class="n">history</span><span class="o">=</span><span class="n">HistoryPolicy</span><span class="o">.</span><span class="n">KEEP_LAST</span><span class="p">,</span>
+            <span class="n">depth</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="p">)</span></div></div>
 </pre></div>
 
               </div>

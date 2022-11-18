@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.ctrl.antenna.horizontal_coord &#8212; necst 0.3.1 documentation</title>
+    <title>necst.ctrl.antenna.thermometer_reader &#8212; necst 0.3.1 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.ctrl.antenna.motor" href="necst.ctrl.antenna.motor.html" />
-    <link rel="prev" title="necst.ctrl.antenna.encoder" href="necst.ctrl.antenna.encoder.html" />
+    <link rel="next" title="necst.ctrl.exec_antenna_cal" href="necst.ctrl.exec_antenna_cal.html" />
+    <link rel="prev" title="necst.ctrl.antenna.sim_devices" href="necst.ctrl.antenna.sim_devices.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -200,8 +200,8 @@
        necst.ctrl.antenna.encoder
       </a>
      </li>
-     <li class="toctree-l3 current active">
-      <a class="current reference internal" href="#">
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.antenna.horizontal_coord.html">
        necst.ctrl.antenna.horizontal_coord
       </a>
      </li>
@@ -220,8 +220,8 @@
        necst.ctrl.antenna.sim_devices
       </a>
      </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.ctrl.antenna.thermometer_reader.html">
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
        necst.ctrl.antenna.thermometer_reader
       </a>
      </li>
@@ -314,64 +314,33 @@
               
               <div>
                 
-  <section id="module-necst.ctrl.antenna.horizontal_coord">
-<span id="necst-ctrl-antenna-horizontal-coord"></span><h1>necst.ctrl.antenna.horizontal_coord<a class="headerlink" href="#module-necst.ctrl.antenna.horizontal_coord" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.ctrl.antenna.thermometer_reader">
+<span id="necst-ctrl-antenna-thermometer-reader"></span><h1>necst.ctrl.antenna.thermometer_reader<a class="headerlink" href="#module-necst.ctrl.antenna.thermometer_reader" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HorizontalCoord</span></span><a class="reference internal" href="../_modules/necst/ctrl/antenna/horizontal_coord.html#HorizontalCoord"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="necst.ctrl.antenna.thermometer_reader.ThermometerReader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ThermometerReader</span></span><a class="reference internal" href="../_modules/necst/ctrl/antenna/thermometer_reader.html#ThermometerReader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.thermometer_reader.ThermometerReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.core.device_node.html#necst.core.device_node.DeviceNode" title="necst.core.device_node.DeviceNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceNode</span></code></a></p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.NodeName">
-<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'altaz_coord'</span></em><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.NodeName" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.ctrl.antenna.thermometer_reader.ThermometerReader.NodeName">
+<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'thermometer_reader'</span></em><a class="headerlink" href="#necst.ctrl.antenna.thermometer_reader.ThermometerReader.NodeName" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.Namespace">
-<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/ctrl/antenna'</span></em><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.Namespace" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.ctrl.antenna.thermometer_reader.ThermometerReader.Namespace">
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M'</span></em><a class="headerlink" href="#necst.ctrl.antenna.thermometer_reader.ThermometerReader.Namespace" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.command_realtime">
-<span class="sig-name descname"><span class="pre">command_realtime</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/horizontal_coord.html#HorizontalCoord.command_realtime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.command_realtime" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.convert">
-<span class="sig-name descname"><span class="pre">convert</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/horizontal_coord.html#HorizontalCoord.convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.convert" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.horizontal_coord.HorizontalCoord.change_weather">
-<span class="sig-name descname"><span class="pre">change_weather</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/horizontal_coord.html#HorizontalCoord.change_weather"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.change_weather" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>kind</strong> (<em>str</em>) – </p></li>
-<li><p><strong>msg</strong> (<em>TimedFloat64</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="necst.ctrl.antenna.thermometer_reader.ThermometerReader.stream">
+<span class="sig-name descname"><span class="pre">stream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/thermometer_reader.html#ThermometerReader.stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.thermometer_reader.ThermometerReader.stream" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.thermometer_reader.main">
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/thermometer_reader.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.thermometer_reader.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </section>
 
@@ -381,17 +350,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.ctrl.antenna.encoder.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.ctrl.antenna.sim_devices.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.ctrl.antenna.encoder</p>
+            <p class="prev-next-title">necst.ctrl.antenna.sim_devices</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.ctrl.antenna.motor.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.ctrl.exec_antenna_cal.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.ctrl.antenna.motor</p>
+        <p class="prev-next-title">necst.ctrl.exec_antenna_cal</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

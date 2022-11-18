@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.utils.callbacks &#8212; necst 0.3.1 documentation</title>
+    <title>necst.core.exec_auth &#8212; necst 0.3.1 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -145,15 +145,39 @@
               
               <div>
                 
-  <h1>Source code for necst.utils.callbacks</h1><div class="highlight"><pre>
-<span></span><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;respond_to_ping&quot;</span><span class="p">]</span>
+  <h1>Source code for necst.core.exec_auth</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">rclpy</span>
+<span class="kn">from</span> <span class="nn">rclpy.executors</span> <span class="kn">import</span> <span class="n">SingleThreadedExecutor</span>
 
-<span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="n">Empty</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">Authorizer</span>
 
 
-<div class="viewcode-block" id="respond_to_ping"><a class="viewcode-back" href="../../../_source/necst.utils.callbacks.html#necst.utils.callbacks.respond_to_ping">[docs]</a><span class="k">def</span> <span class="nf">respond_to_ping</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Callback function for ping server, which uses ``std_srvs.srv.Empty``.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">response</span></div>
+<div class="viewcode-block" id="configure_executor"><a class="viewcode-back" href="../../../_source/necst.core.exec_auth.html#necst.core.exec_auth.configure_executor">[docs]</a><span class="k">def</span> <span class="nf">configure_executor</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">SingleThreadedExecutor</span><span class="p">:</span>
+    <span class="n">executor</span> <span class="o">=</span> <span class="n">SingleThreadedExecutor</span><span class="p">()</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Authorizer</span><span class="p">(),</span>
+    <span class="p">]</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">executor</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">executor</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../_source/necst.core.exec_auth.html#necst.core.exec_auth.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">rclpy</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="n">executor</span> <span class="o">=</span> <span class="n">configure_executor</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">executor</span><span class="o">.</span><span class="n">spin</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">executor</span><span class="o">.</span><span class="n">get_nodes</span><span class="p">()]</span>
+        <span class="n">rclpy</span><span class="o">.</span><span class="n">try_shutdown</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
 </pre></div>
 
               </div>

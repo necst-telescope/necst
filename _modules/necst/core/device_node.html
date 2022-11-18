@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.utils.callbacks &#8212; necst 0.3.1 documentation</title>
+    <title>necst.core.device_node &#8212; necst 0.3.1 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -145,15 +145,24 @@
               
               <div>
                 
-  <h1>Source code for necst.utils.callbacks</h1><div class="highlight"><pre>
-<span></span><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;respond_to_ping&quot;</span><span class="p">]</span>
-
-<span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="n">Empty</span>
+  <h1>Source code for necst.core.device_node</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">rclpy.node</span> <span class="kn">import</span> <span class="n">Node</span>
 
 
-<div class="viewcode-block" id="respond_to_ping"><a class="viewcode-back" href="../../../_source/necst.utils.callbacks.html#necst.utils.callbacks.respond_to_ping">[docs]</a><span class="k">def</span> <span class="nf">respond_to_ping</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Callback function for ping server, which uses ``std_srvs.srv.Empty``.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">response</span></div>
+<div class="viewcode-block" id="DeviceNode"><a class="viewcode-back" href="../../../_source/necst.core.device_node.html#necst.core.device_node.DeviceNode">[docs]</a><span class="k">class</span> <span class="nc">DeviceNode</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Device handling node, which knows procedures required to control devices.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="DeviceNode.destroy_node"><a class="viewcode-back" href="../../../_source/necst.core.device_node.html#necst.core.device_node.DeviceNode.destroy_node">[docs]</a>    <span class="k">def</span> <span class="nf">destroy_node</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override destroy_node to ensure that the device is finalized.</span>
+
+<span class="sd">        This implementation assumes the device controllers are registered as instance</span>
+<span class="sd">        variables. In other cases, you should invoke `finalize` method manually.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="s2">&quot;finalize&quot;</span><span class="p">):</span>
+                <span class="n">attr</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span></div></div>
 </pre></div>
 
               </div>

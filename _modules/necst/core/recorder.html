@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.core.recorder &#8212; necst 0.2.3 documentation</title>
+    <title>necst.core.recorder &#8212; necst 0.3.1 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.2.3</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.1</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -201,13 +201,16 @@
             <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subscriber</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">msg_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_msg_type</span><span class="p">(</span><span class="n">msg_type_str</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">subscriber</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_subscription</span><span class="p">(</span>
-                    <span class="n">msg_type</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">,</span> <span class="n">topic_name</span><span class="o">=</span><span class="n">name</span><span class="p">),</span> <span class="n">qos</span><span class="o">.</span><span class="n">lowest</span>
+                    <span class="n">msg_type</span><span class="p">,</span>
+                    <span class="n">name</span><span class="p">,</span>
+                    <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">,</span> <span class="n">topic_name</span><span class="o">=</span><span class="n">name</span><span class="p">),</span>
+                    <span class="n">qos</span><span class="o">.</span><span class="n">adaptive</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span>
                 <span class="p">)</span></div>
                 <span class="c1"># Callback argument isn&#39;t supported in `create_subscription`.</span>
                 <span class="c1"># The following link can provide a solution, i.e.,</span>
                 <span class="c1"># `callback=lambda msg: self.append(msg, name)` but argument `name` is</span>
                 <span class="c1"># just a reference, so the common callback can be called with unexpected</span>
-                <span class="c1"># value.</span>
+                <span class="c1"># argument value.</span>
                 <span class="c1"># https://answers.ros.org/question/362954/ros2create_subscription-how-to-pass-callback-arguments/?answer=393430#post-id-393430</span>
 
 <div class="viewcode-block" id="Recorder.append"><a class="viewcode-back" href="../../../_source/necst.core.recorder.html#necst.core.recorder.Recorder.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">topic_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
