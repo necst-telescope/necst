@@ -46,13 +46,13 @@ class HorizontalCoord(Node):
         callback_hum = partial(self.change_weather, "humidty")
 
         self.create_subscription(
-            TimedFloat64, f"{namespace.ctrl}/temperature", callback_temp, qos.realtime
+            TimedFloat64, f"{namespace.root}/temperature", callback_temp, qos.realtime
         )
         self.create_subscription(
-            TimedFloat64, f"{namespace.ctrl}/pressuer", callback_pres, qos.realtime
+            TimedFloat64, f"{namespace.root}/pressuer", callback_pres, qos.realtime
         )
         self.create_subscription(
-            TimedFloat64, f"{namespace.ctrl}/humidity", callback_hum, qos.realtime
+            TimedFloat64, f"{namespace.root}/humidity", callback_hum, qos.realtime
         )
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
