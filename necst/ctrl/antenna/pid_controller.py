@@ -78,9 +78,9 @@ class AntennaPIDController(Node):
         elif (self.t_enc < time.time() - 1) or any(p is None for p in [lon, lat]):
             # If ncoder reading is stale, or real-time command coordinate isn't
             # available, decelerate to 0 with `max_acceleration`.
-            with self.controller["az"].param(
+            with self.controller["az"].params(
                 k_i=0, k_d=0, accel_limit_off=-1
-            ), self.controller["el"].param(k_i=0, k_d=0, accel_limit_off=-1):
+            ), self.controller["el"].params(k_i=0, k_d=0, accel_limit_off=-1):
                 # Decay speed to zero
                 az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
                 el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
