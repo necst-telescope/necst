@@ -16,4 +16,5 @@ and the issue for the key feature should be closed:
 
 Then,
 
-- [ ] Update the `version` in `pyproject.toml`
+- [ ] Update the `version` in `setup.py`
+- [ ] Update the `version` in `package.xml`
