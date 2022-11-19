@@ -115,14 +115,16 @@ class PrivilegedNode(Node):
             return default_response
 
         executor = self.executor
-        if self.executor is None:
+        if executor is None:
             executor = rclpy.get_global_executor()
             executor.add_node(self)
 
         future = self.request_cli.call_async(request)
-        self.executor.spin_until_future_complete(future, config.ros_service_timeout_sec)
+        executor.spin_until_future_complete(future, 2 * config.ros_service_timeout_sec)
         # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock. Reason unknown.
+        # NOTE: Authority server also waits for `ros_service_timeout_sec` for status
+        # checking, so this node waits for twice the duration.
 
         result = future.result()
         if result is None:

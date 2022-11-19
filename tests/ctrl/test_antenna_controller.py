@@ -36,8 +36,9 @@ class TestAntennaController(TesterNode):
         )
 
         with spinning([controller, self.node]):
-            cmd.publish(CoordMsg(lon=30.0, lat=45.0))
-            enc.publish(CoordMsg(lon=25.0, lat=45.0))
+            for i in range(10):
+                cmd.publish(CoordMsg(lon=30.0, lat=45.0, time=time.time() + 0.1))
+                enc.publish(CoordMsg(lon=25.0, lat=45.0, time=time.time() + 0.1))
 
             timelimit = time.time() + 1
             while True:

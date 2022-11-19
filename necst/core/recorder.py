@@ -1,9 +1,11 @@
 import importlib
 from functools import partial
-from typing import Any
-
-from neclib.recorders import DBWriter
+from typing import Any, Union
+import neclib
+from neclib.recorders import Recorder as LibRecorder
 from rclpy.node import Node
+import os
+
 
 from .. import config, namespace, qos
 
@@ -15,15 +17,20 @@ class Recorder(Node):
 
     TopicScanInterval: float = 1.0
 
-    def __init__(self) -> None:
+    def __init__(self, record_dir: Union[str, os.PathLike] = None) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.recorder = DBWriter(config.record_root)
+        self.recorder = LibRecorder(config.record_root)
 
         self.subscriber = {}
+        self.recorder.add_writer(
+            neclib.recorders.NECSTDBWriter(),
+            neclib.recorders.FileWriter(),
+            neclib.recorders.ConsoleLogWriter(),
+        )
 
         self.create_timer(self.TopicScanInterval, self.scan_topics)
-        self.recorder.start_recording()
+        self.recorder.start_recording(record_dir)
 
     def _get_msg_type(self, path: str) -> Any:
         module_name, msg_name = path.replace("/", ".").rsplit(".", 1)
@@ -46,13 +53,16 @@ class Recorder(Node):
             if name not in self.subscriber.keys():
                 msg_type = self._get_msg_type(msg_type_str)
                 self.subscriber[name] = self.create_subscription(
-                    msg_type, name, partial(self.append, topic_name=name), qos.lowest
+                    msg_type,
+                    name,
+                    partial(self.append, topic_name=name),
+                    qos.adaptive(name, self),
                 )
                 # Callback argument isn't supported in `create_subscription`.
                 # The following link can provide a solution, i.e.,
                 # `callback=lambda msg: self.append(msg, name)` but argument `name` is
                 # just a reference, so the common callback can be called with unexpected
-                # value.
+                # argument value.
                 # https://answers.ros.org/question/362954/ros2create_subscription-how-to-pass-callback-arguments/?answer=393430#post-id-393430
 
     def append(self, msg, topic_name: str) -> None:
@@ -61,6 +71,7 @@ class Recorder(Node):
             {"key": name, "type": type_, "value": getattr(msg, name)}
             for name, type_ in fields.items()
         ]
+
         self.recorder.append(topic_name, chunk)
 
     def destroy_node(self) -> None:
