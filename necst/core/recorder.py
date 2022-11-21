@@ -51,13 +51,16 @@ class Recorder(Node):
             if name not in self.subscriber.keys():
                 msg_type = self._get_msg_type(msg_type_str)
                 self.subscriber[name] = self.create_subscription(
-                    msg_type, name, partial(self.append, topic_name=name), qos.lowest
+                    msg_type,
+                    name,
+                    partial(self.append, topic_name=name),
+                    qos.adaptive(name, self),
                 )
                 # Callback argument isn't supported in `create_subscription`.
                 # The following link can provide a solution, i.e.,
                 # `callback=lambda msg: self.append(msg, name)` but argument `name` is
                 # just a reference, so the common callback can be called with unexpected
-                # value.
+                # argument value.
                 # https://answers.ros.org/question/362954/ros2create_subscription-how-to-pass-callback-arguments/?answer=393430#post-id-393430
 
     def append(self, msg, topic_name: str) -> None:
