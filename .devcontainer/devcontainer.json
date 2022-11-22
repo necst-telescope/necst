@@ -28,7 +28,10 @@
                 "python.formatting.provider": "black",
                 "[python]": {
                     "editor.formatOnSave": true,
-                    "editor.tabSize": 4
+                    "editor.tabSize": 4,
+                    "editor.codeActionsOnSave": {
+                        "source.organizeImports": true
+                    }
                 }
             }
         }
