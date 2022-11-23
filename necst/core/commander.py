@@ -1,6 +1,7 @@
 import time as pytime
-from typing import Literal
+from typing import Literal, Tuple
 
+from neclib.coordinates import PathFinder
 from neclib.utils import ConditionChecker
 
 from .. import config, namespace, qos
@@ -28,6 +29,9 @@ class Commander(PrivilegedNode):
         *,
         lon: float = None,
         lat: float = None,
+        start: Tuple[float, float] = None,
+        end: Tuple[float, float] = None,
+        speed: float = None,
         unit: str = None,
         frame: str = None,
         time: float = 0.0,
@@ -61,6 +65,16 @@ class Commander(PrivilegedNode):
 
             if wait:
                 self.tracking_check("antenna")
+        elif cmd.lower() == "scan":
+            # TODO: Consider blocking if wait.
+
+            ...
+
+            ...
+
+            ...
+
+            self.antenna("stop")
         else:
             raise NotImplementedError(f"Command '{cmd}' isn't implemented yet.")
 
@@ -101,7 +115,7 @@ class Commander(PrivilegedNode):
                 continue
             error_az = enc_az - cmd_az
             error_el = enc_el - cmd_el
-            if checker.check(error_az**2 + error_el**2 < threshold[target] ** 2):
+            if checker.check(error_az ** 2 + error_el ** 2 < threshold[target] ** 2):
                 self.destroy_subscription(subs_enc)
                 self.destroy_subscription(subs_cmd)
                 return True
