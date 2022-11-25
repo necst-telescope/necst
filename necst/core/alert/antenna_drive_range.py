@@ -1,7 +1,7 @@
+from necst_msgs.msg import AlertMsg, CoordMsg
 from rclpy.node import Node
 
 from ... import config, namespace, qos
-from necst_msgs.msg import AlertMsg, CoordMsg
 
 
 class AntennaDriveRangeAlert(Node):
@@ -14,10 +14,10 @@ class AntennaDriveRangeAlert(Node):
         self.logger = self.get_logger()
 
         self.pub_alert_az = self.create_publisher(
-            AlertMsg, f"{namespace.alert}/antenna_drive_range/az", qos.realtime
+            AlertMsg, f"{namespace.alert}/antenna_drive_range/az", qos.reliable_latched
         )
         self.pub_alert_el = self.create_publisher(
-            AlertMsg, f"{namespace.alert}/antenna_drive_range/el", qos.realtime
+            AlertMsg, f"{namespace.alert}/antenna_drive_range/el", qos.reliable_latched
         )
         self.create_subscription(
             CoordMsg, f"{namespace.antenna}/encoder", self.update, qos.realtime
@@ -58,7 +58,7 @@ class AntennaDriveRangeAlert(Node):
                 actual=self.enc_az,
                 warning=self.enc_az not in self.warning_limit_az,
                 critical=self.enc_az not in self.critical_limit_az,
-                issuer=f"{self.NodeName}/az",
+                target=[namespace.antenna],
             )
             self.pub_alert_az.publish(msg)
 
@@ -68,6 +68,6 @@ class AntennaDriveRangeAlert(Node):
                 actual=self.enc_el,
                 warning=self.enc_el not in self.warning_limit_el,
                 critical=self.enc_el not in self.critical_limit_el,
-                issuer=f"{self.NodeName}/el",
+                target=[namespace.antenna],
             )
             self.pub_alert_el.publish(msg)

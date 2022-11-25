@@ -1,7 +1,7 @@
+from necst_msgs.msg import AlertMsg, TimedAzElFloat64
 from rclpy.node import Node
 
 from ... import config, namespace, qos
-from necst_msgs.msg import AlertMsg, TimedAzElFloat64
 
 
 class AntennaSpeedAlert(Node):
@@ -18,10 +18,10 @@ class AntennaSpeedAlert(Node):
             TimedAzElFloat64, f"{namespace.antenna}/speed", self.update, qos.realtime
         )
         self.pub_alert_az = self.create_publisher(
-            AlertMsg, f"{namespace.alert}/antenna_speed/az", qos.realtime
+            AlertMsg, f"{namespace.alert}/antenna_speed/az", qos.reliable_latched
         )
         self.pub_alert_el = self.create_publisher(
-            AlertMsg, f"{namespace.alert}/antenna_speed/el", qos.realtime
+            AlertMsg, f"{namespace.alert}/antenna_speed/el", qos.reliable_latched
         )
 
         self.speed_az = self.speed_el = None
@@ -46,7 +46,7 @@ class AntennaSpeedAlert(Node):
                 actual=self.speed_az,
                 warning=abs(self.speed_az) > self.max_speed_az,
                 critical=abs(self.speed_az) > self.Critical * self.max_speed_az,
-                issuer=f"{self.NodeName}/az",
+                target=[namespace.antenna],
             )
             self.pub_alert_az.publish(msg)
 
@@ -56,6 +56,6 @@ class AntennaSpeedAlert(Node):
                 actual=self.speed_el,
                 warning=abs(self.speed_el) > self.max_speed_el,
                 critical=abs(self.speed_el) > self.Critical * self.max_speed_el,
-                issuer=f"{self.NodeName}/el",
+                target=[namespace.antenna],
             )
             self.pub_alert_el.publish(msg)
