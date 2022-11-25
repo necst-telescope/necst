@@ -15,7 +15,6 @@ from rclpy.qos import (
     ReliabilityPolicy,
 )
 
-
 try:
     __version__ = version("necst")
 except:  # noqa: E722
@@ -23,6 +22,8 @@ except:  # noqa: E722
 
 logger = get_logger("necst")
 config = neclib.config
+
+from neclib.exceptions import *  # noqa: E402, F401, F403
 
 
 class namespace:
@@ -38,7 +39,7 @@ class namespace:
 
 class qos:
     __default = {
-        "deadline": Duration(seconds=0.01),
+        "deadline": Duration(nanoseconds=int(1e7)),
         "history": HistoryPolicy.KEEP_LAST,
         "lifespan": Duration(),  # Default value.
         "liveliness": LivelinessPolicy.SYSTEM_DEFAULT,
