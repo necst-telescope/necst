@@ -3,7 +3,7 @@ import time
 from neclib.devices import AntennaMotor as AntennaMotorDevice
 from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
 
-from ... import config, namespace, qos, topic
+from ... import config, namespace, topic
 from ...core import DeviceNode
 
 

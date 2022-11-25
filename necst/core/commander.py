@@ -4,9 +4,9 @@ from functools import partial
 from typing import Any, Literal, Optional
 
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import AlertMsg, CoordMsg, TimedAzElFloat64
+from necst_msgs.msg import AlertMsg, CoordMsg
 
-from .. import NECSTTimeoutError, config, namespace, qos, topic, utils
+from .. import NECSTTimeoutError, config, namespace, topic, utils
 from .auth import PrivilegedNode, require_privilege
 
 

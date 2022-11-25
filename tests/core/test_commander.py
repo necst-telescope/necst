@@ -1,6 +1,5 @@
 import time
 
-import pytest
 from necst_msgs.msg import CoordMsg
 
 from necst import namespace, qos

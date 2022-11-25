@@ -3,7 +3,7 @@ import time
 from neclib.devices import AntennaEncoder as AntennaEncoderDevice
 from necst_msgs.msg import CoordMsg
 
-from ... import namespace, qos, topic
+from ... import namespace, topic
 from ...core import DeviceNode
 
 

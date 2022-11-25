@@ -5,7 +5,7 @@ from neclib.controllers import PIDController
 from neclib.safety import Decelerate
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
-from ... import config, namespace, qos, topic
+from ... import config, namespace, topic
 from ...core import AlertHandlerNode
 
 
@@ -75,7 +75,7 @@ class AntennaPIDController(AlertHandlerNode):
 
     def calc_pid(self) -> None:
         if self.status.critical():
-            self.logger.warning(f"Guard condition activated")
+            self.logger.warning("Guard condition activated")
             self.gc.trigger()  # TODO: Consider the behavior
             return
 

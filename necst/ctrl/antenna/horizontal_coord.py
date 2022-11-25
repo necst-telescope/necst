@@ -9,7 +9,7 @@ from neclib.coordinates import CoordCalculator, DriveLimitChecker
 from necst_msgs.msg import CoordMsg, TimedFloat64
 from rclpy.node import Node
 
-from ... import config, namespace, qos, topic
+from ... import config, namespace, topic
 
 
 class HorizontalCoord(Node):
