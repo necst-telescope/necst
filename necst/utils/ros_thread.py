@@ -3,8 +3,7 @@ __all__ = ["spinning"]
 import threading
 from typing import Optional, Sequence, Union
 
-import rclpy
-from rclpy.executors import Executor
+from rclpy.executors import Executor, SingleThreadedExecutor
 from rclpy.node import Node
 
 
@@ -27,7 +26,11 @@ class spinning:
         *,
         executor: Optional[Executor] = None,
     ) -> None:
-        self.executor = executor or rclpy.get_global_executor()
+        # Default executor should be new instance, since the use of
+        # `get_global_executor` can cause deadlock.
+        self.executor = executor or SingleThreadedExecutor()
+        self.using_private_executor = executor is None
+
         self.nodes = [node] if isinstance(node, Node) else node
         _ = [self.executor.add_node(n) for n in self.nodes]
 
@@ -44,3 +47,5 @@ class spinning:
         self._stop.set()
         self._thread.join()
         _ = [self.executor.remove_node(n) for n in self.nodes]
+        if self.using_private_executor:
+            self.executor.shutdown()
