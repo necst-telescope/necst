@@ -3,8 +3,6 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/home/user/ros2_ws/src/necst,type=bind",
-    "workspaceFolder": "/home/user/ros2_ws/src/necst",
     "postCreateCommand": "git config --global --add safe.directory '*'",
     "customizations": {
         "vscode": {
@@ -35,5 +33,10 @@
                 }
             }
         }
-    }
+    },
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/user/ros2_ws/src/necst,type=bind",
+    "workspaceFolder": "/home/user/ros2_ws/src/necst",
+    "runArgs": [
+        "--network=host"
+    ]
 }
