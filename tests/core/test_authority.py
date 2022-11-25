@@ -6,7 +6,8 @@ from rclpy.executors import Executor
 
 from necst.core import Authorizer, PrivilegedNode, require_privilege
 from necst.utils import get_absolute_name, spinning
-from ..conftest import TesterNode, destroy, executor_type
+
+from ..conftest import TesterNode, destroy, executor_type, temp_config
 
 
 class TestAuthority(TesterNode):
@@ -143,7 +144,8 @@ class TestAuthority(TesterNode):
 
             destroy(initial)
 
-            secondary.get_privilege() is True
+            with temp_config(ros_service_timeout_sec=1):
+                secondary.get_privilege() is True
             assert auth_server.approved == secondary.identity
 
         destroy([auth_server, secondary])
@@ -186,8 +188,9 @@ class TestAuthority(TesterNode):
 
         for _ in range(100):
             executor.spin_once(timeout_sec=0)
-        assert auth_client.get_privilege() is False
-        assert auth_client.quit_privilege() is False
+        with temp_config(ros_service_timeout_sec=1):
+            assert auth_client.get_privilege() is False
+            assert auth_client.quit_privilege() is False
 
         [n.destroy_node() for n in executor.get_nodes()]
         [executor.remove_node(n) for n in executor.get_nodes()]

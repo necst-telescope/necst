@@ -2,6 +2,7 @@ from typing import Any, Sequence, Union
 
 import pytest
 import rclpy
+from neclib import config
 from rclpy.executors import Executor, MultiThreadedExecutor, SingleThreadedExecutor
 from rclpy.node import Node
 
@@ -83,3 +84,18 @@ def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
 
     ros_obj = ros_obj if isinstance(ros_obj, Sequence) else [ros_obj]
     _ = [_destroy(obj, node) for obj in ros_obj]
+
+
+class temp_config:
+    def __init__(self, **kwargs):
+        self.temp_values = kwargs
+        self.original_values = {}
+
+    def __enter__(self):
+        self.original_values = {k: getattr(config, k) for k in self.temp_values}
+        [setattr(config, k, v) for k, v in self.temp_values.items()]
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        [setattr(config, k, v) for k, v in self.original_values.items()]
+        if exc_type is not None:
+            raise
