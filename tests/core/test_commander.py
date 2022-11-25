@@ -123,8 +123,8 @@ class TestCommander(TesterNode):
             assert com.parameters["speed"].el > 1e-4
 
             com.antenna("stop")
-            assert com.parameters["speed"].az < 1e-5
-            assert com.parameters["speed"].el < 1e-5
+            assert com.parameters["speed"].az < 1.1e-5  # Consider fluctuation
+            assert com.parameters["speed"].el < 1.1e-5
 
             com.quit_privilege()
         destroy([com, auth_server, horizontal, pid, dev])
