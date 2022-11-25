@@ -4,7 +4,7 @@ from functools import partial
 from typing import Any, Literal, Optional
 
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import AlertMsg, CoordMsg
+from necst_msgs.msg import AlertMsg, CoordMsg, PIDMsg
 
 from .. import NECSTTimeoutError, config, namespace, topic, utils
 from .auth import PrivilegedNode, require_privilege
@@ -20,6 +20,7 @@ class Commander(PrivilegedNode):
         self.publisher = {
             "coord": topic.raw_coord.publisher(self),
             "alert_stop": topic.manual_stop_alert.publisher(self),
+            "pid_param": topic.pid_param.publisher(self),
         }
         self.subscription = {
             "encoder": topic.antenna_encoder.subscription(
@@ -41,7 +42,7 @@ class Commander(PrivilegedNode):
     @require_privilege
     def antenna(
         self,
-        cmd: Literal["stop", "point", "scan", "jog"],
+        cmd: Literal["stop", "point", "scan", "?"],
         *,
         lon: Optional[float] = None,
         lat: Optional[float] = None,
@@ -51,30 +52,21 @@ class Commander(PrivilegedNode):
         name: Optional[str] = None,
         wait: bool = True,
     ) -> None:
+        """Control antenna direction and motion."""
         cmd = cmd.upper()
         if cmd == "STOP":
             with utils.spinning(self):
-                while True:
-                    self.publisher["alert_stop"].publish(
-                        AlertMsg(
-                            critical=True, warning=True, target=[namespace.antenna]
-                        )
-                    )
+                target = [namespace.antenna]
+                speed = self.parameters["speed"]
+                msg = AlertMsg(critical=True, warning=True, target=target)
+                while (
+                    (speed is None) or (abs(speed.az) > 1e-5) or (abs(speed.el) > 1e-5)
+                ):
+                    self.publisher["alert_stop"].publish(msg)
                     pytime.sleep(1 / config.antenna_command_frequency)
-                    speed = self.parameters["speed"]
-                    if (
-                        (speed is not None)
-                        and (abs(speed.az) < 1e-5)
-                        and (abs(speed.el) < 1e-5)
-                    ):
-                        self.publisher["alert_stop"].publish(
-                            AlertMsg(
-                                critical=False,
-                                warning=False,
-                                target=[namespace.antenna],
-                            )
-                        )
-                        break
+
+                msg = AlertMsg(critical=False, warning=False, target=target)
+                self.publisher["alert_stop"].publish(msg)
             return
 
         elif cmd == "POINT":
@@ -86,26 +78,25 @@ class Commander(PrivilegedNode):
                 )
             self.publisher["coord"].publish(msg)
 
-            if wait:
-                self.wait_convergence("antenna")
-            return
+            return self.wait_convergence("antenna") if wait else None
 
         else:
-            raise NotImplementedError(f"Command '{cmd}' isn't implemented yet.")
+            raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
 
     @require_privilege
-    def chopper(self, cmd: Literal["insert", "eject"]):
+    def chopper(self, cmd: Literal["insert", "eject", "?"]):
         """Calibrator."""
         if cmd.lower() == "insert":
             ...
         elif cmd.lower() == "eject":
             ...
         else:
-            raise NotImplementedError(f"Command '{cmd}' isn't implemented yet.")
+            raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
 
     def wait_convergence(
         self, target: Literal["antenna", "dome"], timeout_sec: Optional[float] = None
     ) -> None:
+        """Wait until the motion has been converged."""
         param_name = {
             "antenna": ["encoder", "altaz"],
             "dome": ["", ""],  # TODO: Implement.
@@ -114,12 +105,12 @@ class Commander(PrivilegedNode):
             "antenna": config.antenna_pointing_accuracy.to_value("deg"),
             "dome": ...,
         }
-        ENC, CMD = param_name[target]
+        ENC, CMD = param_name[target.lower()]
 
         timelimit = None if timeout_sec is None else pytime.time() + timeout_sec
         checker = ConditionChecker(10, reset_on_failure=True)
         with utils.spinning(self):
-            while True:
+            while (timelimit is None) or (pytime.time() < timelimit):
                 if (self.parameters[ENC] is None) or (self.parameters[CMD] is None):
                     pytime.sleep(0.05)
                     continue
@@ -129,7 +120,15 @@ class Commander(PrivilegedNode):
                     error_az**2 + error_el**2 < threshold[target] ** 2
                 ):
                     return
-                if (timelimit is not None) and (pytime.time() > timelimit):
-                    break
                 pytime.sleep(0.05)
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
+
+    @require_privilege
+    def pid_parameter(
+        self, Kp: float, Ki: float, Kd: float, axis: Literal["az", "el"]
+    ) -> None:
+        """Change PID parameters."""
+        if axis.lower() not in ("az", "el"):
+            raise ValueError(f"Unknown axis {axis!r}")
+        msg = PIDMsg(k_p=float(Kp), k_i=float(Ki), k_d=float(Kd), axis=axis.lower())
+        self.publisher["pid_param"].publish(msg)
