@@ -3,8 +3,9 @@ from typing import Tuple
 
 from necst import qos
 from necst.ctrl import AntennaPIDController
+from necst.utils import spinning
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
-from ..conftest import TesterNode, destroy, spinning
+from ..conftest import TesterNode, destroy
 
 
 class TestAntennaController(TesterNode):

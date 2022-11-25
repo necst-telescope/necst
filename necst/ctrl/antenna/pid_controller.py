@@ -3,13 +3,13 @@ from typing import List, Tuple
 
 from neclib.controllers import PIDController
 from neclib.safety import Decelerate
-from rclpy.node import Node
-
-from ... import config, namespace, qos
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
+from ... import config, namespace, qos
+from ...core import AlertHandlerNode
 
-class AntennaPIDController(Node):
+
+class AntennaPIDController(AlertHandlerNode):
 
     NodeName = "controller"
     Namespace = namespace.antenna
@@ -53,6 +53,14 @@ class AntennaPIDController(Node):
             config.antenna_max_acceleration_el.to_value("deg/s^2"),
         )
 
+        self.gc = self.create_guard_condition(self._emergency_stop)
+
+    def _emergency_stop(self) -> None:
+        msg = TimedAzElFloat64(az=0.0, el=0.0, time=time.time())
+        self.publisher.publish(msg)
+        self.controller["az"].get_speed(self.az_enc, self.az_enc)
+        self.controller["el"].get_speed(self.el_enc, self.el_enc)
+
     def get_valid_command(self) -> Tuple[float, float]:
         now = time.time()
         self.cmd_list.sort(key=lambda msg: msg.time)
@@ -70,6 +78,11 @@ class AntennaPIDController(Node):
         return None, None
 
     def calc_pid(self) -> None:
+        if self.status.critical():
+            self.logger.warning(f"Guard condition activated")
+            self.gc.trigger()  # TODO: Consider the behavior
+            return
+
         lon, lat = self.get_valid_command()
         if any(p is None for p in [self.az_enc, self.el_enc]):
             # Encoder reading isn't available at all, no calculation can be performed
@@ -78,9 +91,9 @@ class AntennaPIDController(Node):
         elif (self.t_enc < time.time() - 1) or any(p is None for p in [lon, lat]):
             # If ncoder reading is stale, or real-time command coordinate isn't
             # available, decelerate to 0 with `max_acceleration`.
-            with self.controller["az"].param(
+            with self.controller["az"].params(
                 k_i=0, k_d=0, accel_limit_off=-1
-            ), self.controller["el"].param(k_i=0, k_d=0, accel_limit_off=-1):
+            ), self.controller["el"].params(k_i=0, k_d=0, accel_limit_off=-1):
                 # Decay speed to zero
                 az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
                 el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)

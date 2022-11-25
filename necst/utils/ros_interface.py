@@ -2,6 +2,7 @@
 
 __all__ = ["interface_type_path", "get_absolute_name", "wait_for_server_to_pick_up"]
 
+from pathlib import PurePosixPath
 from typing import Any, Sequence, TypeVar
 
 from rclpy.client import Client
@@ -37,12 +38,9 @@ def get_absolute_name(name: S, namespace: str = None) -> S:
 
     """
 
-    def _get_absolute(n: str, ns: str) -> str:
-        return n if n.startswith("/") else f"{ns.rstrip('/')}/{n}"
-
     if isinstance(name, str):
-        return _get_absolute(name, namespace)
-    return [_get_absolute(n, namespace) for n in name]
+        return str(PurePosixPath(namespace) / name)
+    return [str(PurePosixPath(namespace) / n) for n in name]
 
 
 def wait_for_server_to_pick_up(client: Client, timeout_sec: float = None) -> bool:
