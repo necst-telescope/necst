@@ -64,6 +64,7 @@ class Commander(PrivilegedNode):
                 ):
                     self.publisher["alert_stop"].publish(msg)
                     pytime.sleep(1 / config.antenna_command_frequency)
+                    speed = self.parameters["speed"]
 
                 msg = AlertMsg(critical=False, warning=False, target=target)
                 self.publisher["alert_stop"].publish(msg)
