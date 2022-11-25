@@ -106,7 +106,7 @@ class topic:
 
     from .utils import Topic
 
-    raw_coord = Topic(CoordMsg, "raw_coord", qos.realtime, namespace.antenna)
+    raw_coord = Topic(CoordMsg, "raw_coord", qos.reliable, namespace.antenna)
     antenna_encoder = Topic(CoordMsg, "encoder", qos.realtime, namespace.antenna)
     antenna_speed_cmd = Topic(
         TimedAzElFloat64, "speed", qos.realtime, namespace.antenna

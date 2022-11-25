@@ -34,7 +34,7 @@ class AntennaPIDController(AlertHandlerNode):
         }
         topic.altaz_cmd.subscription(self, self.update_command)
         topic.antenna_encoder.subscription(self, self.update_encoder_reading)
-        self.publisher = topic.antenna_speed_cmd(self)
+        self.publisher = topic.antenna_speed_cmd.publisher(self)
         self.create_timer(1 / config.antenna_command_frequency, self.calc_pid)
         topic.pid_param.subscription(self, self.change_pid_param)
         self.az_enc = self.el_enc = self.t_enc = None
