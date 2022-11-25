@@ -1,9 +1,11 @@
 import time
 
+from necst_msgs.msg import AlertMsg
+
 from necst import config, qos
 from necst.core import AlertHandlerNode
 from necst.utils import spinning
-from necst_msgs.msg import AlertMsg
+
 from ...conftest import TesterNode
 
 
@@ -19,4 +21,4 @@ class TestAlertHandlerNode(TesterNode):
             time.sleep(config.ros_topic_scan_interval_sec + 0.5)
             assert len(list(node.subscriptions)) == default_subscription_count + 1
             subscribing_topics = [s.topic_name for s in node.subscriptions]
-            assert "test" in subscribing_topics
+            assert "/test" in subscribing_topics
