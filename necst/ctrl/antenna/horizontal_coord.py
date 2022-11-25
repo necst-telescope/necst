@@ -2,14 +2,14 @@ __all__ = ["HorizontalCoord"]
 
 import queue
 import time
-from typing import Tuple
 from functools import partial
+from typing import Tuple
 
 from neclib.coordinates import CoordCalculator, DriveLimitChecker
+from necst_msgs.msg import CoordMsg, TimedFloat64
 from rclpy.node import Node
 
-from necst import config, namespace, qos
-from necst_msgs.msg import CoordMsg, TimedFloat64
+from ... import config, namespace, qos
 
 
 class HorizontalCoord(Node):
@@ -49,7 +49,7 @@ class HorizontalCoord(Node):
             TimedFloat64, f"{namespace.root}/temperature", callback_temp, qos.realtime
         )
         self.create_subscription(
-            TimedFloat64, f"{namespace.root}/pressuer", callback_pres, qos.realtime
+            TimedFloat64, f"{namespace.root}/pressure", callback_pres, qos.realtime
         )
         self.create_subscription(
             TimedFloat64, f"{namespace.root}/humidity", callback_hum, qos.realtime
