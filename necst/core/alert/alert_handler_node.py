@@ -1,9 +1,9 @@
 from functools import partial
 
 from neclib.safety import Status
+from necst_msgs.msg import AlertMsg
 from rclpy.node import Node
 
-from necst_msgs.msg import AlertMsg
 from ... import config, qos
 
 
@@ -44,8 +44,13 @@ class AlertHandlerNode(Node):
             already_subscribed = name in self.__registered_alert_topics
             if (AlertMsg.__name__ in type_.split("/")) and (not already_subscribed):
                 callback = partial(self.__update_status, name)
-                self.create_subscription(AlertMsg, name, callback, qos.realtime)
+                self.create_subscription(
+                    AlertMsg, name, callback, qos.adaptive(name, self)
+                )
                 self.__registered_alert_topics.append(name)
 
     def __update_status(self, topic_name: str, msg: AlertMsg) -> None:
+        ns = self.get_namespace()
+        if all(target.find(ns) != 0 for target in msg.target):
+            return
         self.__status[topic_name] = {"warning": msg.warning, "critical": msg.critical}
