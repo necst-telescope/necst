@@ -1,7 +1,7 @@
 from necst_msgs.msg import AlertMsg, CoordMsg
 from rclpy.node import Node
 
-from ... import config, namespace, qos
+from ... import config, namespace, topic
 
 
 class AntennaDriveRangeAlert(Node):
@@ -13,15 +13,9 @@ class AntennaDriveRangeAlert(Node):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        self.pub_alert_az = self.create_publisher(
-            AlertMsg, f"{namespace.alert}/antenna_drive_range/az", qos.reliable_latched
-        )
-        self.pub_alert_el = self.create_publisher(
-            AlertMsg, f"{namespace.alert}/antenna_drive_range/el", qos.reliable_latched
-        )
-        self.create_subscription(
-            CoordMsg, f"{namespace.antenna}/encoder", self.update, qos.realtime
-        )
+        self.pub_alert_az = topic.drive_range_alert_az.publisher(self)
+        self.pub_alert_el = topic.drive_range_alert_el.publisher(self)
+        topic.antenna_encoder.subscription(self, self.update)
 
         self.enc_az = self.enc_el = None
         self.warning_limit_az = config.antenna_drive_warning_limit_az.map(

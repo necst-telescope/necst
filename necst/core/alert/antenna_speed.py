@@ -1,7 +1,7 @@
 from necst_msgs.msg import AlertMsg, TimedAzElFloat64
 from rclpy.node import Node
 
-from ... import config, namespace, qos
+from ... import config, namespace, topic
 
 
 class AntennaSpeedAlert(Node):
@@ -14,15 +14,9 @@ class AntennaSpeedAlert(Node):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.create_subscription(
-            TimedAzElFloat64, f"{namespace.antenna}/speed", self.update, qos.realtime
-        )
-        self.pub_alert_az = self.create_publisher(
-            AlertMsg, f"{namespace.alert}/antenna_speed/az", qos.reliable_latched
-        )
-        self.pub_alert_el = self.create_publisher(
-            AlertMsg, f"{namespace.alert}/antenna_speed/el", qos.reliable_latched
-        )
+        topic.antenna_speed_cmd.subscription(self, self.update)
+        self.pub_alert_az = topic.drive_speed_alert_az.publisher(self)
+        self.pub_alert_el = topic.drive_speed_alert_el.publisher(self)
 
         self.speed_az = self.speed_el = None
         self.max_speed_az = config.antenna_max_speed_az.to_value("deg/s").item()

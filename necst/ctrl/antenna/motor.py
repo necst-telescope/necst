@@ -1,9 +1,9 @@
 import time
 
 from neclib.devices import AntennaMotor as AntennaMotorDevice
-
 from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
-from ... import config, namespace, qos
+
+from ... import config, namespace, qos, topic
 from ...core import DeviceNode
 
 
@@ -15,14 +15,10 @@ class AntennaMotor(DeviceNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = {
-            "speed": self.create_publisher(
-                TimedAzElFloat64, "actual_speed", qos.realtime
-            ),
-            "step": self.create_publisher(TimedAzElInt64, "actual_step", qos.realtime),
+            "speed": topic.antenna_motor_speed.publisher(self),
+            "step": topic.antenna_motor_step.publisher(self),
         }
-        self.create_subscription(
-            TimedAzElFloat64, "speed", self.speed_command, qos.realtime
-        )
+        topic.antenna_speed_cmd.subscription(self, self.speed_command)
         self.create_timer(1 / config.antenna_command_frequency, self.stream_speed)
         self.create_timer(1 / config.antenna_command_frequency, self.stream_step)
 
