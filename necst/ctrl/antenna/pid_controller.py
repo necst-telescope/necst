@@ -5,7 +5,7 @@ from neclib.controllers import PIDController
 from neclib.safety import Decelerate
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
-from ... import config, namespace, qos
+from ... import config, namespace, topic
 from ...core import AlertHandlerNode
 
 
@@ -32,15 +32,11 @@ class AntennaPIDController(AlertHandlerNode):
                 max_acceleration=max_accel.el,
             ),
         }
-        self.create_subscription(CoordMsg, "altaz", self.update_command, qos.realtime)
-        self.create_subscription(
-            CoordMsg, "encoder", self.update_encoder_reading, qos.realtime
-        )
-        self.publisher = self.create_publisher(TimedAzElFloat64, "speed", qos.realtime)
+        topic.altaz_cmd.subscription(self, self.update_command)
+        topic.antenna_encoder.subscription(self, self.update_encoder_reading)
+        self.publisher = topic.antenna_speed_cmd.publisher(self)
         self.create_timer(1 / config.antenna_command_frequency, self.calc_pid)
-        self.create_subscription(
-            PIDMsg, "pid_param", self.change_pid_param, qos.reliable
-        )
+        topic.pid_param.subscription(self, self.change_pid_param)
         self.az_enc = self.el_enc = self.t_enc = None
         self.cmd_list: List[CoordMsg] = []
 
@@ -79,7 +75,7 @@ class AntennaPIDController(AlertHandlerNode):
 
     def calc_pid(self) -> None:
         if self.status.critical():
-            self.logger.warning(f"Guard condition activated")
+            self.logger.warning("Guard condition activated")
             self.gc.trigger()  # TODO: Consider the behavior
             return
 

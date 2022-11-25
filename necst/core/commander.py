@@ -4,9 +4,9 @@ from functools import partial
 from typing import Any, Literal, Optional
 
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import AlertMsg, CoordMsg, TimedAzElFloat64
+from necst_msgs.msg import AlertMsg, CoordMsg
 
-from .. import NECSTTimeoutError, config, namespace, qos, utils
+from .. import NECSTTimeoutError, config, namespace, topic, utils
 from .auth import PrivilegedNode, require_privilege
 
 
@@ -18,31 +18,18 @@ class Commander(PrivilegedNode):
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = {
-            "coord": self.create_publisher(
-                CoordMsg, f"{namespace.antenna}/raw_coord", qos.reliable
-            ),
-            "alert_stop": self.create_publisher(
-                AlertMsg, f"{namespace.alert}/manual_stop", qos.reliable_latched
-            ),
+            "coord": topic.raw_coord.publisher(self),
+            "alert_stop": topic.manual_stop_alert.publisher(self),
         }
         self.subscription = {
-            "encoder": self.create_subscription(
-                CoordMsg,
-                f"{namespace.antenna}/encoder",
-                partial(self.__callback, "encoder"),
-                qos.realtime,
+            "encoder": topic.antenna_encoder.subscription(
+                self, partial(self.__callback, "encoder")
             ),
-            "altaz": self.create_subscription(
-                CoordMsg,
-                f"{namespace.antenna}/altaz",
-                partial(self.__callback, "altaz"),
-                qos.realtime,
+            "altaz": topic.altaz_cmd.subscription(
+                self, partial(self.__callback, "altaz")
             ),
-            "speed": self.create_subscription(
-                TimedAzElFloat64,
-                f"{namespace.antenna}/speed",
-                partial(self.__callback, "speed"),
-                qos.realtime,
+            "speed": topic.antenna_speed_cmd.subscription(
+                self, partial(self.__callback, "speed")
             ),
         }
 

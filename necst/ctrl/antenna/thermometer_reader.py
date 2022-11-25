@@ -2,10 +2,10 @@ import time
 
 import rclpy
 from neclib.devices import WeatherStation
-
-from ... import namespace, qos, config
-from ...core import DeviceNode
 from necst_msgs.msg import TimedFloat64
+
+from ... import config, namespace, topic
+from ...core import DeviceNode
 
 
 class ThermometerReader(DeviceNode):
@@ -17,15 +17,9 @@ class ThermometerReader(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.publisher = {
-            "temperature": self.create_publisher(
-                TimedFloat64, f"{namespace.root}/temperature", qos.realtime
-            ),
-            "humidity": self.create_publisher(
-                TimedFloat64, f"{namespace.root}/humidity", qos.realtime
-            ),
-            "pressure": self.create_publisher(
-                TimedFloat64, f"{namespace.root}/pressure", qos.realtime
-            ),
+            "temperature": topic.weather_temperature.publisher(self),
+            "humidity": topic.weather_humidity.publisher(self),
+            "pressure": topic.weather_pressure.publisher(self),
         }
 
         self.thermo = WeatherStation()

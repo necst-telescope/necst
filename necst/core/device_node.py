@@ -3,6 +3,7 @@ from rclpy.node import Node
 
 class DeviceNode(Node):
     """Device handling node, which knows procedures required to control devices."""
+
     def destroy_node(self):
         """Override destroy_node to ensure that the device is finalized.
 
