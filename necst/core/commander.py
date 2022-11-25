@@ -1,13 +1,13 @@
 import time as pytime
 from collections import defaultdict
 from functools import partial
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from neclib.utils import ConditionChecker
+from necst_msgs.msg import AlertMsg, CoordMsg, TimedAzElFloat64
 
-from .. import config, namespace, qos, utils
+from .. import NECSTTimeoutError, config, namespace, qos, utils
 from .auth import PrivilegedNode, require_privilege
-from necst_msgs.msg import CoordMsg
 
 
 class Commander(PrivilegedNode):
@@ -20,6 +20,9 @@ class Commander(PrivilegedNode):
         self.publisher = {
             "coord": self.create_publisher(
                 CoordMsg, f"{namespace.antenna}/raw_coord", qos.reliable
+            ),
+            "alert_stop": self.create_publisher(
+                AlertMsg, f"{namespace.alert}/manual_stop", qos.reliable_latched
             ),
         }
         self.subscription = {
@@ -35,12 +38,17 @@ class Commander(PrivilegedNode):
                 partial(self.__callback, "altaz"),
                 qos.realtime,
             ),
+            "speed": self.create_subscription(
+                TimedAzElFloat64,
+                f"{namespace.antenna}/speed",
+                partial(self.__callback, "speed"),
+                qos.realtime,
+            ),
         }
 
         self.parameters = defaultdict(lambda: None)
 
     def __callback(self, name: str, msg: Any):
-        self.publisher["coord"].publish(CoordMsg(name=name))
         self.parameters[name] = msg
 
     @require_privilege
@@ -48,29 +56,41 @@ class Commander(PrivilegedNode):
         self,
         cmd: Literal["stop", "point", "scan", "jog"],
         *,
-        lon: float = None,
-        lat: float = None,
-        unit: str = None,
-        frame: str = None,
-        time: float = 0.0,
-        name: str = None,
+        lon: Optional[float] = None,
+        lat: Optional[float] = None,
+        unit: Optional[str] = None,
+        frame: Optional[str] = None,
+        time: Optional[float] = 0.0,
+        name: Optional[str] = None,
         wait: bool = True,
     ) -> None:
-        if cmd.lower() == "stop":
-            # with utils.spinning(self):
-            while True:
-                if self.parameters["speed"] is None:
-                    # self.publisher["coord"].publish(CoordMsg(name="continue"))
-                    pytime.sleep(0.05)
-                    continue
-                speed = self.parameters["speed"]
-                if (abs(speed.az) < 1e-3) and (abs(speed.el) < 1e-3):
-                    break
-                self.publisher["coord"].publish(self.parameters["encoder"])
-                pytime.sleep(config.antenna_command_interval_sec)
+        cmd = cmd.upper()
+        if cmd == "STOP":
+            with utils.spinning(self):
+                while True:
+                    self.publisher["alert_stop"].publish(
+                        AlertMsg(
+                            critical=True, warning=True, target=[namespace.antenna]
+                        )
+                    )
+                    pytime.sleep(1 / config.antenna_command_frequency)
+                    speed = self.parameters["speed"]
+                    if (
+                        (speed is not None)
+                        and (abs(speed.az) < 1e-5)
+                        and (abs(speed.el) < 1e-5)
+                    ):
+                        self.publisher["alert_stop"].publish(
+                            AlertMsg(
+                                critical=False,
+                                warning=False,
+                                target=[namespace.antenna],
+                            )
+                        )
+                        break
             return
 
-        elif cmd.lower() == "point":
+        elif cmd == "POINT":
             if name is not None:
                 msg = CoordMsg(time=time, name=name)
             else:
@@ -80,7 +100,7 @@ class Commander(PrivilegedNode):
             self.publisher["coord"].publish(msg)
 
             if wait:
-                self.tracking_check("antenna")
+                self.wait_convergence("antenna")
             return
 
         else:
@@ -96,13 +116,9 @@ class Commander(PrivilegedNode):
         else:
             raise NotImplementedError(f"Command '{cmd}' isn't implemented yet.")
 
-    @require_privilege
-    def chopper(self, cmd: Literal["insert", "eject"]):
-        ...
-
-    def tracking_check(
-        self, target: Literal["antenna", "dome"], timeout_sec: float = None
-    ) -> bool:
+    def wait_convergence(
+        self, target: Literal["antenna", "dome"], timeout_sec: Optional[float] = None
+    ) -> None:
         param_name = {
             "antenna": ["encoder", "altaz"],
             "dome": ["", ""],  # TODO: Implement.
@@ -117,15 +133,16 @@ class Commander(PrivilegedNode):
         checker = ConditionChecker(10, reset_on_failure=True)
         with utils.spinning(self):
             while True:
-                if (self.params[ENC] is None) or (self.params[CMD] is None):
+                if (self.parameters[ENC] is None) or (self.parameters[CMD] is None):
                     pytime.sleep(0.05)
                     continue
-                error_az = self.params[ENC].az - self.params[CMD].az
-                error_el = self.params[ENC].el - self.params[CMD].el
+                error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
+                error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
                 if checker.check(
                     error_az**2 + error_el**2 < threshold[target] ** 2
                 ):
-                    return True
+                    return
                 if (timelimit is not None) and (pytime.time() > timelimit):
-                    return False
+                    break
                 pytime.sleep(0.05)
+        raise NECSTTimeoutError("Couldn't confirm drive convergence")
