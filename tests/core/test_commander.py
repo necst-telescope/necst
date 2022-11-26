@@ -155,3 +155,24 @@ class TestCommander(TesterNode):
 
             com.quit_privilege()
         destroy([com, auth_server, horizontal, pid, dev])
+
+    def test_pid_parameter_change(self):
+        com = Commander()
+        pid = AntennaPIDController()
+        auth = Authorizer()
+
+        with spinning([pid, auth]):
+            com.get_privilege()
+            pid.controller["az"].k_p != 3
+            pid.controller["az"].k_i != 4
+            pid.controller["az"].k_d != 5.0
+            com.pid_parameter(3, 4, 5.0, "az")
+            com.quit_privilege()
+
+            timelimit = time.time() + 3
+            while pid.controller["az"].k_p != 3:
+                assert time.time() < timelimit
+            pid.controller["az"].k_i == 4
+            pid.controller["az"].k_d == 5.0
+
+        destroy([com, pid, auth])

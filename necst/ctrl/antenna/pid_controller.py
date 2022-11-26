@@ -52,13 +52,21 @@ class AntennaPIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self._emergency_stop)
 
     def _emergency_stop(self) -> None:
-        msg = TimedAzElFloat64(az=0.0, el=0.0, time=time.time())
+        if any(p is None for p in [self.az_enc, self.el_enc]):
+            _az_speed, _el_speed = 0, 0
+        else:
+            _az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
+            _el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
+        az_speed = float(self.decelerate_az(self.az_enc, _az_speed))
+        el_speed = float(self.decelerate_el(self.el_enc, _el_speed))
+        msg = TimedAzElFloat64(az=float(az_speed), el=float(el_speed), time=time.time())
         self.publisher.publish(msg)
-        self.controller["az"].get_speed(self.az_enc, self.az_enc)
-        self.controller["el"].get_speed(self.el_enc, self.el_enc)
 
     def get_valid_command(self) -> Tuple[float, float]:
         now = time.time()
+        if (self.t_enc is not None) and (self.t_enc < now - 5):
+            self.az_enc, self.el_enc = None, None
+
         self.cmd_list.sort(key=lambda msg: msg.time)
         while len(self.cmd_list) > 1:
             msg = self.cmd_list.pop(0)
@@ -75,8 +83,8 @@ class AntennaPIDController(AlertHandlerNode):
 
     def calc_pid(self) -> None:
         if self.status.critical():
-            self.logger.warning("Guard condition activated")
-            self.gc.trigger()  # TODO: Consider the behavior
+            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
+            self.gc.trigger()
             return
 
         lon, lat = self.get_valid_command()
@@ -111,6 +119,11 @@ class AntennaPIDController(AlertHandlerNode):
 
     def change_pid_param(self, msg: PIDMsg) -> None:
         axis = msg.axis.lower()
+        Kp, Ki, Kd = (getattr(self.controller[axis], k) for k in ("k_p", "k_i", "k_d"))
+        self.logger.warning(
+            f"PID parameter for {axis=} has been changed from {(Kp, Ki, Kd) = } "
+            f"to ({msg.k_p}, {msg.k_i}, {msg.k_d})"
+        )
         self.controller[axis].k_p = msg.k_p
         self.controller[axis].k_i = msg.k_i
         self.controller[axis].k_d = msg.k_d
