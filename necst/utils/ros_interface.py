@@ -130,6 +130,9 @@ class Topic(Generic[T]):
 
     def _get_namespace_if_unknown(self, node: Node) -> None:
         if self.namespace is None:
+            logger.warning(
+                f"Inferring namespace for topic {self.topic!r}. Caution inconsistency."
+            )
             self.namespace = node.get_namespace()
 
 
@@ -174,4 +177,8 @@ class Service(Generic[T]):
 
     def _get_namespace_if_unknown(self, node: Node) -> None:
         if self.namespace is None:
+            logger.warning(
+                f"Inferring namespace for service {self.srv_name!r}. "
+                "Caution inconsistency."
+            )
             self.namespace = node.get_namespace()
