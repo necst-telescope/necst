@@ -132,9 +132,13 @@ class topic:
     )
     weather_pressure = Topic(TimedFloat64, "pressure", qos.realtime, namespace.root)
     weather_humidity = Topic(TimedFloat64, "humidity", qos.realtime, namespace.root)
-    antenna_motor_speed = Topic(TimedAzElFloat64, "actual_speed", qos.realtime)
-    antenna_motor_step = Topic(TimedAzElInt64, "actual_step", qos.realtime)
-    pid_param = Topic(PIDMsg, "pid_param", qos.reliable)
+    antenna_motor_speed = Topic(
+        TimedAzElFloat64, "actual_speed", qos.realtime, namespace.antenna
+    )
+    antenna_motor_step = Topic(
+        TimedAzElInt64, "actual_step", qos.realtime, namespace.antenna
+    )
+    pid_param = Topic(PIDMsg, "pid_param", qos.reliable, namespace.antenna)
 
 
 class service:
