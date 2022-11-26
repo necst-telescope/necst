@@ -119,6 +119,11 @@ class AntennaPIDController(AlertHandlerNode):
 
     def change_pid_param(self, msg: PIDMsg) -> None:
         axis = msg.axis.lower()
+        Kp, Ki, Kd = (getattr(self.controller[axis], k) for k in ("k_p", "k_i", "k_d"))
+        self.logger.warning(
+            f"PID parameter for {axis=} has been changed from {(Kp, Ki, Kd) = } "
+            f"to ({msg.k_p}, {msg.k_i}, {msg.k_d})"
+        )
         self.controller[axis].k_p = msg.k_p
         self.controller[axis].k_i = msg.k_i
         self.controller[axis].k_d = msg.k_d
