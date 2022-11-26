@@ -57,14 +57,15 @@ class Commander(PrivilegedNode):
         if cmd == "STOP":
             with utils.spinning(self):
                 target = [namespace.antenna]
-                speed = self.parameters["speed"]
                 msg = AlertMsg(critical=True, warning=True, target=target)
-                while (
-                    (speed is None) or (abs(speed.az) > 1e-5) or (abs(speed.el) > 1e-5)
+                checker = ConditionChecker(5, reset_on_failure=True)
+                while not checker.check(
+                    (self.parameters["speed"] is not None)
+                    and (abs(self.parameters["speed"].az) < 1e-5)
+                    and (abs(self.parameters["speed"].el) < 1e-5)
                 ):
                     self.publisher["alert_stop"].publish(msg)
                     pytime.sleep(1 / config.antenna_command_frequency)
-                    speed = self.parameters["speed"]
 
                 msg = AlertMsg(critical=False, warning=False, target=target)
                 self.publisher["alert_stop"].publish(msg)
@@ -78,7 +79,6 @@ class Commander(PrivilegedNode):
                     lon=float(lon), lat=float(lat), unit=unit, frame=frame, time=time
                 )
             self.publisher["coord"].publish(msg)
-
             return self.wait_convergence("antenna") if wait else None
 
         else:
