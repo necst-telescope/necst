@@ -2,13 +2,15 @@ import time
 from pathlib import Path
 
 import pytest
+from neclib.recorders import NECSTDBWriter
+from necst_msgs.msg import TimedAzElFloat64
 from std_msgs.msg import Float64, Int32
 
 from necst import config, qos
 from necst.core import Recorder
-from necst_msgs.msg import TimedAzElFloat64
-from ..conftest import TesterNode, destroy, spinning
-from neclib.recorders import NECSTDBWriter
+from necst.utils import spinning
+
+from ..conftest import TesterNode, destroy
 
 
 @pytest.fixture
@@ -31,7 +33,7 @@ class TestRecorder(TesterNode):
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.realtime)
 
         with spinning([self.node, recorder]):
-            time.sleep(recorder.TopicScanInterval + 0.2)
+            time.sleep(config.ros_topic_scan_interval_sec + 0.2)
             # Wait for this topic to be detected
 
             assert "/test/topic1" in recorder.subscriber
@@ -57,7 +59,7 @@ class TestRecorder(TesterNode):
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
 
         with spinning([self.node, recorder]):
-            time.sleep(recorder.TopicScanInterval + 0.2)
+            time.sleep(config.ros_topic_scan_interval_sec + 0.2)
             # Wait for this topic to be detected
 
             assert "/test/topic1" in recorder.subscriber
@@ -85,7 +87,7 @@ class TestRecorder(TesterNode):
         pub2 = self.node.create_publisher(Int32, "/topic2", qos.reliable)
 
         with spinning([self.node, recorder]):
-            time.sleep(recorder.TopicScanInterval + 0.2)
+            time.sleep(config.ros_topic_scan_interval_sec + 0.2)
             # Wait for this topic to be detected
 
             assert "/test/topic1" in recorder.subscriber
@@ -117,7 +119,7 @@ class TestRecorder(TesterNode):
         pub2 = self.node.create_publisher(Int32, "/topic2", qos.reliable)
 
         with spinning([self.node, recorder]):
-            time.sleep(recorder.TopicScanInterval + 0.2)
+            time.sleep(config.ros_topic_scan_interval_sec + 0.2)
             # Wait for this topic to be detected
 
             assert "/test/topic1" in recorder.subscriber
@@ -150,7 +152,7 @@ class TestRecorder(TesterNode):
         pub1 = self.node.create_publisher(TimedAzElFloat64, "/test/azel", qos.reliable)
 
         with spinning([self.node, recorder]):
-            time.sleep(recorder.TopicScanInterval + 0.2)
+            time.sleep(config.ros_topic_scan_interval_sec + 0.2)
             # Wait for this topic to be detected
 
             assert "/test/azel" in recorder.subscriber
@@ -178,7 +180,7 @@ class TestRecorder(TesterNode):
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
 
         with spinning([self.node, recorder]):
-            time.sleep(recorder.TopicScanInterval + 0.2)
+            time.sleep(config.ros_topic_scan_interval_sec + 0.2)
             # Wait for this topic to be detected
 
             assert "/test/topic1" in recorder.subscriber
@@ -210,7 +212,7 @@ class TestRecorder(TesterNode):
         pub5 = self.node.create_publisher(Float64, "/test/topic5", qos.lowest)
 
         with spinning([self.node, recorder]):
-            time.sleep(recorder.TopicScanInterval + 0.2)
+            time.sleep(config.ros_topic_scan_interval_sec + 0.2)
             # Wait for this topic to be detected
 
             for idx in range(1, 6):

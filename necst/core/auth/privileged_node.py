@@ -1,17 +1,16 @@
-__all__ = ["PrivilegedNode"]
+__all__ = ["PrivilegedNode", "require_privilege"]
 
 import functools
 import uuid
 from typing import Any, Callable
 
 import rclpy
+from necst_msgs.srv import AuthoritySrv
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.exceptions import InvalidHandle
 from rclpy.node import Node
-from std_srvs.srv import Empty
 
-from .. import config, namespace, utils
-from necst_msgs.srv import AuthoritySrv
+from ... import config, namespace, service, utils
 
 
 class PrivilegedNode(Node):
@@ -70,10 +69,8 @@ class PrivilegedNode(Node):
         super().__init__(node_name, **kwargs)
         self.logger = self.get_logger()
 
-        self.request_cli = self.create_client(
-            AuthoritySrv,
-            f"{namespace.auth}/request",
-            callback_group=MutuallyExclusiveCallbackGroup(),
+        self.request_cli = service.privilege_request.client(
+            self, callback_group=MutuallyExclusiveCallbackGroup()
         )
         self.ping_srv = None
 
@@ -92,9 +89,8 @@ class PrivilegedNode(Node):
         self.__has_privilege = privileged
         if privileged:
             try:
-                self.ping_srv = self.create_service(
-                    Empty,
-                    f"{namespace.auth}/ping",
+                self.ping_srv = service.privilege_ping.service(
+                    self,
                     utils.respond_to_ping,
                     callback_group=MutuallyExclusiveCallbackGroup(),
                 )
@@ -183,7 +179,7 @@ class PrivilegedNode(Node):
         return self.has_privilege
 
     @staticmethod
-    def require_privilege(callable_obj: Callable[[Any], Any]) -> Callable[[Any], Any]:
+    def require_privilege(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
         """Decorator to mark conflict-unsafe functions.
 
         Use ``@PrivilegedNode.require_privilege``. Other form of reference including
@@ -230,6 +226,9 @@ class PrivilegedNode(Node):
         """
         self._set_privilege(False)
         super().destroy_node()
+
+
+require_privilege = PrivilegedNode.require_privilege
 
 
 def main(args=None):

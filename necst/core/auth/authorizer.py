@@ -3,12 +3,12 @@ __all__ = ["Authorizer"]
 from typing import Optional
 
 import rclpy
+from necst_msgs.srv import AuthoritySrv
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
-from .. import config, namespace, utils
-from necst_msgs.srv import AuthoritySrv
+from ... import config, namespace, service, utils
 
 
 class Authorizer(Node):
@@ -43,14 +43,11 @@ class Authorizer(Node):
 
         self.__approved: Optional[str] = None
 
-        self.request_srv = self.create_service(
-            AuthoritySrv,
-            "request",
-            self._authorize,
-            callback_group=MutuallyExclusiveCallbackGroup(),
+        self.request_srv = service.privilege_request.service(
+            self, self._authorize, callback_group=MutuallyExclusiveCallbackGroup()
         )
-        self.ping_cli = self.create_client(
-            Empty, "ping", callback_group=MutuallyExclusiveCallbackGroup()
+        self.ping_cli = service.privilege_ping.client(
+            self, callback_group=MutuallyExclusiveCallbackGroup()
         )
 
     @property

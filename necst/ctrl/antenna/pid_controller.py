@@ -3,13 +3,13 @@ from typing import List, Tuple
 
 from neclib.controllers import PIDController
 from neclib.safety import Decelerate
-from rclpy.node import Node
-
-from ... import config, namespace, qos
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
+from ... import config, namespace, topic
+from ...core import AlertHandlerNode
 
-class AntennaPIDController(Node):
+
+class AntennaPIDController(AlertHandlerNode):
 
     NodeName = "controller"
     Namespace = namespace.antenna
@@ -32,15 +32,11 @@ class AntennaPIDController(Node):
                 max_acceleration=max_accel.el,
             ),
         }
-        self.create_subscription(CoordMsg, "altaz", self.update_command, qos.realtime)
-        self.create_subscription(
-            CoordMsg, "encoder", self.update_encoder_reading, qos.realtime
-        )
-        self.publisher = self.create_publisher(TimedAzElFloat64, "speed", qos.realtime)
+        topic.altaz_cmd.subscription(self, self.update_command)
+        topic.antenna_encoder.subscription(self, self.update_encoder_reading)
+        self.publisher = topic.antenna_speed_cmd.publisher(self)
         self.create_timer(1 / config.antenna_command_frequency, self.calc_pid)
-        self.create_subscription(
-            PIDMsg, "pid_param", self.change_pid_param, qos.reliable
-        )
+        topic.pid_param.subscription(self, self.change_pid_param)
         self.az_enc = self.el_enc = self.t_enc = None
         self.cmd_list: List[CoordMsg] = []
 
@@ -53,8 +49,24 @@ class AntennaPIDController(Node):
             config.antenna_max_acceleration_el.to_value("deg/s^2"),
         )
 
+        self.gc = self.create_guard_condition(self._emergency_stop)
+
+    def _emergency_stop(self) -> None:
+        if any(p is None for p in [self.az_enc, self.el_enc]):
+            _az_speed, _el_speed = 0, 0
+        else:
+            _az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
+            _el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
+        az_speed = float(self.decelerate_az(self.az_enc, _az_speed))
+        el_speed = float(self.decelerate_el(self.el_enc, _el_speed))
+        msg = TimedAzElFloat64(az=float(az_speed), el=float(el_speed), time=time.time())
+        self.publisher.publish(msg)
+
     def get_valid_command(self) -> Tuple[float, float]:
         now = time.time()
+        if (self.t_enc is not None) and (self.t_enc < now - 5):
+            self.az_enc, self.el_enc = None, None
+
         self.cmd_list.sort(key=lambda msg: msg.time)
         while len(self.cmd_list) > 1:
             msg = self.cmd_list.pop(0)
@@ -70,6 +82,11 @@ class AntennaPIDController(Node):
         return None, None
 
     def calc_pid(self) -> None:
+        if self.status.critical():
+            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
+            self.gc.trigger()
+            return
+
         lon, lat = self.get_valid_command()
         if any(p is None for p in [self.az_enc, self.el_enc]):
             # Encoder reading isn't available at all, no calculation can be performed
@@ -78,9 +95,9 @@ class AntennaPIDController(Node):
         elif (self.t_enc < time.time() - 1) or any(p is None for p in [lon, lat]):
             # If ncoder reading is stale, or real-time command coordinate isn't
             # available, decelerate to 0 with `max_acceleration`.
-            with self.controller["az"].param(
+            with self.controller["az"].params(
                 k_i=0, k_d=0, accel_limit_off=-1
-            ), self.controller["el"].param(k_i=0, k_d=0, accel_limit_off=-1):
+            ), self.controller["el"].params(k_i=0, k_d=0, accel_limit_off=-1):
                 # Decay speed to zero
                 az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
                 el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
@@ -102,6 +119,11 @@ class AntennaPIDController(Node):
 
     def change_pid_param(self, msg: PIDMsg) -> None:
         axis = msg.axis.lower()
+        Kp, Ki, Kd = (getattr(self.controller[axis], k) for k in ("k_p", "k_i", "k_d"))
+        self.logger.warning(
+            f"PID parameter for {axis=} has been changed from {(Kp, Ki, Kd) = } "
+            f"to ({msg.k_p}, {msg.k_i}, {msg.k_d})"
+        )
         self.controller[axis].k_p = msg.k_p
         self.controller[axis].k_i = msg.k_i
         self.controller[axis].k_d = msg.k_d

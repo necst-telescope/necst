@@ -2,14 +2,14 @@ __all__ = ["HorizontalCoord"]
 
 import queue
 import time
-from typing import Tuple
 from functools import partial
+from typing import Tuple
 
 from neclib.coordinates import CoordCalculator, DriveLimitChecker
+from necst_msgs.msg import CoordMsg, TimedFloat64
 from rclpy.node import Node
 
-from necst import config, namespace, qos
-from necst_msgs.msg import CoordMsg, TimedFloat64
+from ... import config, namespace, topic
 
 
 class HorizontalCoord(Node):
@@ -37,23 +37,17 @@ class HorizontalCoord(Node):
             ),
         }
 
-        self.publisher = self.create_publisher(CoordMsg, "altaz", qos.realtime)
-        self.create_subscription(CoordMsg, "raw_coord", self._update_cmd, qos.reliable)
-        self.create_subscription(CoordMsg, "encoder", self._update_enc, qos.realtime)
+        self.publisher = topic.altaz_cmd.publisher(self)
+        topic.raw_coord.subscription(self, self._update_cmd)
+        topic.antenna_encoder.subscription(self, self._update_enc)
 
         callback_temp = partial(self.change_weather, "temperature")
-        callback_pres = partial(self.change_weather, "pressuer")
+        callback_pres = partial(self.change_weather, "pressure")
         callback_hum = partial(self.change_weather, "humidty")
 
-        self.create_subscription(
-            TimedFloat64, f"{namespace.root}/temperature", callback_temp, qos.realtime
-        )
-        self.create_subscription(
-            TimedFloat64, f"{namespace.root}/pressuer", callback_pres, qos.realtime
-        )
-        self.create_subscription(
-            TimedFloat64, f"{namespace.root}/humidity", callback_hum, qos.realtime
-        )
+        topic.weather_temperature.subscription(self, callback_temp)
+        topic.weather_pressure.subscription(self, callback_pres)
+        topic.weather_humidity.subscription(self, callback_hum)
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(1, self.convert)
@@ -133,7 +127,7 @@ class HorizontalCoord(Node):
     def change_weather(self, kind: str, msg: TimedFloat64) -> None:
         if kind == "temperature":
             self.calculator.temperature = msg.data
-        elif kind == "pressuer":
+        elif kind == "pressure":
             self.calculator.pressure = msg.data
         else:
             self.calculator.relative_humidity = msg.data

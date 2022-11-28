@@ -1,9 +1,9 @@
 import time
 
 from neclib.devices import AntennaEncoder as AntennaEncoderDevice
-
 from necst_msgs.msg import CoordMsg
-from ... import namespace, qos
+
+from ... import namespace, topic
 from ...core import DeviceNode
 
 
@@ -14,7 +14,7 @@ class AntennaEncoder(DeviceNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.publisher = self.create_publisher(CoordMsg, "encoder", qos.realtime)
+        self.publisher = topic.antenna_encoder.publisher(self)
         self.encoder = AntennaEncoderDevice()
         self.create_timer(1 / 15, self.stream)  # TODO: Parametrize
 
