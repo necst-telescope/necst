@@ -5,8 +5,8 @@ import time
 from functools import partial
 from typing import Tuple
 
-from neclib.coordinates import CoordCalculator, DriveLimitChecker
-from necst_msgs.msg import CoordMsg, TimedFloat64
+from neclib.coordinates import CoordCalculator, DriveLimitChecker, PathFinder
+from necst_msgs.msg import CoordCmdMsg, CoordMsg, TimedFloat64
 from rclpy.node import Node
 
 from ... import config, namespace, topic
@@ -25,7 +25,14 @@ class HorizontalCoord(Node):
         self.enc_az = self.enc_el = None
 
         self.calculator = CoordCalculator(
-            config.location, config.antenna_pointing_parameter_path
+            config.location,
+            config.antenna_pointing_parameter_path,
+            obsfreq=config.observation_frequency,  # TODO: Make ``obsfreq`` changeable.
+        )  # TODO: Take weather data into account.
+        self.finder = PathFinder(
+            config.location,
+            config.antenna_pointing_parameter_path,
+            obsfreq=config.observation_frequency,  # TODO: Make ``obsfreq`` changeable.
         )  # TODO: Take weather data into account.
         drive_limit = config.antenna_drive
         self.optimizer = {
@@ -55,7 +62,7 @@ class HorizontalCoord(Node):
         self.result_queue = queue.Queue()
         self.last_result = None
 
-    def _update_cmd(self, msg: CoordMsg) -> None:
+    def _update_cmd(self, msg: CoordCmdMsg) -> None:
         self.cmd = msg
         self.result_queue = queue.Queue()
 
@@ -88,23 +95,32 @@ class HorizontalCoord(Node):
             return
 
         name_query = bool(self.cmd.name)
-        obstime = self.cmd.time
+        obstime = self.cmd.time[0]
         if obstime == 0.0:
             obstime = None
         elif obstime < time.time() + config.antenna_command_offset_sec:
             self.logger.warning("Got outdated command, ignoring...")
             return
 
-        if name_query:
-            az, el, t = self.calculator.get_altaz_by_name(self.cmd.name, obstime)
-        else:
-            az, el, t = self.calculator.get_altaz(
-                self.cmd.lon,
-                self.cmd.lat,
-                self.cmd.frame,
+        if all(len(x) == 2 for x in [self.cmd.lon, self.cmd.lat]):  # SCAN
+            az, el, t = self.finder.linear(
+                start=(self.cmd.lon[0], self.cmd.lat[0]),
+                end=(self.cmd.lon[1], self.cmd.lat[1]),
+                frame=self.cmd.frame,
+                speed=self.cmd.speed,
                 unit=self.cmd.unit,
-                obstime=obstime,
             )
+        else:  # POINT
+            if name_query:
+                az, el, t = self.calculator.get_altaz_by_name(self.cmd.name, obstime)
+            else:
+                az, el, t = self.calculator.get_altaz(
+                    self.cmd.lon[0],
+                    self.cmd.lat[0],
+                    self.cmd.frame,
+                    unit=self.cmd.unit,
+                    obstime=obstime,
+                )
 
         az, el = self._validate_drive_range(az, el)
         for _az, _el, _t in zip(az, el, t):
@@ -127,7 +143,10 @@ class HorizontalCoord(Node):
     def change_weather(self, kind: str, msg: TimedFloat64) -> None:
         if kind == "temperature":
             self.calculator.temperature = msg.data
+            self.finder.temperature = msg.data
         elif kind == "pressure":
             self.calculator.pressure = msg.data
+            self.finder.pressure = msg.data
         else:
             self.calculator.relative_humidity = msg.data
+            self.finder.relative_humidity = msg.data

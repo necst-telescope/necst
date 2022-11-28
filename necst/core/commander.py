@@ -3,9 +3,9 @@ from collections import defaultdict
 from functools import partial
 from typing import Any, Literal, Optional, Tuple
 
-from neclib.coordinates import PathFinder
+from neclib.coordinates import StandbyPosition
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import AlertMsg, CoordMsg, PIDMsg
+from necst_msgs.msg import AlertMsg, CoordCmdMsg, PIDMsg
 
 from .. import NECSTTimeoutError, config, namespace, topic, utils
 from .auth import PrivilegedNode, require_privilege
@@ -77,24 +77,45 @@ class Commander(PrivilegedNode):
 
         elif cmd == "POINT":
             if name is not None:
-                msg = CoordMsg(time=time, name=name)
+                msg = CoordCmdMsg(time=[time], name=name)
             else:
-                msg = CoordMsg(
-                    lon=float(lon), lat=float(lat), unit=unit, frame=frame, time=time
+                msg = CoordCmdMsg(
+                    lon=[float(lon)],
+                    lat=[float(lat)],
+                    unit=unit,
+                    frame=frame,
+                    time=time,
                 )
             self.publisher["coord"].publish(msg)
             return self.wait_convergence("antenna") if wait else None
 
         elif cmd == "SCAN":
-            # TODO: Consider blocking if wait.
+            standby = StandbyPosition()
+            standby_lon, standby_lat = standby.standby_position(
+                start=start, end=end, unit=unit
+            )
+            self.antenna(
+                "point",
+                lon=standby_lon,
+                lat=standby_lat,
+                unit=unit,
+                frame=frame,
+                wait=True,
+            )
 
-            ...
-
-            ...
-
-            ...
+            msg = CoordCmdMsg(
+                lon=[standby_lon, end[0]],
+                lat=[standby_lat, end[1]],
+                unit=unit,
+                frame=frame,
+                time=[time],
+                speed=speed,
+            )
+            self.publisher["coord"].publish(msg)
+            # TODO: Wait regardless of ``wait``.
 
             self.antenna("stop")
+            return  # TODO: Wait if necessary.
         else:
             raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
 
@@ -132,7 +153,7 @@ class Commander(PrivilegedNode):
                 error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
                 error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
                 if checker.check(
-                    error_az**2 + error_el**2 < threshold[target] ** 2
+                    error_az ** 2 + error_el ** 2 < threshold[target] ** 2
                 ):
                     return
                 pytime.sleep(0.05)
