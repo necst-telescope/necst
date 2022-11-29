@@ -84,7 +84,7 @@ class Commander(PrivilegedNode):
                     lat=[float(lat)],
                     unit=unit,
                     frame=frame,
-                    time=time,
+                    time=[time],
                 )
             self.publisher["coord"].publish(msg)
             return self.wait_convergence("antenna") if wait else None
