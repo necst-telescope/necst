@@ -153,7 +153,7 @@ class Commander(PrivilegedNode):
                 error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
                 error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
                 if checker.check(
-                    error_az ** 2 + error_el ** 2 < threshold[target] ** 2
+                    error_az**2 + error_el**2 < threshold[target] ** 2
                 ):
                     return
                 pytime.sleep(0.05)
