@@ -7,7 +7,7 @@ from necst.core import Commander
 from neclib.parameters import PointingError
 
 
-rclpy.init
+rclpy.init()
 com = Commander()
 com.get_privilege()
 
