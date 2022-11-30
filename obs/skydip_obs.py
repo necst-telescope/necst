@@ -2,11 +2,9 @@
 import time
 import argparse
 
-from numpy import insert
-
 import rclpy
 from necst.core import Commander
-from neclib.parameters import PointingError as pe
+from neclib.parameters import PointingError
 
 
 rclpy.init
@@ -14,6 +12,10 @@ com = Commander()
 com.get_privilege()
 
 def skydip(integ_time):
+    default_lon = com.parameters[encoder.az]
+    params = PointingError.from_file("path/to/params.toml")
+    convert_lon = params.apparent2refracted(az=default_lon, unit="deg")
+
     com.chopper("insert")
     time.sleep(integ_time)
     com.chopper("eject")
@@ -21,7 +23,7 @@ def skydip(integ_time):
 
     z = [80, 70, 60, 45, 30, 25, 20]
     for i in z:
-        com.antenna("point", lon=lon, lat=i, frame="altaz", unit="deg", wait=True)
+        com.antenna("point", lon=convert_lon, lat=i, frame="altaz", unit="deg", wait=True)
         time.sleep(integ_time)
 
     com.chopper("insert")
