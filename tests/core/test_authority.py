@@ -1,10 +1,13 @@
+from typing import Type
+
 import pytest
 from rclpy.exceptions import InvalidHandle
+from rclpy.executors import Executor
 
 from necst.core import Authorizer, PrivilegedNode, require_privilege
 from necst.utils import get_absolute_name, spinning
 
-from ..conftest import TesterNode, destroy, temp_config
+from ..conftest import TesterNode, destroy, executor_type, temp_config
 
 
 class TestAuthority(TesterNode):
@@ -163,7 +166,7 @@ class TestAuthority(TesterNode):
             destroy(initial)
 
             with temp_config(ros_service_timeout_sec=1):
-                secondary.get_privilege() is True
+                assert secondary.get_privilege() is True
             assert auth_server.approved == secondary.identity
 
         destroy([auth_server, secondary])
@@ -181,3 +184,12 @@ class TestAuthority(TesterNode):
             assert initial.approved == auth_client.identity
 
         destroy([initial, auth_client])
+
+    @executor_type
+    def test_assigning_executor_is_error(self, executor_type: Type[Executor]):
+        auth = Authorizer()
+        executor = executor_type()
+        with pytest.raises(ValueError):
+            executor.add_node(auth)
+        executor.shutdown()
+        destroy(auth)
