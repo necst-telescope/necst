@@ -57,7 +57,7 @@ class Commander(PrivilegedNode):
         lat: Optional[Union[int, float]] = None,
         unit: Optional[str] = None,
         frame: Optional[str] = None,
-        time: Optional[Union[int, float]] = 0,
+        time: Union[int, float] = 0,
         name: Optional[str] = None,
         wait: bool = True,
     ) -> None:
@@ -81,10 +81,14 @@ class Commander(PrivilegedNode):
 
         elif CMD == "POINT":
             if name is not None:
-                msg = CoordMsg(time=time, name=name)
+                msg = CoordMsg(time=float(time), name=name)
             else:
                 msg = CoordMsg(
-                    lon=float(lon), lat=float(lat), unit=unit, frame=frame, time=time
+                    lon=float(lon),
+                    lat=float(lat),
+                    unit=unit,
+                    frame=frame,
+                    time=float(time),
                 )
             self.publisher["coord"].publish(msg)
             return self.wait_convergence("antenna") if wait else None
