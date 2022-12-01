@@ -3,6 +3,7 @@ __all__ = ["spinning"]
 import threading
 from typing import Optional, Sequence, Union
 
+from neclib import get_logger
 from rclpy.executors import Executor, SingleThreadedExecutor
 from rclpy.node import Node
 
@@ -31,8 +32,15 @@ class spinning:
         self.executor = executor or SingleThreadedExecutor()
         self.using_private_executor = executor is None
 
-        self.nodes = [node] if isinstance(node, Node) else node
-        _ = [self.executor.add_node(n) for n in self.nodes]
+        nodes = [node] if isinstance(node, Node) else node
+        executor_already_attached = [n for n in nodes if n.executor is not None]
+        if len(executor_already_attached) > 0:
+            get_logger(self.__class__.__name__).warning(
+                f"Cannot spin {executor_already_attached}; executor already attached."
+            )
+
+        self.nodes = list(filter(lambda n: n.executor is None, nodes))
+        [self.executor.add_node(n) for n in self.nodes if n.executor is None]
 
     def __enter__(self) -> None:
         self._stop = threading.Event()

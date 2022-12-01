@@ -24,6 +24,7 @@
                 "files.trimTrailingWhitespace": true,
                 "python.analysis.autoImportCompletions": false,
                 "python.formatting.provider": "black",
+                "python.languageServer": "Pylance",
                 "[python]": {
                     "editor.formatOnSave": true,
                     "editor.tabSize": 4,

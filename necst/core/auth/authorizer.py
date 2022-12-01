@@ -4,14 +4,14 @@ from typing import Optional
 
 import rclpy
 from necst_msgs.srv import AuthoritySrv
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.node import Node
+from rclpy.callback_groups import ReentrantCallbackGroup
 from std_srvs.srv import Empty
 
 from ... import config, namespace, service, utils
+from ..server_node import ServerNode
 
 
-class Authorizer(Node):
+class Authorizer(ServerNode):
     """Singleton privilege server.
 
     To interact with this server, subclass `PrivilegeNode`.
@@ -44,35 +44,35 @@ class Authorizer(Node):
         self.__approved: Optional[str] = None
 
         self.request_srv = service.privilege_request.service(
-            self, self._authorize, callback_group=MutuallyExclusiveCallbackGroup()
+            self, self._authorize, callback_group=ReentrantCallbackGroup()
         )
         self.ping_cli = service.privilege_ping.client(
-            self, callback_group=MutuallyExclusiveCallbackGroup()
+            self, callback_group=ReentrantCallbackGroup()
         )
+
+        self.start_server()
 
     @property
     def approved(self) -> Optional[str]:
         """Identity string of currently privileged node."""
         return self.__approved
 
-    def _ping(self, timeout_sec: float = None) -> bool:
+    def _ping(self, timeout_sec: Optional[float] = None) -> bool:
         """Assume auth ping server only responds if it has privilege."""
         self.logger.info("Checking status of current privileged node...")
         if not utils.wait_for_server_to_pick_up(self.ping_cli):
             self.logger.info("Ping server on current privileged node is unreachable.")
             return False
 
-        executor = self.executor
-        if executor is None:
-            executor = rclpy.get_global_executor()
-            executor.add_node(self)
+        if timeout_sec is None:
+            timeout_sec = config.ros_service_timeout_sec
 
-        timeout = config.ros_service_timeout_sec if timeout_sec is None else timeout_sec
         request = Empty.Request()
         future = self.ping_cli.call_async(request)
-        executor.spin_until_future_complete(future, timeout)
-        # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
+        self.wait_until_future_complete(future, timeout_sec)
+        # NOTE: Use of `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock. Reason unknown.
+
         return future.done()
 
     def _authorize(

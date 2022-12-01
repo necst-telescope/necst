@@ -1,13 +1,10 @@
-from typing import Type
-
 import pytest
 from rclpy.exceptions import InvalidHandle
-from rclpy.executors import Executor
 
 from necst.core import Authorizer, PrivilegedNode, require_privilege
 from necst.utils import get_absolute_name, spinning
 
-from ..conftest import TesterNode, destroy, executor_type, temp_config
+from ..conftest import TesterNode, destroy, temp_config
 
 
 class TestAuthority(TesterNode):
@@ -72,6 +69,27 @@ class TestAuthority(TesterNode):
             assert my_node.some_operation(100) is None
 
         destroy([auth_server, my_node])
+
+    def test_privilege_escape_command(self):
+        class MyNode(PrivilegedNode):
+            def __init__(self):
+                super().__init__("test_node")
+
+            @require_privilege(escape_cmd=["?"])
+            def operate(self, cmd: str) -> str:
+                return cmd
+
+        auth = Authorizer()
+        my_node = MyNode()
+        with spinning(auth):
+            assert my_node.operate("run") is None
+            assert my_node.operate("?") == "?"
+
+            my_node.get_privilege()
+            assert my_node.operate("run") == "run"
+            assert my_node.operate("?") == "?"
+            my_node.quit_privilege()
+        destroy([auth, my_node])
 
     def test_reject_privilege_request_when_other_node_has_one(self):
         auth_server = Authorizer()
@@ -163,53 +181,3 @@ class TestAuthority(TesterNode):
             assert initial.approved == auth_client.identity
 
         destroy([initial, auth_client])
-
-    @executor_type
-    def test_no_deadlock_when_server_only(self, executor_type: Type[Executor]):
-        auth_server = Authorizer()
-
-        executor = executor_type()
-        executor.add_node(auth_server)
-
-        for _ in range(100):
-            executor.spin_once(timeout_sec=0)
-        assert auth_server.approved is None
-
-        [n.destroy_node() for n in executor.get_nodes()]
-        [executor.remove_node(n) for n in executor.get_nodes()]
-        executor.shutdown()
-
-    @executor_type
-    def test_no_deadlock_when_client_only(self, executor_type: Type[Executor]):
-        auth_client = PrivilegedNode("test_node")
-
-        executor = executor_type()
-        executor.add_node(auth_client)
-
-        for _ in range(100):
-            executor.spin_once(timeout_sec=0)
-        with temp_config(ros_service_timeout_sec=1):
-            assert auth_client.get_privilege() is False
-            assert auth_client.quit_privilege() is False
-
-        [n.destroy_node() for n in executor.get_nodes()]
-        [executor.remove_node(n) for n in executor.get_nodes()]
-        executor.shutdown()
-
-    @executor_type
-    def test_no_deadlock(self, executor_type: Type[Executor]):
-        auth_server = Authorizer()
-        auth_client = PrivilegedNode("test_node")
-
-        executor = executor_type()
-        executor.add_node(auth_server)
-        executor.add_node(auth_client)
-
-        for _ in range(100):
-            executor.spin_once(timeout_sec=0)
-        assert auth_client.get_privilege() is True
-        assert auth_client.quit_privilege() is False
-
-        [n.destroy_node() for n in executor.get_nodes()]
-        [executor.remove_node(n) for n in executor.get_nodes()]
-        executor.shutdown()
