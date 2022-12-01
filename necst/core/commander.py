@@ -43,7 +43,7 @@ class Commander(PrivilegedNode):
     def __callback(self, name: str, msg: Any) -> None:
         self.parameters[name] = msg
 
-    def get_parameter(self, key: str) -> Any:
+    def get_message(self, key: str) -> Any:
         while self.parameters[key] is None:
             pytime.sleep(0.01)
         return self.parameters[key]
@@ -97,7 +97,7 @@ class Commander(PrivilegedNode):
         """Calibrator."""
         CMD = cmd.upper()
         if CMD == "?":
-            return self.get_parameter("chopper")
+            return self.get_message("chopper")
         elif CMD == "INSERT":
             msg = ChopperMsg(insert=True, time=pytime.time())
             self.publisher["chopper"].publish(msg)
@@ -109,7 +109,7 @@ class Commander(PrivilegedNode):
 
         if wait:
             target_status = CMD == "INSERT"
-            while self.get_parameter("chopper").insert is not target_status:
+            while self.get_message("chopper").insert is not target_status:
                 pytime.sleep(0.1)
 
     def wait_convergence(
