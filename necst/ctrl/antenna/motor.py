@@ -34,8 +34,8 @@ class AntennaMotor(DeviceNode):
         self.motor.set_speed(msg.el, "el")
 
     def stream_speed(self) -> None:
-        readout_az = self.motor.get_speed("az")
-        readout_el = self.motor.get_speed("el")
+        readout_az = self.motor.get_speed("az").to_value("deg/s").item()
+        readout_el = self.motor.get_speed("el").to_value("deg/s").item()
         speed_msg = TimedAzElFloat64(
             az=float(readout_az), el=float(readout_el), time=time.time()
         )
