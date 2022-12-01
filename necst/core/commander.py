@@ -5,9 +5,8 @@ from typing import Any, Literal, Optional
 
 from neclib.utils import ConditionChecker
 from necst_msgs.msg import AlertMsg, ChopperMsg, CoordMsg, PIDMsg
-from rclpy.executors import SingleThreadedExecutor
 
-from .. import NECSTTimeoutError, config, namespace, topic, utils
+from .. import NECSTTimeoutError, config, namespace, topic
 from .auth import PrivilegedNode, require_privilege
 
 
@@ -46,8 +45,7 @@ class Commander(PrivilegedNode):
 
     def __get_parameter(self, key: str) -> Any:
         while self.parameters[key] is None:
-            with utils.spinning(self):
-                pytime.sleep(0.01)
+            pytime.sleep(0.01)
         return self.parameters[key]
 
     @require_privilege(escape_cmd=["?"])
@@ -66,20 +64,19 @@ class Commander(PrivilegedNode):
         """Control antenna direction and motion."""
         cmd = cmd.upper()
         if cmd == "STOP":
-            with utils.spinning(self):
-                target = [namespace.antenna]
-                msg = AlertMsg(critical=True, warning=True, target=target)
-                checker = ConditionChecker(5, reset_on_failure=True)
-                while not checker.check(
-                    (self.parameters["speed"] is not None)
-                    and (abs(self.parameters["speed"].az) < 1e-5)
-                    and (abs(self.parameters["speed"].el) < 1e-5)
-                ):
-                    self.publisher["alert_stop"].publish(msg)
-                    pytime.sleep(1 / config.antenna_command_frequency)
-
-                msg = AlertMsg(critical=False, warning=False, target=target)
+            target = [namespace.antenna]
+            msg = AlertMsg(critical=True, warning=True, target=target)
+            checker = ConditionChecker(5, reset_on_failure=True)
+            while not checker.check(
+                (self.parameters["speed"] is not None)
+                and (abs(self.parameters["speed"].az) < 1e-5)
+                and (abs(self.parameters["speed"].el) < 1e-5)
+            ):
                 self.publisher["alert_stop"].publish(msg)
+                pytime.sleep(1 / config.antenna_command_frequency)
+
+            msg = AlertMsg(critical=False, warning=False, target=target)
+            self.publisher["alert_stop"].publish(msg)
             return
 
         elif cmd == "POINT":
@@ -131,18 +128,15 @@ class Commander(PrivilegedNode):
 
         timelimit = None if timeout_sec is None else pytime.time() + timeout_sec
         checker = ConditionChecker(10, reset_on_failure=True)
-        with utils.spinning(self):
-            while (timelimit is None) or (pytime.time() < timelimit):
-                if (self.parameters[ENC] is None) or (self.parameters[CMD] is None):
-                    pytime.sleep(0.05)
-                    continue
-                error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
-                error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
-                if checker.check(
-                    error_az**2 + error_el**2 < threshold[target] ** 2
-                ):
-                    return
+        while (timelimit is None) or (pytime.time() < timelimit):
+            if (self.parameters[ENC] is None) or (self.parameters[CMD] is None):
                 pytime.sleep(0.05)
+                continue
+            error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
+            error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
+            if checker.check(error_az**2 + error_el**2 < threshold[target] ** 2):
+                return
+            pytime.sleep(0.05)
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
 
     @require_privilege
