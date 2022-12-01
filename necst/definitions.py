@@ -1,6 +1,6 @@
 __all__ = ["namespace", "topic", "qos", "service"]
 
-from neclib import config
+from neclib import config, get_logger
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import (
@@ -11,12 +11,15 @@ from rclpy.qos import (
     ReliabilityPolicy,
 )
 
+logger = get_logger(__name__)
+
 
 class namespace:
     root: str = f"/necst/{config.observatory}"
 
     ctrl: str = f"{root}/ctrl"
     antenna: str = f"{ctrl}/antenna"
+    calib: str = f"{ctrl}/calib"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
@@ -83,6 +86,12 @@ class qos:
             qos_info, key=lambda q: q.liveliness_lease_duration.nanoseconds
         ).liveliness_lease_duration
 
+        logger.debug(
+            f"QoS profile for topic {topicname!r}:\n\t{reliability = }\n"
+            f"\t{durability = }\n\t{deadline = }\n\t{liveliness = }\n"
+            f"\t{lease_duration = }\n\thistory = KEEP_LAST (default)\n\tdepth = 10"
+        )
+
         return QoSProfile(
             reliability=reliability,
             durability=durability,
@@ -97,6 +106,7 @@ class qos:
 class topic:
     from necst_msgs.msg import (
         AlertMsg,
+        ChopperMsg,
         CoordMsg,
         PIDMsg,
         TimedAzElFloat64,
@@ -139,6 +149,10 @@ class topic:
         TimedAzElInt64, "actual_step", qos.realtime, namespace.antenna
     )
     pid_param = Topic(PIDMsg, "pid_param", qos.reliable, namespace.antenna)
+    chopper_cmd = Topic(ChopperMsg, "chopper_cmd", qos.reliable, namespace.calib)
+    chopper_status = Topic(
+        ChopperMsg, "chopper_status", qos.reliable, namespace.calib
+    )  # Set to reliable, because of low data acquisition frequency.
 
 
 class service:
