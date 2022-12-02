@@ -5,7 +5,7 @@ import time
 from functools import partial
 from typing import Tuple
 
-from neclib.coordinates import CoordCalculator, DriveLimitChecker, PathFinder
+from neclib.coordinates import DriveLimitChecker, PathFinder
 from necst_msgs.msg import CoordCmdMsg, CoordMsg, TimedFloat64
 from rclpy.node import Node
 
@@ -24,11 +24,6 @@ class HorizontalCoord(Node):
         self.cmd = None
         self.enc_az = self.enc_el = None
 
-        self.calculator = CoordCalculator(
-            config.location,
-            config.antenna_pointing_parameter_path,
-            obsfreq=config.observation_frequency,  # TODO: Make ``obsfreq`` changeable.
-        )  # TODO: Take weather data into account.
         self.finder = PathFinder(
             config.location,
             config.antenna_pointing_parameter_path,
@@ -112,9 +107,9 @@ class HorizontalCoord(Node):
             )
         else:  # POINT
             if name_query:
-                az, el, t = self.calculator.get_altaz_by_name(self.cmd.name, obstime)
+                az, el, t = self.finder.get_altaz_by_name(self.cmd.name, obstime)
             else:
-                az, el, t = self.calculator.get_altaz(
+                az, el, t = self.finder.get_altaz(
                     self.cmd.lon[0],
                     self.cmd.lat[0],
                     self.cmd.frame,
@@ -142,11 +137,8 @@ class HorizontalCoord(Node):
 
     def change_weather(self, kind: str, msg: TimedFloat64) -> None:
         if kind == "temperature":
-            self.calculator.temperature = msg.data
             self.finder.temperature = msg.data
         elif kind == "pressure":
-            self.calculator.pressure = msg.data
             self.finder.pressure = msg.data
         else:
-            self.calculator.relative_humidity = msg.data
             self.finder.relative_humidity = msg.data
