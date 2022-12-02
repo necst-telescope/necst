@@ -11,12 +11,13 @@ ENV SHELL=/bin/bash
 
 ENV PATH=$PATH:/home/$USERNAME/.local/bin
 ENV ROS2_WS=/home/$USERNAME/ros2_ws
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
 RUN apt-get update \
-    && apt-get install -y curl git gnupg2 openssh-client python3-pip sudo vim \
+    && apt-get install -y curl git gnupg2 openssh-client python3-pip sudo vim ros-${DISTRO}-rmw-cyclonedds-cpp \
     && apt-get clean \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
