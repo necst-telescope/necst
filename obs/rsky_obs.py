@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-import time
 import argparse
+import time
 
 import rclpy
-from necst.core import Commander
 from neclib.parameters import PointingError
+from necst.core import Commander
 
-
-rclpy.init()
-com = Commander()
-com.get_privilege()
 
 def rsky(n, integ_time):
-    default_lon = com.parameters[encoder.az]
+    com = Commander()
+    com.get_privilege()
+
+    default_lon = com.parameters["encoder"].az
     params = PointingError.from_file("path/to/params.toml")
     convert_lon = params.apparent2refracted(az=default_lon, unit="deg")
 
@@ -20,29 +19,33 @@ def rsky(n, integ_time):
     for i in range(n):
         com.chopper("insert")
         time.sleep(integ_time)
-        com.chopper("eject")
+        com.chopper("remove")
         time.sleep(integ_time)
 
-description = "R sky Observation"
-p = argparse.ArgumentParser(description=description)
-p.add_argument(
-    "-n",
-    type=int,
-    help="Number of repetitions",
-    default=1,
-)
-p.add_argument(
-    "--integ_time",
-    type=float,
-    help="Integration time for the R-sky obs.",
-    default=2,
-)
-args = p.parse_args()
 
-try:
-    rsky(n=args.n, integ_time=args.integ_time)
-except KeyboardInterrupt:
-    pass
-finally:
-    com.quit_privilege()
-    rclpy.try_shutdown()
+if __name__ == "__main__":
+    description = "R sky Observation"
+    p = argparse.ArgumentParser(description=description)
+    p.add_argument(
+        "-n",
+        type=int,
+        help="Number of repetitions",
+        default=1,
+    )
+    p.add_argument(
+        "--integ_time",
+        type=float,
+        help="Integration time for the R-sky obs.",
+        default=2,
+    )
+    args = p.parse_args()
+
+    rclpy.init()
+
+    try:
+        rsky(n=args.n, integ_time=args.integ_time)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        com.quit_privilege()
+        rclpy.try_shutdown()

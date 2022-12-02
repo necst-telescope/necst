@@ -18,7 +18,7 @@ def skydip(integ_time):
 
     com.chopper("insert")
     time.sleep(integ_time)
-    com.chopper("eject")
+    com.chopper("remove")
     time.sleep(integ_time)
 
     z = [80, 70, 60, 45, 30, 25, 20]
@@ -28,7 +28,7 @@ def skydip(integ_time):
 
     com.chopper("insert")
     time.sleep(integ_time)
-    com.chopper("eject")
+    com.chopper("remove")
     time.sleep(integ_time)
 
 description = "Skydip Observation"
