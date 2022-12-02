@@ -4,23 +4,35 @@ import time
 
 import rclpy
 from neclib.parameters import PointingError
+from necst import config
 from necst.core import Commander
 
 
-def rsky(n, integ_time):
+def RSky(n, integ_time):
     com = Commander()
     com.get_privilege()
 
-    default_lon = com.parameters["encoder"].az
-    params = PointingError.from_file("path/to/params.toml")
-    convert_lon = params.apparent2refracted(az=default_lon, unit="deg")
+    default_pos = com.parameters["encoder"]
+    params = PointingError.from_file(config.antenna_pointing_parameter_path)
+    convert_lon, *_ = params.apparent2refracted(
+        az=default_pos.lon, el=default_pos.lat, unit="deg"
+    )
 
-    com.antenna("point", lon=convert_lon, lat=45, frame="altaz", unit="deg", wait=True)
-    for i in range(n):
+    com.antenna(
+        "point",
+        lon=convert_lon.to_value("deg"),
+        lat=45,
+        frame="altaz",
+        unit="deg",
+        wait=True,
+    )
+    for _ in range(n):
         com.chopper("insert")
         time.sleep(integ_time)
         com.chopper("remove")
         time.sleep(integ_time)
+    com.quit_privilege()
+    com.destroy_node()
 
 
 if __name__ == "__main__":
@@ -33,6 +45,7 @@ if __name__ == "__main__":
         default=1,
     )
     p.add_argument(
+        "-i",
         "--integ_time",
         type=float,
         help="Integration time for the R-sky obs.",
@@ -43,9 +56,8 @@ if __name__ == "__main__":
     rclpy.init()
 
     try:
-        rsky(n=args.n, integ_time=args.integ_time)
+        RSky(n=args.n, integ_time=args.integ_time)
     except KeyboardInterrupt:
         pass
     finally:
-        com.quit_privilege()
         rclpy.try_shutdown()

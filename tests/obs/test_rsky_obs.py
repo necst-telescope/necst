@@ -1,17 +1,15 @@
-import time
-
-from necst import qos, topic
+from necst import topic
 from necst.core import Authorizer
-from necst.ctrl import AntennaDeviceSimulator, HorizontalCoord
+from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 from necst.utils import spinning
-from necst_msgs.msg import ChopperMsg, CoordMsg, TimedAzElFloat64
+from necst_msgs.msg import ChopperMsg
 
-from obs.rsky_obs import rsky
+from obs.rsky_obs import RSky
 
 from ..conftest import TesterNode, destroy
 
 
-class TestRsky(TesterNode):
+class TestRSky(TesterNode):
 
     NodeName = "test_rsky"
 
@@ -19,17 +17,16 @@ class TestRsky(TesterNode):
         auth = Authorizer()
         dev = AntennaDeviceSimulator()
         horizontal = HorizontalCoord()
+        pid = AntennaPIDController()
+
+        pub = topic.chopper_status.publisher(self.node)
 
         def update(msg: ChopperMsg):
-            nonlocal checked
-            if msg.insert:
-                checked = True
+            pub.publish(msg)
 
         sub = topic.chopper_cmd.subscription(self.node, update)
-        timelimit = time.time() + 3
-        checked = False
-        while not checked:
-            assert time.time() < timelimit, "Chopper command not published in 3s"
-            time.sleep(0.05)
+        with spinning([self.node, dev, horizontal, pid]):
+            RSky(1, 2)
 
-        rsky(1, 2)
+        destroy([auth, dev, horizontal, pid])
+        destroy([sub, pub], node=self.node)

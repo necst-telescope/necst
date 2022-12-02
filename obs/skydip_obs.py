@@ -1,29 +1,38 @@
 #!/usr/bin/env python3
-import time
 import argparse
+import time
 
 import rclpy
-from necst.core import Commander
 from neclib.parameters import PointingError
+from necst import config
+from necst.core import Commander
 
 
-rclpy.init()
-com = Commander()
-com.get_privilege()
+def Skydip(integ_time):
+    com = Commander()
+    com.get_privilege()
 
-def skydip(integ_time):
-    default_lon = com.parameters[encoder.az]
-    params = PointingError.from_file("path/to/params.toml")
-    convert_lon = params.apparent2refracted(az=default_lon, unit="deg")
+    default_pos = com.parameters["encoder"]
+    params = PointingError.from_file(config.antenna_pointing_parameter_path)
+    convert_lon, *_ = params.apparent2refracted(
+        az=default_pos.lon, el=default_pos.lat, unit="deg"
+    )
 
     com.chopper("insert")
     time.sleep(integ_time)
     com.chopper("remove")
     time.sleep(integ_time)
 
-    z = [80, 70, 60, 45, 30, 25, 20]
-    for i in z:
-        com.antenna("point", lon=convert_lon, lat=i, frame="altaz", unit="deg", wait=True)
+    El = [80, 70, 60, 45, 30, 25, 20]
+    for i in El:
+        com.antenna(
+            "point",
+            lon=convert_lon.to_value("deg"),
+            lat=i,
+            frame="altaz",
+            unit="deg",
+            wait=True,
+        )
         time.sleep(integ_time)
 
     com.chopper("insert")
@@ -31,20 +40,26 @@ def skydip(integ_time):
     com.chopper("remove")
     time.sleep(integ_time)
 
-description = "Skydip Observation"
-p = argparse.ArgumentParser(description=description)
-p.add_argument(
-    "--integ_time",
-    type=float,
-    help="Integration time for the skydip obs.",
-    default=2,
-)
-args = p.parse_args()
-
-try:
-    rsky(integ_time=args.integ_time)
-except KeyboardInterrupt:
-    pass
-finally:
     com.quit_privilege()
-    rclpy.try_shutdown()
+    com.destroy_node()
+
+
+if __name__ == "__main__":
+    description = "Skydip Observation"
+    p = argparse.ArgumentParser(description=description)
+    p.add_argument(
+        "--integ_time",
+        type=float,
+        help="Integration time for the skydip obs.",
+        default=2,
+    )
+    args = p.parse_args()
+
+    rclpy.init()
+
+    try:
+        Skydip(integ_time=args.integ_time)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        rclpy.try_shutdown()
