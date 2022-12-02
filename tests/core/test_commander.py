@@ -1,6 +1,6 @@
 import time
 
-from necst_msgs.msg import ChopperMsg, CoordMsg
+from necst_msgs.msg import ChopperMsg, CoordCmdMsg, CoordMsg
 
 from necst import namespace, qos, topic
 from necst.core import Authorizer, Commander
@@ -57,7 +57,7 @@ class TestCommander(TesterNode):
         cmd = {"lon": 30.0, "lat": 45.0, "unit": "deg", "frame": "fk5"}
         checked = False
 
-        def check(msg: CoordMsg) -> None:
+        def check(msg: CoordCmdMsg) -> None:
             nonlocal checked
             assert msg.lon == cmd["lon"]
             assert msg.lat == cmd["lat"]
@@ -68,7 +68,7 @@ class TestCommander(TesterNode):
 
         ns = namespace.antenna
         sub = self.node.create_subscription(
-            CoordMsg, f"{ns}/raw_coord", check, qos.reliable
+            CoordCmdMsg, f"{ns}/raw_coord", check, qos.reliable
         )
 
         timelimit = time.time() + 2
