@@ -1,8 +1,8 @@
 import time
 
-from necst_msgs.msg import CoordMsg
+from necst_msgs.msg import ChopperMsg, CoordMsg
 
-from necst import namespace, qos
+from necst import namespace, qos, topic
 from necst.core import Authorizer, Commander
 from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 from necst.utils import spinning
@@ -176,3 +176,84 @@ class TestCommander(TesterNode):
             pid.controller["az"].k_d == 5.0
 
         destroy([com, pid, auth])
+
+    def test_chopper_insert(self):
+        com = Commander()
+        auth = Authorizer()
+        checked = False
+
+        def update(msg: ChopperMsg):
+            nonlocal checked
+            if msg.insert:
+                checked = True
+
+        sub = topic.chopper_cmd.subscription(self.node, update)
+        timelimit = time.time() + 3
+        with spinning([auth, self.node]):
+            com.get_privilege()
+            com.chopper("insert", wait=False)
+            com.quit_privilege()
+            while not checked:
+                assert time.time() < timelimit, "Chopper command not published in 3s"
+                time.sleep(0.05)
+
+        destroy([com, auth])
+        destroy(sub, node=self.node)
+
+    def test_chopper_remove(self):
+        com = Commander()
+        auth = Authorizer()
+        checked = False
+
+        def update(msg: ChopperMsg):
+            nonlocal checked
+            if not msg.insert:
+                checked = True
+
+        sub = topic.chopper_cmd.subscription(self.node, update)
+        timelimit = time.time() + 3
+        with spinning([auth, self.node]):
+            com.get_privilege()
+            com.chopper("remove", wait=False)
+            com.quit_privilege()
+            while not checked:
+                assert time.time() < timelimit, "Chopper command not published in 3s"
+                time.sleep(0.05)
+
+        destroy([com, auth])
+        destroy(sub, node=self.node)
+
+    def test_chopper_move_wait(self):
+        com = Commander()
+        auth = Authorizer()
+
+        pub = topic.chopper_status.publisher(self.node)
+
+        def update(msg: ChopperMsg):
+            response = ChopperMsg(insert=msg.insert, time=time.time())
+            pub.publish(response)
+
+        sub = topic.chopper_cmd.subscription(self.node, update)
+
+        with spinning([auth, self.node]):
+            com.get_privilege()
+            com.chopper("remove", wait=True)
+            com.quit_privilege()
+
+        destroy([com, auth])
+        destroy([sub, pub], node=self.node)
+
+    def test_chopper_status_query(self):
+        com = Commander()
+        pub = topic.chopper_status.publisher(self.node)
+        now = time.time()
+        msg = ChopperMsg(insert=True, time=now)
+        self.node.create_timer(0.5, lambda: pub.publish(msg))
+
+        with spinning(self.node):
+            status = com.chopper("?")
+            assert status.insert is True
+            assert status.time == now
+
+        destroy([pub], node=self.node)
+        destroy(com)
