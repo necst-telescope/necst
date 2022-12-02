@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import partial
 from typing import Any, Literal, Optional, Tuple
 
-from neclib.coordinates import StandbyPosition
+from neclib.coordinates import standby_position
 from neclib.utils import ConditionChecker
 from necst_msgs.msg import AlertMsg, CoordCmdMsg, PIDMsg
 
@@ -41,7 +41,7 @@ class Commander(PrivilegedNode):
         self.parameters[name] = msg
 
     @require_privilege
-    def antenna(
+    def antenna(  # TODO: Fix some type hints to support many types.
         self,
         cmd: Literal["stop", "point", "scan", "?"],
         *,
@@ -90,10 +90,9 @@ class Commander(PrivilegedNode):
             return self.wait_convergence("antenna") if wait else None
 
         elif cmd == "SCAN":
-            standby = StandbyPosition()
-            standby_lon, standby_lat = standby.standby_position(
-                start=start, end=end, unit=unit
-            )
+            standby_lon, standby_lat = standby_position(start=start, end=end, unit=unit)
+            standby_lon = float(standby_lon.value)
+            standby_lat = float(standby_lat.value)
             self.antenna(
                 "point",
                 lon=standby_lon,
@@ -104,8 +103,8 @@ class Commander(PrivilegedNode):
             )
 
             msg = CoordCmdMsg(
-                lon=[standby_lon, end[0]],
-                lat=[standby_lat, end[1]],
+                lon=[standby_lon, float(end[0])],
+                lat=[standby_lat, float(end[1])],
                 unit=unit,
                 frame=frame,
                 time=[time],
@@ -153,7 +152,9 @@ class Commander(PrivilegedNode):
                 error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
                 error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
                 if checker.check(
+                    # fmt: off
                     error_az**2 + error_el**2 < threshold[target] ** 2
+                    # fmt: on
                 ):
                     return
                 pytime.sleep(0.05)
