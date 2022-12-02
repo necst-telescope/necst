@@ -1,3 +1,4 @@
+import contextlib
 from typing import Any, Sequence, Union
 
 import pytest
@@ -86,16 +87,12 @@ def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
     _ = [_destroy(obj, node) for obj in ros_obj]
 
 
-class temp_config:
-    def __init__(self, **kwargs):
-        self.temp_values = kwargs
-        self.original_values = {}
-
-    def __enter__(self):
-        self.original_values = {k: getattr(config, k) for k in self.temp_values}
-        [setattr(config, k, v) for k, v in self.temp_values.items()]
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        [setattr(config, k, v) for k, v in self.original_values.items()]
-        if exc_type is not None:
-            raise
+@contextlib.contextmanager
+def temp_config(**kwargs):
+    temp_values = kwargs
+    original_values = {k: getattr(config, k) for k in temp_values}
+    [setattr(config, k, v) for k, v in temp_values.items()]
+    try:
+        yield
+    finally:
+        [setattr(config, k, v) for k, v in original_values.items()]

@@ -2,18 +2,18 @@ __all__ = ["PrivilegedNode", "require_privilege"]
 
 import functools
 import uuid
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 import rclpy
 from necst_msgs.srv import AuthoritySrv
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.exceptions import InvalidHandle
-from rclpy.node import Node
 
 from ... import config, namespace, service, utils
+from ..server_node import ServerNode
 
 
-class PrivilegedNode(Node):
+class PrivilegedNode(ServerNode):
     r"""Manage privilege for conflict-unsafe operations.
 
     Using this privilege client requires communication with running ``Authorizer`` node.
@@ -37,7 +37,7 @@ class PrivilegedNode(Node):
     ...     def __init__(self):
     ...         super().__init__("my_node")
     ...
-    ...     @necst.core.PrivilegedNode.require_privilege
+    ...     @necst.core.require_privilege
     ...     def some_operation(self):
     ...         ...
     ...
@@ -70,7 +70,7 @@ class PrivilegedNode(Node):
         self.logger = self.get_logger()
 
         self.request_cli = service.privilege_request.client(
-            self, callback_group=MutuallyExclusiveCallbackGroup()
+            self, callback_group=ReentrantCallbackGroup()
         )
         self.ping_srv = None
 
@@ -79,6 +79,7 @@ class PrivilegedNode(Node):
         self.identity = f"{node_name}-{uuid.uuid1()}-{id(self)}"
 
         self._set_privilege(False)
+        self.start_server()
 
     @property
     def has_privilege(self) -> bool:
@@ -92,9 +93,10 @@ class PrivilegedNode(Node):
                 self.ping_srv = service.privilege_ping.service(
                     self,
                     utils.respond_to_ping,
-                    callback_group=MutuallyExclusiveCallbackGroup(),
+                    callback_group=ReentrantCallbackGroup(),
                 )
             except InvalidHandle:
+                # Multiple server for single service cannot exist in ROS 2 system.
                 self.logger.error(
                     "Failed to verify privilege, it may be granted to other node."
                 )
@@ -110,13 +112,8 @@ class PrivilegedNode(Node):
         if not utils.wait_for_server_to_pick_up(self.request_cli):
             return default_response
 
-        executor = self.executor
-        if executor is None:
-            executor = rclpy.get_global_executor()
-            executor.add_node(self)
-
         future = self.request_cli.call_async(request)
-        executor.spin_until_future_complete(future, 2 * config.ros_service_timeout_sec)
+        self.wait_until_future_complete(future, 2 * config.ros_service_timeout_sec)
         # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock. Reason unknown.
         # NOTE: Authority server also waits for `ros_service_timeout_sec` for status
@@ -179,40 +176,65 @@ class PrivilegedNode(Node):
         return self.has_privilege
 
     @staticmethod
-    def require_privilege(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
+    def require_privilege(
+        callable_obj: Callable[..., Any] = None, *, escape_cmd: List[Any] = []
+    ) -> Callable[..., Any]:
         """Decorator to mark conflict-unsafe functions.
 
-        Use ``@PrivilegedNode.require_privilege``. Other form of reference including
-        ``@super().require_privilege`` and
-        ``client = PrivilegedNode(); @client.require_privilege`` won't work.
+        Parameters
+        ----------
+        escape_cmds
+            List of commands allowed to execute ignoring the privilege. Command should
+            passsed as the first argument of the decorated function.
+
+        Notes
+        -----
+        This decorator assumes the function is defined and called as method of arbitrary
+        class, not a standalone function object.
 
         Examples
         --------
-        >>> @necst.core.PrivilegedNode.require_privilege
-        ... def some_unsafe_operation(*args):
+        >>> @necst.core.require_privilege
+        ... def some_unsafe_operation(self, *args):
+        ...     ...
+
+        >>> @necst.core.require_privilege(escape_cmds=["?"])
+        ... def operation_or_query(self, command, *args):
         ...     ...
 
         """
 
-        @functools.wraps(callable_obj)
-        def run_with_privilege_check(self, *args, **kwargs):
-            """Run the function if privilege is granted for this client.
+        def get_first_arg(args, kwargs):
+            if len(args) > 0:
+                return args[0]
+            if len(kwargs) > 0:
+                return next(iter(kwargs.values()))
+            return None
 
-            The implementation is collection of workarounds, and is inspired by the
-            following StackOverflow answer.
-            https://stackoverflow.com/a/59157026
+        def create_wrapper_func(_callable: Callable[..., Any]) -> Callable[..., Any]:
+            @functools.wraps(_callable)
+            def run_with_privilege_check(self, *args, **kwargs):
+                """Run the function if privilege is granted for this client.
 
-            """
-            if self.has_privilege:
-                return callable_obj(self, *args, **kwargs)
+                The implementation is collection of workarounds, and is inspired by the
+                following StackOverflow answer.
+                https://stackoverflow.com/a/59157026
 
-            self.logger.error(
-                f"Executing '{callable_obj}' requires privilege, "
-                "but this node doesn't have one."
-            )
-            return
+                """
+                if self.has_privilege or (get_first_arg(args, kwargs) in escape_cmd):
+                    return _callable(self, *args, **kwargs)
 
-        return run_with_privilege_check
+                self.logger.error(
+                    f"Executing {_callable!r} requires privilege, "
+                    "but this node doesn't have one."
+                )
+                return
+
+            return run_with_privilege_check
+
+        if callable_obj is None:
+            return create_wrapper_func
+        return create_wrapper_func(callable_obj)
 
     def destroy_node(self) -> None:
         """Add minimal privilege removal procedure.
@@ -225,6 +247,7 @@ class PrivilegedNode(Node):
 
         """
         self._set_privilege(False)
+        self._executor.shutdown()
         super().destroy_node()
 
 

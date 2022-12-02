@@ -73,6 +73,27 @@ class TestAuthority(TesterNode):
 
         destroy([auth_server, my_node])
 
+    def test_privilege_escape_command(self):
+        class MyNode(PrivilegedNode):
+            def __init__(self):
+                super().__init__("test_node")
+
+            @require_privilege(escape_cmd=["?"])
+            def operate(self, cmd: str) -> str:
+                return cmd
+
+        auth = Authorizer()
+        my_node = MyNode()
+        with spinning(auth):
+            assert my_node.operate("run") is None
+            assert my_node.operate("?") == "?"
+
+            my_node.get_privilege()
+            assert my_node.operate("run") == "run"
+            assert my_node.operate("?") == "?"
+            my_node.quit_privilege()
+        destroy([auth, my_node])
+
     def test_reject_privilege_request_when_other_node_has_one(self):
         auth_server = Authorizer()
         initial = PrivilegedNode("test_node")
@@ -145,7 +166,7 @@ class TestAuthority(TesterNode):
             destroy(initial)
 
             with temp_config(ros_service_timeout_sec=1):
-                secondary.get_privilege() is True
+                assert secondary.get_privilege() is True
             assert auth_server.approved == secondary.identity
 
         destroy([auth_server, secondary])
@@ -165,51 +186,10 @@ class TestAuthority(TesterNode):
         destroy([initial, auth_client])
 
     @executor_type
-    def test_no_deadlock_when_server_only(self, executor_type: Type[Executor]):
-        auth_server = Authorizer()
-
+    def test_assigning_executor_is_error(self, executor_type: Type[Executor]):
+        auth = Authorizer()
         executor = executor_type()
-        executor.add_node(auth_server)
-
-        for _ in range(100):
-            executor.spin_once(timeout_sec=0)
-        assert auth_server.approved is None
-
-        [n.destroy_node() for n in executor.get_nodes()]
-        [executor.remove_node(n) for n in executor.get_nodes()]
+        with pytest.raises(ValueError):
+            executor.add_node(auth)
         executor.shutdown()
-
-    @executor_type
-    def test_no_deadlock_when_client_only(self, executor_type: Type[Executor]):
-        auth_client = PrivilegedNode("test_node")
-
-        executor = executor_type()
-        executor.add_node(auth_client)
-
-        for _ in range(100):
-            executor.spin_once(timeout_sec=0)
-        with temp_config(ros_service_timeout_sec=1):
-            assert auth_client.get_privilege() is False
-            assert auth_client.quit_privilege() is False
-
-        [n.destroy_node() for n in executor.get_nodes()]
-        [executor.remove_node(n) for n in executor.get_nodes()]
-        executor.shutdown()
-
-    @executor_type
-    def test_no_deadlock(self, executor_type: Type[Executor]):
-        auth_server = Authorizer()
-        auth_client = PrivilegedNode("test_node")
-
-        executor = executor_type()
-        executor.add_node(auth_server)
-        executor.add_node(auth_client)
-
-        for _ in range(100):
-            executor.spin_once(timeout_sec=0)
-        assert auth_client.get_privilege() is True
-        assert auth_client.quit_privilege() is False
-
-        [n.destroy_node() for n in executor.get_nodes()]
-        [executor.remove_node(n) for n in executor.get_nodes()]
-        executor.shutdown()
+        destroy(auth)
