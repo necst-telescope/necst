@@ -171,9 +171,7 @@ class Commander(PrivilegedNode):
                 continue
             error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
             error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
-            # fmt: off
             if checker.check(error_az**2 + error_el**2 < threshold**2):
-                # fmt: on
                 return
             pytime.sleep(0.05)
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
