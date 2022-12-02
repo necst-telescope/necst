@@ -5,7 +5,7 @@ from typing import Any, Literal, Optional, Tuple, Union
 
 from neclib.coordinates import standby_position
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, CoordMsg, PIDMsg
+from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, PIDMsg
 
 from .. import NECSTTimeoutError, config, namespace, topic
 from .auth import PrivilegedNode, require_privilege
@@ -56,9 +56,9 @@ class Commander(PrivilegedNode):
         *,
         lon: Optional[Union[int, float]] = None,
         lat: Optional[Union[int, float]] = None,
-        start: Optional[Tuple[float, float]] = None,
-        end: Optional[Tuple[float, float]] = None,
-        speed: Optional[float] = None,
+        start: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
+        end: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
+        speed: Union[int, float] = 0,
         unit: Optional[str] = None,
         frame: Optional[str] = None,
         time: Union[int, float] = 0,
@@ -115,8 +115,8 @@ class Commander(PrivilegedNode):
                 lat=[standby_lat, float(end[1])],
                 unit=unit,
                 frame=frame,
-                time=[time],
-                speed=speed,
+                time=[float(time)],
+                speed=float(speed),
             )
             self.publisher["coord"].publish(msg)
             # TODO: Wait regardless of ``wait``.
