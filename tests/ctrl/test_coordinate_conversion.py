@@ -5,7 +5,7 @@ import pytest
 from necst import qos
 from necst.ctrl import HorizontalCoord
 from necst.utils import spinning
-from necst_msgs.msg import CoordMsg
+from necst_msgs.msg import CoordCmdMsg, CoordMsg
 from ..conftest import TesterNode, destroy
 
 
@@ -33,7 +33,9 @@ class TestHorizontalCoord(TesterNode):
             subscribed = True
 
         ns = converter.get_namespace()
-        raw_cmd = self.node.create_publisher(CoordMsg, f"{ns}/raw_coord", qos.reliable)
+        raw_cmd = self.node.create_publisher(
+            CoordCmdMsg, f"{ns}/raw_coord", qos.reliable
+        )
         converted = self.node.create_subscription(
             CoordMsg, f"{ns}/altaz", update, qos.realtime
         )
@@ -70,7 +72,9 @@ class TestHorizontalCoord(TesterNode):
             subscribed = True
 
         ns = converter.get_namespace()
-        raw_cmd = self.node.create_publisher(CoordMsg, f"{ns}/raw_coord", qos.reliable)
+        raw_cmd = self.node.create_publisher(
+            CoordCmdMsg, f"{ns}/raw_coord", qos.reliable
+        )
         converted = self.node.create_subscription(
             CoordMsg, f"{ns}/altaz", update, qos.realtime
         )
@@ -105,7 +109,9 @@ class TestHorizontalCoord(TesterNode):
             subscribed = True
 
         ns = converter.get_namespace()
-        raw_cmd = self.node.create_publisher(CoordMsg, f"{ns}/raw_coord", qos.reliable)
+        raw_cmd = self.node.create_publisher(
+            CoordCmdMsg, f"{ns}/raw_coord", qos.reliable
+        )
         converted = self.node.create_subscription(
             CoordMsg, f"{ns}/altaz", update, qos.realtime
         )
@@ -139,7 +145,9 @@ class TestHorizontalCoord(TesterNode):
             subscribed = True
 
         ns = converter.get_namespace()
-        raw_cmd = self.node.create_publisher(CoordMsg, f"{ns}/raw_coord", qos.realtime)
+        raw_cmd = self.node.create_publisher(
+            CoordCmdMsg, f"{ns}/raw_coord", qos.realtime
+        )
         converted = self.node.create_subscription(
             CoordMsg, f"{ns}/altaz", update, qos.realtime
         )
