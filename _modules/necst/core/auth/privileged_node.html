@@ -5,36 +5,36 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.core.privileged_node &#8212; necst 0.3.1 documentation</title>
+    <title>necst.core.auth.privileged_node &#8212; necst 0.3.2 documentation</title>
     
-  <link href="../../../_static/css/theme.css" rel="stylesheet">
-  <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+  <link href="../../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
 
     
   <link rel="stylesheet"
-    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
   <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
     
       
 
     
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/css/blank.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css" />
     
-  <link rel="preload" as="script" href="../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+  <link rel="preload" as="script" href="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
 
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/doctools.js"></script>
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -52,7 +52,7 @@
   <div id="navbar-start">
     
     
-<a class="navbar-brand" href="../../../index.html">
+<a class="navbar-brand" href="../../../../index.html">
 <p class="title">necst</p>
 </a>
 
@@ -70,13 +70,13 @@
       <div class="navbar-center-item">
         <ul id="navbar-main-elements" class="navbar-nav">
     <li class="toctree-l1 nav-item">
- <a class="reference internal nav-link" href="../../../index.html">
+ <a class="reference internal nav-link" href="../../../../index.html">
   Home
  </a>
 </li>
 
 <li class="toctree-l1 nav-item">
- <a class="reference internal nav-link" href="../../../_source/necst.html">
+ <a class="reference internal nav-link" href="../../../../_source/necst.html">
   API Reference
  </a>
 </li>
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.1</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -145,24 +145,23 @@
               
               <div>
                 
-  <h1>Source code for necst.core.privileged_node</h1><div class="highlight"><pre>
-<span></span><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;PrivilegedNode&quot;</span><span class="p">]</span>
+  <h1>Source code for necst.core.auth.privileged_node</h1><div class="highlight"><pre>
+<span></span><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;PrivilegedNode&quot;</span><span class="p">,</span> <span class="s2">&quot;require_privilege&quot;</span><span class="p">]</span>
 
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">import</span> <span class="nn">uuid</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span> <span class="nn">rclpy</span>
-<span class="kn">from</span> <span class="nn">rclpy.callback_groups</span> <span class="kn">import</span> <span class="n">MutuallyExclusiveCallbackGroup</span>
-<span class="kn">from</span> <span class="nn">rclpy.exceptions</span> <span class="kn">import</span> <span class="n">InvalidHandle</span>
-<span class="kn">from</span> <span class="nn">rclpy.node</span> <span class="kn">import</span> <span class="n">Node</span>
-<span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="n">Empty</span>
-
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">utils</span>
 <span class="kn">from</span> <span class="nn">necst_msgs.srv</span> <span class="kn">import</span> <span class="n">AuthoritySrv</span>
+<span class="kn">from</span> <span class="nn">rclpy.callback_groups</span> <span class="kn">import</span> <span class="n">ReentrantCallbackGroup</span>
+<span class="kn">from</span> <span class="nn">rclpy.exceptions</span> <span class="kn">import</span> <span class="n">InvalidHandle</span>
+
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">..server_node</span> <span class="kn">import</span> <span class="n">ServerNode</span>
 
 
-<div class="viewcode-block" id="PrivilegedNode"><a class="viewcode-back" href="../../../_source/necst.core.privileged_node.html#necst.core.privileged_node.PrivilegedNode">[docs]</a><span class="k">class</span> <span class="nc">PrivilegedNode</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+<div class="viewcode-block" id="PrivilegedNode"><a class="viewcode-back" href="../../../../_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode">[docs]</a><span class="k">class</span> <span class="nc">PrivilegedNode</span><span class="p">(</span><span class="n">ServerNode</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Manage privilege for conflict-unsafe operations.</span>
 
 <span class="sd">    Using this privilege client requires communication with running ``Authorizer`` node.</span>
@@ -186,7 +185,7 @@
 <span class="sd">    ...     def __init__(self):</span>
 <span class="sd">    ...         super().__init__(&quot;my_node&quot;)</span>
 <span class="sd">    ...</span>
-<span class="sd">    ...     @necst.core.PrivilegedNode.require_privilege</span>
+<span class="sd">    ...     @necst.core.require_privilege</span>
 <span class="sd">    ...     def some_operation(self):</span>
 <span class="sd">    ...         ...</span>
 <span class="sd">    ...</span>
@@ -218,10 +217,8 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">node_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">request_cli</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_client</span><span class="p">(</span>
-            <span class="n">AuthoritySrv</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">namespace</span><span class="o">.</span><span class="n">auth</span><span class="si">}</span><span class="s2">/request&quot;</span><span class="p">,</span>
-            <span class="n">callback_group</span><span class="o">=</span><span class="n">MutuallyExclusiveCallbackGroup</span><span class="p">(),</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_cli</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">privilege_request</span><span class="o">.</span><span class="n">client</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">callback_group</span><span class="o">=</span><span class="n">ReentrantCallbackGroup</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ping_srv</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -230,6 +227,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">identity</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">()</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_privilege</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_server</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">has_privilege</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -240,13 +238,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__has_privilege</span> <span class="o">=</span> <span class="n">privileged</span>
         <span class="k">if</span> <span class="n">privileged</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">ping_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_service</span><span class="p">(</span>
-                    <span class="n">Empty</span><span class="p">,</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">namespace</span><span class="o">.</span><span class="n">auth</span><span class="si">}</span><span class="s2">/ping&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ping_srv</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">privilege_ping</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span>
                     <span class="n">utils</span><span class="o">.</span><span class="n">respond_to_ping</span><span class="p">,</span>
-                    <span class="n">callback_group</span><span class="o">=</span><span class="n">MutuallyExclusiveCallbackGroup</span><span class="p">(),</span>
+                    <span class="n">callback_group</span><span class="o">=</span><span class="n">ReentrantCallbackGroup</span><span class="p">(),</span>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="n">InvalidHandle</span><span class="p">:</span>
+                <span class="c1"># Multiple server for single service cannot exist in ROS 2 system.</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
                     <span class="s2">&quot;Failed to verify privilege, it may be granted to other node.&quot;</span>
                 <span class="p">)</span>
@@ -262,13 +260,8 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">wait_for_server_to_pick_up</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request_cli</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">default_response</span>
 
-        <span class="n">executor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">executor</span>
-        <span class="k">if</span> <span class="n">executor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">executor</span> <span class="o">=</span> <span class="n">rclpy</span><span class="o">.</span><span class="n">get_global_executor</span><span class="p">()</span>
-            <span class="n">executor</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
         <span class="n">future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_cli</span><span class="o">.</span><span class="n">call_async</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-        <span class="n">executor</span><span class="o">.</span><span class="n">spin_until_future_complete</span><span class="p">(</span><span class="n">future</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">ros_service_timeout_sec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_until_future_complete</span><span class="p">(</span><span class="n">future</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">ros_service_timeout_sec</span><span class="p">)</span>
         <span class="c1"># NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`</span>
         <span class="c1"># will cause deadlock. Reason unknown.</span>
         <span class="c1"># NOTE: Authority server also waits for `ros_service_timeout_sec` for status</span>
@@ -282,7 +275,7 @@
             <span class="k">return</span> <span class="n">default_response</span>
         <span class="k">return</span> <span class="n">result</span>
 
-<div class="viewcode-block" id="PrivilegedNode.get_privilege"><a class="viewcode-back" href="../../../_source/necst.core.privileged_node.html#necst.core.privileged_node.PrivilegedNode.get_privilege">[docs]</a>    <span class="k">def</span> <span class="nf">get_privilege</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="PrivilegedNode.get_privilege"><a class="viewcode-back" href="../../../../_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode.get_privilege">[docs]</a>    <span class="k">def</span> <span class="nf">get_privilege</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Request for privilege.</span>
 
 <span class="sd">        Returns</span>
@@ -306,7 +299,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Request declined&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_privilege</span></div>
 
-<div class="viewcode-block" id="PrivilegedNode.quit_privilege"><a class="viewcode-back" href="../../../_source/necst.core.privileged_node.html#necst.core.privileged_node.PrivilegedNode.quit_privilege">[docs]</a>    <span class="k">def</span> <span class="nf">quit_privilege</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="PrivilegedNode.quit_privilege"><a class="viewcode-back" href="../../../../_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode.quit_privilege">[docs]</a>    <span class="k">def</span> <span class="nf">quit_privilege</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Give up privilege.</span>
 
 <span class="sd">        Returns</span>
@@ -330,43 +323,68 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Request declined&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_privilege</span></div>
 
-<div class="viewcode-block" id="PrivilegedNode.require_privilege"><a class="viewcode-back" href="../../../_source/necst.core.privileged_node.html#necst.core.privileged_node.PrivilegedNode.require_privilege">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">require_privilege</span><span class="p">(</span><span class="n">callable_obj</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
+<div class="viewcode-block" id="PrivilegedNode.require_privilege"><a class="viewcode-back" href="../../../../_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode.require_privilege">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">require_privilege</span><span class="p">(</span>
+        <span class="n">callable_obj</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">escape_cmd</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Decorator to mark conflict-unsafe functions.</span>
 
-<span class="sd">        Use ``@PrivilegedNode.require_privilege``. Other form of reference including</span>
-<span class="sd">        ``@super().require_privilege`` and</span>
-<span class="sd">        ``client = PrivilegedNode(); @client.require_privilege`` won&#39;t work.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        escape_cmds</span>
+<span class="sd">            List of commands allowed to execute ignoring the privilege. Command should</span>
+<span class="sd">            passsed as the first argument of the decorated function.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        This decorator assumes the function is defined and called as method of arbitrary</span>
+<span class="sd">        class, not a standalone function object.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; @necst.core.PrivilegedNode.require_privilege</span>
-<span class="sd">        ... def some_unsafe_operation(*args):</span>
+<span class="sd">        &gt;&gt;&gt; @necst.core.require_privilege</span>
+<span class="sd">        ... def some_unsafe_operation(self, *args):</span>
+<span class="sd">        ...     ...</span>
+
+<span class="sd">        &gt;&gt;&gt; @necst.core.require_privilege(escape_cmds=[&quot;?&quot;])</span>
+<span class="sd">        ... def operation_or_query(self, command, *args):</span>
 <span class="sd">        ...     ...</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">callable_obj</span><span class="p">)</span>
-        <span class="k">def</span> <span class="nf">run_with_privilege_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Run the function if privilege is granted for this client.</span>
+        <span class="k">def</span> <span class="nf">get_first_arg</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+            <span class="k">return</span> <span class="kc">None</span>
 
-<span class="sd">            The implementation is collection of workarounds, and is inspired by the</span>
-<span class="sd">            following StackOverflow answer.</span>
-<span class="sd">            https://stackoverflow.com/a/59157026</span>
+        <span class="k">def</span> <span class="nf">create_wrapper_func</span><span class="p">(</span><span class="n">_callable</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+            <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">_callable</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">run_with_privilege_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot;Run the function if privilege is granted for this client.</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_privilege</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">callable_obj</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="sd">                The implementation is collection of workarounds, and is inspired by the</span>
+<span class="sd">                following StackOverflow answer.</span>
+<span class="sd">                https://stackoverflow.com/a/59157026</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Executing &#39;</span><span class="si">{</span><span class="n">callable_obj</span><span class="si">}</span><span class="s2">&#39; requires privilege, &quot;</span>
-                <span class="s2">&quot;but this node doesn&#39;t have one.&quot;</span>
-            <span class="p">)</span>
-            <span class="k">return</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_privilege</span> <span class="ow">or</span> <span class="p">(</span><span class="n">get_first_arg</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span> <span class="ow">in</span> <span class="n">escape_cmd</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">_callable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">run_with_privilege_check</span></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Executing </span><span class="si">{</span><span class="n">_callable</span><span class="si">!r}</span><span class="s2"> requires privilege, &quot;</span>
+                    <span class="s2">&quot;but this node doesn&#39;t have one.&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span>
 
-<div class="viewcode-block" id="PrivilegedNode.destroy_node"><a class="viewcode-back" href="../../../_source/necst.core.privileged_node.html#necst.core.privileged_node.PrivilegedNode.destroy_node">[docs]</a>    <span class="k">def</span> <span class="nf">destroy_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">run_with_privilege_check</span>
+
+        <span class="k">if</span> <span class="n">callable_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">create_wrapper_func</span>
+        <span class="k">return</span> <span class="n">create_wrapper_func</span><span class="p">(</span><span class="n">callable_obj</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PrivilegedNode.destroy_node"><a class="viewcode-back" href="../../../../_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode.destroy_node">[docs]</a>    <span class="k">def</span> <span class="nf">destroy_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Add minimal privilege removal procedure.</span>
 
 <span class="sd">        More &quot;formal&quot; privilege removal i.e. ``quit_privilege`` cannot be invoked, when</span>
@@ -377,7 +395,11 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_privilege</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span></div></div>
+
+
+<span class="n">require_privilege</span> <span class="o">=</span> <span class="n">PrivilegedNode</span><span class="o">.</span><span class="n">require_privilege</span>
 
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -410,7 +432,7 @@
       </div>
     </div>
   
-  <script src="../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+  <script src="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
 <footer class="footer mt-5 mt-md-0">
   <div class="container">
     

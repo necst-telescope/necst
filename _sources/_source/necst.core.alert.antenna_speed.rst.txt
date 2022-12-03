@@ -1,0 +1,7 @@
+necst.core.alert.antenna\_speed
+===============================
+
+.. automodule:: necst.core.alert.antenna_speed
+   :members:
+   :undoc-members:
+   :show-inheritance:

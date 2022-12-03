@@ -1,0 +1,7 @@
+necst.core.auth.authorizer
+==========================
+
+.. automodule:: necst.core.auth.authorizer
+   :members:
+   :undoc-members:
+   :show-inheritance:

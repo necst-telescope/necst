@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.core.privileged_node &#8212; necst 0.3.1 documentation</title>
+    <title>necst.core.auth.privileged_node &#8212; necst 0.3.2 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.core.recorder" href="necst.core.recorder.html" />
-    <link rel="prev" title="necst.core.exec_record" href="necst.core.exec_record.html" />
+    <link rel="next" title="necst.core.commander" href="necst.core.commander.html" />
+    <link rel="prev" title="necst.core.auth.authorizer" href="necst.core.auth.authorizer.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -138,10 +138,54 @@
    </i>
   </label>
   <ul class="current">
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.authorizer.html">
-     necst.core.authorizer
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="necst.core.alert.html">
+     necst.core.alert
     </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.core.alert.alert_handler_node.html">
+       necst.core.alert.alert_handler_node
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.core.alert.antenna_drive_range.html">
+       necst.core.alert.antenna_drive_range
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.core.alert.antenna_speed.html">
+       necst.core.alert.antenna_speed
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 current active has-children">
+    <a class="reference internal" href="necst.core.auth.html">
+     necst.core.auth
+    </a>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+    <label for="toctree-checkbox-3">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul class="current">
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.core.auth.authorizer.html">
+       necst.core.auth.authorizer
+      </a>
+     </li>
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
+       necst.core.auth.privileged_node
+      </a>
+     </li>
+    </ul>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.commander.html">
@@ -154,6 +198,11 @@
     </a>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.exec_alert.html">
+     necst.core.exec_alert
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.exec_auth.html">
      necst.core.exec_auth
     </a>
@@ -163,14 +212,14 @@
      necst.core.exec_record
     </a>
    </li>
-   <li class="toctree-l2 current active">
-    <a class="current reference internal" href="#">
-     necst.core.privileged_node
-    </a>
-   </li>
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.recorder.html">
      necst.core.recorder
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.server_node.html">
+     necst.core.server_node
     </a>
    </li>
   </ul>
@@ -179,8 +228,8 @@
   <a class="reference internal" href="necst.ctrl.html">
    necst.ctrl
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
-  <label for="toctree-checkbox-2">
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <label for="toctree-checkbox-4">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -189,8 +238,8 @@
     <a class="reference internal" href="necst.ctrl.antenna.html">
      necst.ctrl.antenna
     </a>
-    <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
-    <label for="toctree-checkbox-3">
+    <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+    <label for="toctree-checkbox-5">
      <i class="fas fa-chevron-down">
      </i>
     </label>
@@ -227,6 +276,23 @@
      </li>
     </ul>
    </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="necst.ctrl.calibrator.html">
+     necst.ctrl.calibrator
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+    <label for="toctree-checkbox-6">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.calibrator.chopper.html">
+       necst.ctrl.calibrator.chopper
+      </a>
+     </li>
+    </ul>
+   </li>
    <li class="toctree-l2">
     <a class="reference internal" href="necst.ctrl.exec_antenna_cal.html">
      necst.ctrl.exec_antenna_cal
@@ -253,8 +319,8 @@
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
-  <label for="toctree-checkbox-4">
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -269,13 +335,18 @@
      necst.utils.ros_interface
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.ros_thread.html">
+     necst.utils.ros_thread
+    </a>
+   </li>
   </ul>
  </li>
 </ul>
 <ul class="nav bd-sidenav">
  <li class="toctree-l1">
-  <a class="reference internal" href="necst.tester.html">
-   necst.tester
+  <a class="reference internal" href="necst.definitions.html">
+   necst.definitions
   </a>
  </li>
 </ul>
@@ -314,12 +385,12 @@
               
               <div>
                 
-  <section id="module-necst.core.privileged_node">
-<span id="necst-core-privileged-node"></span><h1>necst.core.privileged_node<a class="headerlink" href="#module-necst.core.privileged_node" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.core.auth.privileged_node">
+<span id="necst-core-auth-privileged-node"></span><h1>necst.core.auth.privileged_node<a class="headerlink" href="#module-necst.core.auth.privileged_node" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.core.privileged_node.PrivilegedNode">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrivilegedNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/privileged_node.html#PrivilegedNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.privileged_node.PrivilegedNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></p>
+<dt class="sig sig-object py" id="necst.core.auth.privileged_node.PrivilegedNode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PrivilegedNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/auth/privileged_node.html#PrivilegedNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.auth.privileged_node.PrivilegedNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.core.server_node.html#necst.core.server_node.ServerNode" title="necst.core.server_node.ServerNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">ServerNode</span></code></a></p>
 <p>Manage privilege for conflict-unsafe operations.</p>
 <p>Using this privilege client requires communication with running <code class="docutils literal notranslate"><span class="pre">Authorizer</span></code> node.</p>
 <dl class="field-list simple">
@@ -344,7 +415,7 @@
 <span class="gp">... </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;my_node&quot;</span><span class="p">)</span>
 <span class="gp">...</span>
-<span class="gp">... </span>    <span class="nd">@necst</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">PrivilegedNode</span><span class="o">.</span><span class="n">require_privilege</span>
+<span class="gp">... </span>    <span class="nd">@necst</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">require_privilege</span>
 <span class="gp">... </span>    <span class="k">def</span> <span class="nf">some_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="o">...</span>
 <span class="gp">...</span>
@@ -370,19 +441,19 @@
 </pre></div>
 </div>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.core.privileged_node.PrivilegedNode.Namespace">
-<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/core/auth'</span></em><a class="headerlink" href="#necst.core.privileged_node.PrivilegedNode.Namespace" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.core.auth.privileged_node.PrivilegedNode.Namespace">
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/core/auth'</span></em><a class="headerlink" href="#necst.core.auth.privileged_node.PrivilegedNode.Namespace" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="necst.core.privileged_node.PrivilegedNode.has_privilege">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">has_privilege</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#necst.core.privileged_node.PrivilegedNode.has_privilege" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.core.auth.privileged_node.PrivilegedNode.has_privilege">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">has_privilege</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#necst.core.auth.privileged_node.PrivilegedNode.has_privilege" title="Permalink to this definition">¶</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if privilege is granted for this node.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.core.privileged_node.PrivilegedNode.get_privilege">
-<span class="sig-name descname"><span class="pre">get_privilege</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/privileged_node.html#PrivilegedNode.get_privilege"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.privileged_node.PrivilegedNode.get_privilege" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.core.auth.privileged_node.PrivilegedNode.get_privilege">
+<span class="sig-name descname"><span class="pre">get_privilege</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/auth/privileged_node.html#PrivilegedNode.get_privilege"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.auth.privileged_node.PrivilegedNode.get_privilege" title="Permalink to this definition">¶</a></dt>
 <dd><p>Request for privilege.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -395,8 +466,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.core.privileged_node.PrivilegedNode.quit_privilege">
-<span class="sig-name descname"><span class="pre">quit_privilege</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/privileged_node.html#PrivilegedNode.quit_privilege"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.privileged_node.PrivilegedNode.quit_privilege" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.core.auth.privileged_node.PrivilegedNode.quit_privilege">
+<span class="sig-name descname"><span class="pre">quit_privilege</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/auth/privileged_node.html#PrivilegedNode.quit_privilege"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.auth.privileged_node.PrivilegedNode.quit_privilege" title="Permalink to this definition">¶</a></dt>
 <dd><p>Give up privilege.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -409,31 +480,43 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.core.privileged_node.PrivilegedNode.require_privilege">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">require_privilege</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callable_obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/privileged_node.html#PrivilegedNode.require_privilege"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.privileged_node.PrivilegedNode.require_privilege" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.core.auth.privileged_node.PrivilegedNode.require_privilege">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">require_privilege</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callable_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">escape_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/auth/privileged_node.html#PrivilegedNode.require_privilege"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.auth.privileged_node.PrivilegedNode.require_privilege" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decorator to mark conflict-unsafe functions.</p>
-<p>Use <code class="docutils literal notranslate"><span class="pre">&#64;PrivilegedNode.require_privilege</span></code>. Other form of reference including
-<code class="docutils literal notranslate"><span class="pre">&#64;super().require_privilege</span></code> and
-<code class="docutils literal notranslate"><span class="pre">client</span> <span class="pre">=</span> <span class="pre">PrivilegedNode();</span> <span class="pre">&#64;client.require_privilege</span></code> won’t work.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>escape_cmds</strong> – List of commands allowed to execute ignoring the privilege. Command should
+passsed as the first argument of the decorated function.</p></li>
+<li><p><strong>callable_obj</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>...</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>escape_cmd</strong> (<em>List</em><em>[</em><em>Any</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Callable</em>[[…], <em>Any</em>]</p>
+</dd>
+</dl>
+<div class="admonition-notes admonition">
+<p class="admonition-title">Notes</p>
+<p>This decorator assumes the function is defined and called as method of arbitrary
+class, not a standalone function object.</p>
+</div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@necst</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">PrivilegedNode</span><span class="o">.</span><span class="n">require_privilege</span>
-<span class="gp">... </span><span class="k">def</span> <span class="nf">some_unsafe_operation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@necst</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">require_privilege</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">some_unsafe_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="o">...</span>
 </pre></div>
 </div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>callable_obj</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>Any</em><em>]</em>) – </p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Callable</em>[[<em>Any</em>], <em>Any</em>]</p>
-</dd>
-</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@necst</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">require_privilege</span><span class="p">(</span><span class="n">escape_cmds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">operation_or_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="o">...</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.core.privileged_node.PrivilegedNode.destroy_node">
-<span class="sig-name descname"><span class="pre">destroy_node</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/privileged_node.html#PrivilegedNode.destroy_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.privileged_node.PrivilegedNode.destroy_node" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.core.auth.privileged_node.PrivilegedNode.destroy_node">
+<span class="sig-name descname"><span class="pre">destroy_node</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/auth/privileged_node.html#PrivilegedNode.destroy_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.auth.privileged_node.PrivilegedNode.destroy_node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add minimal privilege removal procedure.</p>
 <p>More “formal” privilege removal i.e. <code class="docutils literal notranslate"><span class="pre">quit_privilege</span></code> cannot be invoked, when
 Ctrl-C is detected. This method doesn’t interfere with the behavior, instead
@@ -448,6 +531,41 @@ make intra-node privilege check (<code class="docutils literal notranslate"><spa
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.core.auth.privileged_node.require_privilege">
+<span class="sig-name descname"><span class="pre">require_privilege</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callable_obj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">escape_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.auth.privileged_node.require_privilege" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator to mark conflict-unsafe functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>escape_cmds</strong> – List of commands allowed to execute ignoring the privilege. Command should
+passsed as the first argument of the decorated function.</p></li>
+<li><p><strong>callable_obj</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>...</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>escape_cmd</strong> (<em>List</em><em>[</em><em>Any</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Callable</em>[[…], <em>Any</em>]</p>
+</dd>
+</dl>
+<div class="admonition-notes admonition">
+<p class="admonition-title">Notes</p>
+<p>This decorator assumes the function is defined and called as method of arbitrary
+class, not a standalone function object.</p>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@necst</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">require_privilege</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">some_unsafe_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@necst</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">require_privilege</span><span class="p">(</span><span class="n">escape_cmds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">operation_or_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="o">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </section>
 
 
@@ -456,17 +574,17 @@ make intra-node privilege check (<code class="docutils literal notranslate"><spa
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.core.exec_record.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.core.auth.authorizer.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.core.exec_record</p>
+            <p class="prev-next-title">necst.core.auth.authorizer</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.core.recorder.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.core.commander.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.core.recorder</p>
+        <p class="prev-next-title">necst.core.commander</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

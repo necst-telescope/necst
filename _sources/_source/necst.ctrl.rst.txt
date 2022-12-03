@@ -21,6 +21,7 @@ Subpackages
 .. autosummary::
 
    necst.ctrl.antenna
+   necst.ctrl.calibrator
 
 .. toctree::
    :maxdepth: 4
@@ -28,6 +29,7 @@ Subpackages
    :hidden:
 
    necst.ctrl.antenna
+   necst.ctrl.calibrator
 
 
 

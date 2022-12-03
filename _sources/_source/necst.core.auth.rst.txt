@@ -1,0 +1,35 @@
+
+
+
+necst.core.auth
+===============
+
+
+
+
+.. automodule:: necst.core.auth
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+Submodules
+----------
+
+.. autosummary::
+
+   necst.core.auth.authorizer
+   necst.core.auth.privileged_node
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.core.auth.authorizer
+   necst.core.auth.privileged_node

@@ -25,6 +25,7 @@ Submodules
 
    necst.utils.callbacks
    necst.utils.ros_interface
+   necst.utils.ros_thread
 
 .. toctree::
    :maxdepth: 4
@@ -33,3 +34,4 @@ Submodules
 
    necst.utils.callbacks
    necst.utils.ros_interface
+   necst.utils.ros_thread

@@ -44,11 +44,11 @@ Submodules
 
 .. autosummary::
 
-   necst.tester
+   necst.definitions
 
 .. toctree::
    :maxdepth: 4
    :titlesonly:
    :hidden:
 
-   necst.tester
+   necst.definitions

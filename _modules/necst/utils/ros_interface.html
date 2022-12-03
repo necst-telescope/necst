@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.utils.ros_interface &#8212; necst 0.3.1 documentation</title>
+    <title>necst.utils.ros_interface &#8212; necst 0.3.2 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.1</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -148,11 +148,24 @@
   <h1>Source code for necst.utils.ros_interface</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;General utilities around ROS interfaces (msg / srv / action).&quot;&quot;&quot;</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;interface_type_path&quot;</span><span class="p">,</span> <span class="s2">&quot;get_absolute_name&quot;</span><span class="p">,</span> <span class="s2">&quot;wait_for_server_to_pick_up&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;interface_type_path&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;get_absolute_name&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;wait_for_server_to_pick_up&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Topic&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Service&quot;</span><span class="p">,</span>
+<span class="p">]</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TypeVar</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PurePosixPath</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">rclpy.client</span> <span class="kn">import</span> <span class="n">Client</span>
+<span class="kn">from</span> <span class="nn">rclpy.node</span> <span class="kn">import</span> <span class="n">Node</span>
+<span class="kn">from</span> <span class="nn">rclpy.publisher</span> <span class="kn">import</span> <span class="n">Publisher</span>
+<span class="kn">from</span> <span class="nn">rclpy.qos</span> <span class="kn">import</span> <span class="n">QoSProfile</span>
+<span class="kn">from</span> <span class="nn">rclpy.service</span> <span class="kn">import</span> <span class="n">Service</span> <span class="k">as</span> <span class="n">ROS2Service</span>
+<span class="kn">from</span> <span class="nn">rclpy.subscription</span> <span class="kn">import</span> <span class="n">Subscription</span>
 
 <span class="kn">from</span> <span class="nn">necst</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">logger</span>
 
@@ -174,7 +187,7 @@
 <span class="n">S</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span>
 
 
-<div class="viewcode-block" id="get_absolute_name"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.get_absolute_name">[docs]</a><span class="k">def</span> <span class="nf">get_absolute_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">S</span><span class="p">,</span> <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">S</span><span class="p">:</span>
+<div class="viewcode-block" id="get_absolute_name"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.get_absolute_name">[docs]</a><span class="k">def</span> <span class="nf">get_absolute_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">S</span><span class="p">,</span> <span class="n">namespace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">S</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Absolute name for node, topic, service, etc.</span>
 
 <span class="sd">    Examples</span>
@@ -185,15 +198,14 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_get_absolute</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ns</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">n</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ns</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span>
-
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_get_absolute</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">namespace</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">_get_absolute</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">namespace</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">PurePosixPath</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span> <span class="o">/</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">PurePosixPath</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="wait_for_server_to_pick_up"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.wait_for_server_to_pick_up">[docs]</a><span class="k">def</span> <span class="nf">wait_for_server_to_pick_up</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">Client</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="wait_for_server_to_pick_up"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.wait_for_server_to_pick_up">[docs]</a><span class="k">def</span> <span class="nf">wait_for_server_to_pick_up</span><span class="p">(</span>
+    <span class="n">client</span><span class="p">:</span> <span class="n">Client</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Wait until ROS Service server is available to client.</span>
 
 <span class="sd">    Examples</span>
@@ -216,6 +228,108 @@
 
     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Couldn&#39;t connect to server (</span><span class="si">{</span><span class="n">srv_name</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Topic"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Topic">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Topic</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="n">msg_type</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">qos_profile</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">QoSProfile</span><span class="p">]</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Normalize the input style</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Check topic and namespace consistency</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">topic</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
+            <span class="n">ns</span><span class="p">,</span> <span class="n">topic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">topic</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ns</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Fully qualified name is given (topic=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">topic</span><span class="si">!r}</span><span class="s2">) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;but conflicting namespace </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="si">!r}</span><span class="s2"> is provided.&quot;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">topic</span> <span class="o">=</span> <span class="n">topic</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">ns</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_qualname</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">topic</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No namespace information is provided.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Topic.subscription"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Topic.subscription">[docs]</a>    <span class="k">def</span> <span class="nf">subscription</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Subscription</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_namespace_if_unknown</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">create_subscription</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">msg_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qualname</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qos_profile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Topic.publisher"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Topic.publisher">[docs]</a>    <span class="k">def</span> <span class="nf">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Publisher</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_namespace_if_unknown</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">create_publisher</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">msg_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qualname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qos_profile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_namespace_if_unknown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Inferring namespace for topic </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">topic</span><span class="si">!r}</span><span class="s2">. Caution inconsistency.&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get_namespace</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Service"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Service">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Service</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="n">srv_type</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">srv_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">qos_profile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">QoSProfile</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Normalize the input style</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Check topic and namespace consistency</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">srv_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
+            <span class="n">ns</span><span class="p">,</span> <span class="n">srv_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">srv_name</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ns</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Fully qualified name is given (srv_name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">srv_name</span><span class="si">!r}</span><span class="s2">) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;but conflicting namespace </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="si">!r}</span><span class="s2"> is provided.&quot;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">srv_name</span> <span class="o">=</span> <span class="n">srv_name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">ns</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_qualname</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">srv_name</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No namespace information is provided.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Service.service"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Service.service">[docs]</a>    <span class="k">def</span> <span class="nf">service</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ROS2Service</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_namespace_if_unknown</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">create_service</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">srv_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qualname</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Service.client"><a class="viewcode-back" href="../../../_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Service.client">[docs]</a>    <span class="k">def</span> <span class="nf">client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Client</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_namespace_if_unknown</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">create_client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">srv_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qualname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_namespace_if_unknown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Inferring namespace for service </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">srv_name</span><span class="si">!r}</span><span class="s2">. &quot;</span>
+                <span class="s2">&quot;Caution inconsistency.&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get_namespace</span><span class="p">()</span></div>
 </pre></div>
 
               </div>

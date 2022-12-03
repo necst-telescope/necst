@@ -1,7 +1,0 @@
-necst.tester
-============
-
-.. automodule:: necst.tester
-   :members:
-   :undoc-members:
-   :show-inheritance:
