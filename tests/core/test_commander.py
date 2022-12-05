@@ -59,11 +59,11 @@ class TestCommander(TesterNode):
 
         def check(msg: CoordCmdMsg) -> None:
             nonlocal checked
-            assert msg.lon == cmd["lon"]
-            assert msg.lat == cmd["lat"]
+            assert msg.lon[0] == cmd["lon"]
+            assert msg.lat[0] == cmd["lat"]
             assert msg.unit == cmd["unit"]
             assert msg.frame == cmd["frame"]
-            # assert msg.time == cmd["time"]
+            # assert msg.time[0] == cmd["time"]
             checked = True
 
         ns = namespace.antenna
