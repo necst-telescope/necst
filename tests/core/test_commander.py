@@ -1,11 +1,10 @@
 import time
 
-from necst_msgs.msg import ChopperMsg, CoordCmdMsg, CoordMsg
-
 from necst import namespace, qos, topic
 from necst.core import Authorizer, Commander
 from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 from necst.utils import spinning
+from necst_msgs.msg import ChopperMsg, CoordCmdMsg, CoordMsg
 
 from ..conftest import TesterNode, destroy
 
@@ -24,12 +23,8 @@ class TestCommander(TesterNode):
     def test_tracking_check(self):
         com = Commander()
 
-        enc = self.node.create_publisher(
-            CoordMsg, f"{namespace.antenna}/encoder", qos.realtime
-        )
-        cmd = self.node.create_publisher(
-            CoordMsg, f"{namespace.antenna}/altaz", qos.realtime
-        )
+        enc = topic.antenna_encoder.publisher(self.node)
+        cmd = topic.altaz_cmd.publisher(self.node)
 
         start = time.time()
 
