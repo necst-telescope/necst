@@ -121,7 +121,7 @@ class topic:
     antenna_speed_cmd = Topic(
         TimedAzElFloat64, "speed", qos.realtime, namespace.antenna
     )
-    altaz_cmd = Topic(CoordMsg, "altaz", qos.realtime, namespace.antenna)
+    altaz_cmd = Topic(CoordMsg, "altaz", qos.reliable, namespace.antenna)
     drive_range_alert_az = Topic(
         AlertMsg, "antenna_drive_range/az", qos.reliable_latched, namespace.alert
     )
