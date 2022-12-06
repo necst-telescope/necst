@@ -78,6 +78,7 @@ class HorizontalCoord(Node):
                 cmd = self.result_queue.get()
                 if cmd[2] > now:
                     break
+        print(f"Published altaz standby cmd: {cmd}")
 
         if cmd:
             msg = CoordMsg(
