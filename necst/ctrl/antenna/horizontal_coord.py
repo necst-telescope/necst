@@ -118,8 +118,10 @@ class HorizontalCoord(Node):
                     unit=self.cmd.unit,
                     obstime=obstime,
                 )
+        print(f"A; az: {az} / el: {el} / t: {t}")
 
         az, el = self._validate_drive_range(az, el)
+        print(f"B; az: {az} / el: {el} / t: {t}")
         for _az, _el, _t in zip(az, el, t):
             if any(x is None for x in [_az, _el, _t]):
                 continue
