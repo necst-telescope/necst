@@ -23,7 +23,7 @@ def Skydip(integ_time):
     com.chopper("remove")
     time.sleep(integ_time)
 
-    El = [80, 70, 60, 45, 30, 25, 20]
+    El = [80, 50, 40, 30, 25, 22, 20]
     for i in El:
         com.antenna(
             "point",
