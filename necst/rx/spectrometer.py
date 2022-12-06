@@ -74,7 +74,7 @@ class SpectralData(DeviceNode):
             return
 
         time, data = _data
-        for board_id, spectral_data in data:
+        for board_id, spectral_data in data.items():
             msg = Spectral(
                 data=spectral_data, time=time, id=self.id, position=self.position
             )
