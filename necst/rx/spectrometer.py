@@ -41,7 +41,7 @@ class SpectralData(Node):
         self.position = msg.position
         self.id = msg.id
 
-    def fetch_spectra(self) -> None:
+    def fetch_data(self) -> None:
         if self.io.data_queue.empty():
             return
         self.data_queue.put(self.io.get_spectra())
