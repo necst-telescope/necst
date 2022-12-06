@@ -92,6 +92,7 @@ class HorizontalCoord(Node):
     def convert(self) -> None:
         print(f"convert/cmd: {self.cmd}")
         if self.cmd is None:
+            print("cmd is None")
             return
 
         name_query = bool(self.cmd.name)
