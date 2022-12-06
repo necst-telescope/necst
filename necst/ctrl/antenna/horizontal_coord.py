@@ -84,6 +84,7 @@ class HorizontalCoord(Node):
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
             )
             self.publisher.publish(msg)
+            print(f"Published altaz: {msg}")
 
     def convert(self) -> None:
         if self.cmd is None:
