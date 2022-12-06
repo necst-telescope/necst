@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 from neclib.data import Resize
 from neclib.devices import Spectrometer
 from neclib.recorders import Recorder
-from necst_msgs.mgs import Spectral
+from necst_msgs.msg import Spectral
 from rclpy.node import Node
 
 from .. import config, namespace, topic
