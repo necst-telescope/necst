@@ -26,7 +26,7 @@ class TestHorizontalCoord(TesterNode):
         subscribed = False
 
         def update(msg: CoordMsg) -> None:
-            self.get_logger().debug(f"Subscribed: {msg}")
+            print(f"Subscribed: {msg}")
             nonlocal subscribed
             assert msg.lat > 0
             assert msg.unit == "deg"
@@ -48,7 +48,7 @@ class TestHorizontalCoord(TesterNode):
                     break
                 msg = CoordCmdMsg(lon=[lon], **cmd)
                 raw_cmd.publish(msg)
-                self.get_logger().debug(f"Published: {msg}")
+                print(f"Published: {msg}")
 
                 timelimit = time.time() + 5
                 while not subscribed:
