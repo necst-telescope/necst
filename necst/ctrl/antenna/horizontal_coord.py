@@ -60,6 +60,8 @@ class HorizontalCoord(Node):
     def _update_cmd(self, msg: CoordCmdMsg) -> None:
         self.cmd = msg
         self.result_queue = queue.Queue()
+        print(f"_update_cnd/cmd: {self.cmd}")
+        print(f"_update_cnd/r_q: {self.result_queue}")
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
@@ -88,6 +90,7 @@ class HorizontalCoord(Node):
             print(f"Published altaz: {msg}")
 
     def convert(self) -> None:
+        print(f"convert/cmd: {self.cmd}")
         if self.cmd is None:
             return
 
