@@ -67,6 +67,7 @@ class HorizontalCoord(Node):
         self.enc_el = msg.lat
 
     def command_realtime(self) -> None:
+        # No realtime-ness check is performed, just filter outdated commands out
         now = time.time()
         cmd = None
         if self.result_queue.empty() and (self.last_result is not None):
