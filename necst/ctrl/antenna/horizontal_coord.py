@@ -96,11 +96,13 @@ class HorizontalCoord(Node):
 
         name_query = bool(self.cmd.name)
         obstime = self.cmd.time[0]
+        print(f"convert/obstime: {obstime}")
         if obstime == 0.0:
             obstime = None
         elif obstime < time.time() + config.antenna_command_offset_sec:
             self.logger.warning("Got outdated command, ignoring...")
             return
+        print(f"convert/cmd_f: {self.cmd}")
 
         if all(len(x) == 2 for x in [self.cmd.lon, self.cmd.lat]):  # SCAN
             az, el, t = self.finder.linear(
