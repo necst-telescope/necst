@@ -1,11 +1,10 @@
 import time
 from typing import Tuple
 
-from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
-
-from necst import qos
+from necst import qos, topic
 from necst.ctrl import AntennaPIDController
 from necst.utils import spinning
+from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 from ..conftest import TesterNode, destroy
 
@@ -32,8 +31,8 @@ class TestAntennaController(TesterNode):
             speed_el = msg.el
 
         ns = controller.get_namespace()
-        cmd = self.node.create_publisher(CoordMsg, f"{ns}/altaz", qos.realtime)
-        enc = self.node.create_publisher(CoordMsg, f"{ns}/encoder", qos.realtime)
+        cmd = topic.altaz_cmd.publisher(self.node)
+        enc = topic.antenna_encoder.publisher(self.node)
         sub = self.node.create_subscription(
             TimedAzElFloat64, f"{ns}/speed", update, qos.realtime
         )
