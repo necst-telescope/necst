@@ -6,7 +6,6 @@ from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalC
 from necst.utils import spinning
 from necst_msgs.msg import ChopperMsg, CoordMsg
 
-from ... import topic
 from ..conftest import TesterNode, destroy
 
 
