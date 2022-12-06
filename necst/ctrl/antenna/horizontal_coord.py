@@ -125,6 +125,7 @@ class HorizontalCoord(Node):
                 continue
             cmd = (float(_az.to_value("deg")), float(_el.to_value("deg")), _t)
             self.result_queue.put(cmd)
+            print(f"result_queue.put({cmd})")
 
     def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
         enc_az = 180 if self.enc_az is None else self.enc_az
