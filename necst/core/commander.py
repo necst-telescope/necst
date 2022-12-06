@@ -119,8 +119,7 @@ class Commander(PrivilegedNode):
                 speed=float(speed),
             )
             self.publisher["coord"].publish(msg)
-            if wait:
-                self.wait_convergence("antenna")
+            self.wait_convergence("antenna")
 
             self.antenna("stop")
             return
