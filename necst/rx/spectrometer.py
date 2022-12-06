@@ -35,6 +35,8 @@ class SpectralData(DeviceNode):
         self.create_timer(0.02, self.record)
         self.create_timer(0.02, self.fetch_data)
 
+        self.recorder.start_recording()
+
         topic.spectra_meta.subscription(self, self.update_metadata)
 
     def update_metadata(self, msg: Spectral) -> None:
