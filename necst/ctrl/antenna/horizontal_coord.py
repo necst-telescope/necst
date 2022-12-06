@@ -96,6 +96,7 @@ class HorizontalCoord(Node):
             return
 
         name_query = bool(self.cmd.name)
+        print(f"convert/cmd.name: {self.cmd.name} -> {name_query}")
         obstime = self.cmd.time[0]
         print(f"convert/obstime: {obstime}")
         if obstime == 0.0:
