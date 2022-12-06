@@ -1,10 +1,11 @@
 import time as pytime
 from collections import defaultdict
 from functools import partial
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Tuple, Union
 
+from neclib.coordinates import standby_position
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import AlertMsg, ChopperMsg, CoordMsg, PIDMsg
+from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, PIDMsg
 
 from .. import NECSTTimeoutError, config, namespace, topic
 from .auth import PrivilegedNode, require_privilege
@@ -55,6 +56,9 @@ class Commander(PrivilegedNode):
         *,
         lon: Optional[Union[int, float]] = None,
         lat: Optional[Union[int, float]] = None,
+        start: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
+        end: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
+        speed: Union[int, float] = 0,
         unit: Optional[str] = None,
         frame: Optional[str] = None,
         time: Union[int, float] = 0,
@@ -81,18 +85,44 @@ class Commander(PrivilegedNode):
 
         elif CMD == "POINT":
             if name is not None:
-                msg = CoordMsg(time=float(time), name=name)
+                msg = CoordCmdMsg(time=[float(time)], name=name)
             else:
-                msg = CoordMsg(
-                    lon=float(lon),
-                    lat=float(lat),
+                msg = CoordCmdMsg(
+                    lon=[float(lon)],
+                    lat=[float(lat)],
                     unit=unit,
                     frame=frame,
-                    time=float(time),
+                    time=[float(time)],
                 )
             self.publisher["coord"].publish(msg)
             return self.wait_convergence("antenna") if wait else None
 
+        elif cmd == "SCAN":
+            standby_lon, standby_lat = standby_position(start=start, end=end, unit=unit)
+            standby_lon = float(standby_lon.value)
+            standby_lat = float(standby_lat.value)
+            self.antenna(
+                "point",
+                lon=standby_lon,
+                lat=standby_lat,
+                unit=unit,
+                frame=frame,
+                wait=True,
+            )
+
+            msg = CoordCmdMsg(
+                lon=[standby_lon, float(end[0])],
+                lat=[standby_lat, float(end[1])],
+                unit=unit,
+                frame=frame,
+                time=[float(time)],
+                speed=float(speed),
+            )
+            self.publisher["coord"].publish(msg)
+            self.wait_convergence("antenna")
+
+            self.antenna("stop")
+            return
         else:
             raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
 

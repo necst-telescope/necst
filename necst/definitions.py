@@ -107,6 +107,7 @@ class topic:
     from necst_msgs.msg import (
         AlertMsg,
         ChopperMsg,
+        CoordCmdMsg,
         CoordMsg,
         PIDMsg,
         TimedAzElFloat64,
@@ -116,7 +117,7 @@ class topic:
 
     from .utils import Topic
 
-    raw_coord = Topic(CoordMsg, "raw_coord", qos.reliable, namespace.antenna)
+    raw_coord = Topic(CoordCmdMsg, "raw_coord", qos.reliable, namespace.antenna)
     antenna_encoder = Topic(CoordMsg, "encoder", qos.realtime, namespace.antenna)
     antenna_speed_cmd = Topic(
         TimedAzElFloat64, "speed", qos.realtime, namespace.antenna
