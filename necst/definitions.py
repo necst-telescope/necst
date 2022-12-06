@@ -111,10 +111,10 @@ class topic:
         ChopperMsg,
         CoordMsg,
         PIDMsg,
+        Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
         TimedFloat64,
-        Spectra,
     )
 
     from .utils import Topic
@@ -156,8 +156,8 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
-    quick_spectra = Topic(Spectra, "quick_spectra", qos.realtime, namespace.rx)
-    spectra_meta = Topic(Spectra, "spectra_meta", qos.reliable, namespace.rx)
+    quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx)
+    spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
 
 
 class service:
