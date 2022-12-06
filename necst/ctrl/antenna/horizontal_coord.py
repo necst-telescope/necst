@@ -60,8 +60,6 @@ class HorizontalCoord(Node):
     def _update_cmd(self, msg: CoordCmdMsg) -> None:
         self.cmd = msg
         self.result_queue = queue.Queue()
-        print(f"_update_cnd/cmd: {self.cmd}")
-        print(f"_update_cnd/r_q: {self.result_queue}")
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
@@ -80,35 +78,24 @@ class HorizontalCoord(Node):
                 cmd = self.result_queue.get()
                 if cmd[2] > now:
                     break
-        print(f"Published altaz standby cmd: {cmd}")
 
         if cmd:
             msg = CoordMsg(
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
             )
             self.publisher.publish(msg)
-            print(f"Published altaz: {msg}")
 
     def convert(self) -> None:
-        print(f"convert/cmd: {self.cmd}")
         if self.cmd is None:
-            print("cmd is None")
             return
 
         name_query = bool(self.cmd.name)
-        print(f"convert/cmd.name: {self.cmd.name} -> {name_query}")
-        # obstime = self.cmd.time[0] if len(self.cmd.time) > 0 else 0.0
-        try:
-            obstime = self.cmd.time[0]
-        except Exception as e:
-            print(f"err: {e}")
-        print(f"convert/obstime: {obstime}")
+        obstime = self.cmd.time[0] if len(self.cmd.time) > 0 else 0.0
         if obstime == 0.0:
             obstime = None
         elif obstime < time.time() + config.antenna_command_offset_sec:
             self.logger.warning("Got outdated command, ignoring...")
             return
-        print(f"convert/cmd_f: {self.cmd}")
 
         if all(len(x) == 2 for x in [self.cmd.lon, self.cmd.lat]):  # SCAN
             az, el, t = self.finder.linear(
@@ -129,16 +116,13 @@ class HorizontalCoord(Node):
                     unit=self.cmd.unit,
                     obstime=obstime,
                 )
-        print(f"A; az: {az} / el: {el} / t: {t}")
 
         az, el = self._validate_drive_range(az, el)
-        print(f"B; az: {az} / el: {el} / t: {t}")
         for _az, _el, _t in zip(az, el, t):
             if any(x is None for x in [_az, _el, _t]):
                 continue
             cmd = (float(_az.to_value("deg")), float(_el.to_value("deg")), _t)
             self.result_queue.put(cmd)
-            print(f"result_queue.put({cmd})")
 
     def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
         enc_az = 180 if self.enc_az is None else self.enc_az
