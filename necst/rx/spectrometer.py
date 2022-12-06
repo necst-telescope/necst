@@ -33,12 +33,18 @@ class SpectralData(Node):
         self.last_data = None
         self.recorder = Recorder(config.record_root)
         self.create_timer(0.02, self.record)
+        self.create_timer(0.02, self.fetch_data)
 
         topic.spectra_meta.subscription(self, self.update_metadata)
 
     def update_metadata(self, msg: Spectral) -> None:
         self.position = msg.position
         self.id = msg.id
+
+    def fetch_spectra(self) -> None:
+        if self.io.data_queue.empty():
+            return
+        self.data_queue.put(self.io.get_spectra())
 
     def get_data(self) -> Optional[Tuple[float, Dict[int, List[float]]]]:
         if self.data_queue.empty():
