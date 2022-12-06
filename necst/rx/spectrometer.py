@@ -59,7 +59,7 @@ class SpectralData(DeviceNode):
         return self.last_data
 
     def stream(self) -> None:
-        __range = [1, 100]
+        __range = (1, 100)
         for board_id in self.resizers:
             data = self.resizers[board_id].get(__range)
             msg = Spectral(
