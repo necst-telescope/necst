@@ -1,12 +1,11 @@
 import time
 from typing import Tuple
 
-from necst import qos
+from necst import qos, topic
 from necst.ctrl import AntennaPIDController
 from necst.utils import spinning
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
-from ... import topic
 from ..conftest import TesterNode, destroy
 
 
