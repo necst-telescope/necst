@@ -97,7 +97,7 @@ class HorizontalCoord(Node):
 
         name_query = bool(self.cmd.name)
         print(f"convert/cmd.name: {self.cmd.name} -> {name_query}")
-        obstime = self.cmd.time[0] if len(self.cmd.time) > 0 else 0.0
+        # obstime = self.cmd.time[0] if len(self.cmd.time) > 0 else 0.0
         try:
             obstime = self.cmd.time[0]
         except Exception as e:
