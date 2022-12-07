@@ -7,7 +7,7 @@ from necst.core import Authorizer, Commander
 from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 from necst.utils import spinning
 
-from ..conftest import TesterNode, destroy, temp_config
+from ..conftest import TesterNode, destroy
 
 
 class TestCommander(TesterNode):
