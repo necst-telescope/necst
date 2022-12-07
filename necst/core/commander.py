@@ -43,8 +43,13 @@ class Commander(PrivilegedNode):
     def __callback(self, name: str, msg: Any) -> None:
         self.parameters[name] = msg
 
-    def get_message(self, key: str) -> Any:
+    def get_message(
+        self, key: str, timeout: Optional[Union[int, float]] = None
+    ) -> Optional[Any]:
+        start = pytime.monotonic()
         while self.parameters[key] is None:
+            if (timeout is not None) and (pytime.monotonic() - start < timeout):
+                return
             pytime.sleep(0.01)
         return self.parameters[key]
 
