@@ -110,16 +110,14 @@ class TestCommander(TesterNode):
             com.antenna(
                 "point", lon=340, lat=80, frame="altaz", unit="deg", wait=False
             )  # To accelerate to non-zero speed.
-            with spinning(com):
-                while com.parameters["speed"] is None:
-                    time.sleep(0.05)  # Consider antenna_command_offset=3s
-                time.sleep(3)  # Additional acceleration time
-            assert com.parameters["speed"].az > 1e-4
-            assert com.parameters["speed"].el > 1e-4
+            _ = com.get_message("speed")
+            time.sleep(3)  # Additional acceleration time
+            assert com.get_message("speed").az > 1e-4
+            assert com.get_message("speed").el > 1e-4
 
             com.antenna("stop")
-            assert com.parameters["speed"].az < 1e-5
-            assert com.parameters["speed"].el < 1e-5
+            assert com.get_message("speed").az < 1e-5
+            assert com.get_message("speed").el < 1e-5
 
             com.quit_privilege()
         destroy([com, auth_server, horizontal, pid, dev])
