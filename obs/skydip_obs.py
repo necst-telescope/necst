@@ -24,7 +24,7 @@ def Skydip(integ_time):
     com = Commander()
     com.get_privilege()
 
-    default_pos = com.parameters["encoder"]
+    default_pos = com.get_message("encoder")
     params = PointingError.from_file(config.antenna_pointing_parameter_path)
     convert_lon, *_ = params.apparent2refracted(
         az=default_pos.lon, el=default_pos.lat, unit="deg"
