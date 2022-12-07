@@ -1,3 +1,15 @@
+"""Observation program for rsky.
+
+Elevation angle fixed at 45deg. 
+Repeats the blackbody in and out the specified number of times.
+For each, integrate over the specified time.
+
+Examples
+--------
+>>> ./rsky_obs.py -n 1 -i 2
+
+"""
+
 #!/usr/bin/env python3
 import argparse
 import time
