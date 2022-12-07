@@ -1,7 +1,7 @@
 """Observation program for skydip.
 
 Keep the Azimuth angles in the facing direction.
-Observe at Elevation angles of 80, 50, 40, 30, 25, 22 and 20.
+Observe at Elevation angles of 80, 50, 40, 30, 25, 22 and 20deg.
 For each, integrate over the specified time.
 
 Examples
