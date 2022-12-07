@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 
 from neclib.data import Resize
 from neclib.devices import Spectrometer
-from neclib.recorders import Recorder
+from neclib.recorders import NECSTDBWriter, Recorder
 from necst_msgs.msg import Spectral
 
 from .. import config, namespace, topic
@@ -32,9 +32,10 @@ class SpectralData(DeviceNode):
 
         self.last_data = None
         self.recorder = Recorder(config.record_root)
+        if not any(isinstance(w, NECSTDBWriter) for w in self.recorder.writers):
+            self.recorder.add_writer(NECSTDBWriter())
         self.create_timer(0.02, self.record)
         self.create_timer(0.02, self.fetch_data)
-
         self.recorder.start_recording()
 
         topic.spectra_meta.subscription(self, self.update_metadata)
