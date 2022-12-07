@@ -6,7 +6,7 @@ For each, integrate over the specified time.
 
 Examples
 --------
->>> ./rsky_obs.py -n 1 -i 2
+$ ./rsky_obs.py -n 1 -i 2
 
 """
 

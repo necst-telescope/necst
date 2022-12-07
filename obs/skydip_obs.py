@@ -6,7 +6,7 @@ For each, integrate over the specified time.
 
 Examples
 --------
->>> ./skydip_obs.py -i 2
+$ ./skydip_obs.py -i 2
 
 """
 
