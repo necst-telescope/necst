@@ -49,22 +49,18 @@ class Commander(PrivilegedNode):
         key: str,
         stale_sec: Optional[Union[int, float]] = None,
         timeout_sec: Optional[Union[int, float]] = None,
-    ) -> Any:
-        def outdated(msg, stale_sec) -> bool:
+    ) -> Optional[Any]:
+        def outdated(msg: Any, stale_sec: Union[int, float, None]) -> bool:
             if stale_sec is None:
                 return False
             msg_timestamp = getattr(msg, "time", 0)
             return msg_timestamp < pytime.time() - stale_sec
 
         start = pytime.monotonic()
-        while (
-            (timeout_sec is not None)
-            and (pytime.monotonic() - start < timeout_sec)
-            and (
-                (self.parameters[key] is None)
-                or outdated(self.parameters[key], stale_sec)
-            )
-        ):
+        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+            msg = self.parameters[key]
+            if (msg is not None) and (not outdated(msg, stale_sec)):
+                return msg
             pytime.sleep(0.01)
         return self.parameters[key]
 
