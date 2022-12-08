@@ -112,7 +112,7 @@ class TestCommander(TesterNode):
                 "point", lon=340, lat=80, frame="altaz", unit="deg", wait=False
             )  # To accelerate to non-zero speed.
             _ = com.get_message("speed")
-            time.sleep(4)  # Additional acceleration time
+            time.sleep(5)  # Additional acceleration time
             assert com.get_message("speed").az > 1e-4
             assert com.get_message("speed").el > 1e-4
 
@@ -137,7 +137,7 @@ class TestCommander(TesterNode):
                 "point", lon=340, lat=80, frame="altaz", unit="deg", wait=False
             )  # To accelerate to non-zero speed.
             _ = com.get_message("speed")
-            time.sleep(4)  # Additional acceleration time
+            time.sleep(5)  # Additional acceleration time
             assert com.get_message("speed").az > 1e-4
             assert com.get_message("speed").el > 1e-4
 
