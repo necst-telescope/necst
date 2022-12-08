@@ -44,8 +44,27 @@ class Commander(PrivilegedNode):
     def __callback(self, name: str, msg: Any) -> None:
         self.parameters[name] = msg
 
-    def get_message(self, key: str) -> Any:
-        while self.parameters[key] is None:
+    def get_message(
+        self,
+        key: str,
+        stale_sec: Optional[Union[int, float]] = None,
+        timeout_sec: Optional[Union[int, float]] = None,
+    ) -> Any:
+        def outdated(msg, stale_sec) -> bool:
+            if stale_sec is None:
+                return False
+            msg_timestamp = getattr(msg, "time", 0)
+            return msg_timestamp < pytime.time() - stale_sec
+
+        start = pytime.monotonic()
+        while (
+            (timeout_sec is not None)
+            and (pytime.monotonic() - start < timeout_sec)
+            and (
+                (self.parameters[key] is None)
+                or outdated(self.parameters[key], stale_sec)
+            )
+        ):
             pytime.sleep(0.01)
         return self.parameters[key]
 
@@ -163,14 +182,18 @@ class Commander(PrivilegedNode):
         ENC, CMD = _param_name[target.lower()]
         threshold = _threshold[target.lower()]
 
-        timelimit = None if timeout_sec is None else pytime.time() + timeout_sec
+        pytime.sleep(10 / config.antenna_command_frequency)  # Avoid reading old command
+
+        start = pytime.monotonic()
+        stale = 2 / config.antenna_command_frequency
         checker = ConditionChecker(10, reset_on_failure=True)
-        while (timelimit is None) or (pytime.time() < timelimit):
-            if (self.parameters[ENC] is None) or (self.parameters[CMD] is None):
-                pytime.sleep(0.05)
-                continue
-            error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
-            error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
+        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+            error_az = (
+                self.get_message(ENC, stale).lon - self.get_message(CMD, stale).lon
+            )
+            error_el = (
+                self.get_message(ENC, stale).lat - self.get_message(CMD, stale).lat
+            )
             if checker.check(error_az**2 + error_el**2 < threshold**2):
                 return
             pytime.sleep(0.05)
