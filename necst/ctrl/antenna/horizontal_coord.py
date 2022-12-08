@@ -23,6 +23,7 @@ class HorizontalCoord(Node):
 
         self.cmd = None
         self.enc_az = self.enc_el = None
+        self.enc_time = 0
 
         self.finder = PathFinder(
             config.location,
@@ -67,6 +68,7 @@ class HorizontalCoord(Node):
             return
         self.enc_az = msg.lon
         self.enc_el = msg.lat
+        self.enc_time = msg.time
 
     def command_realtime(self) -> None:
         now = time.time()
@@ -86,6 +88,13 @@ class HorizontalCoord(Node):
             self.publisher.publish(msg)
 
     def convert(self) -> None:
+        if (self.cmd is not None) and (self.enc_time < time.time() - 5):
+            # Don't resume normal operation after communication with encoder lost for 5s
+            self.logger.error(
+                "Lost the communication with the encoder. Command to drive to "
+                f"{self.cmd} has been discarded."
+            )
+            self.cmd = None
         if self.cmd is None:
             return
 
