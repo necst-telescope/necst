@@ -68,6 +68,11 @@ class AntennaPIDController(AlertHandlerNode):
             self.az_enc, self.el_enc = None, None
 
         self.cmd_list.sort(key=lambda msg: msg.time)
+        if (len(self.cmd_list) > 1) and (
+            self.cmd_list[0].time > now + 1 / config.antenna_command_frequency
+        ):
+            return None, None
+
         while len(self.cmd_list) > 1:
             msg = self.cmd_list.pop(0)
             if msg.time >= now:
