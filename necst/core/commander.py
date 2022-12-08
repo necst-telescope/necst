@@ -62,7 +62,7 @@ class Commander(PrivilegedNode):
             if (msg is not None) and (not outdated(msg, stale_sec)):
                 return msg
             pytime.sleep(0.01)
-        return self.parameters[key]
+        raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
     @require_privilege(escape_cmd=["?"])
     def antenna(
