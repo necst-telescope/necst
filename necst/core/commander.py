@@ -178,11 +178,9 @@ class Commander(PrivilegedNode):
         ENC, CMD = _param_name[target.lower()]
         threshold = _threshold[target.lower()]
 
-        pytime.sleep(10 / config.antenna_command_frequency)  # Avoid reading old command
-
         start = pytime.monotonic()
-        stale = 2 / config.antenna_command_frequency
         checker = ConditionChecker(10, reset_on_failure=True)
+        stale = 5 / config.antenna_command_frequency
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
             error_az = (
                 self.get_message(ENC, stale).lon - self.get_message(CMD, stale).lon
