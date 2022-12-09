@@ -44,10 +44,25 @@ class Commander(PrivilegedNode):
     def __callback(self, name: str, msg: Any) -> None:
         self.parameters[name] = msg
 
-    def get_message(self, key: str) -> Any:
-        while self.parameters[key] is None:
+    def get_message(
+        self,
+        key: str,
+        stale_sec: Optional[Union[int, float]] = None,
+        timeout_sec: Optional[Union[int, float]] = None,
+    ) -> Optional[Any]:
+        def outdated(msg: Any, stale_sec: Union[int, float, None]) -> bool:
+            if stale_sec is None:
+                return False
+            msg_timestamp = getattr(msg, "time", 0)
+            return msg_timestamp < pytime.time() - stale_sec
+
+        start = pytime.monotonic()
+        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+            msg = self.parameters[key]
+            if (msg is not None) and (not outdated(msg, stale_sec)):
+                return msg
             pytime.sleep(0.01)
-        return self.parameters[key]
+        raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
     @require_privilege(escape_cmd=["?"])
     def antenna(
@@ -97,7 +112,7 @@ class Commander(PrivilegedNode):
             self.publisher["coord"].publish(msg)
             return self.wait_convergence("antenna") if wait else None
 
-        elif cmd == "SCAN":
+        elif CMD == "SCAN":
             standby_lon, standby_lat = standby_position(start=start, end=end, unit=unit)
             standby_lon = float(standby_lon.value)
             standby_lat = float(standby_lat.value)
@@ -111,8 +126,8 @@ class Commander(PrivilegedNode):
             )
 
             msg = CoordCmdMsg(
-                lon=[standby_lon, float(end[0])],
-                lat=[standby_lat, float(end[1])],
+                lon=[float(start[0]), float(end[0])],
+                lat=[float(start[1]), float(end[1])],
                 unit=unit,
                 frame=frame,
                 time=[float(time)],
@@ -163,14 +178,16 @@ class Commander(PrivilegedNode):
         ENC, CMD = _param_name[target.lower()]
         threshold = _threshold[target.lower()]
 
-        timelimit = None if timeout_sec is None else pytime.time() + timeout_sec
+        start = pytime.monotonic()
         checker = ConditionChecker(10, reset_on_failure=True)
-        while (timelimit is None) or (pytime.time() < timelimit):
-            if (self.parameters[ENC] is None) or (self.parameters[CMD] is None):
-                pytime.sleep(0.05)
-                continue
-            error_az = self.parameters[ENC].lon - self.parameters[CMD].lon
-            error_el = self.parameters[ENC].lat - self.parameters[CMD].lat
+        stale = 5 / config.antenna_command_frequency
+        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+            error_az = (
+                self.get_message(ENC, stale).lon - self.get_message(CMD, stale).lon
+            )
+            error_el = (
+                self.get_message(ENC, stale).lat - self.get_message(CMD, stale).lat
+            )
             if checker.check(error_az**2 + error_el**2 < threshold**2):
                 return
             pytime.sleep(0.05)
