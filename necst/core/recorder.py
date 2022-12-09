@@ -72,6 +72,7 @@ class Recorder(Node):
         ]
         print(f"before: c: {chunk}")
         for i in chunk:
+            print(f"looping: {i}: {chunk}")
             if "string" in chunk[i]["type"]:
                 print(f"before: c[{i}]: {chunk[i]}")
                 chunk[i]["value"] = chunk[i]["value"].ljust(
@@ -79,6 +80,8 @@ class Recorder(Node):
                 )
                 print(f"after: c[{i}]: {chunk[i]}")
 
+        print(f"append_t:n {topic_name}")
+        print(f"append_ck: {chunk}")
         self.recorder.append(topic_name, chunk)
         print(f"appended_tn: {topic_name}")
         print(f"appended_ck: {chunk}")
