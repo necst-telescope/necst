@@ -1,11 +1,12 @@
 import time
 
 import pytest
+from necst_msgs.msg import CoordCmdMsg, CoordMsg
 
 from necst import qos
 from necst.ctrl import HorizontalCoord
 from necst.utils import spinning
-from necst_msgs.msg import CoordCmdMsg, CoordMsg
+
 from ..conftest import TesterNode, destroy
 
 
@@ -50,6 +51,7 @@ class TestHorizontalCoord(TesterNode):
 
                 timelimit = time.time() + 5
                 while not subscribed:
+                    converter.enc_time = time.time()
                     if time.time() > timelimit:
                         break
                     time.sleep(0.02)
