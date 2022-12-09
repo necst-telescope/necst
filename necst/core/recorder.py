@@ -70,10 +70,10 @@ class Recorder(Node):
             {"key": name, "type": type_, "value": getattr(msg, name)}
             for name, type_ in fields.items()
         ]
-        for i in range(len(chunk)):
-            if "string" in chunk[i]["type"]:
-                chunk[i]["value"] = chunk[i]["value"].ljust(
-                    int(re.sub(r"\D", "", chunk[i]["type"]))
+        for _chunk in chunk:
+            if "string" in _chunk["type"]:
+                _chunk["value"] = _chunk["value"].ljust(
+                    int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
                 )
 
         self.recorder.append(topic_name, chunk)
