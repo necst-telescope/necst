@@ -71,7 +71,7 @@ class Recorder(Node):
             for name, type_ in fields.items()
         ]
         print(f"before: c: {chunk}")
-        for i in chunk:
+        for i in len(chunk):
             print(f"looping: {i}: {chunk}")
             if "string" in chunk[i]["type"]:
                 print(f"before: c[{i}]: {chunk[i]}")
@@ -80,7 +80,7 @@ class Recorder(Node):
                 )
                 print(f"after: c[{i}]: {chunk[i]}")
 
-        print(f"append_t:n {topic_name}")
+        print(f"append_tn: {topic_name}")
         print(f"append_ck: {chunk}")
         self.recorder.append(topic_name, chunk)
         print(f"appended_tn: {topic_name}")
