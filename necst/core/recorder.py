@@ -71,12 +71,12 @@ class Recorder(Node):
             for name, type_ in fields.items()
         ]
         print(f"before: c: {chunk}")
-        for i in len(chunk):
+        for i in range(len(chunk)):
             print(f"looping: {i}: {chunk}")
             if "string" in chunk[i]["type"]:
                 print(f"before: c[{i}]: {chunk[i]}")
                 chunk[i]["value"] = chunk[i]["value"].ljust(
-                    int(re.sub(r"\D", "", chunk[i]["value"]))
+                    int(re.sub(r"\D", "", chunk[i]["type"]))
                 )
                 print(f"after: c[{i}]: {chunk[i]}")
 
