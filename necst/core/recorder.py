@@ -1,5 +1,6 @@
 import importlib
 import os
+import re
 from functools import partial
 from typing import Any, Union
 
@@ -69,6 +70,11 @@ class Recorder(Node):
             {"key": name, "type": type_, "value": getattr(msg, name)}
             for name, type_ in fields.items()
         ]
+        for i in chunk:
+            if "string" in chunk[i]["type"]:
+                chunk[i]["value"] = chunk[i]["value"].ljust(
+                    int(re.sub(r"\D", "", chunk[i]["value"]))
+                )
 
         self.recorder.append(topic_name, chunk)
 
