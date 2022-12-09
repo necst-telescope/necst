@@ -72,9 +72,11 @@ class Recorder(Node):
         ]
         for i in chunk:
             if "string" in chunk[i]["type"]:
+                print(f"before: c[{i}]: {chunk[i]}")
                 chunk[i]["value"] = chunk[i]["value"].ljust(
                     int(re.sub(r"\D", "", chunk[i]["value"]))
                 )
+                print(f"after: c[{i}]: {chunk[i]}")
 
         self.recorder.append(topic_name, chunk)
 
