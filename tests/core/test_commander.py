@@ -2,10 +2,9 @@ import time
 
 from necst_msgs.msg import ChopperMsg, CoordCmdMsg, CoordMsg
 
-from necst import namespace, qos, topic
+from necst import topic
 from necst.core import Authorizer, Commander
-from necst.ctrl import (AntennaDeviceSimulator, AntennaPIDController,
-                        HorizontalCoord)
+from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 from necst.utils import spinning
 
 from ..conftest import TesterNode, destroy
