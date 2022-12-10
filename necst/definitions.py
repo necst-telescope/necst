@@ -27,6 +27,8 @@ class namespace:
 
     rx: str = f"{root}/rx"
 
+    data: str = f"{root}/data"
+
 
 class qos:
     __default = {
