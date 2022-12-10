@@ -88,5 +88,5 @@ class SpectralData(DeviceNode):
             ]
 
             self.recorder.append(
-                f"{self.Namespace}/data/spectral/board{board_id}", chunk
+                f"{namespace.data}/spectral/board{board_id}", chunk
             )
