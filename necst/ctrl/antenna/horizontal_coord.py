@@ -1,6 +1,5 @@
 __all__ = ["HorizontalCoord"]
 
-import queue
 import time
 from functools import partial
 from typing import Tuple
