@@ -1,4 +1,5 @@
 import importlib
+import re
 from functools import partial
 from typing import Any
 
@@ -76,6 +77,11 @@ class Recorder(ServerNode):
             {"key": name, "type": type_, "value": getattr(msg, name)}
             for name, type_ in fields.items()
         ]
+        for _chunk in chunk:
+            if _chunk["type"].startswith("string"):
+                _chunk["value"] = _chunk["value"].ljust(
+                    int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
+                )
 
         self.recorder.append(topic_name, chunk)
 

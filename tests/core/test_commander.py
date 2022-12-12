@@ -2,7 +2,7 @@ import time
 
 from necst_msgs.msg import ChopperMsg, CoordCmdMsg, CoordMsg
 
-from necst import namespace, qos, topic
+from necst import topic
 from necst.core import Authorizer, Commander
 from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 from necst.utils import spinning
@@ -27,20 +27,26 @@ class TestCommander(TesterNode):
         enc = topic.antenna_encoder.publisher(self.node)
         cmd = topic.altaz_cmd.publisher(self.node)
 
-        start = time.time()
+        start = time.monotonic()
 
         def publish():
-            duration_passed = time.time() - start
+            duration_passed = time.monotonic() - start
             x = 30.0 - max(0, 1.6 - 1.6 * duration_passed)
             y = 25.0 + max(0, 0.1 - 1.6 * duration_passed)
-            cmd.publish(CoordMsg(lon=30.0, lat=25.0, frame="altaz", unit="deg"))
-            enc.publish(CoordMsg(lon=x, lat=y, frame="altaz", unit="deg"))
+            cmd.publish(
+                CoordMsg(
+                    lon=30.0, lat=25.0, frame="altaz", unit="deg", time=time.time()
+                )
+            )
+            enc.publish(
+                CoordMsg(lon=x, lat=y, frame="altaz", unit="deg", time=time.time())
+            )
 
         timer = self.node.create_timer(0.1, lambda: publish())
 
         with spinning(self.node):
             com.wait_convergence("antenna")
-            assert time.time() - start > 0.99
+            assert time.monotonic() - start > 0.99
             # It takes at least 0.99826s to converge `x` within 10arcsec
 
         destroy([enc, cmd, timer], node=self.node)
@@ -59,21 +65,19 @@ class TestCommander(TesterNode):
             assert msg.lat[0] == cmd["lat"]
             assert msg.unit == cmd["unit"]
             assert msg.frame == cmd["frame"]
-            # assert msg.time[0] == cmd["time"]
             checked = True
 
-        ns = namespace.antenna
-        sub = self.node.create_subscription(
-            CoordCmdMsg, f"{ns}/raw_coord", check, qos.reliable
-        )
+        sub = topic.raw_coord.subscription(self.node, check)
 
-        timelimit = time.time() + 2
+        start = time.monotonic()
         with spinning([self.node, auth_server]):
             com.get_privilege()
             com.antenna("point", **cmd, wait=False)
 
             while not checked:
-                assert time.time() < timelimit, "Coordinate command not published in 2s"
+                assert (
+                    time.monotonic() - start < 2
+                ), "Coordinate command not published in 2s"
                 time.sleep(0.02)
             com.quit_privilege()
 
