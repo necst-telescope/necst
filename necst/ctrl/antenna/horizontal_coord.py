@@ -55,17 +55,31 @@ class HorizontalCoord(AlertHandlerNode):
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(1, self.convert)
 
-        self.result_queue = queue.Queue()
+        self.result_queue = []
         self.last_result = None
 
-        self.gc = self.create_guard_condition(self.clear_cmd)
+        self.gc = self.create_guard_condition(self._clear_cmd)
 
     def _clear_cmd(self) -> None:
         self.cmd = None
 
     def _update_cmd(self, msg: CoordCmdMsg) -> None:
+        """Update the target coordinate command.
+
+        When new command has been received, conversion result will stop for a moment,
+        since coordinate conversion for new coordinate cannot be performed immediately.
+        This suspension won't affect PID control, as it checks the command time.
+
+        Notes
+        -----
+        The conversion result will be cleared immediately after receiving the new
+        command. This won't irregular drive, as this command doesn't contain detailed
+        and frequent coordinate information. This is the case for scan command, as the
+        command only contains start/stop position and scan speed.
+
+        """
         self.cmd = msg
-        self.result_queue = queue.Queue()
+        self.result_queue = []
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
@@ -84,11 +98,11 @@ class HorizontalCoord(AlertHandlerNode):
 
         now = time.time()
         cmd = None
-        if self.result_queue.empty() and (self.last_result is not None):
+        if (len(self.result_queue) == 0) and (self.last_result is not None):
             cmd = self.last_result
         else:
-            while not self.result_queue.empty():
-                cmd = self.result_queue.get()
+            while len(self.result_queue) > 0:
+                cmd = self.result_queue[0]
                 if cmd[2] > now:
                     break
 
@@ -142,7 +156,10 @@ class HorizontalCoord(AlertHandlerNode):
             if any(x is None for x in [_az, _el, _t]):
                 continue
             cmd = (float(_az.to_value("deg")), float(_el.to_value("deg")), _t)
-            self.result_queue.put(cmd)
+
+            # Remove chronologically duplicated/overlapping commands
+            self.result_queue = list(filter(lambda x: x[2] < _t, self.result_queue))
+            self.result_queue.append(cmd)
 
     def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
         enc_az = 180 if self.enc_az is None else self.enc_az
