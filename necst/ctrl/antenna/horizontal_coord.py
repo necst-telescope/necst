@@ -7,12 +7,12 @@ from typing import Tuple
 
 from neclib.coordinates import DriveLimitChecker, PathFinder
 from necst_msgs.msg import CoordCmdMsg, CoordMsg, TimedFloat64
-from rclpy.node import Node
 
 from ... import config, namespace, topic
+from ...core import AlertHandlerNode
 
 
-class HorizontalCoord(Node):
+class HorizontalCoord(AlertHandlerNode):
 
     NodeName = "altaz_coord"
     Namespace = namespace.antenna
@@ -57,6 +57,11 @@ class HorizontalCoord(Node):
         self.result_queue = queue.Queue()
         self.last_result = None
 
+        self.gc = self.create_guard_condition(self.clear_cmd)
+
+    def _clear_cmd(self) -> None:
+        self.cmd = None
+
     def _update_cmd(self, msg: CoordCmdMsg) -> None:
         self.cmd = msg
         self.result_queue = queue.Queue()
@@ -69,6 +74,12 @@ class HorizontalCoord(Node):
         self.enc_el = msg.lat
 
     def command_realtime(self) -> None:
+        if self.status.critical():
+            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
+            # Avoid sudden resumption of telescope drive
+            self.gc.trigger()
+            return
+
         now = time.time()
         cmd = None
         if self.result_queue.empty() and (self.last_result is not None):

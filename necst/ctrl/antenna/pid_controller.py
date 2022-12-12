@@ -52,8 +52,6 @@ class AntennaPIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self._immediate_stop)
 
     def _immediate_stop(self) -> None:
-        self.cmd_list.clear()  # Avoid sudden resumption of drive
-
         if any(p is None for p in [self.az_enc, self.el_enc]):
             _az_speed, _el_speed = 0, 0
         else:
