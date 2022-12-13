@@ -5,9 +5,10 @@ from typing import Any, Literal, Optional, Tuple, Union
 
 from neclib.coordinates import standby_position
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, PIDMsg
+from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, PIDMsg, Spectral
+from necst_msgs.srv import RecordSrv
 
-from .. import NECSTTimeoutError, config, namespace, topic
+from .. import NECSTTimeoutError, config, namespace, service, topic
 from .auth import PrivilegedNode, require_privilege
 
 
@@ -23,6 +24,7 @@ class Commander(PrivilegedNode):
             "alert_stop": topic.manual_stop_alert.publisher(self),
             "pid_param": topic.pid_param.publisher(self),
             "chopper": topic.chopper_cmd.publisher(self),
+            "spectral_meta": topic.spectra_meta.publisher(self),
         }
         self.subscription = {
             "encoder": topic.antenna_encoder.subscription(
@@ -37,6 +39,9 @@ class Commander(PrivilegedNode):
             "chopper": topic.chopper_status.subscription(
                 self, partial(self.__callback, "chopper")
             ),
+        }
+        self.client = {
+            "record_path": service.record_path.client(self),
         }
 
         self.parameters = defaultdict[str, Optional[Any]](lambda: None)
@@ -178,6 +183,9 @@ class Commander(PrivilegedNode):
         ENC, CMD = _param_name[target.lower()]
         threshold = _threshold[target.lower()]
 
+        # Antenna drive should have delay of offset duration
+        pytime.sleep(config.antenna_command_offset_sec)
+
         start = pytime.monotonic()
         checker = ConditionChecker(10, reset_on_failure=True)
         stale = 5 / config.antenna_command_frequency
@@ -188,7 +196,9 @@ class Commander(PrivilegedNode):
             error_el = (
                 self.get_message(ENC, stale).lat - self.get_message(CMD, stale).lat
             )
-            if checker.check(error_az**2 + error_el**2 < threshold**2):
+            error = error_az**2 + error_el**2
+            self.logger.debug(f"Error = {error ** 0.5}deg", throttle_duration_sec=1)
+            if checker.check(error < threshold**2):
                 return
             pytime.sleep(0.05)
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
@@ -207,3 +217,38 @@ class Commander(PrivilegedNode):
         msg = PIDMsg(k_p=float(Kp), k_i=float(Ki), k_d=float(Kd), axis=axis.lower())
         self.publisher["pid_param"].publish(msg)
         # TODO: Consider demand for parameter getter
+
+    def metadata(self, cmd: Literal["set", "?"], position: str, id: str) -> None:
+        CMD = cmd.upper()
+        if CMD == "SET":
+            msg = Spectral(position=position, id=id)
+            self.publisher["spectral_meta"].publish(msg)
+            return
+        elif CMD == "?":
+            # May return metadata, by subscribing to the resized spectral data.
+            raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    def record(self, cmd: Literal["start", "stop", "?"], name: str = "") -> None:
+        CMD = cmd.upper()
+        if CMD == "START":
+            recording = False
+            while not recording:
+                req = RecordSrv(name=name, stop=False)
+                future = self.client["record_path"].call_async(req)
+                self.wait_until_future_complete(future)
+                recording = future.result().recording
+            return
+        elif CMD == "STOP":
+            recording = True
+            while recording:
+                req = RecordSrv(name=name, stop=True)
+                future = self.client["record_path"].call_async(req)
+                self.wait_until_future_complete(future)
+                recording = future.result().recording
+            return
+        elif CMD == "?":
+            raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
