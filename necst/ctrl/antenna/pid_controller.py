@@ -60,8 +60,8 @@ class AntennaPIDController(AlertHandlerNode):
             az_speed, el_speed = 0, 0
         else:
             with self.controller["az"].params(
-                k_i=0, k_d=0, accel_limit_off=-1
-            ), self.controller["el"].params(k_i=0, k_d=0, accel_limit_off=-1):
+                k_i=0, k_d=0, k_c=0, accel_limit_off=-1
+            ), self.controller["el"].params(k_i=0, k_d=0, k_c=0, accel_limit_off=-1):
                 _az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
                 _el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
             az_speed = float(self.decelerate_az(self.az_enc, _az_speed))
