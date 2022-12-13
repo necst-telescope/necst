@@ -61,6 +61,8 @@ class HorizontalCoord(AlertHandlerNode):
 
     def _clear_cmd(self) -> None:
         self.cmd = None
+        self.last_result = None
+        self.result_queue.clear()
 
     def _update_cmd(self, msg: CoordCmdMsg) -> None:
         """Update the target coordinate command.
@@ -78,7 +80,7 @@ class HorizontalCoord(AlertHandlerNode):
 
         """
         self.cmd = msg
-        self.result_queue = []
+        self.result_queue.clear()
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
