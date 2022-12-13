@@ -183,6 +183,9 @@ class Commander(PrivilegedNode):
         ENC, CMD = _param_name[target.lower()]
         threshold = _threshold[target.lower()]
 
+        # Antenna drive should have delay of offset duration
+        pytime.sleep(config.antenna_command_offset_sec)
+
         start = pytime.monotonic()
         checker = ConditionChecker(10, reset_on_failure=True)
         stale = 5 / config.antenna_command_frequency
@@ -193,7 +196,9 @@ class Commander(PrivilegedNode):
             error_el = (
                 self.get_message(ENC, stale).lat - self.get_message(CMD, stale).lat
             )
-            if checker.check(error_az**2 + error_el**2 < threshold**2):
+            error = error_az**2 + error_el**2
+            self.logger.debug(f"Error = {error ** 0.5}deg", throttle_duration_sec=1)
+            if checker.check(error < threshold**2):
                 return
             pytime.sleep(0.05)
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
