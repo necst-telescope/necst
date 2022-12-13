@@ -101,7 +101,7 @@ class HorizontalCoord(AlertHandlerNode):
             cmd = self.last_result
         else:
             while len(self.result_queue) > 0:
-                cmd = self.result_queue[0]
+                cmd = self.result_queue.pop(0)
                 if cmd[2] > now:
                     break
 
