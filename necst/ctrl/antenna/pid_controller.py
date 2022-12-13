@@ -100,17 +100,11 @@ class AntennaPIDController(AlertHandlerNode):
         lon, lat = self.get_valid_command()
         if any(p is None for p in [self.az_enc, self.el_enc]):
             # Encoder reading isn't available at all, no calculation can be performed
-            az_speed = 0.0
-            el_speed = 0.0
+            return self._immediate_stop()
         elif (self.t_enc < time.time() - 1) or any(p is None for p in [lon, lat]):
             # If ncoder reading is stale, or real-time command coordinate isn't
             # available, decelerate to 0 with `max_acceleration`.
-            with self.controller["az"].params(
-                k_i=0, k_d=0, accel_limit_off=-1
-            ), self.controller["el"].params(k_i=0, k_d=0, accel_limit_off=-1):
-                # Decay speed to zero
-                az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
-                el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
+            return self._immediate_stop()
         else:
             _az_speed = self.controller["az"].get_speed(lon, self.az_enc)
             _el_speed = self.controller["el"].get_speed(lat, self.el_enc)
