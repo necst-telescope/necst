@@ -1,34 +1,42 @@
 import importlib
-import os
+import re
 from functools import partial
-from typing import Any, Union
+from typing import Any
 
-import neclib
+from neclib.recorders import ConsoleLogWriter, FileWriter, NECSTDBWriter
 from neclib.recorders import Recorder as LibRecorder
-from rclpy.node import Node
+from necst_msgs.srv import RecordSrv
 
-from .. import config, namespace, qos
+from .. import config, namespace, qos, service
+from .server_node import ServerNode
 
 
-class Recorder(Node):
+class Recorder(ServerNode):
 
     NodeName = "recorder"
     Namespace = namespace.core
 
-    def __init__(self, record_dir: Union[str, os.PathLike] = None) -> None:
+    def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.recorder = LibRecorder(config.record_root)
 
         self.subscriber = {}
-        self.recorder.add_writer(
-            neclib.recorders.NECSTDBWriter(),
-            neclib.recorders.FileWriter(),
-            neclib.recorders.ConsoleLogWriter(),
-        )
+        writers = [NECSTDBWriter(), FileWriter(), ConsoleLogWriter()]
+        for writer in writers:
+            if writer not in self.recorder.writers:
+                self.recorder.add_writer(writer)
 
         self.create_timer(config.ros_topic_scan_interval_sec, self.scan_topics)
-        self.recorder.start_recording(record_dir)
+        self.recorder.start_recording()
+
+        service.record_path.service(self, self.change_directory)
+        self.start_server()
+
+    def change_directory(
+        self, request: RecordSrv.Request, response: RecordSrv.Response
+    ) -> None:
+        ...
 
     def _get_msg_type(self, path: str) -> Any:
         module_name, msg_name = path.replace("/", ".").rsplit(".", 1)
@@ -69,6 +77,11 @@ class Recorder(Node):
             {"key": name, "type": type_, "value": getattr(msg, name)}
             for name, type_ in fields.items()
         ]
+        for _chunk in chunk:
+            if _chunk["type"].startswith("string"):
+                _chunk["value"] = _chunk["value"].ljust(
+                    int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
+                )
 
         self.recorder.append(topic_name, chunk)
 

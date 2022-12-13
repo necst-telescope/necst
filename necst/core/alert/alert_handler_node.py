@@ -40,7 +40,7 @@ class AlertHandlerNode(Node):
 
     def __scan_alert_topics(self) -> None:
         topic_list = self.get_topic_names_and_types()
-        for name, (type_,) in topic_list:
+        for name, (type_, *_) in topic_list:
             already_subscribed = name in self.__registered_alert_topics
             if (AlertMsg.__name__ in type_.split("/")) and (not already_subscribed):
                 callback = partial(self.__update_status, name)

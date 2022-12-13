@@ -111,6 +111,7 @@ class topic:
     from necst_msgs.msg import (
         AlertMsg,
         ChopperMsg,
+        CoordCmdMsg,
         CoordMsg,
         PIDMsg,
         Spectral,
@@ -121,7 +122,7 @@ class topic:
 
     from .utils import Topic
 
-    raw_coord = Topic(CoordMsg, "raw_coord", qos.reliable, namespace.antenna)
+    raw_coord = Topic(CoordCmdMsg, "raw_coord", qos.reliable, namespace.antenna)
     antenna_encoder = Topic(CoordMsg, "encoder", qos.realtime, namespace.antenna)
     antenna_speed_cmd = Topic(
         TimedAzElFloat64, "speed", qos.realtime, namespace.antenna
@@ -163,10 +164,11 @@ class topic:
 
 
 class service:
-    from necst_msgs.srv import AuthoritySrv
+    from necst_msgs.srv import AuthoritySrv, RecordSrv
     from std_srvs.srv import Empty
 
     from .utils import Service
 
     privilege_request = Service(AuthoritySrv, "request", namespace.auth)
     privilege_ping = Service(Empty, "ping", namespace.auth)
+    record_path = Service(RecordSrv, "record_path", namespace.core)
