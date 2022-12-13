@@ -49,11 +49,13 @@ class AntennaPIDController(AlertHandlerNode):
             config.antenna_max_acceleration_el.to_value("deg/s^2"),
         )
 
-        self.gc = self.create_guard_condition(self._immediate_stop)
+        self.gc = self.create_guard_condition(self._immediate_stop_with_no_resumption)
+
+    def _immediate_stop_with_no_resumption(self) -> None:
+        self.cmd_list.clear()  # Avoid sudden resumption of drive
+        self._immediate_stop()
 
     def _immediate_stop(self) -> None:
-        self.cmd_list.clear()  # Avoid sudden resumption of drive
-
         if any(p is None for p in [self.az_enc, self.el_enc]):
             az_speed, el_speed = 0, 0
         else:
