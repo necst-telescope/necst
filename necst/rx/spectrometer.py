@@ -87,6 +87,4 @@ class SpectralData(DeviceNode):
                 for name, type_ in fields.items()
             ]
 
-            self.recorder.append(
-                f"{namespace.data}/spectral/board{board_id}", chunk
-            )
+            self.recorder.append(f"{namespace.data}/spectral/board{board_id}", chunk)
