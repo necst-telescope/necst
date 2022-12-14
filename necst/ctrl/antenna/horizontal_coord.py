@@ -139,6 +139,7 @@ class HorizontalCoord(AlertHandlerNode):
                 frame=self.cmd.frame,
                 speed=self.cmd.speed,
                 unit=self.cmd.unit,
+                margin=config.antenna_scan_margin,
             )
         else:  # POINT
             if name_query:
