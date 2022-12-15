@@ -162,7 +162,7 @@ class TestCommander(TesterNode):
             pid.controller["az"].k_p != 3
             pid.controller["az"].k_i != 4
             pid.controller["az"].k_d != 5.0
-            com.pid_parameter(3, 4, 5.0, "az")
+            com.pid_parameter("set", Kp=3, Ki=4, Kd=5.0, "az")
             com.quit_privilege()
 
             timelimit = time.time() + 3
