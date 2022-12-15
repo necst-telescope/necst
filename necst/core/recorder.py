@@ -5,7 +5,7 @@ from typing import Any
 
 from neclib.recorders import ConsoleLogWriter, FileWriter, NECSTDBWriter
 from neclib.recorders import Recorder as LibRecorder
-from necst_msgs.srv import RecordSrv
+from necst_msgs.srv import File, RecordSrv
 
 from .. import config, namespace, qos, service
 from .server_node import ServerNode
@@ -19,6 +19,7 @@ class Recorder(ServerNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
+        self.logger = self.get_logger()
         self.recorder = LibRecorder(config.record_root)
 
         self.subscriber = {}
@@ -28,15 +29,31 @@ class Recorder(ServerNode):
                 self.recorder.add_writer(writer)
 
         self.create_timer(config.ros_topic_scan_interval_sec, self.scan_topics)
-        self.recorder.start_recording()
 
         service.record_path.service(self, self.change_directory)
+        service.record_file.service(self, self.write_file)
         self.start_server()
 
     def change_directory(
         self, request: RecordSrv.Request, response: RecordSrv.Response
-    ) -> None:
-        ...
+    ) -> RecordSrv.Response:
+        if self.recorder.recording_path != self.recorder.record_root / request.name:
+            self.recorder.stop_recording()
+            self.recorder.start_recording(request.name)
+        response.recording = True
+        return response
+
+    def write_file(
+        self, request: File.Request, response: File.Response
+    ) -> File.Response:
+        if self.recorder.is_recording:
+            self.recorder.append(path=request.path, contents=request.data)
+            response.success = True
+        else:
+            msg = f"This recorder hasn't been started, discarding {request.path!r}"
+            self.logger.warning(msg)
+            response.success = False
+        return response
 
     def _get_msg_type(self, path: str) -> Any:
         module_name, msg_name = path.replace("/", ".").rsplit(".", 1)
@@ -72,6 +89,11 @@ class Recorder(ServerNode):
                 # https://answers.ros.org/question/362954/ros2create_subscription-how-to-pass-callback-arguments/?answer=393430#post-id-393430
 
     def append(self, msg, topic_name: str) -> None:
+        if not self.recorder.is_recording:
+            msg = f"This recorder hasn't been started, discarding message {msg!r}"
+            self.logger.warning(msg[: min(100, len(msg))], throttle_duration_sec=5)
+            return
+
         fields = msg.get_fields_and_field_types()
         chunk = [
             {"key": name, "type": type_, "value": getattr(msg, name)}
