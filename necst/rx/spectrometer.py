@@ -19,6 +19,8 @@ class SpectralData(DeviceNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
+        self.logger = self.get_logger()
+
         integ = 1
         self.resizers = defaultdict(lambda: Resize(integ))
         self.io = Spectrometer()
@@ -41,6 +43,10 @@ class SpectralData(DeviceNode):
         topic.spectra_meta.subscription(self, self.update_metadata)
 
     def update_metadata(self, msg: Spectral) -> None:
+        self.logger.info(
+            "Observation metadata updated : "
+            f"position={msg.position}(<-{self.position}), id={msg.id}(<-{self.id})"
+        )
         self.position = msg.position
         self.id = msg.id
 
