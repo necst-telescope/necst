@@ -164,7 +164,7 @@ class topic:
 
 
 class service:
-    from necst_msgs.srv import AuthoritySrv, FileSrv, RecordSrv
+    from necst_msgs.srv import AuthoritySrv, File, RecordSrv
     from std_srvs.srv import Empty
 
     from .utils import Service
@@ -172,4 +172,4 @@ class service:
     privilege_request = Service(AuthoritySrv, "request", namespace.auth)
     privilege_ping = Service(Empty, "ping", namespace.auth)
     record_path = Service(RecordSrv, "record_path", namespace.core)
-    record_file = Service(FileSrv, "record_file", namespace.core)
+    record_file = Service(File, "record_file", namespace.core)
