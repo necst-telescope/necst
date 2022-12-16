@@ -27,6 +27,8 @@ class namespace:
 
     rx: str = f"{root}/rx"
 
+    weather: str = f"{root}/weather"
+
 
 class qos:
     __default = {
@@ -116,6 +118,7 @@ class topic:
         TimedAzElFloat64,
         TimedAzElInt64,
         TimedFloat64,
+        WeatherMsg,
     )
 
     from .utils import Topic
@@ -141,11 +144,7 @@ class topic:
     manual_stop_alert = Topic(
         AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
     )
-    weather_temperature = Topic(
-        TimedFloat64, "temperature", qos.realtime, namespace.root
-    )
-    weather_pressure = Topic(TimedFloat64, "pressure", qos.realtime, namespace.root)
-    weather_humidity = Topic(TimedFloat64, "humidity", qos.realtime, namespace.root)
+    weather = Topic(WeatherMsg, "ambient", qos.realtime, namespace.weather)
     antenna_motor_speed = Topic(
         TimedAzElFloat64, "actual_speed", qos.realtime, namespace.antenna
     )
