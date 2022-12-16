@@ -8,7 +8,7 @@ from ... import config, namespace, topic
 from ...core import DeviceNode
 
 
-class ThermometerReader(DeviceNode):
+class WeatherStationReader(DeviceNode):
 
     NodeName = "thermometer_reader"
     Namespace = namespace.root
@@ -23,7 +23,7 @@ class ThermometerReader(DeviceNode):
         }
 
         self.thermo = WeatherStation()
-        self.create_timer(1 / config.antenna_command_frequency, self.stream)
+        self.create_timer(1, self.stream)
 
     def stream(self):
 
