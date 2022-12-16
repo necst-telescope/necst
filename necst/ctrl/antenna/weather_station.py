@@ -4,11 +4,11 @@ import rclpy
 from neclib.devices import WeatherStation
 from necst_msgs.msg import TimedFloat64
 
-from ... import config, namespace, topic
+from ... import namespace, topic
 from ...core import DeviceNode
 
 
-class ThermometerReader(DeviceNode):
+class WeatherStationReader(DeviceNode):
 
     NodeName = "thermometer_reader"
     Namespace = namespace.root
@@ -23,7 +23,7 @@ class ThermometerReader(DeviceNode):
         }
 
         self.thermo = WeatherStation()
-        self.create_timer(1 / config.antenna_command_frequency, self.stream)
+        self.create_timer(1, self.stream)
 
     def stream(self):
 
@@ -42,7 +42,7 @@ class ThermometerReader(DeviceNode):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ThermometerReader()
+    node = WeatherStationReader()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

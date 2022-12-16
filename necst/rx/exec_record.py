@@ -1,13 +1,15 @@
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 
-from . import Recorder
+from ..core import Recorder
+from .spectrometer import SpectralData
 
 
 def configure_executor() -> SingleThreadedExecutor:
     executor = SingleThreadedExecutor()
     nodes = [
         Recorder(),
+        SpectralData(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
