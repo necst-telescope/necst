@@ -40,6 +40,9 @@ class Commander(PrivilegedNode):
             "chopper": topic.chopper_status.subscription(
                 self, partial(self.__callback, "chopper")
             ),
+            "antenna_control": topic.antenna_control_status.subscription(
+                self, partial(self.__callback, "antenna_control")
+            ),
         }
         self.client = {
             "record_path": service.record_path.client(self),
@@ -193,6 +196,9 @@ class Commander(PrivilegedNode):
         checker = ConditionChecker(10, reset_on_failure=True)
         stale = 5 / config.antenna_command_frequency
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+            if not self.get_message("antenna_control", 1).controlled:
+                return  # TODO: Support for dome control
+
             error_az = (
                 self.get_message(ENC, stale).lon - self.get_message(CMD, stale).lon
             )

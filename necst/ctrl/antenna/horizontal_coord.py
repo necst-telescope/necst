@@ -5,7 +5,7 @@ from functools import partial
 from typing import Generator, Optional, Tuple
 
 from neclib.coordinates import DriveLimitChecker, PathFinder
-from necst_msgs.msg import CoordCmdMsg, CoordMsg, TimedFloat64
+from necst_msgs.msg import ControlStatus, CoordCmdMsg, CoordMsg, TimedFloat64
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -40,6 +40,7 @@ class HorizontalCoord(AlertHandlerNode):
         }
 
         self.publisher = topic.altaz_cmd.publisher(self)
+        self.status_publisher = topic.antenna_control_status.publisher(self)
         topic.raw_coord.subscription(self, self._update_cmd)
         topic.antenna_encoder.subscription(self, self._update_enc)
 
@@ -53,6 +54,7 @@ class HorizontalCoord(AlertHandlerNode):
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(1, self.convert)
+        self.create_timer(1, self.telemetry)
 
         self.result_queue = []
         self.last_result = None
@@ -65,6 +67,10 @@ class HorizontalCoord(AlertHandlerNode):
         self.cmd = None
         self.last_result = None
         self.result_queue.clear()
+
+    def telemetry(self) -> None:
+        msg = ControlStatus(controlled=self.cmd is not None, remote=True)
+        self.status_publisher.publish(msg)
 
     def _update_cmd(self, msg: CoordCmdMsg) -> None:
         """Update the target coordinate command.
@@ -157,6 +163,7 @@ class HorizontalCoord(AlertHandlerNode):
         try:
             az, el, t = next(self.executing_generator)
         except (StopIteration, TypeError):
+            self.cmd = None
             return
 
         az, el = self._validate_drive_range(az, el)
