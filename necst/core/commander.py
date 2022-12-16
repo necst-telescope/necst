@@ -144,9 +144,10 @@ class Commander(PrivilegedNode):
                 speed=float(speed),
             )
             self.publisher["coord"].publish(msg)
-            self.wait_convergence("antenna")
-
-            return self.antenna("stop")
+            if wait:
+                self.wait_convergence("antenna")
+                self.antenna("stop")
+            return
         else:
             raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
 
