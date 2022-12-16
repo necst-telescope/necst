@@ -137,7 +137,7 @@ class HorizontalCoord(AlertHandlerNode):
         elif all(len(x) == 1 for x in (msg.lon, msg.lat)):
             self.logger.info(f"Got POINT drive command: {msg}")
             self.executing_generator = self.finder.track(
-                lon=msg.lon, lat=msg.lat, frame=msg.frame, unit=msg.unit
+                lon=msg.lon[0], lat=msg.lat[0], frame=msg.frame, unit=msg.unit
             )
         else:
             raise ValueError(f"Cannot determine command type for {msg}")
