@@ -2,7 +2,7 @@ __all__ = ["HorizontalCoord"]
 
 import time
 from functools import partial
-from typing import Tuple
+from typing import Generator, Optional, Tuple
 
 from neclib.coordinates import DriveLimitChecker, PathFinder
 from necst_msgs.msg import CoordCmdMsg, CoordMsg, TimedFloat64
@@ -57,6 +57,8 @@ class HorizontalCoord(AlertHandlerNode):
         self.result_queue = []
         self.last_result = None
 
+        self.executing_generator: Optional[Generator] = None
+
         self.gc = self.create_guard_condition(self._clear_cmd)
 
     def _clear_cmd(self) -> None:
@@ -80,6 +82,7 @@ class HorizontalCoord(AlertHandlerNode):
 
         """
         self.cmd = msg
+        self._parse_cmd(msg)
         self.result_queue.clear()
 
     def _update_enc(self, msg: CoordMsg) -> None:
@@ -113,6 +116,32 @@ class HorizontalCoord(AlertHandlerNode):
             )
             self.publisher.publish(msg)
 
+    def _parse_cmd(self, msg: CoordCmdMsg) -> None:
+        if self.executing_generator is not None:
+            self.executing_generator.close()
+
+        if all(len(x) == 2 for x in (msg.lon, msg.lat)):
+            self.logger.info(f"Got LINEAR drive command: {msg}")
+            start, end = (msg.lon[0], msg.lat[0]), (msg.lon[1], msg.lat[1])
+            self.executing_generator = self.finder.linear_with_acceleration(
+                start=start,
+                end=end,
+                frame=msg.frame,
+                speed=msg.speed,
+                unit=msg.unit,
+                margin=config.antenna_scan_margin,
+            )
+        elif msg.name != "":
+            self.logger.info(f"Got NAME drive command: {msg}")
+            self.executing_generator = self.finder.track_by_name(msg.name)
+        elif all(len(x) == 1 for x in (msg.lon, msg.lat)):
+            self.logger.info(f"Got POINT drive command: {msg}")
+            self.executing_generator = self.finder.track(
+                lon=msg.lon, lat=msg.lat, frame=msg.frame, unit=msg.unit
+            )
+        else:
+            raise ValueError(f"Cannot determine command type for {msg}")
+
     def convert(self) -> None:
         if (self.cmd is not None) and (self.enc_time < time.time() - 5):
             # Don't resume normal operation after communication with encoder lost for 5s
@@ -124,33 +153,10 @@ class HorizontalCoord(AlertHandlerNode):
         if self.cmd is None:
             return
 
-        name_query = bool(self.cmd.name)
-        obstime = self.cmd.time[0] if len(self.cmd.time) > 0 else 0.0
-        if obstime == 0.0:
-            obstime = None
-        elif obstime < time.time() + config.antenna_command_offset_sec:
-            self.logger.warning("Got outdated command, ignoring...")
+        try:
+            az, el, t = next(self.executing_generator)
+        except (StopIteration, TypeError):
             return
-
-        if all(len(x) == 2 for x in [self.cmd.lon, self.cmd.lat]):  # SCAN
-            az, el, t = self.finder.linear(
-                start=(self.cmd.lon[0], self.cmd.lat[0]),
-                end=(self.cmd.lon[1], self.cmd.lat[1]),
-                frame=self.cmd.frame,
-                speed=self.cmd.speed,
-                unit=self.cmd.unit,
-            )
-        else:  # POINT
-            if name_query:
-                az, el, t = self.finder.get_altaz_by_name(self.cmd.name, obstime)
-            else:
-                az, el, t = self.finder.get_altaz(
-                    self.cmd.lon[0],
-                    self.cmd.lat[0],
-                    self.cmd.frame,
-                    unit=self.cmd.unit,
-                    obstime=obstime,
-                )
 
         az, el = self._validate_drive_range(az, el)
         for _az, _el, _t in zip(az, el, t):
