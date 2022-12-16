@@ -197,14 +197,16 @@ class Commander(PrivilegedNode):
         checker = ConditionChecker(10, reset_on_failure=True)
         stale = 5 / config.antenna_command_frequency
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            if not self.get_message("antenna_control", 1).controlled:
+            if not self.get_message("antenna_control", stale, 0.5).controlled:
                 return  # TODO: Support for dome control
 
             error_az = (
-                self.get_message(ENC, stale).lon - self.get_message(CMD, stale).lon
+                self.get_message(ENC, stale, 0.5).lon
+                - self.get_message(CMD, stale, 0.5).lon
             )
             error_el = (
-                self.get_message(ENC, stale).lat - self.get_message(CMD, stale).lat
+                self.get_message(ENC, stale, 0.5).lat
+                - self.get_message(CMD, stale, 0.5).lat
             )
             error2 = error_az**2 + error_el**2
             self.logger.debug(f"Error = {error2 ** 0.5}deg", throttle_duration_sec=1)
