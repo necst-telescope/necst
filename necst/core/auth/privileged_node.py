@@ -2,7 +2,7 @@ __all__ = ["PrivilegedNode", "require_privilege"]
 
 import functools
 import uuid
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Optional
 
 import rclpy
 from necst_msgs.srv import AuthoritySrv
