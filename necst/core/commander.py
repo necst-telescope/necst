@@ -218,11 +218,17 @@ class Commander(PrivilegedNode):
         axis: Literal["az", "el"],
     ) -> None:
         """Change PID parameters."""
-        if axis.lower() not in ("az", "el"):
-            raise ValueError(f"Unknown axis {axis!r}")
-        msg = PIDMsg(k_p=float(Kp), k_i=float(Ki), k_d=float(Kd), axis=axis.lower())
-        self.publisher["pid_param"].publish(msg)
-        # TODO: Consider demand for parameter getter
+        CMD = cmd.upper()
+        if CMD == "SET":
+            if axis.lower() not in ("az", "el"):
+                raise ValueError(f"Unknown axis {axis!r}")
+            msg = PIDMsg(k_p=float(Kp), k_i=float(Ki), k_d=float(Kd), axis=axis.lower())
+            self.publisher["pid_param"].publish(msg)
+        elif CMD == "?":
+            raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
+            # TODO: Consider demand for parameter getter
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
 
     def metadata(self, cmd: Literal["set", "?"], /, *, position: str, id: str) -> None:
         CMD = cmd.upper()
