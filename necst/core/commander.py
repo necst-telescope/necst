@@ -71,7 +71,7 @@ class Commander(PrivilegedNode):
             pytime.sleep(0.01)
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
-    @require_privilege(escape_cmd=["?"])
+    @require_privilege(escape_cmd=["?", "stop"])
     def antenna(
         self,
         cmd: Literal["stop", "point", "scan", "?"],
@@ -206,7 +206,7 @@ class Commander(PrivilegedNode):
             pytime.sleep(0.05)
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
 
-    @require_privilege
+    @require_privilege(escape_cmd=["?"])
     def pid_parameter(
         self,
         cmd: Literal["set", "?"],
