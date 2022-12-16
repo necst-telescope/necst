@@ -29,6 +29,7 @@ class Recorder(ServerNode):
                 self.recorder.add_writer(writer)
 
         self.create_timer(config.ros_topic_scan_interval_sec, self.scan_topics)
+        self.recorder.start_recording()
 
         service.record_path.service(self, self.change_directory)
         service.record_file.service(self, self.write_file)
