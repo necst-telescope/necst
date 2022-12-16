@@ -197,21 +197,26 @@ class Commander(PrivilegedNode):
         checker = ConditionChecker(10, reset_on_failure=True)
         stale = 5 / config.antenna_command_frequency
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            if not self.get_message("antenna_control", stale, 0.5).controlled:
-                return  # TODO: Support for dome control
+            try:
+                if not self.get_message("antenna_control", stale, 0.5).controlled:
+                    return  # TODO: Support for dome control
+            except NECSTTimeoutError:
+                pass
 
-            error_az = (
-                self.get_message(ENC, stale, 0.5).lon
-                - self.get_message(CMD, stale, 0.5).lon
-            )
-            error_el = (
-                self.get_message(ENC, stale, 0.5).lat
-                - self.get_message(CMD, stale, 0.5).lat
-            )
-            error2 = error_az**2 + error_el**2
-            self.logger.debug(f"Error = {error2 ** 0.5}deg", throttle_duration_sec=1)
-            if checker.check(error2 < threshold**2):
-                return
+            try:
+                enc = self.get_message(ENC, stale, 0.5)
+                cmd = self.get_message(CMD, stale, 0.5)
+                error_az = enc.lon - cmd.lon
+                error_el = enc.lat - cmd.lat
+                error2 = error_az**2 + error_el**2
+                self.logger.debug(
+                    f"Error = {error2 ** 0.5}deg", throttle_duration_sec=1
+                )
+                if checker.check(error2 < threshold**2):
+                    return
+            except NECSTTimeoutError:
+                pass
+
             pytime.sleep(0.05)
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
 
