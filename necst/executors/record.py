@@ -1,15 +1,15 @@
 import rclpy
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import SingleThreadedExecutor
 
-from .antenna import AntennaEncoder, AntennaMotor, WeatherStationReader
+from ..core import Recorder
+from ..rx.spectrometer import SpectralData
 
 
-def configure_executor() -> MultiThreadedExecutor:
-    executor = MultiThreadedExecutor()
+def configure_executor() -> SingleThreadedExecutor:
+    executor = SingleThreadedExecutor()
     nodes = [
-        AntennaEncoder(),
-        AntennaMotor(),
-        WeatherStationReader(),
+        Recorder(),
+        SpectralData(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
@@ -25,8 +25,8 @@ def main(args=None) -> None:
     except KeyboardInterrupt:
         pass
     finally:
-        _ = [n.destroy_node() for n in executor.get_nodes()]
         executor.shutdown()
+        _ = [n.destroy_node() for n in executor.get_nodes()]
         rclpy.try_shutdown()
 
 

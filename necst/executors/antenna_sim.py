@@ -1,15 +1,15 @@
 import rclpy
-from rclpy.executors import SingleThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor
 
-from ..core import Recorder
-from .spectrometer import SpectralData
+from ..ctrl.antenna import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 
 
-def configure_executor() -> SingleThreadedExecutor:
-    executor = SingleThreadedExecutor()
+def configure_executor() -> MultiThreadedExecutor:
+    executor = MultiThreadedExecutor()
     nodes = [
-        Recorder(),
-        SpectralData(),
+        AntennaPIDController(),
+        HorizontalCoord(),
+        AntennaDeviceSimulator(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
