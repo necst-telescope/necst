@@ -80,7 +80,7 @@ class SpectralData(DeviceNode):
                 position=self.position,
                 id=str(__range) + self.id,
             )
-            self.publisher[board_id].publish(msg)
+            self.publisher[_id].publish(msg)
 
     def record(self) -> None:
         _data = self.get_data()
