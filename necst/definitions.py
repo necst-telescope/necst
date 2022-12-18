@@ -161,6 +161,7 @@ class topic:
     )  # Set to reliable, because of low data acquisition frequency.
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
+    qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
 
 
 class service:

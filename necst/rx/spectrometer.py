@@ -40,7 +40,10 @@ class SpectralData(DeviceNode):
         self.create_timer(0.02, self.record)
         self.create_timer(0.02, self.fetch_data)
 
+        self.qlook_ch_range = [0, 100]
+
         topic.spectra_meta.subscription(self, self.update_metadata)
+        topic.qlook_meta.subscription(self, self.update_qlook_conf)
 
     def update_metadata(self, msg: Spectral) -> None:
         self.logger.info(
@@ -49,6 +52,19 @@ class SpectralData(DeviceNode):
         )
         self.position = msg.position
         self.id = msg.id
+
+    def update_qlook_conf(self, msg: Spectral) -> None:
+        if len(msg.ch) == 2:
+            self.qlook_ch_range = msg.ch
+            self.logger.info(
+                f"Changed Q-Look configuration: channel range {self.qlook_ch_range}"
+            )
+        else:
+            self.logger.warning(f"Cannot parse new Q-Look configuration: {msg}")
+
+        if msg.integ > 0:
+            for r in self.resizers.values():
+                r.keep_duration = msg.integ
 
     def fetch_data(self) -> None:
         if self.io.data_queue.empty():
@@ -66,18 +82,17 @@ class SpectralData(DeviceNode):
         return self.last_data
 
     def stream(self) -> None:
-        __range = (1, 100)
         for board_id in self.resizers:
             _id = f"board{board_id}"
             if _id not in self.publisher:
                 self.publisher[_id] = topic.quick_spectra[_id].publisher(self)
 
-            data = self.resizers[board_id].get(__range)
+            data = self.resizers[board_id].get(self.qlook_ch_range)
             msg = Spectral(
                 data=data,
                 time=pytime.time(),
                 position=self.position,
-                id=str(__range) + self.id,
+                id=str(tuple(self.qlook_ch_range)) + self.id,
             )
             self.publisher[_id].publish(msg)
 

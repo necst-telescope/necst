@@ -26,6 +26,7 @@ class Commander(PrivilegedNode):
             "pid_param": topic.pid_param.publisher(self),
             "chopper": topic.chopper_cmd.publisher(self),
             "spectral_meta": topic.spectra_meta.publisher(self),
+            "qlook_meta": topic.qlook_meta.publisher(self),
         }
         self.subscription = {
             "encoder": topic.antenna_encoder.subscription(
@@ -241,6 +242,22 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
+    def qlook(
+        self,
+        mode: Literal["ch", "rf", "if", "vlsr"],
+        /,
+        *,
+        range: Tuple[Union[int, float], Union[int, float]],
+        integ: Union[float, int] = 1,
+    ) -> None:
+        MODE = mode.upper()
+        if MODE == "CH":
+            self.publisher["qlook_meta"].publish(Spectral(ch=range, integ=integ))
+        elif MODE in ["IF", "RF", "VLSR"]:
+            raise NotImplementedError(f"Mode {mode!r} is not implemented yet.")
+        else:
+            raise ValueError(f"Unknown mode: {mode!r}")
+
     def record(
         self, cmd: Literal["start", "stop", "file", "?"], /, *, name: str = ""
     ) -> None:
@@ -248,7 +265,7 @@ class Commander(PrivilegedNode):
         if CMD == "START":
             recording = False
             while not recording:
-                req = RecordSrv(name=name, stop=False)
+                req = RecordSrv.Request(name=name, stop=False)
                 future = self.client["record_path"].call_async(req)
                 self.wait_until_future_complete(future)
                 recording = future.result().recording
