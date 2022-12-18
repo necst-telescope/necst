@@ -85,6 +85,11 @@ class SpectralData(DeviceNode):
         _data = self.get_data()
         if _data is None:
             return
+        if not self.recorder.is_recording:
+            self.logger.warning(
+                "Recorder not started, skipping recording", throttle_duration_sec=5
+            )
+            return
 
         time, data = _data
         for board_id, spectral_data in data.items():
