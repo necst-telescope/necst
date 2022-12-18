@@ -2,6 +2,7 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
 from ..ctrl.antenna import AntennaEncoder, AntennaMotor, WeatherStationReader
+from ..ctrl.calibrator import Chopper
 
 
 def configure_executor() -> MultiThreadedExecutor:
@@ -10,6 +11,7 @@ def configure_executor() -> MultiThreadedExecutor:
         AntennaEncoder(),
         AntennaMotor(),
         WeatherStationReader(),
+        Chopper(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
