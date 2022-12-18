@@ -109,7 +109,7 @@ class Topic(Generic[T]):
             self.topic = topic
             self.namespace = ns
 
-    def __getitem__(self, key) -> "Topic":
+    def __getitem__(self, key: str) -> "Topic":
         return Topic(
             self.msg_type, f"{self.topic}/{key}", self.qos_profile, self.namespace
         )

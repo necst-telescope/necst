@@ -69,8 +69,9 @@ class SpectralData(DeviceNode):
     def stream(self) -> None:
         __range = (1, 100)
         for board_id in self.resizers:
-            if board_id not in self.publisher:
-                self.publisher[board_id] = topic.quick_spectra[board_id].publisher(self)
+            _id = f"board{board_id}"
+            if _id not in self.publisher:
+                self.publisher[_id] = topic.quick_spectra[_id].publisher(self)
 
             data = self.resizers[board_id].get(__range)
             msg = Spectral(
