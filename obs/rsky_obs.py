@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Observation program for rsky.
 
 Elevation angle fixed at 45deg.
@@ -10,12 +11,12 @@ $ ./rsky_obs.py -n 1 -i 2
 
 """
 
-#!/usr/bin/env python3
 import argparse
 import time
 
 import rclpy
 from neclib.parameters import PointingError
+
 from necst import config
 from necst.core import Commander
 

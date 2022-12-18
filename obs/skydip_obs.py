@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Observation program for skydip.
 
 Keep the Azimuth angles in the facing direction.
@@ -10,12 +11,13 @@ $ ./skydip_obs.py -i 2
 
 """
 
-#!/usr/bin/env python3
+
 import argparse
 import time
 
 import rclpy
 from neclib.parameters import PointingError
+
 from necst import config
 from necst.core import Commander
 
