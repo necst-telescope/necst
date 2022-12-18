@@ -1,24 +1,26 @@
+from typing import Tuple
+
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
+from rclpy.node import Node
 
 from ..core import Recorder
 from ..rx.spectrometer import SpectralData
 
 
-def configure_executor() -> SingleThreadedExecutor:
+def configure_executor() -> Tuple[SingleThreadedExecutor, Node]:
     executor = SingleThreadedExecutor()
     nodes = [
-        Recorder(),
         SpectralData(),
     ]
     _ = [executor.add_node(n) for n in nodes]
-    return executor
+    return executor, Recorder()
 
 
 def main(args=None) -> None:
     rclpy.init(args=args)
 
-    executor = configure_executor()
+    executor, node = configure_executor()
 
     try:
         executor.spin()
@@ -26,6 +28,7 @@ def main(args=None) -> None:
         pass
     finally:
         executor.shutdown()
+        node.destroy_node()
         _ = [n.destroy_node() for n in executor.get_nodes()]
         rclpy.try_shutdown()
 
