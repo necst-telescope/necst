@@ -39,7 +39,6 @@ class SpectralData(DeviceNode):
             self.recorder.add_writer(NECSTDBWriter())
         self.create_timer(0.02, self.record)
         self.create_timer(0.02, self.fetch_data)
-        self.recorder.start_recording()
 
         topic.spectra_meta.subscription(self, self.update_metadata)
 
