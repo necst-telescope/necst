@@ -7,6 +7,7 @@ from neclib.data import Resize
 from neclib.devices import Spectrometer
 from neclib.recorders import NECSTDBWriter, Recorder
 from necst_msgs.msg import Spectral
+from rclpy.publisher import Publisher
 
 from .. import config, namespace, topic
 from ..core import DeviceNode
@@ -29,7 +30,7 @@ class SpectralData(DeviceNode):
         self.id = ""
         self.data_queue = queue.Queue()
 
-        self.publisher = topic.quick_spectra.publisher(self)
+        self.publisher: Dict[int, Publisher] = {}
         self.create_timer(integ, self.stream)
 
         self.last_data = None
@@ -68,6 +69,9 @@ class SpectralData(DeviceNode):
     def stream(self) -> None:
         __range = (1, 100)
         for board_id in self.resizers:
+            if board_id not in self.publisher:
+                self.publisher[board_id] = topic.quick_spectra[board_id].publisher(self)
+
             data = self.resizers[board_id].get(__range)
             msg = Spectral(
                 data=data,
@@ -75,7 +79,7 @@ class SpectralData(DeviceNode):
                 position=self.position,
                 id=str(__range) + self.id,
             )
-            self.publisher.publish(msg)
+            self.publisher[board_id].publish(msg)
 
     def record(self) -> None:
         _data = self.get_data()
