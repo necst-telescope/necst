@@ -87,7 +87,7 @@ class SpectralData(DeviceNode):
             if _id not in self.publisher:
                 self.publisher[_id] = topic.quick_spectra[_id].publisher(self)
 
-            data = self.resizers[board_id].get(self.qlook_ch_range)
+            data = self.resizers[board_id].get(self.qlook_ch_range, n_samples=100)
             msg = Spectral(
                 data=data,
                 time=pytime.time(),
