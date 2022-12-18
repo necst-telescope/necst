@@ -252,7 +252,8 @@ class Commander(PrivilegedNode):
     ) -> None:
         MODE = mode.upper()
         if MODE == "CH":
-            self.publisher["qlook_meta"].publish(Spectral(ch=range, integ=integ))
+            range = tuple(map(int, range))
+            self.publisher["qlook_meta"].publish(Spectral(ch=range, integ=float(integ)))
         elif MODE in ["IF", "RF", "VLSR"]:
             raise NotImplementedError(f"Mode {mode!r} is not implemented yet.")
         else:
