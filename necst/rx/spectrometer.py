@@ -92,7 +92,9 @@ class SpectralData(DeviceNode):
                 data=data,
                 time=pytime.time(),
                 position=self.position,
-                id=str(tuple(self.qlook_ch_range)) + self.id,
+                id=self.id,
+                ch=tuple(map(int, self.qlook_ch_range)),
+                integ=float(self.resizers[board_id].keep_duration),
             )
             self.publisher[_id].publish(msg)
 
