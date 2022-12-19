@@ -196,11 +196,15 @@ class Commander(PrivilegedNode):
         pytime.sleep(config.antenna_command_offset_sec)
 
         start = pytime.monotonic()
-        checker = ConditionChecker(10, reset_on_failure=True)
+        error_checker = ConditionChecker(10, reset_on_failure=True)
+        telemetry_checker = ConditionChecker(3, reset_on_failure=True)
         stale = 5 / config.antenna_command_frequency
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
             try:
-                if not self.get_message("antenna_control", stale, 0.5).controlled:
+                antenna_is_controlled = self.get_message(
+                    "antenna_control", stale, 0.5
+                ).controlled
+                if telemetry_checker.check(not antenna_is_controlled):
                     return  # TODO: Support for dome control
             except NECSTTimeoutError:
                 pass
@@ -214,7 +218,7 @@ class Commander(PrivilegedNode):
                 self.logger.debug(
                     f"Error = {error2 ** 0.5}deg", throttle_duration_sec=1
                 )
-                if checker.check(error2 < threshold**2):
+                if error_checker.check(error2 < threshold**2):
                     return
             except NECSTTimeoutError:
                 pass
