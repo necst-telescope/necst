@@ -70,7 +70,7 @@ class HorizontalCoord(AlertHandlerNode):
 
     def telemetry(self) -> None:
         msg = ControlStatus(
-            controlled=self.cmd is not None, remote=True, time=time.time()
+            controlled=len(self.result_queue) == 0, remote=True, time=time.time()
         )
         self.status_publisher.publish(msg)
 
