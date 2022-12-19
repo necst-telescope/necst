@@ -197,12 +197,12 @@ class Commander(PrivilegedNode):
 
         start = pytime.monotonic()
         error_checker = ConditionChecker(10, reset_on_failure=True)
-        telemetry_checker = ConditionChecker(3, reset_on_failure=True)
+        telemetry_checker = ConditionChecker(25, reset_on_failure=True)
         stale = 5 / config.antenna_command_frequency
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
             try:
                 antenna_is_controlled = self.get_message(
-                    "antenna_control", stale, 0.5
+                    "antenna_control", stale, 1
                 ).controlled
                 if telemetry_checker.check(not antenna_is_controlled):
                     return  # TODO: Support for dome control
@@ -210,8 +210,8 @@ class Commander(PrivilegedNode):
                 pass
 
             try:
-                enc = self.get_message(ENC, stale, 0.5)
-                cmd = self.get_message(CMD, stale, 0.5)
+                enc = self.get_message(ENC, stale, 0.2)
+                cmd = self.get_message(CMD, stale, 0.2)
                 error_az = enc.lon - cmd.lon
                 error_el = enc.lat - cmd.lat
                 error2 = error_az**2 + error_el**2
