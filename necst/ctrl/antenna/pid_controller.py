@@ -72,17 +72,18 @@ class AntennaPIDController(AlertHandlerNode):
     def get_valid_command(self) -> Tuple[float, float]:
         now = time.time()
         if (self.t_enc is not None) and (self.t_enc < now - 5):
+            self.logger.warning(
+                "Encoder reading isn't available.", throttle_duration_sec=5
+            )
             self.az_enc, self.el_enc = None, None
 
         self.cmd_list.sort(key=lambda msg: msg.time)
-        if (len(self.cmd_list) > 1) and (
-            self.cmd_list[0].time > now + 1 / config.antenna_command_frequency
-        ):
-            return None, None
 
         while len(self.cmd_list) > 1:
             msg = self.cmd_list.pop(0)
             if msg.time >= now:
+                while msg.time > now + 1 / config.antenna_command_frequency:
+                    time.sleep(0.001)
                 return msg.lon, msg.lat
 
         if len(self.cmd_list) == 1:
@@ -91,6 +92,7 @@ class AntennaPIDController(AlertHandlerNode):
             if msg.time <= now - 1:  # For up to 1 second
                 self.cmd_list.pop(0)
             return msg.lon, msg.lat
+        self.logger.warning("No command available.", throttle_duration_sec=5)
         return None, None
 
     def calc_pid(self) -> None:
@@ -103,8 +105,8 @@ class AntennaPIDController(AlertHandlerNode):
         if any(p is None for p in [self.az_enc, self.el_enc]):
             # Encoder reading isn't available at all, no calculation can be performed
             return self._immediate_stop()
-        elif (self.t_enc < time.time() - 1) or any(p is None for p in [lon, lat]):
-            # If ncoder reading is stale, or real-time command coordinate isn't
+        elif (self.t_enc < time.time() - 1) or any(p is None for p in (lon, lat)):
+            # If encoder reading is stale, or real-time command coordinate isn't
             # available, decelerate to 0 with `max_acceleration`.
             return self._immediate_stop()
         else:
