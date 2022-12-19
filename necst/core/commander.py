@@ -1,7 +1,6 @@
 import time as pytime
 from collections import defaultdict
 from functools import partial
-from pathlib import Path
 from typing import Any, Literal, Optional, Tuple, Union
 
 from neclib.coordinates import standby_position
