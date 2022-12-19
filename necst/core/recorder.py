@@ -121,7 +121,10 @@ class Recorder(ServerNode):
                     int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
                 )
 
-        self.recorder.append(topic_name, chunk)
+        try:
+            self.recorder.append(topic_name, chunk)
+        except RuntimeError:
+            pass
 
     def destroy_node(self) -> None:
         try:

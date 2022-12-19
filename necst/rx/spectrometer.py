@@ -119,4 +119,9 @@ class SpectralData(DeviceNode):
                 for name, type_ in fields.items()
             ]
 
-            self.recorder.append(f"{namespace.data}/spectral/board{board_id}", chunk)
+            try:
+                self.recorder.append(
+                    f"{namespace.data}/spectral/board{board_id}", chunk
+                )
+            except RuntimeError:
+                pass
