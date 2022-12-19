@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Observation program for skydip.
 
 Keep the Azimuth angles in the facing direction.
@@ -10,13 +11,13 @@ $ ./skydip_obs.py -i 2
 
 """
 
-#!/usr/bin/env python3
+
 import argparse
 import time
 
-import rclpy
 from neclib.parameters import PointingError
-from necst import config
+
+from necst import config, utils
 from necst.core import Commander
 
 
@@ -68,11 +69,5 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    rclpy.init()
-
-    try:
+    with utils.ros2context():
         Skydip(integ_time=args.integ_time)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        rclpy.try_shutdown()

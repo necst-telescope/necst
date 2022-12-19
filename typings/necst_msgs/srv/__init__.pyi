@@ -27,7 +27,7 @@ class AuthoritySrv:
         @privilege.setter
         def privilege(self, value: bool) -> None: ...
 
-class FileSrv:
+class File:
     class Request:
         SLOT_TYPES: typing.Tuple
         def __init__(self, data: str = str(), path: str = str()) -> None: ...

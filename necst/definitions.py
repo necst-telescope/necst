@@ -27,6 +27,8 @@ class namespace:
 
     rx: str = f"{root}/rx"
 
+    data: str = f"{root}/data"
+
 
 class qos:
     __default = {
@@ -157,12 +159,13 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
-    quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx)
+    quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
+    qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
 
 
 class service:
-    from necst_msgs.srv import AuthoritySrv, RecordSrv
+    from necst_msgs.srv import AuthoritySrv, File, RecordSrv
     from std_srvs.srv import Empty
 
     from .utils import Service
@@ -170,3 +173,4 @@ class service:
     privilege_request = Service(AuthoritySrv, "request", namespace.auth)
     privilege_ping = Service(Empty, "ping", namespace.auth)
     record_path = Service(RecordSrv, "record_path", namespace.core)
+    record_file = Service(File, "record_file", namespace.core)

@@ -4,9 +4,9 @@ from functools import partial
 from typing import Any, Literal, Optional, Tuple, Union
 
 from neclib.coordinates import standby_position
-from neclib.utils import ConditionChecker
+from neclib.utils import ConditionChecker, read_file
 from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, PIDMsg, Spectral
-from necst_msgs.srv import RecordSrv
+from necst_msgs.srv import File, RecordSrv
 
 from .. import NECSTTimeoutError, config, namespace, service, topic
 from .auth import PrivilegedNode, require_privilege
@@ -25,6 +25,7 @@ class Commander(PrivilegedNode):
             "pid_param": topic.pid_param.publisher(self),
             "chopper": topic.chopper_cmd.publisher(self),
             "spectral_meta": topic.spectra_meta.publisher(self),
+            "qlook_meta": topic.qlook_meta.publisher(self),
         }
         self.subscription = {
             "encoder": topic.antenna_encoder.subscription(
@@ -42,6 +43,7 @@ class Commander(PrivilegedNode):
         }
         self.client = {
             "record_path": service.record_path.client(self),
+            "record_file": service.record_file.client(self),
         }
 
         self.parameters = defaultdict[str, Optional[Any]](lambda: None)
@@ -69,10 +71,11 @@ class Commander(PrivilegedNode):
             pytime.sleep(0.01)
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
-    @require_privilege(escape_cmd=["?"])
+    @require_privilege(escape_cmd=["?", "stop"])
     def antenna(
         self,
         cmd: Literal["stop", "point", "scan", "?"],
+        /,
         *,
         lon: Optional[Union[int, float]] = None,
         lat: Optional[Union[int, float]] = None,
@@ -100,8 +103,7 @@ class Commander(PrivilegedNode):
                 pytime.sleep(1 / config.antenna_command_frequency)
 
             msg = AlertMsg(critical=False, warning=False, target=target)
-            self.publisher["alert_stop"].publish(msg)
-            return
+            return self.publisher["alert_stop"].publish(msg)
 
         elif CMD == "POINT":
             if name is not None:
@@ -141,13 +143,12 @@ class Commander(PrivilegedNode):
             self.publisher["coord"].publish(msg)
             self.wait_convergence("antenna")
 
-            self.antenna("stop")
-            return
+            return self.antenna("stop")
         else:
             raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
 
     @require_privilege(escape_cmd=["?"])
-    def chopper(self, cmd: Literal["insert", "remove", "?"], wait: bool = True):
+    def chopper(self, cmd: Literal["insert", "remove", "?"], /, *, wait: bool = True):
         """Calibrator."""
         CMD = cmd.upper()
         if CMD == "?":
@@ -169,6 +170,8 @@ class Commander(PrivilegedNode):
     def wait_convergence(
         self,
         target: Literal["antenna", "dome"],
+        /,
+        *,
         timeout_sec: Optional[Union[int, float]] = None,
     ) -> None:
         """Wait until the motion has been converged."""
@@ -196,46 +199,78 @@ class Commander(PrivilegedNode):
             error_el = (
                 self.get_message(ENC, stale).lat - self.get_message(CMD, stale).lat
             )
-            error = error_az**2 + error_el**2
-            self.logger.debug(f"Error = {error ** 0.5}deg", throttle_duration_sec=1)
-            if checker.check(error < threshold**2):
+            error2 = error_az**2 + error_el**2
+            self.logger.debug(f"Error = {error2 ** 0.5}deg", throttle_duration_sec=1)
+            if checker.check(error2 < threshold**2):
                 return
             pytime.sleep(0.05)
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
 
-    @require_privilege
+    @require_privilege(escape_cmd=["?"])
     def pid_parameter(
         self,
+        cmd: Literal["set", "?"],
+        /,
+        *,
         Kp: Union[int, float],
         Ki: Union[int, float],
         Kd: Union[int, float],
         axis: Literal["az", "el"],
     ) -> None:
         """Change PID parameters."""
-        if axis.lower() not in ("az", "el"):
-            raise ValueError(f"Unknown axis {axis!r}")
-        msg = PIDMsg(k_p=float(Kp), k_i=float(Ki), k_d=float(Kd), axis=axis.lower())
-        self.publisher["pid_param"].publish(msg)
-        # TODO: Consider demand for parameter getter
-
-    def metadata(self, cmd: Literal["set", "?"], position: str, id: str) -> None:
         CMD = cmd.upper()
         if CMD == "SET":
-            msg = Spectral(position=position, id=id)
-            self.publisher["spectral_meta"].publish(msg)
-            return
+            if axis.lower() not in ("az", "el"):
+                raise ValueError(f"Unknown axis {axis!r}")
+            msg = PIDMsg(k_p=float(Kp), k_i=float(Ki), k_d=float(Kd), axis=axis.lower())
+            self.publisher["pid_param"].publish(msg)
+        elif CMD == "?":
+            raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
+            # TODO: Consider demand for parameter getter
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    def metadata(self, cmd: Literal["set", "?"], /, *, position: str, id: str) -> None:
+        CMD = cmd.upper()
+        if CMD == "SET":
+            msg = Spectral(position=position, id=str(id))
+            return self.publisher["spectral_meta"].publish(msg)
         elif CMD == "?":
             # May return metadata, by subscribing to the resized spectral data.
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
-    def record(self, cmd: Literal["start", "stop", "?"], name: str = "") -> None:
+    def qlook(
+        self,
+        mode: Literal["ch", "rf", "if", "vlsr"],
+        /,
+        *,
+        range: Tuple[Union[int, float], Union[int, float]],
+        integ: Union[float, int] = 1,
+    ) -> None:
+        MODE = mode.upper()
+        if MODE == "CH":
+            range = tuple(map(int, range))
+            self.publisher["qlook_meta"].publish(Spectral(ch=range, integ=float(integ)))
+        elif MODE in ["IF", "RF", "VLSR"]:
+            raise NotImplementedError(f"Mode {mode!r} is not implemented yet.")
+        else:
+            raise ValueError(f"Unknown mode: {mode!r}")
+
+    def record(
+        self,
+        cmd: Literal["start", "stop", "file", "?"],
+        /,
+        *,
+        name: str = "",
+        content: Optional[str] = None,
+    ) -> None:
         CMD = cmd.upper()
         if CMD == "START":
             recording = False
             while not recording:
-                req = RecordSrv(name=name, stop=False)
+                req = RecordSrv.Request(name=name.lstrip("/"), stop=False)
                 future = self.client["record_path"].call_async(req)
                 self.wait_until_future_complete(future)
                 recording = future.result().recording
@@ -243,12 +278,21 @@ class Commander(PrivilegedNode):
         elif CMD == "STOP":
             recording = True
             while recording:
-                req = RecordSrv(name=name, stop=True)
+                req = RecordSrv.Request(name=name, stop=True)
                 future = self.client["record_path"].call_async(req)
                 self.wait_until_future_complete(future)
                 recording = future.result().recording
             return
+        elif CMD == "FILE":
+            if content is None:
+                content = read_file(name)
+            req = File.Request(data=str(content), path=name)
+            future = self.client["record_file"].call_async(req)
+            return self.wait_until_future_complete(future)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+    def sis_bias(self, *args, **kwargs) -> None:
+        ...

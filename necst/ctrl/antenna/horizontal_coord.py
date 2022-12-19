@@ -97,6 +97,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.gc.trigger()
             return
 
+        # No realtime-ness check is performed, just filter outdated commands out
         now = time.time()
         cmd = None
         if (len(self.result_queue) == 0) and (self.last_result is not None):

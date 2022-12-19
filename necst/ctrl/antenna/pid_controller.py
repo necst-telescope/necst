@@ -49,21 +49,23 @@ class AntennaPIDController(AlertHandlerNode):
             config.antenna_max_acceleration_el.to_value("deg/s^2"),
         )
 
-        self.gc = self.create_guard_condition(self._immediate_stop)
+        self.gc = self.create_guard_condition(self._immediate_stop_with_no_resumption)
+
+    def _immediate_stop_with_no_resumption(self) -> None:
+        self.cmd_list.clear()  # Avoid sudden resumption of drive
+        self._immediate_stop()
 
     def _immediate_stop(self) -> None:
-        self.cmd_list.clear()  # Avoid sudden resumption of drive
-
         if any(p is None for p in [self.az_enc, self.el_enc]):
-            _az_speed, _el_speed = 0, 0
+            az_speed, el_speed = 0, 0
         else:
             with self.controller["az"].params(
-                k_i=0, k_d=0, accel_limit_off=-1
-            ), self.controller["el"].params(k_i=0, k_d=0, accel_limit_off=-1):
+                k_i=0, k_d=0, k_c=0, accel_limit_off=-1
+            ), self.controller["el"].params(k_i=0, k_d=0, k_c=0, accel_limit_off=-1):
                 _az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
                 _el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
-        az_speed = float(self.decelerate_az(self.az_enc, _az_speed))
-        el_speed = float(self.decelerate_el(self.el_enc, _el_speed))
+            az_speed = float(self.decelerate_az(self.az_enc, _az_speed))
+            el_speed = float(self.decelerate_el(self.el_enc, _el_speed))
         msg = TimedAzElFloat64(az=float(az_speed), el=float(el_speed), time=time.time())
         self.publisher.publish(msg)
 
@@ -100,17 +102,11 @@ class AntennaPIDController(AlertHandlerNode):
         lon, lat = self.get_valid_command()
         if any(p is None for p in [self.az_enc, self.el_enc]):
             # Encoder reading isn't available at all, no calculation can be performed
-            az_speed = 0.0
-            el_speed = 0.0
+            return self._immediate_stop()
         elif (self.t_enc < time.time() - 1) or any(p is None for p in [lon, lat]):
             # If ncoder reading is stale, or real-time command coordinate isn't
             # available, decelerate to 0 with `max_acceleration`.
-            with self.controller["az"].params(
-                k_i=0, k_d=0, accel_limit_off=-1
-            ), self.controller["el"].params(k_i=0, k_d=0, accel_limit_off=-1):
-                # Decay speed to zero
-                az_speed = self.controller["az"].get_speed(self.az_enc, self.az_enc)
-                el_speed = self.controller["el"].get_speed(self.el_enc, self.el_enc)
+            return self._immediate_stop()
         else:
             _az_speed = self.controller["az"].get_speed(lon, self.az_enc)
             _el_speed = self.controller["el"].get_speed(lat, self.el_enc)
