@@ -82,7 +82,7 @@ class AntennaPIDController(AlertHandlerNode):
         while len(self.cmd_list) > 1:
             msg = self.cmd_list.pop(0)
             if msg.time >= now:
-                while msg.time > now + 1 / config.antenna_command_frequency:
+                while msg.time > time.time() + 1 / config.antenna_command_frequency:
                     time.sleep(0.001)
                 return msg.lon, msg.lat
 
