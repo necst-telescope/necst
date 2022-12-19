@@ -40,7 +40,7 @@ class SpectralData(DeviceNode):
         self.create_timer(0.02, self.record)
         self.create_timer(0.02, self.fetch_data)
 
-        self.qlook_ch_range = [0, 100]
+        self.qlook_ch_range = (0, 100)
 
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
@@ -55,9 +55,9 @@ class SpectralData(DeviceNode):
 
     def update_qlook_conf(self, msg: Spectral) -> None:
         if len(msg.ch) == 2:
-            self.qlook_ch_range = msg.ch
+            self.qlook_ch_range = (min(msg.ch), max(msg.ch))
             self.logger.info(
-                f"Changed Q-Look configuration: channel range {self.qlook_ch_range}"
+                f"Changed Q-Look configuration: channel = {tuple(self.qlook_ch_range)}"
             )
         else:
             self.logger.warning(f"Cannot parse new Q-Look configuration: {msg}")
