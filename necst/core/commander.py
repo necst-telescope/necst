@@ -67,11 +67,12 @@ class Commander(PrivilegedNode):
             return msg_timestamp < pytime.time() - stale_sec
 
         start = pytime.monotonic()
+        loop_interval = 0.01 if timeout_sec is None else timeout_sec / 10
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
             msg = self.parameters[key]
             if (msg is not None) and (not outdated(msg, stale_sec)):
                 return msg
-            pytime.sleep(0.01)
+            pytime.sleep(loop_interval)
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
     @require_privilege(escape_cmd=["?", "stop"])
@@ -202,7 +203,7 @@ class Commander(PrivilegedNode):
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
             try:
                 antenna_is_controlled = self.get_message(
-                    "antenna_control", stale, 0.1
+                    "antenna_control", stale, 0.01
                 ).controlled
                 if telemetry_checker.check(not antenna_is_controlled):
                     return  # TODO: Support for dome control
@@ -210,8 +211,8 @@ class Commander(PrivilegedNode):
                 pass
 
             try:
-                enc = self.get_message(ENC, stale, 0.1)
-                cmd = self.get_message(CMD, stale, 0.1)
+                enc = self.get_message(ENC, stale, 0.01)
+                cmd = self.get_message(CMD, stale, 0.01)
                 error_az = enc.lon - cmd.lon
                 error_el = enc.lat - cmd.lat
                 error2 = error_az**2 + error_el**2
