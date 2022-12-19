@@ -123,7 +123,9 @@ class Commander(PrivilegedNode):
             return self.wait_convergence("antenna") if wait else None
 
         elif CMD == "SCAN":
-            standby_lon, standby_lat = standby_position(start=start, end=end, unit=unit)
+            standby_lon, standby_lat = standby_position(
+                start=start, end=end, unit=unit, margin=config.antenna_scan_margin
+            )
             standby_lon = float(standby_lon.value)
             standby_lat = float(standby_lat.value)
             self.antenna(
