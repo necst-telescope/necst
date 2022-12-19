@@ -14,16 +14,16 @@ $ ./rsky_obs.py -n 1 -i 2
 import argparse
 import time
 
-import rclpy
 from neclib.parameters import PointingError
 
-from necst import config
+from necst import config, utils
 from necst.core import Commander
 
 
 def RSky(n, integ_time):
     com = Commander()
     com.get_privilege()
+    com.record("start", name="")
 
     default_pos = com.get_message("encoder")
     params = PointingError.from_file(config.antenna_pointing_parameter_path)
@@ -44,6 +44,8 @@ def RSky(n, integ_time):
         time.sleep(integ_time)
         com.chopper("remove")
         time.sleep(integ_time)
+
+    com.record("stop")
     com.quit_privilege()
     com.destroy_node()
 
@@ -66,11 +68,5 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    rclpy.init()
-
-    try:
+    with utils.ros2context():
         RSky(n=args.n, integ_time=args.integ_time)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        rclpy.try_shutdown()

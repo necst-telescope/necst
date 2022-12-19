@@ -15,10 +15,9 @@ $ ./skydip_obs.py -i 2
 import argparse
 import time
 
-import rclpy
 from neclib.parameters import PointingError
 
-from necst import config
+from necst import config, utils
 from necst.core import Commander
 
 
@@ -70,11 +69,5 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    rclpy.init()
-
-    try:
+    with utils.ros2context():
         Skydip(integ_time=args.integ_time)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        rclpy.try_shutdown()
