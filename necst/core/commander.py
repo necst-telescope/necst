@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional, Tuple, Union
 
 from neclib.coordinates import standby_position
-from neclib.utils import ConditionChecker
+from neclib.utils import ConditionChecker, read_file
 from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, PIDMsg, Spectral
 from necst_msgs.srv import File, RecordSrv
 
@@ -234,7 +234,7 @@ class Commander(PrivilegedNode):
     def metadata(self, cmd: Literal["set", "?"], /, *, position: str, id: str) -> None:
         CMD = cmd.upper()
         if CMD == "SET":
-            msg = Spectral(position=position, id=id)
+            msg = Spectral(position=position, id=str(id))
             return self.publisher["spectral_meta"].publish(msg)
         elif CMD == "?":
             # May return metadata, by subscribing to the resized spectral data.
@@ -260,13 +260,18 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown mode: {mode!r}")
 
     def record(
-        self, cmd: Literal["start", "stop", "file", "?"], /, *, name: str = ""
+        self,
+        cmd: Literal["start", "stop", "file", "?"],
+        /,
+        *,
+        name: str = "",
+        content: Optional[str] = None,
     ) -> None:
         CMD = cmd.upper()
         if CMD == "START":
             recording = False
             while not recording:
-                req = RecordSrv.Request(name=name, stop=False)
+                req = RecordSrv.Request(name=name.lstrip("/"), stop=False)
                 future = self.client["record_path"].call_async(req)
                 self.wait_until_future_complete(future)
                 recording = future.result().recording
@@ -280,14 +285,15 @@ class Commander(PrivilegedNode):
                 recording = future.result().recording
             return
         elif CMD == "FILE":
-            try:
-                data = Path(name).read_text()
-            except UnicodeDecodeError:
-                data = str(Path(name).read_bytes())
-            req = File.Request(data=data, path=name)
+            if content is None:
+                content = read_file(name)
+            req = File.Request(data=str(content), path=name)
             future = self.client["record_file"].call_async(req)
             return self.wait_until_future_complete(future)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+    def sis_bias(self, *args, **kwargs) -> None:
+        ...
