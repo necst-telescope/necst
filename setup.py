@@ -13,14 +13,14 @@ def get_executor_entrypoints() -> List[str]:
     be executed in different directory, causing incorrect ``__file__``.
 
     """
-    root = Path(__file__).parent / package_name
-    exec_files = root.glob("**/exec_*.py")
+    root = Path(__file__).parent / package_name / "executors"
+    exec_files = root.glob("**/*.py")
 
     def _parse(path: Path) -> str:
-        cmd = path.stem.strip("exec_")
+        cmd = path.stem
         path_with_no_extension = path.with_suffix("")
         dot_separated_path = str(path_with_no_extension).replace("/", ".")
-        return f"{cmd}={package_name}.{dot_separated_path}:main"
+        return f"{cmd}={package_name}.executors.{dot_separated_path}:main"
 
     paths_in_pkg = [f.relative_to(root) for f in exec_files]
     return [_parse(p) for p in paths_in_pkg]

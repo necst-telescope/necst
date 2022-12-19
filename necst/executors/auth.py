@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 
-from . import Authorizer
+from ..core import Authorizer
 
 
 def configure_server() -> Node:

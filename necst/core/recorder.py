@@ -29,7 +29,6 @@ class Recorder(ServerNode):
                 self.recorder.add_writer(writer)
 
         self.create_timer(config.ros_topic_scan_interval_sec, self.scan_topics)
-        self.recorder.start_recording()
 
         service.record_path.service(self, self.change_directory)
         service.record_file.service(self, self.write_file)
@@ -38,10 +37,26 @@ class Recorder(ServerNode):
     def change_directory(
         self, request: RecordSrv.Request, response: RecordSrv.Response
     ) -> RecordSrv.Response:
-        if self.recorder.recording_path != self.recorder.record_root / request.name:
+        if request.stop and self.recorder.is_recording:
+            self.recorder.stop_recording()
+            self.logger.info("Recording has been stopped.")
+            response.recording = False
+        elif request.stop:
+            self.logger.info("Recording has already been stopped.")
+            response.recording = False
+        elif not self.recorder.is_recording:
+            self.recorder.start_recording(request.name or None)
+            self.logger.info(f"Recorder started: {self.recorder.recording_path!s}")
+            response.recording = True
+        elif self.recorder.recording_path != self.recorder.record_root / request.name:
+            self.logger.info(f"Stopped recording: {self.recorder.recording_path!s}")
             self.recorder.stop_recording()
             self.recorder.start_recording(request.name)
-        response.recording = True
+            self.logger.info(f"Recorder started: {self.recorder.recording_path!s}")
+            response.recording = True
+        else:
+            self.logger.info(f"Continue recording: {self.recorder.recording_path!s}")
+            response.recording = True
         return response
 
     def write_file(

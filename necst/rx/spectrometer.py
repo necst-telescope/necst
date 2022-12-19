@@ -7,6 +7,7 @@ from neclib.data import Resize
 from neclib.devices import Spectrometer
 from neclib.recorders import NECSTDBWriter, Recorder
 from necst_msgs.msg import Spectral
+from rclpy.publisher import Publisher
 
 from .. import config, namespace, topic
 from ..core import DeviceNode
@@ -29,7 +30,7 @@ class SpectralData(DeviceNode):
         self.id = ""
         self.data_queue = queue.Queue()
 
-        self.publisher = topic.quick_spectra.publisher(self)
+        self.publisher: Dict[int, Publisher] = {}
         self.create_timer(integ, self.stream)
 
         self.last_data = None
@@ -38,9 +39,11 @@ class SpectralData(DeviceNode):
             self.recorder.add_writer(NECSTDBWriter())
         self.create_timer(0.02, self.record)
         self.create_timer(0.02, self.fetch_data)
-        self.recorder.start_recording()
+
+        self.qlook_ch_range = [0, 100]
 
         topic.spectra_meta.subscription(self, self.update_metadata)
+        topic.qlook_meta.subscription(self, self.update_qlook_conf)
 
     def update_metadata(self, msg: Spectral) -> None:
         self.logger.info(
@@ -49,6 +52,19 @@ class SpectralData(DeviceNode):
         )
         self.position = msg.position
         self.id = msg.id
+
+    def update_qlook_conf(self, msg: Spectral) -> None:
+        if len(msg.ch) == 2:
+            self.qlook_ch_range = msg.ch
+            self.logger.info(
+                f"Changed Q-Look configuration: channel range {self.qlook_ch_range}"
+            )
+        else:
+            self.logger.warning(f"Cannot parse new Q-Look configuration: {msg}")
+
+        if msg.integ > 0:
+            for r in self.resizers.values():
+                r.keep_duration = msg.integ
 
     def fetch_data(self) -> None:
         if self.io.data_queue.empty():
@@ -66,20 +82,30 @@ class SpectralData(DeviceNode):
         return self.last_data
 
     def stream(self) -> None:
-        __range = (1, 100)
         for board_id in self.resizers:
-            data = self.resizers[board_id].get(__range)
+            _id = f"board{board_id}"
+            if _id not in self.publisher:
+                self.publisher[_id] = topic.quick_spectra[_id].publisher(self)
+
+            data = self.resizers[board_id].get(self.qlook_ch_range, n_samples=100)
             msg = Spectral(
                 data=data,
                 time=pytime.time(),
                 position=self.position,
-                id=str(__range) + self.id,
+                id=self.id,
+                ch=tuple(map(int, self.qlook_ch_range)),
+                integ=float(self.resizers[board_id].keep_duration),
             )
-            self.publisher.publish(msg)
+            self.publisher[_id].publish(msg)
 
     def record(self) -> None:
         _data = self.get_data()
         if _data is None:
+            return
+        if not self.recorder.is_recording:
+            self.logger.warning(
+                "Recorder not started, skipping recording", throttle_duration_sec=5
+            )
             return
 
         time, data = _data
