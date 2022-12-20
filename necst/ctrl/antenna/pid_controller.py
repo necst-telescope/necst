@@ -118,12 +118,13 @@ class AntennaPIDController(AlertHandlerNode):
                 break
 
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
+        now = pytime.time()
+        self.discard_outdated_commands()
+
         # Check if any command is available.
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
-
-        self.discard_outdated_commands()
-        now = pytime.time()
+            return
 
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
