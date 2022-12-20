@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import List, Optional, Tuple
 
 from neclib.controllers import PIDController
+from neclib.data import LinearInterp
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
 from necst_msgs.msg import ControlStatus, CoordMsg, PIDMsg, TimedAzElFloat64
@@ -58,6 +59,10 @@ class AntennaPIDController(AlertHandlerNode):
         self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
         self.create_timer(1, self.telemetry)
 
+        self.coord_interp = LinearInterp(
+            "time", CoordMsg.get_fields_and_field_types().keys()
+        )
+
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
@@ -69,28 +74,14 @@ class AntennaPIDController(AlertHandlerNode):
 
     def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
         """Perform linear interpolation on encoder reading."""
-        older, newer = self.enc
+        _, newer = self.enc
         if newer.time < time - 1:
             self.logger.warning(
                 "Encoder reading not available.", throttle_duration_sec=5
             )
             return
 
-        if time < older.time:
-            return older
-        if newer.time < time:
-            return newer
-
-        dt = newer.time - older.time
-        if dt == 0:
-            return newer
-        az_interp = (newer.lon - older.lon) / dt * (time - older.time) + older.lon
-        el_interp = (newer.lat - older.lat) / dt * (time - older.time) + older.lat
-        if any(v != v for v in (az_interp, el_interp)):
-            return  # Detect 'nan'.
-        return CoordMsg(
-            lon=az_interp, lat=el_interp, time=time, frame="altaz", unit="deg"
-        )
+        return self.coord_interp(CoordMsg(time=time), self.enc)
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
