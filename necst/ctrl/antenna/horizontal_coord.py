@@ -5,7 +5,7 @@ from functools import partial
 from typing import Generator, Optional, Tuple
 
 from neclib.coordinates import DriveLimitChecker, PathFinder
-from necst_msgs.msg import ControlStatus, CoordCmdMsg, CoordMsg, TimedFloat64
+from necst_msgs.msg import CoordCmdMsg, CoordMsg, TimedFloat64
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -28,7 +28,7 @@ class HorizontalCoord(AlertHandlerNode):
             config.location,
             config.antenna_pointing_parameter_path,
             obsfreq=config.observation_frequency,  # TODO: Make ``obsfreq`` changeable.
-        )  # TODO: Take weather data into account.
+        )
         drive_limit = config.antenna_drive
         self.optimizer = {
             "az": DriveLimitChecker(
@@ -40,21 +40,19 @@ class HorizontalCoord(AlertHandlerNode):
         }
 
         self.publisher = topic.altaz_cmd.publisher(self)
-        self.status_publisher = topic.antenna_control_status.publisher(self)
         topic.raw_coord.subscription(self, self._update_cmd)
         topic.antenna_encoder.subscription(self, self._update_enc)
 
-        callback_temp = partial(self.change_weather, "temperature")
-        callback_pres = partial(self.change_weather, "pressure")
-        callback_hum = partial(self.change_weather, "humidty")
+        callback_temp = partial(self.update_weather, "temperature")
+        callback_pres = partial(self.update_weather, "pressure")
+        callback_hum = partial(self.update_weather, "humidty")
 
         topic.weather_temperature.subscription(self, callback_temp)
         topic.weather_pressure.subscription(self, callback_pres)
         topic.weather_humidity.subscription(self, callback_hum)
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
-        self.create_timer(1, self.convert)
-        self.create_timer(1, self.telemetry)
+        self.create_timer(0.5, self.convert)
 
         self.result_queue = []
         self.last_result = None
@@ -67,12 +65,6 @@ class HorizontalCoord(AlertHandlerNode):
         self.cmd = None
         self.last_result = None
         self.result_queue.clear()
-
-    def telemetry(self) -> None:
-        msg = ControlStatus(
-            controlled=len(self.result_queue) != 0, remote=True, time=time.time()
-        )
-        self.status_publisher.publish(msg)
 
     def _update_cmd(self, msg: CoordCmdMsg) -> None:
         """Update the target coordinate command.
@@ -95,7 +87,7 @@ class HorizontalCoord(AlertHandlerNode):
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
-            self.logger.warning("Invalid encoder reading detected.")
+            self.logger.debug("Invalid encoder reading detected.")
             return
         self.enc_az = msg.lon
         self.enc_el = msg.lat
@@ -130,7 +122,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.executing_generator.close()
 
         if all(len(x) == 2 for x in (msg.lon, msg.lat)):
-            self.logger.info(f"Got LINEAR drive command: {msg}")
+            self.logger.debug(f"Got LINEAR drive command: {msg}")
             start, end = (msg.lon[0], msg.lat[0]), (msg.lon[1], msg.lat[1])
             self.executing_generator = self.finder.linear_with_acceleration(
                 start=start,
@@ -141,10 +133,10 @@ class HorizontalCoord(AlertHandlerNode):
                 margin=config.antenna_scan_margin,
             )
         elif msg.name != "":
-            self.logger.info(f"Got NAME drive command: {msg}")
+            self.logger.debug(f"Got NAME drive command: {msg}")
             self.executing_generator = self.finder.track_by_name(msg.name)
         elif all(len(x) == 1 for x in (msg.lon, msg.lat)):
-            self.logger.info(f"Got POINT drive command: {msg}")
+            self.logger.debug(f"Got POINT drive command: {msg}")
             self.executing_generator = self.finder.track(
                 lon=msg.lon[0], lat=msg.lat[0], frame=msg.frame, unit=msg.unit
             )
@@ -162,6 +154,13 @@ class HorizontalCoord(AlertHandlerNode):
         if self.cmd is None:
             return
 
+        if (len(self.result_queue) > 1) and (
+            self.result_queue[-1][2] > time.time() + config.antenna_command_offset_sec
+        ):
+            # This function will be called twice per 1s, to ensure no run-out of command
+            # but it can cause overloading the data, so judge command update necessity.
+            return
+
         try:
             az, el, t = next(self.executing_generator)
         except (StopIteration, TypeError):
@@ -172,10 +171,10 @@ class HorizontalCoord(AlertHandlerNode):
         for _az, _el, _t in zip(az, el, t):
             if any(x is None for x in [_az, _el, _t]):
                 continue
-            cmd = (float(_az.to_value("deg")), float(_el.to_value("deg")), _t)
-
             # Remove chronologically duplicated/overlapping commands
             self.result_queue = list(filter(lambda x: x[2] < _t, self.result_queue))
+
+            cmd = (float(_az.to_value("deg")), float(_el.to_value("deg")), _t)
             self.result_queue.append(cmd)
 
     def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
@@ -189,7 +188,7 @@ class HorizontalCoord(AlertHandlerNode):
             return _az, _el
         return [], []
 
-    def change_weather(self, kind: str, msg: TimedFloat64) -> None:
+    def update_weather(self, kind: str, msg: TimedFloat64) -> None:
         if kind == "temperature":
             self.finder.temperature = msg.data
         elif kind == "pressure":
