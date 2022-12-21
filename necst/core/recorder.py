@@ -109,7 +109,7 @@ class Recorder(ServerNode):
                 if "/" in type:
                     regex = r"<([a-zA-Z0-9_/]*)>|^([a-zA-Z0-9_/]*)$"
                     msgtype = re.search(regex, type).groups()
-                    msgtype = list(filter(lambda x: x is not None, msgtype))
+                    msgtype = list(filter(lambda x: x is not None, msgtype))[0]
                     msgtype = utils.import_msg(msgtype.replace("/", "/msg/"))
                     # This still doesn't support field of type 'CustomMsg[]'
                     parsed.extend(msg2dict(msgtype, name + "_"))
