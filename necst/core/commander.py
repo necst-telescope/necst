@@ -4,8 +4,9 @@ from functools import partial
 from typing import Any, Literal, Optional, Tuple, Union
 
 from neclib.coordinates import standby_position
-from neclib.utils import ConditionChecker, read_file
-from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, PIDMsg, Spectral
+from neclib.data import LinearInterp
+from neclib.utils import ConditionChecker, ParameterList, read_file
+from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, CoordMsg, PIDMsg, Spectral
 from necst_msgs.srv import File, RecordSrv
 
 from .. import NECSTTimeoutError, config, namespace, service, topic
@@ -40,6 +41,9 @@ class Commander(PrivilegedNode):
             "chopper": topic.chopper_status.subscription(
                 self, partial(self.__callback, "chopper")
             ),
+            "antenna_control": topic.antenna_control_status.subscription(
+                self, partial(self.__callback, "antenna_control")
+            ),
         }
         self.client = {
             "record_path": service.record_path.client(self),
@@ -64,11 +68,12 @@ class Commander(PrivilegedNode):
             return msg_timestamp < pytime.time() - stale_sec
 
         start = pytime.monotonic()
+        loop_interval = 0.01 if timeout_sec is None else timeout_sec / 10
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
             msg = self.parameters[key]
             if (msg is not None) and (not outdated(msg, stale_sec)):
                 return msg
-            pytime.sleep(0.01)
+            pytime.sleep(loop_interval)
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
     @require_privilege(escape_cmd=["?", "stop"])
@@ -120,7 +125,9 @@ class Commander(PrivilegedNode):
             return self.wait_convergence("antenna") if wait else None
 
         elif CMD == "SCAN":
-            standby_lon, standby_lat = standby_position(start=start, end=end, unit=unit)
+            standby_lon, standby_lat = standby_position(
+                start=start, end=end, unit=unit, margin=config.antenna_scan_margin
+            )
             standby_lon = float(standby_lon.value)
             standby_lat = float(standby_lat.value)
             self.antenna(
@@ -141,9 +148,10 @@ class Commander(PrivilegedNode):
                 speed=float(speed),
             )
             self.publisher["coord"].publish(msg)
-            self.wait_convergence("antenna")
-
-            return self.antenna("stop")
+            if wait:
+                self.wait_convergence("antenna", mode="control")
+                self.antenna("stop")
+            return
         else:
             raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
 
@@ -172,38 +180,65 @@ class Commander(PrivilegedNode):
         target: Literal["antenna", "dome"],
         /,
         *,
+        mode: Literal["control", "error"] = "error",
         timeout_sec: Optional[Union[int, float]] = None,
     ) -> None:
         """Wait until the motion has been converged."""
-        _param_name = {
-            "antenna": ["encoder", "altaz"],
-            "dome": ["", ""],  # TODO: Implement.
-        }
-        _threshold = {
-            "antenna": config.antenna_pointing_accuracy.to_value("deg"),
-            "dome": ...,
-        }
-        ENC, CMD = _param_name[target.lower()]
-        threshold = _threshold[target.lower()]
+        TARGET, MODE = target.upper(), mode.upper()
 
-        # Antenna drive should have delay of offset duration
-        pytime.sleep(config.antenna_command_offset_sec)
+        if TARGET == "ANTENNA":
+            _cfg_ant = config.antenna_command
+            ENC_TOPIC = "encoder"
+            CMD_TOPIC = "altaz"
+            CTRL_TOPIC = "antenna_control"
+            THRESHOLD = config.antenna_pointing_accuracy.to_value("deg")
+            WAIT_DURATION = config.antenna_command_offset_sec
+            N_CMD_TO_KEEP = int(1.1 * _cfg_ant.frequency * _cfg_ant.offset_sec)
+            STALE = 10 / config.antenna_command_frequency
+        elif TARGET == "DOME":
+            raise NotImplementedError(
+                f"This function for target {target!r} isn't implemented yet."
+            )
+        else:
+            raise ValueError(f"Unknown target: {target!r}")
+
+        # Drive should have delay of offset duration
+        pytime.sleep(WAIT_DURATION)
 
         start = pytime.monotonic()
         checker = ConditionChecker(10, reset_on_failure=True)
-        stale = 5 / config.antenna_command_frequency
-        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            error_az = (
-                self.get_message(ENC, stale).lon - self.get_message(CMD, stale).lon
-            )
-            error_el = (
-                self.get_message(ENC, stale).lat - self.get_message(CMD, stale).lat
-            )
-            error2 = error_az**2 + error_el**2
-            self.logger.debug(f"Error = {error2 ** 0.5}deg", throttle_duration_sec=1)
-            if checker.check(error2 < threshold**2):
-                return
-            pytime.sleep(0.05)
+
+        if MODE == "ERROR":
+            cmd = ParameterList.new(N_CMD_TO_KEEP, CoordMsg())
+            interp = LinearInterp("time", CoordMsg.get_fields_and_field_types().keys())
+            while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+                try:
+                    enc = self.get_message(ENC_TOPIC, STALE, 0.01)
+                    cmd.push(self.get_message(CMD_TOPIC, STALE, 0.01))
+                    aligned_cmd = interp(enc, cmd)
+                    error_az = enc.lon - aligned_cmd.lon
+                    error_el = enc.lat - aligned_cmd.lat
+                    error = (error_az**2 + error_el**2) ** 0.5
+                    self.logger.debug(
+                        f"Error = {error:10.6f} deg", throttle_duration_sec=1
+                    )
+                    if checker.check(error < THRESHOLD):
+                        return
+                except NECSTTimeoutError:
+                    pass
+                pytime.sleep(0.05)
+        elif MODE == "CONTROL":
+            while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+                try:
+                    controlled = self.get_message(CTRL_TOPIC, STALE, 0.01).controlled
+                    if checker.check(not controlled):
+                        return
+                except NECSTTimeoutError:
+                    pass
+                pytime.sleep(0.05)
+        else:
+            raise ValueError(f"Unknown mode: {mode!r}")
+
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
 
     @require_privilege(escape_cmd=["?"])
@@ -253,7 +288,7 @@ class Commander(PrivilegedNode):
         if MODE == "CH":
             range = tuple(map(int, range))
             self.publisher["qlook_meta"].publish(Spectral(ch=range, integ=float(integ)))
-        elif MODE in ["IF", "RF", "VLSR"]:
+        elif MODE in ("IF", "RF", "VLSR"):
             raise NotImplementedError(f"Mode {mode!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown mode: {mode!r}")

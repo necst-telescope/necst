@@ -111,6 +111,7 @@ class topic:
     from necst_msgs.msg import (
         AlertMsg,
         ChopperMsg,
+        ControlStatus,
         CoordCmdMsg,
         CoordMsg,
         PIDMsg,
@@ -153,6 +154,9 @@ class topic:
     )
     antenna_motor_step = Topic(
         TimedAzElInt64, "actual_step", qos.realtime, namespace.antenna
+    )
+    antenna_control_status = Topic(
+        ControlStatus, "controlled", qos.realtime, namespace.antenna
     )
     pid_param = Topic(PIDMsg, "pid_param", qos.reliable, namespace.antenna)
     chopper_cmd = Topic(ChopperMsg, "chopper_cmd", qos.reliable, namespace.calib)

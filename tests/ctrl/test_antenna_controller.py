@@ -1,10 +1,11 @@
 import time
 from typing import Tuple
 
+from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
+
 from necst import qos, topic
 from necst.ctrl import AntennaPIDController
 from necst.utils import spinning
-from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 from ..conftest import TesterNode, destroy
 
@@ -36,12 +37,16 @@ class TestAntennaController(TesterNode):
         sub = self.node.create_subscription(
             TimedAzElFloat64, f"{ns}/speed", update, qos.realtime
         )
+        timer_cmd = self.node.create_timer(
+            0.05,
+            lambda: cmd.publish(CoordMsg(lon=30.0, lat=45.0, time=time.time() + 0.1)),
+        )
+        timer_enc = self.node.create_timer(
+            0.05,
+            lambda: enc.publish(CoordMsg(lon=25.0, lat=45.0, time=time.time())),
+        )
 
         with spinning([controller, self.node]):
-            for i in range(10):
-                cmd.publish(CoordMsg(lon=30.0, lat=45.0, time=time.time() + 0.1))
-                enc.publish(CoordMsg(lon=25.0, lat=45.0, time=time.time() + 0.1))
-
             timelimit = time.time() + 1
             while True:
                 assert time.time() < timelimit, "Speed command not published in 1s"
@@ -52,7 +57,7 @@ class TestAntennaController(TesterNode):
                 time.sleep(0.02)
 
         destroy(controller)
-        destroy([cmd, enc, sub], self.node)
+        destroy([cmd, enc, sub, timer_enc, timer_cmd], self.node)
 
     def test_change_pid_parameter(self):
         def get_pid_param(ctrl, axis) -> Tuple[float, float, float]:

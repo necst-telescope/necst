@@ -3,7 +3,7 @@ import time
 from neclib.devices import AntennaMotor as AntennaMotorDevice
 from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
 
-from ... import config, namespace, topic
+from ... import namespace, topic
 from ...core import DeviceNode
 
 
@@ -19,8 +19,8 @@ class AntennaMotor(DeviceNode):
             "step": topic.antenna_motor_step.publisher(self),
         }
         topic.antenna_speed_cmd.subscription(self, self.speed_command)
-        self.create_timer(1 / config.antenna_command_frequency, self.stream_speed)
-        self.create_timer(1 / config.antenna_command_frequency, self.stream_step)
+        self.create_timer(1 / 10, self.stream_speed)
+        self.create_timer(1 / 10, self.stream_step)
 
         self.motor = AntennaMotorDevice()
 
