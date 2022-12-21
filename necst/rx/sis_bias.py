@@ -14,6 +14,8 @@ class SISBias(DeviceNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
+        self.logger = self.get_logger()
+
         self.reader_io = BiasReader()
         self.setter_io = BiasSetter()
 
@@ -39,5 +41,7 @@ class SISBias(DeviceNode):
             # in config
             ch = self.correspondence_table.setter[msg.id]
             self.setter_io.set_voltage(voltage_mV=msg.voltage, ch=ch)
+            self.setter_io.output_voltage()
+            self.logger.info(f"Set voltage {msg.voltage} mV for ch {ch}")
             return
         raise ValueError(f"Unsafe voltage: {msg.voltage} mV")

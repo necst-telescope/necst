@@ -15,6 +15,7 @@ class SignalGenerator(DeviceNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
 
+        self.logger = self.get_logger()
         self.io = SG()
 
         self.publisher = topic.lo_signal.publisher(self)
@@ -25,6 +26,8 @@ class SignalGenerator(DeviceNode):
     def set_param(self, msg: LocalSignal) -> None:
         self.io.set_freq(freq_GHz=msg.freq)
         self.io.set_power(power_dBm=msg.power)
+        self.io.start_output()
+        self.logger.info(f"Set freq = {msg.freq} GHz, power = {msg.power} dBm")
 
     def stream(self) -> None:
         freq = self.io.get_freq()
