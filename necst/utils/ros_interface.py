@@ -6,8 +6,10 @@ __all__ = [
     "wait_for_server_to_pick_up",
     "Topic",
     "Service",
+    "import_msg",
 ]
 
+import importlib
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar, Union
@@ -188,3 +190,10 @@ class Service(Generic[T]):
                 "Caution inconsistency."
             )
             self.namespace = node.get_namespace()
+
+
+def import_msg(path: str) -> Any:
+    module_name, msg_name = path.replace("/", ".").rsplit(".", 1)
+    module = importlib.import_module(module_name)
+    msg = getattr(module, msg_name)
+    return msg
