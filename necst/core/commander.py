@@ -265,10 +265,19 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
-    def metadata(self, cmd: Literal["set", "?"], /, *, position: str, id: str) -> None:
+    def metadata(
+        self,
+        cmd: Literal["set", "?"],
+        /,
+        *,
+        position: str,
+        id: str,
+        time: Optional[float] = None,
+    ) -> None:
         CMD = cmd.upper()
         if CMD == "SET":
-            msg = Spectral(position=position, id=str(id))
+            time = pytime.time() if time is None else time
+            msg = Spectral(position=position, id=str(id), time=time)
             return self.publisher["spectral_meta"].publish(msg)
         elif CMD == "?":
             # May return metadata, by subscribing to the resized spectral data.

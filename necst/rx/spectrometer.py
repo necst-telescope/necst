@@ -1,6 +1,7 @@
 import queue
 import time as pytime
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from neclib.data import Resize
@@ -13,6 +14,40 @@ from .. import config, namespace, topic
 from ..core import DeviceNode
 
 
+class ObservingModeManager:
+    @dataclass(frozen=True)
+    class ObservingMode:
+        time: float
+        position: str = ""
+        id: str = ""
+
+    def __init__(self) -> None:
+        self.mode = []
+
+    def set(
+        self, time: float, position: Optional[str] = None, id: Optional[str] = None
+    ) -> None:
+        last = self.get(time)
+        if position is None:
+            position = last.position
+        if id is None:
+            id = last.id
+        self.mode.append(self.ObservingMode(position=position, id=id, time=time))
+        self.mode.sort(key=lambda x: x.time)
+
+        n_stale_modes = len(list(filter(lambda x: x.time < pytime.time(), self.mode)))
+        if n_stale_modes > 1:
+            [self.mode.pop(0) for _ in range(n_stale_modes - 1)]
+
+    def get(self, time: float) -> ObservingMode:
+        try:
+            return tuple(filter(lambda x: x.time < time, self.mode))[-1]
+        except IndexError:
+            new = self.ObservingMode(time=time)
+            self.mode.append(new)
+            return new
+
+
 class SpectralData(DeviceNode):
 
     NodeName = "spectrometer"
@@ -22,16 +57,14 @@ class SpectralData(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        integ = 1
-        self.resizers = defaultdict(lambda: Resize(integ))
+        self.resizers = defaultdict(lambda: Resize(1))
         self.io = Spectrometer()
 
-        self.position = ""
-        self.id = ""
+        self.metadata = ObservingModeManager()
         self.data_queue = queue.Queue()
 
         self.publisher: Dict[int, Publisher] = {}
-        self.create_timer(integ, self.stream)
+        self.create_timer(1, self.stream)
 
         self.last_data = None
         self.recorder = Recorder(config.record_root)
@@ -46,12 +79,16 @@ class SpectralData(DeviceNode):
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
 
     def update_metadata(self, msg: Spectral) -> None:
+        now = pytime.time()
+        dt = msg.time - now
+        current = self.metadata.get(now)
+        logmsg = f"in {dt:.3s}s" if dt > 0 else "immediately"
         self.logger.info(
-            "Observation metadata updated : "
-            f"position={msg.position}(<-{self.position}), id={msg.id}(<-{self.id})"
+            f"Observation metadata updated : position={msg.position}"
+            f"(<-{current.position}), id={msg.id}(<-{current.id}); will take effect"
+            f"{logmsg}"
         )
-        self.position = msg.position
-        self.id = msg.id
+        self.metadata.set(msg.time, msg.position, msg.id)
 
     def update_qlook_conf(self, msg: Spectral) -> None:
         if len(msg.ch) == 2:
@@ -88,11 +125,13 @@ class SpectralData(DeviceNode):
                 self.publisher[_id] = topic.quick_spectra[_id].publisher(self)
 
             data = self.resizers[board_id].get(self.qlook_ch_range, n_samples=100)
+            now = pytime.time()
+            metadata = self.metadata.get(now)
             msg = Spectral(
                 data=data,
-                time=pytime.time(),
-                position=self.position,
-                id=self.id,
+                time=now,
+                position=metadata.position,
+                id=metadata.id,
                 ch=tuple(map(int, self.qlook_ch_range)),
                 integ=float(self.resizers[board_id].keep_duration),
             )
@@ -110,8 +149,12 @@ class SpectralData(DeviceNode):
 
         time, data = _data
         for board_id, spectral_data in data.items():
+            metadata = self.metadata.get(time)
             msg = Spectral(
-                data=spectral_data, time=time, id=self.id, position=self.position
+                data=spectral_data,
+                time=time,
+                id=metadata.id,
+                position=metadata.position,
             )
             fields = msg.get_fields_and_field_types()
             chunk = [
