@@ -111,6 +111,7 @@ class qos:
 class topic:
     from necst_msgs.msg import (
         AlertMsg,
+        BiasMsg,
         ChopperMsg,
         ControlStatus,
         CoordCmdMsg,
@@ -164,6 +165,8 @@ class topic:
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
+    sis_bias = Topic(BiasMsg, "sis_bias", qos.reliable, namespace.rx)
+    sis_bias_cmd = Topic(BiasMsg, "sis_bias_cmd", qos.reliable, namespace.rx)
 
 
 class service:

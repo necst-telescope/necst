@@ -6,7 +6,15 @@ from typing import Any, Literal, Optional, Tuple, Union
 from neclib.coordinates import standby_position
 from neclib.data import LinearInterp
 from neclib.utils import ConditionChecker, ParameterList, read_file
-from necst_msgs.msg import AlertMsg, ChopperMsg, CoordCmdMsg, CoordMsg, PIDMsg, Spectral
+from necst_msgs.msg import (
+    AlertMsg,
+    BiasMsg,
+    ChopperMsg,
+    CoordCmdMsg,
+    CoordMsg,
+    PIDMsg,
+    Spectral,
+)
 from necst_msgs.srv import File, RecordSrv
 
 from .. import NECSTTimeoutError, config, namespace, service, topic
@@ -27,6 +35,7 @@ class Commander(PrivilegedNode):
             "chopper": topic.chopper_cmd.publisher(self),
             "spectral_meta": topic.spectra_meta.publisher(self),
             "qlook_meta": topic.qlook_meta.publisher(self),
+            "sis_bias": topic.sis_bias_cmd.publisher(self),
         }
         self.subscription = {
             "encoder": topic.antenna_encoder.subscription(
@@ -43,6 +52,9 @@ class Commander(PrivilegedNode):
             ),
             "antenna_control": topic.antenna_control_status.subscription(
                 self, partial(self.__callback, "antenna_control")
+            ),
+            "sis_bias": topic.sis_bias.subscription(
+                self, partial(self.__callback, "sis_bias")
             ),
         }
         self.client = {
@@ -152,15 +164,17 @@ class Commander(PrivilegedNode):
                 self.wait_convergence("antenna", mode="control")
                 self.antenna("stop")
             return
-        else:
+        elif CMD in ["?"]:
             raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
 
     @require_privilege(escape_cmd=["?"])
     def chopper(self, cmd: Literal["insert", "remove", "?"], /, *, wait: bool = True):
         """Calibrator."""
         CMD = cmd.upper()
         if CMD == "?":
-            return self.get_message("chopper")
+            return self.get_message("chopper", timeout_sec=10)
         elif CMD == "INSERT":
             msg = ChopperMsg(insert=True, time=pytime.time())
             self.publisher["chopper"].publish(msg)
@@ -285,7 +299,7 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
-    def qlook(
+    def quick_look(
         self,
         mode: Literal["ch", "rf", "if", "vlsr"],
         /,
@@ -338,5 +352,40 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
-    def sis_bias(self, *args, **kwargs) -> None:
+    @require_privilege(escape_cmd=["?"])
+    def sis_bias(
+        self, cmd: Literal["set", "?"], /, *, mV: Optional[Union[int, float]] = None
+    ) -> None:
+        CMD = cmd.upper()
+        if CMD == "SET":
+            if not -8 <= mV <= 8:
+                # TODO: Implement the checker in neclib.devices, and define limit values
+                # in config
+                raise ValueError(f"Unsafe voltage: {mV} mV")
+            self.publisher["sis_bias"].publish(BiasMsg(voltage=mV))
+        elif CMD == "?":
+            return self.get_message("sis_bias", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    @require_privilege(escape_cmd=["?"])
+    def attenuator(
+        self, cmd: Literal["set", "?"], /, *, dB: Optional[Union[int, float]]
+    ) -> None:
         ...
+
+    @require_privilege(escape_cmd=["?"])
+    def signal_generator(
+        self,
+        cmd: Literal["set", "?"],
+        /,
+        *,
+        GHz: Optional[Union[int, float]],
+        dBm: Optional[Union[int, float]],
+    ) -> None:
+        ...
+
+    sg = signal_generator
+    att = attenuator
+    qlook = quick_look
+    pid = pid_parameter
