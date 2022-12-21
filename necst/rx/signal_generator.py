@@ -32,5 +32,5 @@ class SignalGenerator(DeviceNode):
     def stream(self) -> None:
         freq = self.io.get_freq()
         power = self.io.get_power()
-        msg = LocalSignal(time=time.time(), freq=freq, power=power)
+        msg = LocalSignal(time=time.time(), freq=float(freq), power=float(power))
         self.publisher.publish(msg)
