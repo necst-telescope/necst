@@ -1,11 +1,10 @@
 __all__ = ["HorizontalCoord"]
 
 import time
-from functools import partial
 from typing import Generator, Optional, Tuple
 
 from neclib.coordinates import DriveLimitChecker, PathFinder
-from necst_msgs.msg import CoordCmdMsg, CoordMsg, TimedFloat64
+from necst_msgs.msg import CoordCmdMsg, CoordMsg, WeatherMsg
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -42,14 +41,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.publisher = topic.altaz_cmd.publisher(self)
         topic.raw_coord.subscription(self, self._update_cmd)
         topic.antenna_encoder.subscription(self, self._update_enc)
-
-        callback_temp = partial(self.update_weather, "temperature")
-        callback_pres = partial(self.update_weather, "pressure")
-        callback_hum = partial(self.update_weather, "humidty")
-
-        topic.weather_temperature.subscription(self, callback_temp)
-        topic.weather_pressure.subscription(self, callback_pres)
-        topic.weather_humidity.subscription(self, callback_hum)
+        topic.weather.subscription(self, self.update_weather)
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(0.5, self.convert)
@@ -188,10 +180,7 @@ class HorizontalCoord(AlertHandlerNode):
             return _az, _el
         return [], []
 
-    def update_weather(self, kind: str, msg: TimedFloat64) -> None:
-        if kind == "temperature":
-            self.finder.temperature = msg.data
-        elif kind == "pressure":
-            self.finder.pressure = msg.data
-        else:
-            self.finder.relative_humidity = msg.data
+    def update_weather(self, msg: WeatherMsg) -> None:
+        self.finder.temperature = msg.temperature
+        self.finder.pressure = msg.pressure
+        self.finder.relative_humidity = msg.humidity
