@@ -39,4 +39,5 @@ class SISBias(DeviceNode):
             # in config
             ch = self.correspondence_table.setter[msg.id]
             self.setter_io.set_voltage(voltage_mV=msg.voltage, ch=ch)
+            return
         raise ValueError(f"Unsafe voltage: {msg.voltage} mV")
