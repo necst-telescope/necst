@@ -84,9 +84,9 @@ class SpectralData(DeviceNode):
         current = self.metadata.get(now)
         logmsg = f"in {dt:.3s}s" if dt > 0 else "immediately"
         self.logger.info(
-            f"Observation metadata updated : position={msg.position}"
-            f"(<-{current.position}), id={msg.id}(<-{current.id}); will take effect"
-            f"{logmsg}"
+            f"Observation metadata updated : position={msg.position!r}"
+            f"(<-{current.position!r}), id={msg.id!r}(<-{current.id!r}); will take "
+            f"effect {logmsg}"
         )
         self.metadata.set(msg.time, msg.position, msg.id)
 
