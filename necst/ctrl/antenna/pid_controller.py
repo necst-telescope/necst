@@ -51,7 +51,7 @@ class AntennaPIDController(AlertHandlerNode):
         topic.antenna_encoder.subscription(self, self.update_encoder_reading)
         topic.pid_param.subscription(self, self.change_pid_param)
 
-        self.enc = ParameterList.new(2, CoordMsg())
+        self.enc = ParameterList.new(2, CoordMsg)
         self.command_list: List[CoordMsg] = []
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
@@ -66,16 +66,20 @@ class AntennaPIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
+        self.command_list.sort(key=lambda x: x.time)
         self.command_list.append(msg)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)
-        self.enc.sort(key=lambda x: x.time)
+        if all(isinstance(p.time, float) for p in self.enc):
+            self.enc.sort(key=lambda x: x.time)
 
     def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
         """Perform linear interpolation on encoder reading."""
         _, newer = self.enc
-        if newer.time < time - 1:
+        if any(not isinstance(p.time, float) for p in self.enc) or (
+            newer.time < time - 1
+        ):
             self.logger.warning(
                 "Encoder reading not available.", throttle_duration_sec=5
             )
@@ -88,7 +92,7 @@ class AntennaPIDController(AlertHandlerNode):
 
         self.logger.warning("Immediate stop ordered.", throttle_duration_sec=5)
         enc = self.enc[-1]
-        if any(p is None for p in (enc.lon, enc.lat)):
+        if any(not isinstance(p, float) for p in (enc.lon, enc.lat)):
             az_speed = el_speed = 0.0
         else:
             p = dict(k_i=0, k_d=0, k_c=0, accel_limit_off=-1)
@@ -148,12 +152,15 @@ class AntennaPIDController(AlertHandlerNode):
         if next_command is None:
             return
         cmd, enc = next_command
-        _az_speed = self.controller["az"].get_speed(cmd.lon, enc.lon, time=cmd.time)
-        _el_speed = self.controller["el"].get_speed(cmd.lat, enc.lat, time=cmd.time)
-        az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
-        el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
-        msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd.time)
-        self.command_publisher.publish(msg)
+        try:
+            _az_speed = self.controller["az"].get_speed(cmd.lon, enc.lon, time=cmd.time)
+            _el_speed = self.controller["el"].get_speed(cmd.lat, enc.lat, time=cmd.time)
+            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
+            el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
+            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd.time)
+            self.command_publisher.publish(msg)
+        except ZeroDivisionError:
+            self.logger.debug("Duplicate command is supplied.")
 
     def change_pid_param(self, msg: PIDMsg) -> None:
         axis = msg.axis.lower()
