@@ -12,6 +12,7 @@ from necst_msgs.msg import (
     ChopperMsg,
     CoordCmdMsg,
     CoordMsg,
+    LocalSignal,
     PIDMsg,
     Spectral,
 )
@@ -36,6 +37,7 @@ class Commander(PrivilegedNode):
             "spectral_meta": topic.spectra_meta.publisher(self),
             "qlook_meta": topic.qlook_meta.publisher(self),
             "sis_bias": topic.sis_bias_cmd.publisher(self),
+            "lo_signal": topic.lo_signal_cmd.publisher(self),
         }
         self.subscription = {
             "encoder": topic.antenna_encoder.subscription(
@@ -55,6 +57,9 @@ class Commander(PrivilegedNode):
             ),
             "sis_bias": topic.sis_bias.subscription(
                 self, partial(self.__callback, "sis_bias")
+            ),
+            "lo_signal": topic.lo_signal.subscription(
+                self, partial(self.__callback, "lo_signal")
             ),
         }
         self.client = {
@@ -362,7 +367,7 @@ class Commander(PrivilegedNode):
                 # TODO: Implement the checker in neclib.devices, and define limit values
                 # in config
                 raise ValueError(f"Unsafe voltage: {mV} mV")
-            self.publisher["sis_bias"].publish(BiasMsg(voltage=mV))
+            self.publisher["sis_bias"].publish(BiasMsg(voltage=float(mV)))
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)
         else:
@@ -380,10 +385,17 @@ class Commander(PrivilegedNode):
         cmd: Literal["set", "?"],
         /,
         *,
-        GHz: Optional[Union[int, float]],
-        dBm: Optional[Union[int, float]],
+        GHz: Optional[Union[int, float]] = None,
+        dBm: Optional[Union[int, float]] = None,
     ) -> None:
-        ...
+        CMD = cmd.upper()
+        if CMD == "SET":
+            msg = LocalSignal(freq=float(GHz), power=float(dBm))
+            self.publisher["local_signal"].publish(msg)
+        elif CMD == "?":
+            return self.get_message("lo_signal", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
 
     sg = signal_generator
     att = attenuator
