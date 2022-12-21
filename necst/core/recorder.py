@@ -103,27 +103,11 @@ class Recorder(ServerNode):
             self.logger.warning(msg[: min(100, len(msg))], throttle_duration_sec=5)
             return
 
-        def msg2dict(msg: Any, prefix: str = "") -> List[Dict[str, Any]]:
-            parsed = []
-            for name, type in msg.get_fields_and_field_types().items():
-                if "/" in type:
-                    regex = r"<([a-zA-Z0-9_/]*)>|^([a-zA-Z0-9_/]*)$"
-                    msgtype = re.search(regex, type).groups()
-                    msgtype = list(filter(lambda x: x is not None, msgtype))[0]
-                    msgtype = utils.import_msg(msgtype.replace("/", "/msg/"))
-                    # This still doesn't support field of type 'CustomMsg[]'
-                    parsed.extend(msg2dict(msgtype, name + "_"))
-                else:
-                    parsed.append(
-                        {
-                            "key": prefix + name,
-                            "type": type,
-                            "value": getattr(msg, name),
-                        }
-                    )
-            return parsed
-
-        chunk = msg2dict(msg)
+        fields = msg.get_fields_and_field_types()
+        chunk = [
+            {"key": name, "type": type_, "value": getattr(msg, name)}
+            for name, type_ in fields.items()
+        ]
         for _chunk in chunk:
             if _chunk["type"].startswith("string"):
                 _chunk["value"] = _chunk["value"].ljust(
