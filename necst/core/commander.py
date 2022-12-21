@@ -359,7 +359,12 @@ class Commander(PrivilegedNode):
 
     @require_privilege(escape_cmd=["?"])
     def sis_bias(
-        self, cmd: Literal["set", "?"], /, *, mV: Optional[Union[int, float]] = None
+        self,
+        cmd: Literal["set", "?"],
+        /,
+        *,
+        mV: Optional[Union[int, float]] = None,
+        id: Optional[str] = None,
     ) -> None:
         CMD = cmd.upper()
         if CMD == "SET":
@@ -367,7 +372,7 @@ class Commander(PrivilegedNode):
                 # TODO: Implement the checker in neclib.devices, and define limit values
                 # in config
                 raise ValueError(f"Unsafe voltage: {mV} mV")
-            self.publisher["sis_bias"].publish(BiasMsg(voltage=float(mV)))
+            self.publisher["sis_bias"].publish(BiasMsg(voltage=float(mV), id=id))
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)
         else:
