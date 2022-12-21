@@ -30,7 +30,7 @@ class SignalGenerator(DeviceNode):
         self.logger.info(f"Set freq = {msg.freq} GHz, power = {msg.power} dBm")
 
     def stream(self) -> None:
-        freq = self.io.get_freq()
-        power = self.io.get_power()
+        freq = self.io.get_freq().to_value("GHz").item()
+        power = self.io.get_power().value.item()
         msg = LocalSignal(time=time.time(), freq=float(freq), power=float(power))
         self.publisher.publish(msg)
