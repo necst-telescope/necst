@@ -41,14 +41,6 @@ class HorizontalCoord(AlertHandlerNode):
         self.publisher = topic.altaz_cmd.publisher(self)
         topic.raw_coord.subscription(self, self._update_cmd)
         topic.antenna_encoder.subscription(self, self._update_enc)
-
-        # callback_temp = partial(self.update_weather, "temperature")
-        # callback_pres = partial(self.update_weather, "pressure")
-        # callback_hum = partial(self.update_weather, "humidty")
-
-        # topic.weather_temperature.subscription(self, callback_temp)
-        # topic.weather_pressure.subscription(self, callback_pres)
-        # topic.weather_humidity.subscription(self, callback_hum)
         topic.weather.subscription(self, self.update_weather)
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
