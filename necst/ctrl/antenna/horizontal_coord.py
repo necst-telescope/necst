@@ -188,7 +188,7 @@ class HorizontalCoord(AlertHandlerNode):
             return _az, _el
         return [], []
 
-    def update_weather(self, kind: str, msg: WeatherMsg) -> None:
+    def update_weather(self, msg: WeatherMsg) -> None:
         self.finder.temperature = msg.temperature
         self.finder.pressure = msg.pressure
         self.finder.relative_humidity = msg.humidity
