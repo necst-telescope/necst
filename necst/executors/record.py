@@ -1,15 +1,15 @@
 from typing import Tuple
 
 import rclpy
-from rclpy.executors import SingleThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 
 from ..core import Recorder
 from ..rx.spectrometer import SpectralData
 
 
-def configure_executor() -> Tuple[SingleThreadedExecutor, Node]:
-    executor = SingleThreadedExecutor()
+def configure_executor() -> Tuple[MultiThreadedExecutor, Node]:
+    executor = MultiThreadedExecutor()
     nodes = [
         SpectralData(),
     ]
