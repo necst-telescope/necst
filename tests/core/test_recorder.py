@@ -28,6 +28,7 @@ class TestRecorder(TesterNode):
         recorder = Recorder()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        recorder.recorder.start_recording()
         db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.realtime)
@@ -54,6 +55,7 @@ class TestRecorder(TesterNode):
         recorder = Recorder()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        recorder.recorder.start_recording()
         db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
@@ -81,6 +83,7 @@ class TestRecorder(TesterNode):
         recorder = Recorder()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        recorder.recorder.start_recording()
         db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
@@ -113,6 +116,7 @@ class TestRecorder(TesterNode):
         recorder = Recorder()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        recorder.recorder.start_recording()
         db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
@@ -147,6 +151,7 @@ class TestRecorder(TesterNode):
         recorder = Recorder()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        recorder.recorder.start_recording()
         db = dbwriter.db
 
         pub1 = self.node.create_publisher(TimedAzElFloat64, "/test/azel", qos.reliable)
@@ -175,6 +180,7 @@ class TestRecorder(TesterNode):
         recorder = Recorder()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        recorder.recorder.start_recording()
         db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)
@@ -203,6 +209,7 @@ class TestRecorder(TesterNode):
         recorder = Recorder()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
+        recorder.recorder.start_recording()
         db = dbwriter.db
 
         pub1 = self.node.create_publisher(Float64, "/test/topic1", qos.reliable)

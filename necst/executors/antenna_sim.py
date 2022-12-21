@@ -1,15 +1,15 @@
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
-from .antenna import AntennaEncoder, AntennaMotor, ThermometerReader
+from ..ctrl.antenna import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 
 
 def configure_executor() -> MultiThreadedExecutor:
     executor = MultiThreadedExecutor()
     nodes = [
-        AntennaEncoder(),
-        AntennaMotor(),
-        ThermometerReader(),
+        AntennaPIDController(),
+        HorizontalCoord(),
+        AntennaDeviceSimulator(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
@@ -25,8 +25,8 @@ def main(args=None) -> None:
     except KeyboardInterrupt:
         pass
     finally:
-        _ = [n.destroy_node() for n in executor.get_nodes()]
         executor.shutdown()
+        _ = [n.destroy_node() for n in executor.get_nodes()]
         rclpy.try_shutdown()
 
 

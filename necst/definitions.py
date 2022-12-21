@@ -28,6 +28,7 @@ class namespace:
     rx: str = f"{root}/rx"
 
     weather: str = f"{root}/weather"
+    data: str = f"{root}/data"
 
 
 class qos:
@@ -111,6 +112,7 @@ class topic:
     from necst_msgs.msg import (
         AlertMsg,
         ChopperMsg,
+        ControlStatus,
         CoordCmdMsg,
         CoordMsg,
         PIDMsg,
@@ -151,17 +153,21 @@ class topic:
     antenna_motor_step = Topic(
         TimedAzElInt64, "actual_step", qos.realtime, namespace.antenna
     )
+    antenna_control_status = Topic(
+        ControlStatus, "controlled", qos.realtime, namespace.antenna
+    )
     pid_param = Topic(PIDMsg, "pid_param", qos.reliable, namespace.antenna)
     chopper_cmd = Topic(ChopperMsg, "chopper_cmd", qos.reliable, namespace.calib)
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
-    quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx)
+    quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
+    qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
 
 
 class service:
-    from necst_msgs.srv import AuthoritySrv, RecordSrv
+    from necst_msgs.srv import AuthoritySrv, File, RecordSrv
     from std_srvs.srv import Empty
 
     from .utils import Service
@@ -169,3 +175,4 @@ class service:
     privilege_request = Service(AuthoritySrv, "request", namespace.auth)
     privilege_ping = Service(Empty, "ping", namespace.auth)
     record_path = Service(RecordSrv, "record_path", namespace.core)
+    record_file = Service(File, "record_file", namespace.core)

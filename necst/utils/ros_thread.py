@@ -1,8 +1,10 @@
-__all__ = ["spinning"]
+__all__ = ["spinning", "ros2context"]
 
 import threading
+from contextlib import contextmanager
 from typing import Optional, Sequence, Union
 
+import rclpy
 from neclib import get_logger
 from rclpy.executors import Executor, SingleThreadedExecutor
 from rclpy.node import Node
@@ -57,3 +59,15 @@ class spinning:
         _ = [self.executor.remove_node(n) for n in self.nodes]
         if self.using_private_executor:
             self.executor.shutdown()
+
+
+@contextmanager
+def ros2context(args=None):
+    logger = get_logger(__name__)
+    rclpy.init(args=args)
+    try:
+        yield
+    except Exception as e:
+        logger.error(str(e))
+    finally:
+        rclpy.shutdown()

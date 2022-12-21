@@ -91,6 +91,7 @@ class Topic(Generic[T]):
     topic: str
     qos_profile: Union[int, QoSProfile]
     namespace: Optional[str] = None
+    support_index: bool = False
 
     def __post_init__(self):
         # Normalize the input style
@@ -107,6 +108,11 @@ class Topic(Generic[T]):
                 )
             self.topic = topic
             self.namespace = ns
+
+    def __getitem__(self, key: str) -> "Topic":
+        return Topic(
+            self.msg_type, f"{self.topic}/{key}", self.qos_profile, self.namespace
+        )
 
     @property
     def _qualname(self) -> str:

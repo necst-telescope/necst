@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
-from .alert import AntennaDriveRangeAlert, AntennaSpeedAlert
+from ..core.alert import AntennaDriveRangeAlert, AntennaSpeedAlert
 
 
 def get_executor() -> MultiThreadedExecutor:

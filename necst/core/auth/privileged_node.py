@@ -2,7 +2,7 @@ __all__ = ["PrivilegedNode", "require_privilege"]
 
 import functools
 import uuid
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Optional
 
 import rclpy
 from necst_msgs.srv import AuthoritySrv
@@ -177,7 +177,7 @@ class PrivilegedNode(ServerNode):
 
     @staticmethod
     def require_privilege(
-        callable_obj: Callable[..., Any] = None, *, escape_cmd: List[Any] = []
+        callable_obj: Optional[Callable[..., Any]] = None, *, escape_cmd: List[Any] = []
     ) -> Callable[..., Any]:
         """Decorator to mark conflict-unsafe functions.
 
@@ -206,10 +206,12 @@ class PrivilegedNode(ServerNode):
 
         def get_first_arg(args, kwargs):
             if len(args) > 0:
-                return args[0]
-            if len(kwargs) > 0:
-                return next(iter(kwargs.values()))
-            return None
+                ret = args[0]
+            elif len(kwargs) > 0:
+                ret = next(iter(kwargs.values()))
+            else:
+                ret = None
+            return ret.lower() if isinstance(ret, str) else ret
 
         def create_wrapper_func(_callable: Callable[..., Any]) -> Callable[..., Any]:
             @functools.wraps(_callable)
@@ -221,7 +223,8 @@ class PrivilegedNode(ServerNode):
                 https://stackoverflow.com/a/59157026
 
                 """
-                if self.has_privilege or (get_first_arg(args, kwargs) in escape_cmd):
+                escape = [cmd.lower() for cmd in escape_cmd if isinstance(cmd, str)]
+                if self.has_privilege or (get_first_arg(args, kwargs) in escape):
                     return _callable(self, *args, **kwargs)
 
                 self.logger.error(
