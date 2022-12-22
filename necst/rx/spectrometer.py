@@ -1,4 +1,5 @@
 import queue
+import re
 import time as pytime
 from collections import defaultdict
 from dataclasses import dataclass
@@ -161,6 +162,11 @@ class SpectralData(DeviceNode):
                 {"key": name, "type": type_, "value": getattr(msg, name)}
                 for name, type_ in fields.items()
             ]
+            for _chunk in chunk:
+                if _chunk["type"].startswith("string"):
+                    _chunk["value"] = _chunk["value"].ljust(
+                        int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
+                    )
 
             try:
                 self.recorder.append(
