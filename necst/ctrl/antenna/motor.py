@@ -3,7 +3,7 @@ import time
 from neclib.devices import AntennaMotor as AntennaMotorDevice
 from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
 
-from ... import namespace, topic
+from ... import config, namespace, topic
 from ...core import DeviceNode
 
 
@@ -21,8 +21,16 @@ class AntennaMotor(DeviceNode):
         topic.antenna_speed_cmd.subscription(self, self.speed_command)
         self.create_timer(1 / 10, self.stream_speed)
         self.create_timer(1 / 10, self.stream_step)
+        self.create_timer(5, self.check_command)
+
+        self.last_cmd_time = time.time()
 
         self.motor = AntennaMotorDevice()
+
+    def check_command(self) -> None:
+        if time.time() - self.last_cmd_time > config.antenna_command_offset_sec:
+            self.motor.set_speed(0, "az")
+            self.motor.set_speed(0, "el")
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
         now = time.time()
@@ -32,6 +40,8 @@ class AntennaMotor(DeviceNode):
             time.sleep(1e-5)
         self.motor.set_speed(msg.az, "az")
         self.motor.set_speed(msg.el, "el")
+
+        self.last_cmd_time = time.time()
 
     def stream_speed(self) -> None:
         readout_az = self.motor.get_speed("az").to_value("deg/s").item()
