@@ -14,6 +14,8 @@ class AntennaMotor(DeviceNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
+        self.logger = self.get_logger()
+
         self.publisher = {
             "speed": topic.antenna_motor_speed.publisher(self),
             "step": topic.antenna_motor_step.publisher(self),
@@ -28,9 +30,14 @@ class AntennaMotor(DeviceNode):
         self.motor = AntennaMotorDevice()
 
     def check_command(self) -> None:
-        if time.time() - self.last_cmd_time > config.antenna_command_offset_sec:
+        timelimit = config.antenna_command_offset_sec
+        if time.time() - self.last_cmd_time > timelimit:
             self.motor.set_speed(0, "az")
             self.motor.set_speed(0, "el")
+            self.logger.warning(
+                f"No command supplied for {timelimit} s, stopping the antenna",
+                throttle_duration_sec=10,
+            )
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
         now = time.time()
