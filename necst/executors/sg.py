@@ -1,13 +1,13 @@
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 
-from ..rx.signal_generator import SignalGenerator
+from ..rx.signal_generator import SignalGeneratorController
 
 
 def configure_executor() -> SingleThreadedExecutor:
     executor = SingleThreadedExecutor()
     nodes = [
-        SignalGenerator(),
+        SignalGeneratorController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor

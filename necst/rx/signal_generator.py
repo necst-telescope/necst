@@ -1,13 +1,13 @@
 import time
 
-from neclib.devices import SignalGenerator as SG
+from neclib.devices import SignalGenerator
 from necst_msgs.msg import LocalSignal
 
 from .. import namespace, topic
 from ..core import DeviceNode
 
 
-class SignalGenerator(DeviceNode):
+class SignalGeneratorController(DeviceNode):
 
     NodeName = "signal_generator"
     Namespace = namespace.rx
@@ -16,7 +16,7 @@ class SignalGenerator(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.logger = self.get_logger()
-        self.io = SG()
+        self.io = SignalGenerator()
 
         self.publisher = topic.lo_signal.publisher(self)
         topic.lo_signal_cmd.subscription(self, self.set_param)
