@@ -11,7 +11,6 @@ from necst_msgs.msg import (
     BiasMsg,
     ChopperMsg,
     CoordCmdMsg,
-    CoordMsg,
     LocalSignal,
     PIDMsg,
     Spectral,
@@ -34,32 +33,34 @@ class Commander(PrivilegedNode):
             "alert_stop": topic.manual_stop_alert.publisher(self),
             "pid_param": topic.pid_param.publisher(self),
             "chopper": topic.chopper_cmd.publisher(self),
-            "spectral_meta": topic.spectra_meta.publisher(self),
+            "spectra_meta": topic.spectra_meta.publisher(self),
             "qlook_meta": topic.qlook_meta.publisher(self),
             "sis_bias": topic.sis_bias_cmd.publisher(self),
             "lo_signal": topic.lo_signal_cmd.publisher(self),
         }
+        _cfg_ant = config.antenna_command
+        _altaz_offset = int(_cfg_ant.frequency * _cfg_ant.offset_sec + 1)
         self.subscription = {
             "encoder": topic.antenna_encoder.subscription(
-                self, partial(self.__callback, "encoder")
+                self, partial(self.__callback, "encoder", 1)
             ),
             "altaz": topic.altaz_cmd.subscription(
-                self, partial(self.__callback, "altaz")
+                self, partial(self.__callback, "altaz", _altaz_offset)
             ),
             "speed": topic.antenna_speed_cmd.subscription(
-                self, partial(self.__callback, "speed")
+                self, partial(self.__callback, "speed", 1)
             ),
             "chopper": topic.chopper_status.subscription(
-                self, partial(self.__callback, "chopper")
+                self, partial(self.__callback, "chopper", 1)
             ),
             "antenna_control": topic.antenna_control_status.subscription(
-                self, partial(self.__callback, "antenna_control")
+                self, partial(self.__callback, "antenna_control", 1)
             ),
             "sis_bias": topic.sis_bias.subscription(
-                self, partial(self.__callback, "sis_bias")
+                self, partial(self.__callback, "sis_bias", 1)
             ),
             "lo_signal": topic.lo_signal.subscription(
-                self, partial(self.__callback, "lo_signal")
+                self, partial(self.__callback, "lo_signal", 1)
             ),
         }
         self.client = {
@@ -67,30 +68,40 @@ class Commander(PrivilegedNode):
             "record_file": service.record_file.client(self),
         }
 
-        self.parameters = defaultdict[str, Optional[Any]](lambda: None)
+        self.parameters = defaultdict[str, ParameterList[Any]](lambda: ParameterList())
 
-    def __callback(self, name: str, msg: Any) -> None:
-        self.parameters[name] = msg
+    def __callback(self, key: str, keep: int, msg: Any) -> None:
+        if len(self.parameters[key]) == 0:
+            self.parameters[key] = ParameterList.new(keep, None)
+
+        self.parameters[key].push(msg)
 
     def get_message(
         self,
         key: str,
-        stale_sec: Optional[Union[int, float]] = None,
+        time: Optional[Union[int, float]] = None,
         timeout_sec: Optional[Union[int, float]] = None,
+        *,
+        interp: bool = False,
     ) -> Optional[Any]:
-        def outdated(msg: Any, stale_sec: Union[int, float, None]) -> bool:
-            if stale_sec is None:
-                return False
-            msg_timestamp = getattr(msg, "time", 0)
-            return msg_timestamp < pytime.time() - stale_sec
-
         start = pytime.monotonic()
-        loop_interval = 0.01 if timeout_sec is None else timeout_sec / 10
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            msg = self.parameters[key]
-            if (msg is not None) and (not outdated(msg, stale_sec)):
-                return msg
-            pytime.sleep(loop_interval)
+            if all(x is None for x in self.parameters[key]):
+                pytime.sleep(0.05)
+                continue
+            msgs = [x for x in self.parameters[key] if x is not None]
+            assert len(msgs) > 0
+            msg_type = msgs[-1].__class__
+            msg_fields = msg_type.get_fields_and_field_types().keys()
+            if "time" not in msg_fields:
+                return msgs[-1]
+
+            if interp:
+                interpolate = LinearInterp("time", msg_fields)
+                return interpolate(msg_type(time=time), msgs)
+            else:
+                nearest, *_ = sorted(msgs, key=lambda x: abs(x.time - time))
+                return nearest
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
     @require_privilege(escape_cmd=["?", "stop"])
@@ -206,14 +217,11 @@ class Commander(PrivilegedNode):
         TARGET, MODE = target.upper(), mode.upper()
 
         if TARGET == "ANTENNA":
-            _cfg_ant = config.antenna_command
             ENC_TOPIC = "encoder"
             CMD_TOPIC = "altaz"
             CTRL_TOPIC = "antenna_control"
             THRESHOLD = config.antenna_pointing_accuracy.to_value("deg")
             WAIT_DURATION = config.antenna_command_offset_sec
-            N_CMD_TO_KEEP = int(1.1 * _cfg_ant.frequency * _cfg_ant.offset_sec)
-            STALE = 10 / config.antenna_command_frequency
         elif TARGET == "DOME":
             raise NotImplementedError(
                 f"This function for target {target!r} isn't implemented yet."
@@ -228,28 +236,29 @@ class Commander(PrivilegedNode):
         checker = ConditionChecker(10, reset_on_failure=True)
 
         if MODE == "ERROR":
-            cmd = ParameterList.new(N_CMD_TO_KEEP, CoordMsg())
-            interp = LinearInterp("time", CoordMsg.get_fields_and_field_types().keys())
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+                now = pytime.time()
                 try:
-                    enc = self.get_message(ENC_TOPIC, STALE, 0.01)
-                    cmd.push(self.get_message(CMD_TOPIC, STALE, 0.01))
-                    aligned_cmd = interp(enc, cmd)
-                    error_az = enc.lon - aligned_cmd.lon
-                    error_el = enc.lat - aligned_cmd.lat
+                    enc = self.get_message(ENC_TOPIC, now, 0.01)
+                    cmd = self.get_message(CMD_TOPIC, now, 0.01, interp=True)
+                    error_az, error_el = enc.lon - cmd.lon, enc.lat - cmd.lat
                     error = (error_az**2 + error_el**2) ** 0.5
                     self.logger.debug(
-                        f"Error = {error:10.6f} deg", throttle_duration_sec=1
+                        f"Error = {error:10.6f} deg"
+                        f" {'[OK]' if error < THRESHOLD else '[NG]'}",
+                        throttle_duration_sec=0.1,
                     )
                     if checker.check(error < THRESHOLD):
+                        self.logger.debug("Tracking OK")
                         return
                 except NECSTTimeoutError:
                     pass
                 pytime.sleep(0.05)
         elif MODE == "CONTROL":
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+                now = pytime.time()
                 try:
-                    controlled = self.get_message(CTRL_TOPIC, STALE, 0.01).controlled
+                    controlled = self.get_message(CTRL_TOPIC, now, 0.01).controlled
                     if checker.check(not controlled):
                         return
                 except NECSTTimeoutError:
@@ -297,7 +306,7 @@ class Commander(PrivilegedNode):
         if CMD == "SET":
             time = pytime.time() if time is None else time
             msg = Spectral(position=position, id=str(id), time=time)
-            return self.publisher["spectral_meta"].publish(msg)
+            return self.publisher["spectra_meta"].publish(msg)
         elif CMD == "?":
             # May return metadata, by subscribing to the resized spectral data.
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
@@ -403,6 +412,6 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
     sg = signal_generator
-    att = attenuator
+    patt = attenuator
     qlook = quick_look
     pid = pid_parameter
