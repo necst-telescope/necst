@@ -28,16 +28,19 @@ class ObservingModeManager:
     def set(
         self, time: float, position: Optional[str] = None, id: Optional[str] = None
     ) -> None:
-        last = self.get(time)
-        if position is None:
-            position = last.position
-        if id is None:
-            id = last.id
+        if (position is None) or (id is None):
+            last = self.get(time)
+            position = last.position if position is None else position
+            id = last.id if id is None else id
+
         self.mode.append(self.ObservingMode(position=position, id=id, time=time))
         self.mode.sort(key=lambda x: x.time)
 
-        n_stale_modes = len(list(filter(lambda x: x.time < pytime.time(), self.mode)))
+        now = pytime.time()
+        # Assume we won't get any data taken more than 30 seconds ago.
+        n_stale_modes = len(list(filter(lambda x: x.time < now - 30, self.mode)))
         if n_stale_modes > 1:
+            # Keep last one observing mode, which will define current status.
             [self.mode.pop(0) for _ in range(n_stale_modes - 1)]
 
     def get(self, time: float) -> ObservingMode:
@@ -144,7 +147,7 @@ class SpectralData(DeviceNode):
             return
         if not self.recorder.is_recording:
             self.logger.warning(
-                "Recorder not started, skipping recording", throttle_duration_sec=5
+                "Recorder not started, skipping recording", throttle_duration_sec=30
             )
             return
 
