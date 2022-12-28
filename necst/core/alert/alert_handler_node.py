@@ -32,7 +32,7 @@ class AlertHandlerNode(Node):
         super().__init__(node_name, **kwargs)
         self.__status = Status(["warning", "critical"])
         self.__registered_alert_topics = []
-        self.create_timer(config.ros_topic_scan_interval_sec, self.__scan_alert_topics)
+        self.create_timer(config.ros.topic_scan_interval_sec, self.__scan_alert_topics)
 
     @property
     def status(self) -> Status:

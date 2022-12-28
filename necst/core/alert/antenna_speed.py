@@ -19,8 +19,8 @@ class AntennaSpeedAlert(Node):
         self.pub_alert_el = topic.drive_speed_alert_el.publisher(self)
 
         self.speed_az = self.speed_el = None
-        self.max_speed_az = config.antenna_max_speed_az.to_value("deg/s").item()
-        self.max_speed_el = config.antenna_max_speed_el.to_value("deg/s").item()
+        self.max_speed_az = config.antenna.max_speed_az.to_value("deg/s").item()
+        self.max_speed_el = config.antenna.max_speed_el.to_value("deg/s").item()
 
         self.create_timer(config.alert_interval_sec, self.stream)
 

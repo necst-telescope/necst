@@ -24,7 +24,7 @@ class Chopper(DeviceNode):
 
     def move(self, msg: ChopperMsg):
         self.telemetry()
-        position = getattr(config.chopper_position, "in" if msg.insert else "away")
+        position = "insert" if msg.insert else "remove"
         self.motor.set_step(position, "chopper")
         self.telemetry()
 

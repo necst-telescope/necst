@@ -18,16 +18,16 @@ class AntennaDriveRangeAlert(Node):
         topic.antenna_encoder.subscription(self, self.update)
 
         self.enc_az = self.enc_el = None
-        self.warning_limit_az = config.antenna_drive_warning_limit_az.map(
+        self.warning_limit_az = config.antenna.drive_warning_limit_az.map(
             lambda x: x.to_value("deg")
         )
-        self.critical_limit_az = config.antenna_drive_critical_limit_az.map(
+        self.critical_limit_az = config.antenna.drive_critical_limit_az.map(
             lambda x: x.to_value("deg")
         )
-        self.warning_limit_el = config.antenna_drive_warning_limit_el.map(
+        self.warning_limit_el = config.antenna.drive_warning_limit_el.map(
             lambda x: x.to_value("deg")
         )
-        self.critical_limit_el = config.antenna_drive_critical_limit_el.map(
+        self.critical_limit_el = config.antenna.drive_critical_limit_el.map(
             lambda x: x.to_value("deg")
         )
 
