@@ -7,12 +7,12 @@ from ... import config, get_logger, namespace, topic
 from ...core import DeviceNode
 
 
-class Chopper(DeviceNode):
+class ChopperController(DeviceNode):
 
     NodeName = "chopper"
     Namespace = namespace.calib
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = get_logger(self.__class__.__name__)
 
@@ -20,9 +20,9 @@ class Chopper(DeviceNode):
 
         topic.chopper_cmd.subscription(self, self.move)
         self.pub = topic.chopper_status.publisher(self)
-        self.create_timer(config.chopper_telemetry_interval, self.telemetry)
+        self.create_timer(1, self.telemetry)
 
-    def move(self, msg: ChopperMsg):
+    def move(self, msg: ChopperMsg) -> None:
         self.telemetry()
         position = "insert" if msg.insert else "remove"
         self.motor.set_step(position, "chopper")

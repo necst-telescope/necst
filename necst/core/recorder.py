@@ -10,7 +10,7 @@ from .. import config, namespace, qos, service, utils
 from .server_node import ServerNode
 
 
-class Recorder(ServerNode):
+class RecorderController(ServerNode):
 
     NodeName = "recorder"
     Namespace = namespace.core

@@ -1,4 +1,4 @@
-from .encoder import AntennaEncoder  # noqa: F401
+from .encoder import AntennaEncoderController  # noqa: F401
 from .horizontal_coord import HorizontalCoord  # noqa: F401
 from .motor import AntennaMotor  # noqa: F401
 from .pid_controller import AntennaPIDController  # noqa: F401

@@ -1,1 +1,1 @@
-from .chopper import Chopper  # noqa: F401
+from .chopper import ChopperController  # noqa: F401

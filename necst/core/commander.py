@@ -150,7 +150,7 @@ class Commander(PrivilegedNode):
                     time=[float(time)],
                 )
             self.publisher["coord"].publish(msg)
-            return self.wait_convergence("antenna") if wait else None
+            return self.wait("antenna") if wait else None
 
         elif CMD == "SCAN":
             standby_lon, standby_lat = standby_position(
@@ -177,7 +177,7 @@ class Commander(PrivilegedNode):
             )
             self.publisher["coord"].publish(msg)
             if wait:
-                self.wait_convergence("antenna", mode="control")
+                self.wait("antenna", mode="control")
                 self.antenna("stop")
             return
         elif CMD in ["?"]:
@@ -205,7 +205,7 @@ class Commander(PrivilegedNode):
             while self.get_message("chopper").insert is not target_status:
                 pytime.sleep(0.1)
 
-    def wait_convergence(
+    def wait(
         self,
         target: Literal["antenna", "dome"],
         /,
