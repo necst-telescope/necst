@@ -1,9 +1,9 @@
+import os
 import re
 from functools import partial
-from typing import Any, Dict, List
+from pathlib import Path
 
-from neclib.recorders import ConsoleLogWriter, FileWriter, NECSTDBWriter
-from neclib.recorders import Recorder as LibRecorder
+from neclib.recorders import ConsoleLogWriter, FileWriter, NECSTDBWriter, Recorder
 from necst_msgs.srv import File, RecordSrv
 
 from .. import config, namespace, qos, service, utils
@@ -19,7 +19,8 @@ class RecorderController(ServerNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.logger = self.get_logger()
-        self.recorder = LibRecorder(config.record_root)
+        record_root = os.environ.get("NECST_RECORD_ROOT")
+        self.recorder = Recorder(record_root or Path.home() / "data")
 
         self.subscriber = {}
         writers = [NECSTDBWriter(), FileWriter(), ConsoleLogWriter()]
@@ -100,7 +101,7 @@ class RecorderController(ServerNode):
     def append(self, msg, topic_name: str) -> None:
         if not self.recorder.is_recording:
             msg = f"This recorder hasn't been started, discarding message {msg!r}"
-            self.logger.warning(msg[: min(100, len(msg))], throttle_duration_sec=5)
+            self.logger.warning(msg[: min(100, len(msg))], throttle_duration_sec=30)
             return
 
         fields = msg.get_fields_and_field_types()
@@ -133,7 +134,7 @@ def main(args=None):
     import rclpy
 
     rclpy.init(args=args)
-    node = Recorder()
+    node = RecorderController()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
