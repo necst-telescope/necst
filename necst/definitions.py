@@ -113,6 +113,7 @@ class topic:
         AlertMsg,
         BiasMsg,
         ChopperMsg,
+        Clock,
         ControlStatus,
         CoordCmdMsg,
         CoordMsg,
@@ -170,6 +171,7 @@ class topic:
     sis_bias_cmd = Topic(BiasMsg, "sis_bias_cmd", qos.reliable, namespace.rx)
     lo_signal_cmd = Topic(LocalSignal, "lo_signal_cmd", qos.reliable, namespace.rx)
     lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx)
+    clock = Topic(Clock, "clock", qos.realtime, namespace.root)
 
 
 class service:
