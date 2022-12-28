@@ -377,10 +377,6 @@ class Commander(PrivilegedNode):
     ) -> None:
         CMD = cmd.upper()
         if CMD == "SET":
-            if not -8 <= mV <= 8:
-                # TODO: Implement the checker in neclib.devices, and define limit values
-                # in config
-                raise ValueError(f"Unsafe voltage: {mV} mV")
             self.publisher["sis_bias"].publish(BiasMsg(voltage=float(mV), id=id))
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)

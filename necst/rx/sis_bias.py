@@ -36,12 +36,8 @@ class SISBias(DeviceNode):
             time.sleep(0.01)
 
     def set_voltage(self, msg: BiasMsg) -> None:
-        if -8 < msg.voltage < 8:
-            # TODO: Implement the checker in neclib.devices, and define limit values
-            # in config
-            ch = self.correspondence_table.setter[msg.id]
-            self.setter_io.set_voltage(voltage_mV=msg.voltage, ch=ch)
-            self.setter_io.output_voltage()
-            self.logger.info(f"Set voltage {msg.voltage} mV for ch {ch}")
-            return
-        raise ValueError(f"Unsafe voltage: {msg.voltage} mV")
+        ch = self.correspondence_table.setter[msg.id]
+        self.setter_io.set_voltage(voltage_mV=msg.voltage, ch=ch)
+        self.setter_io.apply_voltage()
+        self.logger.info(f"Set voltage {msg.voltage} mV for ch {ch}")
+        return
