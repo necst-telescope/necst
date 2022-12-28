@@ -16,13 +16,16 @@ class AntennaEncoderController(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = topic.antenna_encoder.publisher(self)
         self.encoder = AntennaEncoder()
-        self.create_timer(1 / 15, self.stream)  # TODO: Parametrize
+        self.create_timer(1 / 15, self.stream)
 
     def stream(self) -> None:
-        az_reading = self.encoder.get_reading("az").to_value("deg").item()
-        el_reading = self.encoder.get_reading("el").to_value("deg").item()
+        readings = self.encoder.get_reading()
         msg = CoordMsg(
-            lon=az_reading, lat=el_reading, unit="deg", frame="altaz", time=time.time()
+            lon=readings["az"].to_value("deg").item(),
+            lat=readings["el"].to_value("deg").item(),
+            unit="deg",
+            frame="altaz",
+            time=time.time(),
         )
         self.publisher.publish(msg)
 
