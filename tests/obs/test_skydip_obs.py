@@ -4,7 +4,7 @@ import pytest
 from necst_msgs.msg import ChopperMsg
 
 from necst import topic
-from necst.core import Authorizer, Recorder
+from necst.core import Authorizer, RecorderController
 from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 from necst.utils import spinning
 from obs.skydip_obs import Skydip
@@ -26,7 +26,7 @@ class TestSkydip(TesterNode):
         dev = AntennaDeviceSimulator()
         horizontal = HorizontalCoord()
         pid = AntennaPIDController()
-        recorder = Recorder()
+        recorder = RecorderController()
         recorder.recorder.record_root = record_root
 
         pub = topic.chopper_status.publisher(self.node)
