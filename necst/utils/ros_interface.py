@@ -12,7 +12,8 @@ __all__ = [
 import importlib
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Callable, Generic, Optional, Sequence, TypeVar, Union
+from typing import (Any, Callable, Dict, Generic, Optional, Sequence, TypeVar,
+                    Union)
 
 from rclpy.client import Client
 from rclpy.node import Node
@@ -21,7 +22,7 @@ from rclpy.qos import QoSProfile
 from rclpy.service import Service as ROS2Service
 from rclpy.subscription import Subscription
 
-from necst import config, logger
+from .. import config, logger
 
 
 def interface_type_path(interface: Any, sep: str = "/") -> str:
@@ -112,6 +113,11 @@ class Topic(Generic[T]):
             self.namespace = ns
 
     def __getitem__(self, key: str) -> "Topic":
+        if not self.support_index:
+            raise IndexError(
+                f"{self.__class__.__name__} object constructed without `support_index` "
+                "option isn't subscriptable"
+            )
         return Topic(
             self.msg_type, f"{self.topic}/{key}", self.qos_profile, self.namespace
         )
@@ -142,6 +148,23 @@ class Topic(Generic[T]):
                 f"Inferring namespace for topic {self.topic!r}. Caution inconsistency."
             )
             self.namespace = node.get_namespace()
+
+    def get_children(self, node: Node) -> Dict[str, "Topic"]:
+        topics = node.get_topic_names_and_types()
+        ns = f"{self.namespace}/{self.topic}"
+        children = {}
+        for topic_name, (msg_type, *_) in topics:
+            if topic_name.startswith(ns) and import_msg(msg_type) is self.msg_type:
+                key = topic_name[len(ns) + 1 :]
+                child = Topic(
+                    self.msg_type,
+                    f"{self.topic}/{key}",
+                    self.qos_profile,
+                    self.namespace,
+                )
+                children[key] = child
+
+        return children
 
 
 @dataclass
