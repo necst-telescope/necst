@@ -67,16 +67,17 @@ class Commander(PrivilegedNode):
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
         }
+        self.__check_topic()
 
         self.parameters: Dict[str, ParameterList] = {}
-        self.create_timer(1, self.__check_subscription)
+        self.create_timer(1, self.__check_topic)
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
             self.parameters[key] = ParameterList.new(keep, None)
         self.parameters[key].push(msg)
 
-    def __check_subscription(self) -> None:
+    def __check_topic(self) -> None:
         for k, v in self.__publisher.items():
             if k not in self.publisher:
                 self.publisher[k] = v.publisher(self)
@@ -105,6 +106,8 @@ class Commander(PrivilegedNode):
         *,
         interp: bool = False,
     ) -> Dict[str, Any]:
+        if time is None:
+            time = pytime.time()
         start = pytime.monotonic()
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
             keys = [k for k in self.parameters if (k == key) or k.startswith(f"{key}.")]
@@ -128,7 +131,7 @@ class Commander(PrivilegedNode):
                 else:
                     nearest, *_ = sorted(msgs, key=lambda x: abs(x.time - time))
                     message[k] = nearest
-            return message
+            return message[key] if set(message.keys()) == {key} else message
 
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
