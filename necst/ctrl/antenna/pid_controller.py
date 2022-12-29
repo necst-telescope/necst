@@ -66,8 +66,8 @@ class AntennaPIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
-        self.command_list.sort(key=lambda x: x.time)
         self.command_list.append(msg)
+        self.command_list.sort(key=lambda x: x.time)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)
