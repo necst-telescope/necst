@@ -167,7 +167,7 @@ class topic:
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
-    sis_bias = Topic(BiasMsg, "sis_bias", qos.realtime, namespace.rx)
+    sis_bias = Topic(BiasMsg, "sis_bias", qos.realtime, namespace.rx, True)
     sis_bias_cmd = Topic(BiasMsg, "sis_bias_cmd", qos.reliable, namespace.rx)
     lo_signal_cmd = Topic(LocalSignal, "lo_signal_cmd", qos.reliable, namespace.rx)
     lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx)

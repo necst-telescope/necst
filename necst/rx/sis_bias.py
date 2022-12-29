@@ -1,9 +1,11 @@
 import time
+from typing import Dict
 
 from neclib.devices import BiasReader, BiasSetter
 from necst_msgs.msg import BiasMsg
+from rclpy.publisher import Publisher
 
-from .. import config, namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
@@ -19,25 +21,26 @@ class SISBias(DeviceNode):
         self.reader_io = BiasReader()
         self.setter_io = BiasSetter()
 
-        self.pub = topic.sis_bias.publisher(self)
+        self.pub: Dict[str, Publisher] = {}
+
         topic.sis_bias_cmd.subscription(self, self.set_voltage)
-
-        self.correspondence_table = config.rx_sisbias
-
         self.create_timer(1, self.stream)
 
     def stream(self) -> None:
-        for id, ch in self.correspondence_table.getter.items():
-            # Possibly combined into single message, with redefining the interface.
-            current = self.reader_io.get_bias_current(ch).to_value("uA").item()
-            voltage = self.reader_io.get_bias_voltage(ch).to_value("mV").item()
-            msg = BiasMsg(time=time.time(), current=current, voltage=voltage, id=id)
-            self.pub.publish(msg)
+        channels = set(map(lambda x: x[:-2], self.reader_io.Config.channel.keys()))
+        for id in channels:
+            current = self.reader_io.get_current(f"{id}_I").to_value("uA").item()
+            voltage = self.reader_io.get_voltage(f"{id}_V").to_value("mV").item()
+            power = self.reader_io.get_power(f"{id}_P").to_value("mW").item()
+            msg = BiasMsg(
+                time=time.time(), current=current, voltage=voltage, power=power, id=id
+            )
+            if id not in self.pub:
+                self.pub[id] = topic.sis_bias[id].publisher(self)
+            self.pub[id].publish(msg)
             time.sleep(0.01)
 
     def set_voltage(self, msg: BiasMsg) -> None:
-        ch = self.correspondence_table.setter[msg.id]
-        self.setter_io.set_voltage(voltage_mV=msg.voltage, ch=ch)
+        self.setter_io[msg.id].set_voltage(voltage_mV=msg.voltage)
         self.setter_io.apply_voltage()
-        self.logger.info(f"Set voltage {msg.voltage} mV for ch {ch}")
-        return
+        self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
