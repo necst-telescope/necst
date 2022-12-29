@@ -18,7 +18,7 @@ class AntennaDeviceSimulator(Node):
         self.publisher = topic.antenna_encoder.publisher(self)
         topic.antenna_speed_cmd.subscription(self, self.antenna_simulator)
         self.enc = AntennaEncoderEmulator()
-        self.create_timer(1 / config.antenna_command_frequency, self.stream)
+        self.create_timer(1 / config.antenna.command_frequency, self.stream)
 
     def antenna_simulator(self, msg):
         self.enc.command(msg.az, "az")
