@@ -45,7 +45,7 @@ class TestCommander(TesterNode):
         timer = self.node.create_timer(0.1, lambda: publish())
 
         with spinning(self.node):
-            com.wait_convergence("antenna")
+            com.wait("antenna")
             assert time.monotonic() - start > 0.99
             # It takes at least 0.99826s to converge `x` within 10arcsec
 
