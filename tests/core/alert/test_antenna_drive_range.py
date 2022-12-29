@@ -1,9 +1,11 @@
 import time
 
+from necst_msgs.msg import CoordMsg
+
 from necst import config, namespace, qos
 from necst.core.alert import AntennaDriveRangeAlert
 from necst.utils import spinning
-from necst_msgs.msg import CoordMsg
+
 from ...conftest import TesterAlertHandlingNode, destroy
 
 
@@ -23,7 +25,7 @@ class TestAntennaSpeed(TesterAlertHandlingNode):
             )
             enc_pub.publish(msg)
 
-            timelimit = time.time() + config.ros_topic_scan_interval_sec + 1
+            timelimit = time.time() + config.ros.topic_scan_interval_sec + 1
             while (
                 self.node.status[f"{namespace.alert}/antenna_drive_range/az"].warning
                 is None
@@ -53,7 +55,7 @@ class TestAntennaSpeed(TesterAlertHandlingNode):
             )
             enc_pub.publish(msg)
 
-            timelimit = time.time() + config.ros_topic_scan_interval_sec + 1
+            timelimit = time.time() + config.ros.topic_scan_interval_sec + 1
             while not self.node.status[
                 f"{namespace.alert}/antenna_drive_range/az"
             ].warning:
@@ -82,7 +84,7 @@ class TestAntennaSpeed(TesterAlertHandlingNode):
             )
             enc_pub.publish(msg)
 
-            timelimit = time.time() + config.ros_topic_scan_interval_sec + 1
+            timelimit = time.time() + config.ros.topic_scan_interval_sec + 1
             while not (
                 self.node.status[f"{namespace.alert}/antenna_drive_range/az"].critical
             ):

@@ -18,7 +18,7 @@ class TestAlertHandlerNode(TesterNode):
         default_subscription_count = len(list(node.subscriptions))
         self.node.create_publisher(AlertMsg, "test", qos.realtime)
         with spinning(node):
-            time.sleep(config.ros_topic_scan_interval_sec + 0.5)
+            time.sleep(config.ros.topic_scan_interval_sec + 0.5)
             assert len(list(node.subscriptions)) == default_subscription_count + 1
             subscribing_topics = [s.topic_name for s in node.subscriptions]
             assert "/test" in subscribing_topics

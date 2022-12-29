@@ -165,7 +165,7 @@ class TestAuthority(TesterNode):
 
             destroy(initial)
 
-            with temp_config(ros_service_timeout_sec=1):
+            with temp_config({"ros.service_timeout_sec": 1}):
                 assert secondary.get_privilege() is True
             assert auth_server.approved == secondary.identity
 

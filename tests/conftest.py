@@ -1,5 +1,5 @@
 import contextlib
-from typing import Any, Sequence, Union
+from typing import Any, Dict, Sequence, Union
 
 import pytest
 import rclpy
@@ -88,8 +88,7 @@ def destroy(ros_obj: Union[Any, Sequence[Any]], node: Node = None):
 
 
 @contextlib.contextmanager
-def temp_config(**kwargs):
-    temp_values = kwargs
+def temp_config(temp_values: Dict[str, Any]):
     original_values = {k: getattr(config, k) for k in temp_values}
     [setattr(config, k, v) for k, v in temp_values.items()]
     try:
