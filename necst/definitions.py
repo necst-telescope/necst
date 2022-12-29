@@ -122,7 +122,6 @@ class topic:
         Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
-        TimedFloat64,
         WeatherMsg,
     )
 
@@ -170,7 +169,7 @@ class topic:
     sis_bias = Topic(BiasMsg, "sis_bias", qos.realtime, namespace.rx, True)
     sis_bias_cmd = Topic(BiasMsg, "sis_bias_cmd", qos.reliable, namespace.rx)
     lo_signal_cmd = Topic(LocalSignal, "lo_signal_cmd", qos.reliable, namespace.rx)
-    lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx)
+    lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx, True)
     clock = Topic(Clock, "clock", qos.realtime, namespace.root)
 
 
