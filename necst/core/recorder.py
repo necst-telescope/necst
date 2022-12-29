@@ -1,5 +1,4 @@
 import os
-import re
 from functools import partial
 from pathlib import Path
 
@@ -71,14 +70,6 @@ class RecorderController(ServerNode):
             response.success = False
         return response
 
-    # def _get_msg_field_info(self, path: str):
-    #     mapping = {"double": "float64", "float": "float32"}
-    #     msg = utils.import_msg(path)
-    #     info = []
-    #     for name, type_ in msg.get_fields_and_field_types().items():
-    #         info.append({"key": name, "format": mapping.get(type_, type_)})
-    #     return info
-
     def scan_topics(self):
         topics = self.get_topic_names_and_types()
         for name, msg_type_str in topics:
@@ -104,17 +95,7 @@ class RecorderController(ServerNode):
             self.logger.warning(msg[: min(100, len(msg))], throttle_duration_sec=30)
             return
 
-        fields = msg.get_fields_and_field_types()
-        chunk = [
-            {"key": name, "type": type_, "value": getattr(msg, name)}
-            for name, type_ in fields.items()
-        ]
-        for _chunk in chunk:
-            if _chunk["type"].startswith("string"):
-                _chunk["value"] = _chunk["value"].ljust(
-                    int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
-                )
-
+        chunk = list(utils.serialize(msg))
         try:
             self.recorder.append(topic_name, chunk)
         except RuntimeError:

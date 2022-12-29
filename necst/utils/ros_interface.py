@@ -7,13 +7,25 @@ __all__ = [
     "Topic",
     "Service",
     "import_msg",
+    "serialize",
 ]
 
+import array
 import importlib
+import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import (Any, Callable, Dict, Generic, Optional, Sequence, TypeVar,
-                    Union)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Generic,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 from rclpy.client import Client
 from rclpy.node import Node
@@ -220,3 +232,50 @@ def import_msg(path: str) -> Any:
     module = importlib.import_module(module_name)
     msg = getattr(module, msg_name)
     return msg
+
+
+def serialize(msg: Any) -> Generator[Dict[str, Any], None, None]:
+    for fname, ftype in msg.get_fields_and_field_types().items():
+        sequence = re.match(r"sequence<[\w\s/,<>]+>", ftype) is not None
+        string_length = int(re.sub(r".*string<(\d+)>.*|.*", r"\1", ftype) or -1)
+        array_length = int(re.sub(r".*,\s(\d+)>|.*", r"\1", ftype) or -1)
+        base_type = re.sub(
+            r".*<(.*)<\d+>,.*>|.*<([A-Za-z][\w/]*)[\s,\d]*>|(\w*)<\d*>",
+            r"\1\2\3",
+            ftype,
+        )
+
+        if "/" in base_type:
+            logger.warning(
+                "Cannot record nested custom message "
+                f"{fname}({ftype})={getattr(msg, fname)}",
+                throttle_duration_sec=30,
+            )
+            continue
+        value = getattr(msg, fname)
+
+        typecode = getattr(value, "typecode", None)
+        if isinstance(value, property):
+            logger.warning(
+                f"Field value for {fname!r} was property; "
+                "message class may directly been passed"
+            )
+            continue
+        if isinstance(value, array.array):
+            value = value.tolist()
+        if (array_length != -1) and sequence:
+            if typecode is None:
+                _type = str
+            elif typecode in "bBhHiIlLqQ":
+                _type = int
+            elif typecode in "fd":
+                _type = float
+            else:
+                _type = str
+            value.extend([_type()] * (array_length - len(value)))
+        if (string_length != -1) and sequence:
+            value = [v.ljust(string_length, " ") for v in value]
+        if (string_length != -1) and (not sequence):
+            value = value.ljust(string_length, " ")
+
+        yield {"key": fname, "type": base_type, "value": value}
