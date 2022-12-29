@@ -88,7 +88,7 @@ def wait_for_server_to_pick_up(
 
     srv_name = client.srv_name
     logger.debug(f"Waiting for server to pick up the client ({srv_name})")
-    timeout = config.ros_service_timeout_sec if timeout_sec is None else timeout_sec
+    timeout = config.ros.service_timeout_sec if timeout_sec is None else timeout_sec
     if client.wait_for_service(timeout_sec=timeout):
         logger.debug(f"Server is now active ({srv_name})")
         return True
