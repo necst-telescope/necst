@@ -22,9 +22,9 @@ class AntennaPIDController(AlertHandlerNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
-        pid_param = config.antenna_pid_param
-        max_speed = config.antenna_max_speed
-        max_accel = config.antenna_max_acceleration
+        pid_param = config.antenna.pid_param
+        max_speed = config.antenna.max_speed
+        max_accel = config.antenna.max_acceleration
         self.controller = {
             "az": PIDController(
                 pid_param=pid_param.az,
@@ -39,11 +39,11 @@ class AntennaPIDController(AlertHandlerNode):
         }
         self.decelerate_calc = {
             "az": Decelerate(
-                config.antenna_drive_critical_limit_az.map(lambda x: x.to_value("deg")),
+                config.antenna.drive_critical_limit_az.map(lambda x: x.to_value("deg")),
                 max_accel.az.to_value("deg/s^2"),
             ),
             "el": Decelerate(
-                config.antenna_drive_critical_limit_el.map(lambda x: x.to_value("deg")),
+                config.antenna.drive_critical_limit_el.map(lambda x: x.to_value("deg")),
                 max_accel.el.to_value("deg/s^2"),
             ),
         }
@@ -56,7 +56,7 @@ class AntennaPIDController(AlertHandlerNode):
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
         self.status_publisher = topic.antenna_control_status.publisher(self)
-        self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
+        self.create_timer(1 / config.antenna.command_frequency, self.speed_command)
         self.create_timer(1, self.telemetry)
 
         self.coord_interp = LinearInterp(
@@ -122,12 +122,12 @@ class AntennaPIDController(AlertHandlerNode):
             return
 
         # Check if command for immediate future exists or not.
-        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
+        if self.command_list[0].time > now + 2 / config.antenna.command_frequency:
             return
 
         if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
             cmd = deepcopy(self.command_list[0])
-            if now - cmd.time > 1 / config.antenna_command_frequency:
+            if now - cmd.time > 1 / config.antenna.command_frequency:
                 cmd.time = now  # Not a real-time command.
         elif len(self.command_list) == 1:
             cmd = self.command_list.pop(0)

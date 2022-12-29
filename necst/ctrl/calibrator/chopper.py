@@ -30,13 +30,14 @@ class ChopperController(DeviceNode):
 
     def telemetry(self) -> None:
         position = self.motor.get_step("chopper")
-        if position == config.chopper_position_in:
+        if position == config.chopper_motor.position.insert:
             msg = ChopperMsg(insert=True, time=time.time())
-        elif position == config.chopper_position_away:
+        elif position == config.chopper_motor.position.remove:
             msg = ChopperMsg(insert=False, time=time.time())
         else:
             self.logger.warning(
-                f"Chopper wheel is off the expected position (={position})"
+                f"Chopper wheel is off the expected position (={position})",
+                throttle_duration_sec=5,
             )
             return
         self.pub.publish(msg)

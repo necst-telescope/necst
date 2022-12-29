@@ -30,7 +30,7 @@ class AntennaMotor(DeviceNode):
         self.motor = AntennaMotorDevice()
 
     def check_command(self) -> None:
-        timelimit = config.antenna_command_offset_sec
+        timelimit = config.antenna.command_offset_sec
         if time.time() - self.last_cmd_time > timelimit:
             self.motor.set_speed(0, "az")
             self.motor.set_speed(0, "el")
