@@ -96,7 +96,7 @@ class TestCommander(TesterNode):
 
         cmd = {"lon": 30.0, "lat": 45.0, "unit": "deg", "frame": "altaz"}
 
-        with spinning([auth_server, horizontal, pid, dev]):
+        with spinning([auth_server, horizontal, pid, dev], n_thread=5):
             com.get_privilege()
             com.antenna("point", **cmd, wait=True)
             com.quit_privilege()
@@ -110,7 +110,7 @@ class TestCommander(TesterNode):
         pid = AntennaPIDController()
         dev = AntennaDeviceSimulator()
 
-        with spinning([auth_server, horizontal, pid, dev]):
+        with spinning([auth_server, horizontal, pid, dev], n_thread=5):
             com.get_privilege()
             com.antenna(
                 "point", lon=340, lat=80, frame="altaz", unit="deg", wait=False
@@ -134,7 +134,7 @@ class TestCommander(TesterNode):
         pid = AntennaPIDController()
         dev = AntennaDeviceSimulator()
 
-        with spinning([auth_server, horizontal, pid, dev]):
+        with spinning([auth_server, horizontal, pid, dev], n_thread=5):
             com.get_privilege()
 
             com.antenna(
