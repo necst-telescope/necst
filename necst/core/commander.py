@@ -101,9 +101,9 @@ class Commander(PrivilegedNode):
     def get_message(
         self,
         key: str,
+        *,
         time: Optional[Union[int, float]] = None,
         timeout_sec: Optional[Union[int, float]] = None,
-        *,
         interp: bool = False,
     ) -> Dict[str, Any]:
         if time is None:
@@ -158,12 +158,15 @@ class Commander(PrivilegedNode):
             target = [namespace.antenna]
             msg = AlertMsg(critical=True, warning=True, target=target)
             checker = ConditionChecker(5, reset_on_failure=True)
+            now = pytime.time()
+            current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
             while not checker.check(
-                (self.parameters["speed"] is not None)
-                and (abs(self.parameters["speed"].az) < 1e-5)
-                and (abs(self.parameters["speed"].el) < 1e-5)
+                (current_speed is not None)
+                and (abs(current_speed.az) < 1e-5)
+                and (abs(current_speed.el) < 1e-5)
             ):
                 self.publisher["alert_stop"].publish(msg)
+                current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
                 pytime.sleep(1 / config.antenna.command_frequency)
 
             msg = AlertMsg(critical=False, warning=False, target=target)
@@ -270,8 +273,10 @@ class Commander(PrivilegedNode):
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
-                    enc = self.get_message(ENC_TOPIC, now, 0.01)
-                    cmd = self.get_message(CMD_TOPIC, now, 0.01, interp=True)
+                    enc = self.get_message(ENC_TOPIC, time=now, timeout_sec=0.01)
+                    cmd = self.get_message(
+                        CMD_TOPIC, time=now, timeout_sec=0.01, interp=True
+                    )
                     error_az, error_el = enc.lon - cmd.lon, enc.lat - cmd.lat
                     error = (error_az**2 + error_el**2) ** 0.5
                     self.logger.debug(
@@ -289,7 +294,9 @@ class Commander(PrivilegedNode):
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
-                    controlled = self.get_message(CTRL_TOPIC, now, 0.01).controlled
+                    controlled = self.get_message(
+                        CTRL_TOPIC, time=now, timeout_sec=0.01
+                    ).controlled
                     if checker.check(not controlled):
                         return
                 except NECSTTimeoutError:
@@ -435,7 +442,7 @@ class Commander(PrivilegedNode):
     def thermometer(self, cmd: Literal["?"] = "?", /) -> None:
         CMD = cmd.upper()
         if CMD == "?":
-            return self.get_message("thermometer")
+            return self.get_message("thermometer", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
