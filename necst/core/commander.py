@@ -1,7 +1,7 @@
 import time as pytime
-from collections import defaultdict
+from dataclasses import dataclass
 from functools import partial
-from typing import Any, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 from neclib.coordinates import standby_position
 from neclib.data import LinearInterp
@@ -11,6 +11,7 @@ from necst_msgs.msg import (
     BiasMsg,
     ChopperMsg,
     CoordCmdMsg,
+    DeviceReading,
     LocalSignal,
     PIDMsg,
     Spectral,
@@ -18,7 +19,14 @@ from necst_msgs.msg import (
 from necst_msgs.srv import File, RecordSrv
 
 from .. import NECSTTimeoutError, config, namespace, service, topic
+from ..utils import Topic
 from .auth import PrivilegedNode, require_privilege
+
+
+@dataclass
+class _SubscriptionCfg:
+    topic: Topic
+    keep: int
 
 
 class Commander(PrivilegedNode):
@@ -28,53 +36,66 @@ class Commander(PrivilegedNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.publisher = {
-            "coord": topic.raw_coord.publisher(self),
-            "alert_stop": topic.manual_stop_alert.publisher(self),
-            "pid_param": topic.pid_param.publisher(self),
-            "chopper": topic.chopper_cmd.publisher(self),
-            "spectra_meta": topic.spectra_meta.publisher(self),
-            "qlook_meta": topic.qlook_meta.publisher(self),
-            "sis_bias": topic.sis_bias_cmd.publisher(self),
-            "lo_signal": topic.lo_signal_cmd.publisher(self),
+        self.__publisher = {
+            "coord": topic.raw_coord,
+            "alert_stop": topic.manual_stop_alert,
+            "pid_param": topic.pid_param,
+            "chopper": topic.chopper_cmd,
+            "spectra_meta": topic.spectra_meta,
+            "qlook_meta": topic.qlook_meta,
+            "sis_bias": topic.sis_bias_cmd,
+            "lo_signal": topic.lo_signal_cmd,
+            "attenuator": topic.attenuator_cmd,
         }
+        self.publisher = {}
+
         _cfg_ant = config.antenna.command
         _altaz_offset = int(_cfg_ant.frequency * _cfg_ant.offset_sec + 1)
-        self.subscription = {
-            "encoder": topic.antenna_encoder.subscription(
-                self, partial(self.__callback, "encoder", 1)
-            ),
-            "altaz": topic.altaz_cmd.subscription(
-                self, partial(self.__callback, "altaz", _altaz_offset)
-            ),
-            "speed": topic.antenna_speed_cmd.subscription(
-                self, partial(self.__callback, "speed", 1)
-            ),
-            "chopper": topic.chopper_status.subscription(
-                self, partial(self.__callback, "chopper", 1)
-            ),
-            "antenna_control": topic.antenna_control_status.subscription(
-                self, partial(self.__callback, "antenna_control", 1)
-            ),
-            "sis_bias": topic.sis_bias.subscription(
-                self, partial(self.__callback, "sis_bias", 1)
-            ),
-            "lo_signal": topic.lo_signal.subscription(
-                self, partial(self.__callback, "lo_signal", 1)
-            ),
+        self.__subscription = {
+            "encoder": _SubscriptionCfg(topic.antenna_encoder, 1),
+            "altaz": _SubscriptionCfg(topic.altaz_cmd, _altaz_offset),
+            "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
+            "chopper": _SubscriptionCfg(topic.chopper_status, 1),
+            "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
+            "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
+            "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
+            "thermometer": _SubscriptionCfg(topic.thermometer, 1),
+            "attenuator": _SubscriptionCfg(topic.attenuator, 1),
         }
+        self.subscription = {}
         self.client = {
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
         }
 
-        self.parameters = defaultdict[str, ParameterList[Any]](lambda: ParameterList())
+        self.parameters: Dict[str, ParameterList] = {}
+        self.create_timer(1, self.__check_subscription)
 
-    def __callback(self, key: str, keep: int, msg: Any) -> None:
-        if len(self.parameters[key]) == 0:
+    def __callback(self, key: str, msg: Any, *, keep: int = 1) -> None:
+        if key not in self.parameters:
             self.parameters[key] = ParameterList.new(keep, None)
-
         self.parameters[key].push(msg)
+
+    def __check_subscription(self) -> None:
+        for k, v in self.__publisher.items():
+            if k not in self.publisher:
+                self.publisher[k] = v.publisher(self)
+            if v.support_index:
+                for _k, _v in v.get_children(self).items():
+                    key = f"{k}.{_k}"
+                    if key not in self.publisher:
+                        self.publisher[key] = _v.publisher(self)
+
+        for k, v in self.__subscription.items():
+            if k not in self.subscription:
+                callback = partial(self.__callback, key=k, keep=v.keep)
+                self.subscription[k] = v.topic.subscription(self, callback)
+            if v.topic.support_index:
+                for _k, _v in v.topic.get_children(self).items():
+                    key = f"{k}.{_k}"
+                    if key not in self.subscription:
+                        callback = partial(self.__callback, key=key, keep=v.keep)
+                        self.subscription[key] = _v.subscription(self, callback)
 
     def get_message(
         self,
@@ -83,25 +104,32 @@ class Commander(PrivilegedNode):
         timeout_sec: Optional[Union[int, float]] = None,
         *,
         interp: bool = False,
-    ) -> Optional[Any]:
+    ) -> Dict[str, Any]:
         start = pytime.monotonic()
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            if all(x is None for x in self.parameters[key]):
+            keys = [k for k in self.parameters if (k == key) or k.startswith(f"{key}.")]
+            if all(self.parameters[k][-1] is None for k in keys):
                 pytime.sleep(0.05)
                 continue
-            msgs = [x for x in self.parameters[key] if x is not None]
-            assert len(msgs) > 0
-            msg_type = msgs[-1].__class__
-            msg_fields = msg_type.get_fields_and_field_types().keys()
-            if "time" not in msg_fields:
-                return msgs[-1]
 
-            if interp:
-                interpolate = LinearInterp("time", msg_fields)
-                return interpolate(msg_type(time=time), msgs)
-            else:
-                nearest, *_ = sorted(msgs, key=lambda x: abs(x.time - time))
-                return nearest
+            message = {}
+            for k in keys:
+                msgs = [x for x in self.parameters[k] if x is not None]
+                if len(msgs) == 0:
+                    message[k] = None
+                msg_type = msgs[-1].__class__
+                msg_fields = msg_type.get_fields_and_field_types().keys()
+                if "time" not in msg_fields:
+                    message[k] = msgs[-1]
+
+                if interp:
+                    interpolate = LinearInterp("time", msg_fields)
+                    message[k] = interpolate(msg_type(time=time), msgs)
+                else:
+                    nearest, *_ = sorted(msgs, key=lambda x: abs(x.time - time))
+                    message[k] = nearest
+            return message
+
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
     @require_privilege(escape_cmd=["?", "stop"])
@@ -275,10 +303,10 @@ class Commander(PrivilegedNode):
         cmd: Literal["set", "?"],
         /,
         *,
-        Kp: Union[int, float],
-        Ki: Union[int, float],
-        Kd: Union[int, float],
-        axis: Literal["az", "el"],
+        Kp: Optional[Union[int, float]] = None,
+        Ki: Optional[Union[int, float]] = None,
+        Kd: Optional[Union[int, float]] = None,
+        axis: Optional[Literal["az", "el"]] = None,
     ) -> None:
         """Change PID parameters."""
         CMD = cmd.upper()
@@ -298,8 +326,8 @@ class Commander(PrivilegedNode):
         cmd: Literal["set", "?"],
         /,
         *,
-        position: str,
-        id: str,
+        position: Optional[str] = None,
+        id: Optional[str] = None,
         time: Optional[float] = None,
     ) -> None:
         CMD = cmd.upper()
@@ -385,9 +413,28 @@ class Commander(PrivilegedNode):
 
     @require_privilege(escape_cmd=["?"])
     def attenuator(
-        self, cmd: Literal["set", "?"], /, *, dB: Optional[Union[int, float]]
+        self,
+        cmd: Literal["set", "?"],
+        /,
+        *,
+        dB: Optional[Union[int, float]] = None,
+        id: Optional[str] = None,
     ) -> None:
-        ...
+        CMD = cmd.upper()
+        if CMD == "SET":
+            msg = DeviceReading(value=float(dB), time=pytime.time(), id=id)
+            self.publisher["attenuator"].publish(msg)
+        elif CMD == "?":
+            self.get_message("attenuator", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    def thermometer(self, cmd: Literal["?"] = "?", /) -> None:
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("thermometer")
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
 
     @require_privilege(escape_cmd=["?"])
     def signal_generator(
