@@ -117,6 +117,7 @@ class topic:
         ControlStatus,
         CoordCmdMsg,
         CoordMsg,
+        DeviceReading,
         LocalSignal,
         PIDMsg,
         Spectral,
@@ -171,6 +172,9 @@ class topic:
     lo_signal_cmd = Topic(LocalSignal, "lo_signal_cmd", qos.reliable, namespace.rx)
     lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx, True)
     clock = Topic(Clock, "clock", qos.realtime, namespace.root)
+    thermometer = Topic(DeviceReading, "thermometer", qos.realtime, namespace.rx, True)
+    attenuator = Topic(DeviceReading, "attenuator", qos.realtime, namespace.rx, True)
+    attenuator_cmd = Topic(DeviceReading, "attenuator_cmd", qos.reliable, namespace.rx)
 
 
 class service:
