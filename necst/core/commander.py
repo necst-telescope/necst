@@ -71,7 +71,7 @@ class Commander(PrivilegedNode):
         self.parameters: Dict[str, ParameterList] = {}
         self.create_timer(1, self.__check_subscription)
 
-    def __callback(self, key: str, msg: Any, *, keep: int = 1) -> None:
+    def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
             self.parameters[key] = ParameterList.new(keep, None)
         self.parameters[key].push(msg)
