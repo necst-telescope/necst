@@ -47,7 +47,6 @@ class HorizontalCoord(AlertHandlerNode):
         self.create_timer(0.5, self.convert)
 
         self.result_queue = []
-        self.last_result = None
 
         self.executing_generator: Optional[Generator] = None
 
@@ -55,7 +54,6 @@ class HorizontalCoord(AlertHandlerNode):
 
     def _clear_cmd(self) -> None:
         self.cmd = None
-        self.last_result = None
         self.result_queue.clear()
 
     def _update_cmd(self, msg: CoordCmdMsg) -> None:
@@ -95,9 +93,7 @@ class HorizontalCoord(AlertHandlerNode):
         # No realtime-ness check is performed, just filter outdated commands out
         now = time.time()
         cmd = None
-        if (len(self.result_queue) == 0) and (self.last_result is not None):
-            cmd = self.last_result
-        else:
+        if len(self.result_queue) > 0:
             while len(self.result_queue) > 0:
                 cmd = self.result_queue.pop(0)
                 if cmd[2] > now:
