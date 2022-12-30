@@ -1,8 +1,10 @@
+import os
 import queue
 import re
 import time as pytime
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from neclib.data import Resize
@@ -11,7 +13,7 @@ from neclib.recorders import NECSTDBWriter, Recorder
 from necst_msgs.msg import Spectral
 from rclpy.publisher import Publisher
 
-from .. import config, namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
@@ -71,7 +73,8 @@ class SpectralData(DeviceNode):
         self.create_timer(1, self.stream)
 
         self.last_data = None
-        self.recorder = Recorder(config.record_root)
+        record_root = os.environ.get("NECST_RECORD_ROOT", None)
+        self.recorder = Recorder(record_root or Path.home() / "data")
         if not any(isinstance(w, NECSTDBWriter) for w in self.recorder.writers):
             self.recorder.add_writer(NECSTDBWriter())
         self.create_timer(0.02, self.record)

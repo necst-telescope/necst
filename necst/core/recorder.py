@@ -18,7 +18,7 @@ class RecorderController(ServerNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.logger = self.get_logger()
-        record_root = os.environ.get("NECST_RECORD_ROOT")
+        record_root = os.environ.get("NECST_RECORD_ROOT", None)
         self.recorder = Recorder(record_root or Path.home() / "data")
 
         self.subscriber = {}
