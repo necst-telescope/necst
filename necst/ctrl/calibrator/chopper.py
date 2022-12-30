@@ -3,7 +3,7 @@ import time
 from neclib.devices import ChopperMotor
 from necst_msgs.msg import ChopperMsg
 
-from ... import config, get_logger, namespace, topic
+from ... import config, namespace, topic
 from ...core import DeviceNode
 
 
@@ -14,7 +14,7 @@ class ChopperController(DeviceNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = self.get_logger()
 
         self.motor = ChopperMotor()
 
@@ -30,9 +30,9 @@ class ChopperController(DeviceNode):
 
     def telemetry(self) -> None:
         position = self.motor.get_step("chopper")
-        if position == config.chopper_motor_position.insert:
+        if position == config.chopper_motor_position["insert"]:
             msg = ChopperMsg(insert=True, time=time.time())
-        elif position == config.chopper_motor_position.remove:
+        elif position == config.chopper_motor_position["remove"]:
             msg = ChopperMsg(insert=False, time=time.time())
         else:
             self.logger.warning(
