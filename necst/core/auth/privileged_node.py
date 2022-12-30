@@ -113,7 +113,7 @@ class PrivilegedNode(ServerNode):
             return default_response
 
         future = self.request_cli.call_async(request)
-        self.wait_until_future_complete(future, 2 * config.ros.service_timeout_sec)
+        self.wait_until_future_complete(future, 2 * config.ros_service_timeout_sec)
         # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock. Reason unknown.
         # NOTE: Authority server also waits for `ros_service_timeout_sec` for status

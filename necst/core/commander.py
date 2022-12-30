@@ -49,7 +49,7 @@ class Commander(PrivilegedNode):
         }
         self.publisher = {}
 
-        _cfg_ant = config.antenna.command
+        _cfg_ant = config.antenna_command
         _altaz_offset = int(_cfg_ant.frequency * _cfg_ant.offset_sec + 1)
         self.__subscription = {
             "encoder": _SubscriptionCfg(topic.antenna_encoder, 1),
@@ -167,7 +167,7 @@ class Commander(PrivilegedNode):
             ):
                 self.publisher["alert_stop"].publish(msg)
                 current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
-                pytime.sleep(1 / config.antenna.command_frequency)
+                pytime.sleep(1 / config.antenna_command_frequency)
 
             msg = AlertMsg(critical=False, warning=False, target=target)
             return self.publisher["alert_stop"].publish(msg)
@@ -188,7 +188,7 @@ class Commander(PrivilegedNode):
 
         elif CMD == "SCAN":
             standby_lon, standby_lat = standby_position(
-                start=start, end=end, unit=unit, margin=config.antenna.scan_margin
+                start=start, end=end, unit=unit, margin=config.antenna_scan_margin
             )
             standby_lon = float(standby_lon.value)
             standby_lat = float(standby_lat.value)
@@ -254,8 +254,8 @@ class Commander(PrivilegedNode):
             ENC_TOPIC = "encoder"
             CMD_TOPIC = "altaz"
             CTRL_TOPIC = "antenna_control"
-            THRESHOLD = config.antenna.pointing_accuracy.to_value("deg")
-            WAIT_DURATION = config.antenna.command_offset_sec
+            THRESHOLD = config.antenna_pointing_accuracy.to_value("deg")
+            WAIT_DURATION = config.antenna_command_offset_sec
         elif TARGET == "DOME":
             raise NotImplementedError(
                 f"This function for target {target!r} isn't implemented yet."

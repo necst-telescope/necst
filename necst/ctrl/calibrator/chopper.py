@@ -30,9 +30,9 @@ class ChopperController(DeviceNode):
 
     def telemetry(self) -> None:
         position = self.motor.get_step("chopper")
-        if position == config.chopper_motor.position.insert:
+        if position == config.chopper_motor_position.insert:
             msg = ChopperMsg(insert=True, time=time.time())
-        elif position == config.chopper_motor.position.remove:
+        elif position == config.chopper_motor_position.remove:
             msg = ChopperMsg(insert=False, time=time.time())
         else:
             self.logger.warning(

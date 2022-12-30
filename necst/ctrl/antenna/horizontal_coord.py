@@ -25,10 +25,10 @@ class HorizontalCoord(AlertHandlerNode):
 
         self.finder = PathFinder(
             config.location,
-            config.antenna.pointing_parameter_path,
+            config.antenna_pointing_parameter_path,
             obsfreq=config.observation_frequency,  # TODO: Make ``obsfreq`` changeable.
         )
-        drive_limit = config.antenna.drive
+        drive_limit = config.antenna_drive
         self.optimizer = {
             "az": DriveLimitChecker(
                 drive_limit.critical_limit_az, drive_limit.warning_limit_az
@@ -43,7 +43,7 @@ class HorizontalCoord(AlertHandlerNode):
         topic.antenna_encoder.subscription(self, self._update_enc)
         topic.weather.subscription(self, self.update_weather)
 
-        self.create_timer(1 / config.antenna.command_frequency, self.command_realtime)
+        self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(0.5, self.convert)
 
         self.result_queue = []
@@ -118,7 +118,7 @@ class HorizontalCoord(AlertHandlerNode):
                 frame=msg.frame,
                 speed=msg.speed,
                 unit=msg.unit,
-                margin=config.antenna.scan_margin,
+                margin=config.antenna_scan_margin,
             )
         elif msg.name != "":
             self.logger.debug(f"Got NAME drive command: {msg}")
@@ -143,7 +143,7 @@ class HorizontalCoord(AlertHandlerNode):
             return
 
         if (len(self.result_queue) > 1) and (
-            self.result_queue[-1][2] > time.time() + config.antenna.command_offset_sec
+            self.result_queue[-1][2] > time.time() + config.antenna_command_offset_sec
         ):
             # This function will be called twice per 1s, to ensure no run-out of command
             # but it can cause overloading the data, so judge command update necessity.
