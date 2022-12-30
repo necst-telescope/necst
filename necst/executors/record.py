@@ -4,7 +4,7 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 
-from ..core import Recorder
+from ..core import RecorderController
 from ..rx.spectrometer import SpectralData
 
 
@@ -14,7 +14,7 @@ def configure_executor() -> Tuple[MultiThreadedExecutor, Node]:
         SpectralData(),
     ]
     _ = [executor.add_node(n) for n in nodes]
-    return executor, Recorder()
+    return executor, RecorderController()
 
 
 def main(args=None) -> None:
