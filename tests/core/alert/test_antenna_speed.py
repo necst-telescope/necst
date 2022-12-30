@@ -23,7 +23,7 @@ class TestAntennaSpeed(TesterAlertHandlingNode):
             msg = TimedAzElFloat64(az=0.5, el=0.5, time=0.1)
             speed_pub.publish(msg)
 
-            timelimit = time.time() + config.ros.topic_scan_interval_sec + 1
+            timelimit = time.time() + config.ros_topic_scan_interval_sec + 1
             while (
                 self.node.status[f"{namespace.alert}/antenna_speed/az"].warning is None
             ):
@@ -49,7 +49,7 @@ class TestAntennaSpeed(TesterAlertHandlingNode):
             msg = TimedAzElFloat64(az=1.7, el=0.5, time=0.1)
             speed_pub.publish(msg)
 
-            timelimit = time.time() + config.ros.topic_scan_interval_sec + 1
+            timelimit = time.time() + config.ros_topic_scan_interval_sec + 1
             while not self.node.status[f"{namespace.alert}/antenna_speed/az"].warning:
                 assert time.time() < timelimit
             assert (
@@ -73,7 +73,7 @@ class TestAntennaSpeed(TesterAlertHandlingNode):
             msg = TimedAzElFloat64(az=2.1, el=0.5, time=0.1)
             speed_pub.publish(msg)
 
-            timelimit = time.time() + config.ros.topic_scan_interval_sec + 1
+            timelimit = time.time() + config.ros_topic_scan_interval_sec + 1
             while not (
                 self.node.status[f"{namespace.alert}/antenna_speed/az"].critical
             ):
