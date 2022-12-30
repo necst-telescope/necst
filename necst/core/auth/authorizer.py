@@ -65,7 +65,7 @@ class Authorizer(ServerNode):
             return False
 
         if timeout_sec is None:
-            timeout_sec = config.ros.service_timeout_sec
+            timeout_sec = config.ros_service_timeout_sec
 
         request = Empty.Request()
         future = self.ping_cli.call_async(request)
