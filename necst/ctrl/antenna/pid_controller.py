@@ -66,8 +66,8 @@ class AntennaPIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
-        self.command_list.sort(key=lambda x: x.time)
         self.command_list.append(msg)
+        self.command_list.sort(key=lambda x: x.time)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)
@@ -161,6 +161,8 @@ class AntennaPIDController(AlertHandlerNode):
             self.command_publisher.publish(msg)
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
+        except ValueError:
+            pass
 
     def change_pid_param(self, msg: PIDMsg) -> None:
         axis = msg.axis.lower()

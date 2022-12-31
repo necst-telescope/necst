@@ -1,6 +1,10 @@
+import os
 import queue
+import re
 import time as pytime
 from collections import defaultdict
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from neclib.data import Resize
@@ -9,8 +13,45 @@ from neclib.recorders import NECSTDBWriter, Recorder
 from necst_msgs.msg import Spectral
 from rclpy.publisher import Publisher
 
-from .. import config, namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
+
+
+class ObservingModeManager:
+    @dataclass(frozen=True)
+    class ObservingMode:
+        time: float
+        position: str = ""
+        id: str = ""
+
+    def __init__(self) -> None:
+        self.mode = []
+
+    def set(
+        self, time: float, position: Optional[str] = None, id: Optional[str] = None
+    ) -> None:
+        if (position is None) or (id is None):
+            last = self.get(time)
+            position = last.position if position is None else position
+            id = last.id if id is None else id
+
+        self.mode.append(self.ObservingMode(position=position, id=id, time=time))
+        self.mode.sort(key=lambda x: x.time)
+
+        now = pytime.time()
+        # Assume we won't get any data taken more than 30 seconds ago.
+        n_stale_modes = len(list(filter(lambda x: x.time < now - 30, self.mode)))
+        if n_stale_modes > 1:
+            # Keep last one observing mode, which will define current status.
+            [self.mode.pop(0) for _ in range(n_stale_modes - 1)]
+
+    def get(self, time: float) -> ObservingMode:
+        try:
+            return tuple(filter(lambda x: x.time < time, self.mode))[-1]
+        except IndexError:
+            new = self.ObservingMode(time=time)
+            self.mode.append(new)
+            return new
 
 
 class SpectralData(DeviceNode):
@@ -22,19 +63,18 @@ class SpectralData(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        integ = 1
-        self.resizers = defaultdict(lambda: Resize(integ))
+        self.resizers = defaultdict(lambda: Resize(1))
         self.io = Spectrometer()
 
-        self.position = ""
-        self.id = ""
+        self.metadata = ObservingModeManager()
         self.data_queue = queue.Queue()
 
         self.publisher: Dict[int, Publisher] = {}
-        self.create_timer(integ, self.stream)
+        self.create_timer(1, self.stream)
 
         self.last_data = None
-        self.recorder = Recorder(config.record_root)
+        record_root = os.environ.get("NECST_RECORD_ROOT", None)
+        self.recorder = Recorder(record_root or Path.home() / "data")
         if not any(isinstance(w, NECSTDBWriter) for w in self.recorder.writers):
             self.recorder.add_writer(NECSTDBWriter())
         self.create_timer(0.02, self.record)
@@ -46,12 +86,16 @@ class SpectralData(DeviceNode):
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
 
     def update_metadata(self, msg: Spectral) -> None:
+        now = pytime.time()
+        dt = msg.time - now
+        current = self.metadata.get(now)
+        logmsg = f"in {dt:.3f}s" if dt > 0 else "immediately"
         self.logger.info(
-            "Observation metadata updated : "
-            f"position={msg.position}(<-{self.position}), id={msg.id}(<-{self.id})"
+            f"Observation metadata updated : position={msg.position!r}"
+            f"(<-{current.position!r}), id={msg.id!r}(<-{current.id!r}); will take "
+            f"effect {logmsg}"
         )
-        self.position = msg.position
-        self.id = msg.id
+        self.metadata.set(msg.time, msg.position, msg.id)
 
     def update_qlook_conf(self, msg: Spectral) -> None:
         if len(msg.ch) == 2:
@@ -88,11 +132,13 @@ class SpectralData(DeviceNode):
                 self.publisher[_id] = topic.quick_spectra[_id].publisher(self)
 
             data = self.resizers[board_id].get(self.qlook_ch_range, n_samples=100)
+            now = pytime.time()
+            metadata = self.metadata.get(now)
             msg = Spectral(
                 data=data,
-                time=pytime.time(),
-                position=self.position,
-                id=self.id,
+                time=now,
+                position=metadata.position,
+                id=metadata.id,
                 ch=tuple(map(int, self.qlook_ch_range)),
                 integ=float(self.resizers[board_id].keep_duration),
             )
@@ -104,20 +150,29 @@ class SpectralData(DeviceNode):
             return
         if not self.recorder.is_recording:
             self.logger.warning(
-                "Recorder not started, skipping recording", throttle_duration_sec=5
+                "Recorder not started, skipping recording", throttle_duration_sec=30
             )
             return
 
         time, data = _data
         for board_id, spectral_data in data.items():
+            metadata = self.metadata.get(time)
             msg = Spectral(
-                data=spectral_data, time=time, id=self.id, position=self.position
+                data=spectral_data,
+                time=time,
+                id=metadata.id,
+                position=metadata.position,
             )
             fields = msg.get_fields_and_field_types()
             chunk = [
                 {"key": name, "type": type_, "value": getattr(msg, name)}
                 for name, type_ in fields.items()
             ]
+            for _chunk in chunk:
+                if _chunk["type"].startswith("string"):
+                    _chunk["value"] = _chunk["value"].ljust(
+                        int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
+                    )
 
             try:
                 self.recorder.append(

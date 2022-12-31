@@ -1,9 +1,11 @@
 import time
 
+from necst_msgs.msg import CoordMsg
+
 from necst import config, namespace, qos
 from necst.core.alert import AntennaDriveRangeAlert
 from necst.utils import spinning
-from necst_msgs.msg import CoordMsg
+
 from ...conftest import TesterAlertHandlingNode, destroy
 
 

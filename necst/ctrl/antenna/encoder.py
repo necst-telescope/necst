@@ -1,13 +1,13 @@
 import time
 
-from neclib.devices import AntennaEncoder as AntennaEncoderDevice
+from neclib.devices import AntennaEncoder
 from necst_msgs.msg import CoordMsg
 
 from ... import namespace, topic
 from ...core import DeviceNode
 
 
-class AntennaEncoder(DeviceNode):
+class AntennaEncoderController(DeviceNode):
 
     NodeName = "encoder_readout"
     Namespace = namespace.antenna
@@ -15,14 +15,17 @@ class AntennaEncoder(DeviceNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = topic.antenna_encoder.publisher(self)
-        self.encoder = AntennaEncoderDevice()
-        self.create_timer(1 / 15, self.stream)  # TODO: Parametrize
+        self.encoder = AntennaEncoder()
+        self.create_timer(1 / 15, self.stream)
 
     def stream(self) -> None:
-        az_reading = self.encoder.get_reading("az").to_value("deg").item()
-        el_reading = self.encoder.get_reading("el").to_value("deg").item()
+        readings = self.encoder.get_reading()
         msg = CoordMsg(
-            lon=az_reading, lat=el_reading, unit="deg", frame="altaz", time=time.time()
+            lon=readings["az"].to_value("deg").item(),
+            lat=readings["el"].to_value("deg").item(),
+            unit="deg",
+            frame="altaz",
+            time=time.time(),
         )
         self.publisher.publish(msg)
 
@@ -31,7 +34,7 @@ def main(args=None):
     import rclpy
 
     rclpy.init(args=args)
-    node = AntennaEncoder()
+    node = AntennaEncoderController()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

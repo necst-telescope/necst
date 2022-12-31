@@ -3,40 +3,41 @@ import time
 from neclib.devices import ChopperMotor
 from necst_msgs.msg import ChopperMsg
 
-from ... import config, get_logger, namespace, topic
+from ... import config, namespace, topic
 from ...core import DeviceNode
 
 
-class Chopper(DeviceNode):
+class ChopperController(DeviceNode):
 
     NodeName = "chopper"
     Namespace = namespace.calib
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = self.get_logger()
 
         self.motor = ChopperMotor()
 
         topic.chopper_cmd.subscription(self, self.move)
         self.pub = topic.chopper_status.publisher(self)
-        self.create_timer(config.chopper_telemetry_interval, self.telemetry)
+        self.create_timer(1, self.telemetry)
 
-    def move(self, msg: ChopperMsg):
+    def move(self, msg: ChopperMsg) -> None:
         self.telemetry()
-        position = getattr(config.chopper_position, "in" if msg.insert else "away")
+        position = "insert" if msg.insert else "remove"
         self.motor.set_step(position, "chopper")
         self.telemetry()
 
     def telemetry(self) -> None:
         position = self.motor.get_step("chopper")
-        if position == config.chopper_position_in:
+        if position == config.chopper_motor_position["insert"]:
             msg = ChopperMsg(insert=True, time=time.time())
-        elif position == config.chopper_position_away:
+        elif position == config.chopper_motor_position["remove"]:
             msg = ChopperMsg(insert=False, time=time.time())
         else:
             self.logger.warning(
-                f"Chopper wheel is off the expected position (={position})"
+                f"Chopper wheel is off the expected position (={position})",
+                throttle_duration_sec=5,
             )
             return
         self.pub.publish(msg)

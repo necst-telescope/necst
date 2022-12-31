@@ -111,15 +111,18 @@ class qos:
 class topic:
     from necst_msgs.msg import (
         AlertMsg,
+        BiasMsg,
         ChopperMsg,
+        Clock,
         ControlStatus,
         CoordCmdMsg,
         CoordMsg,
+        DeviceReading,
+        LocalSignal,
         PIDMsg,
         Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
-        TimedFloat64,
         WeatherMsg,
     )
 
@@ -164,6 +167,14 @@ class topic:
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
+    sis_bias = Topic(BiasMsg, "sis_bias", qos.realtime, namespace.rx, True)
+    sis_bias_cmd = Topic(BiasMsg, "sis_bias_cmd", qos.reliable, namespace.rx)
+    lo_signal_cmd = Topic(LocalSignal, "lo_signal_cmd", qos.reliable, namespace.rx)
+    lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx, True)
+    clock = Topic(Clock, "clock", qos.realtime, namespace.root)
+    thermometer = Topic(DeviceReading, "thermometer", qos.realtime, namespace.rx, True)
+    attenuator = Topic(DeviceReading, "attenuator", qos.realtime, namespace.rx, True)
+    attenuator_cmd = Topic(DeviceReading, "attenuator_cmd", qos.reliable, namespace.rx)
 
 
 class service:

@@ -12,6 +12,7 @@ ENV SHELL=/bin/bash
 ENV PATH=$PATH:/home/$USERNAME/.local/bin
 ENV ROS2_WS=/home/$USERNAME/ros2_ws
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ENV ROS_DOMAIN_ID=99
 
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME

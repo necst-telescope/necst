@@ -6,7 +6,7 @@ from typing import Optional, Sequence, Union
 
 import rclpy
 from neclib import get_logger
-from rclpy.executors import Executor, SingleThreadedExecutor
+from rclpy.executors import Executor, MultiThreadedExecutor, SingleThreadedExecutor
 from rclpy.node import Node
 
 
@@ -28,10 +28,16 @@ class spinning:
         node: Union[Node, Sequence[Node]] = [],
         *,
         executor: Optional[Executor] = None,
+        n_thread: int = 1,
     ) -> None:
         # Default executor should be new instance, since the use of
         # `get_global_executor` can cause deadlock.
-        self.executor = executor or SingleThreadedExecutor()
+        default_private_executor = (
+            SingleThreadedExecutor()
+            if n_thread == 1
+            else MultiThreadedExecutor(n_thread)
+        )
+        self.executor = executor or default_private_executor
         self.using_private_executor = executor is None
 
         nodes = [node] if isinstance(node, Node) else node

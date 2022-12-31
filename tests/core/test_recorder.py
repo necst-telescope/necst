@@ -1,5 +1,5 @@
+import os
 import time
-from pathlib import Path
 
 import pytest
 from neclib.recorders import NECSTDBWriter
@@ -7,7 +7,7 @@ from necst_msgs.msg import TimedAzElFloat64
 from std_msgs.msg import Float64, Int32
 
 from necst import config, qos
-from necst.core import Recorder
+from necst.core import RecorderController
 from necst.utils import spinning
 
 from ..conftest import TesterNode, destroy
@@ -15,8 +15,9 @@ from ..conftest import TesterNode, destroy
 
 @pytest.fixture
 def mock_record_root(tmp_path_factory):
-    config.record_root: Path = tmp_path_factory.mktemp("data")
+    os.environ["NECST_RECORD_ROOT"] = str(tmp_path_factory.mktemp("data"))
     yield
+    del os.environ["NECST_RECORD_ROOT"]
 
 
 @pytest.mark.usefixtures("mock_record_root")
@@ -25,7 +26,7 @@ class TestRecorder(TesterNode):
     NodeName = "test_recorder"
 
     def test_single_topic_single_message(self):
-        recorder = Recorder()
+        recorder = RecorderController()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
         recorder.recorder.start_recording()
@@ -52,7 +53,7 @@ class TestRecorder(TesterNode):
         destroy([pub1], node=self.node)
 
     def test_single_topic_multiple_message(self):
-        recorder = Recorder()
+        recorder = RecorderController()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
         recorder.recorder.start_recording()
@@ -80,7 +81,7 @@ class TestRecorder(TesterNode):
         destroy([pub1], node=self.node)
 
     def test_multiple_topic_single_message(self):
-        recorder = Recorder()
+        recorder = RecorderController()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
         recorder.recorder.start_recording()
@@ -113,7 +114,7 @@ class TestRecorder(TesterNode):
         destroy([pub1, pub2], node=self.node)
 
     def test_multiple_topic_multiple_message(self):
-        recorder = Recorder()
+        recorder = RecorderController()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
         recorder.recorder.start_recording()
@@ -148,7 +149,7 @@ class TestRecorder(TesterNode):
         destroy([pub1, pub2], node=self.node)
 
     def test_message_with_multiple_fields(self):
-        recorder = Recorder()
+        recorder = RecorderController()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
         recorder.recorder.start_recording()
@@ -177,7 +178,7 @@ class TestRecorder(TesterNode):
         destroy([pub1], node=self.node)
 
     def test_not_recorded_after_destroy(self):
-        recorder = Recorder()
+        recorder = RecorderController()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
         recorder.recorder.start_recording()
@@ -206,7 +207,7 @@ class TestRecorder(TesterNode):
         destroy([pub1], node=self.node)
 
     def test_qos_compatibility(self):
-        recorder = Recorder()
+        recorder = RecorderController()
         writers = recorder.recorder.writers
         dbwriter, *_ = [w for w in writers if isinstance(w, NECSTDBWriter)]
         recorder.recorder.start_recording()
