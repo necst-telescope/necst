@@ -1,0 +1,7 @@
+necst.core.clock
+================
+
+.. automodule:: necst.core.clock
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.definitions &#8212; necst 0.3.2 documentation</title>
+    <title>necst.definitions &#8212; necst 0.4.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -121,7 +121,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.4.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -187,6 +187,11 @@
     </ul>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.clock.html">
+     necst.core.clock
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.commander.html">
      necst.core.commander
     </a>
@@ -194,21 +199,6 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.device_node.html">
      necst.core.device_node
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_alert.html">
-     necst.core.exec_alert
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_auth.html">
-     necst.core.exec_auth
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_record.html">
-     necst.core.exec_record
     </a>
    </li>
    <li class="toctree-l2">
@@ -269,8 +259,8 @@
       </a>
      </li>
      <li class="toctree-l3">
-      <a class="reference internal" href="necst.ctrl.antenna.thermometer_reader.html">
-       necst.ctrl.antenna.thermometer_reader
+      <a class="reference internal" href="necst.ctrl.antenna.weather_station.html">
+       necst.ctrl.antenna.weather_station
       </a>
      </li>
     </ul>
@@ -292,34 +282,51 @@
      </li>
     </ul>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_cal.html">
-     necst.ctrl.exec_antenna_cal
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_dev.html">
-     necst.ctrl.exec_antenna_dev
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_sim.html">
-     necst.ctrl.exec_antenna_sim
-    </a>
-   </li>
   </ul>
  </li>
- <li class="toctree-l1">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.attenuator.html">
+     necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.signal_generator.html">
+     necst.rx.signal_generator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.sis_bias.html">
+     necst.rx.sis_bias
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectrometer.html">
+     necst.rx.spectrometer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.thermometer.html">
+     necst.rx.thermometer
+    </a>
+   </li>
+  </ul>
  </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
-  <label for="toctree-checkbox-7">
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -425,6 +432,21 @@
 <span class="sig-name descname"><span class="pre">alert</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/core/alert'</span></em><a class="headerlink" href="#necst.definitions.namespace.alert" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.namespace.rx">
+<span class="sig-name descname"><span class="pre">rx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/rx'</span></em><a class="headerlink" href="#necst.definitions.namespace.rx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.namespace.weather">
+<span class="sig-name descname"><span class="pre">weather</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/weather'</span></em><a class="headerlink" href="#necst.definitions.namespace.weather" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.namespace.data">
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/data'</span></em><a class="headerlink" href="#necst.definitions.namespace.data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -479,6 +501,53 @@
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BiasMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.BiasMsg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘BiasMsg’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.BiasMsg.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.current">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">current</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.current" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘current’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘id’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.power">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">power</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.power" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘power’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.voltage">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">voltage</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.voltage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘voltage’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="necst.definitions.topic.ChopperMsg">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ChopperMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.ChopperMsg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -503,6 +572,135 @@
 <dt class="sig sig-object py" id="necst.definitions.topic.ChopperMsg.time">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.ChopperMsg.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.Clock">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Clock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Clock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘Clock’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.Clock.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.Clock.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.Clock.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Clock.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Clock.lst">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lst</span></span><a class="headerlink" href="#necst.definitions.topic.Clock.lst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘lst’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Clock.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.Clock.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Clock.v_obs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">v_obs</span></span><a class="headerlink" href="#necst.definitions.topic.Clock.v_obs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘v_obs’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.ControlStatus">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ControlStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.ControlStatus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘ControlStatus’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.ControlStatus.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.ControlStatus.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.ControlStatus.controlled">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">controlled</span></span><a class="headerlink" href="#necst.definitions.topic.ControlStatus.controlled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘controlled’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.ControlStatus.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.ControlStatus.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.ControlStatus.remote">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">remote</span></span><a class="headerlink" href="#necst.definitions.topic.ControlStatus.remote" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘remote’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.ControlStatus.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.ControlStatus.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CoordCmdMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘CoordCmdMsg’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.UnboundedSequence</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedSequence</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedSequence</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.frame">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frame</span></span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘frame’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.lat">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lat</span></span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.lat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘lat’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.lon">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lon</span></span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.lon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘lon’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘name’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.speed">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">speed</span></span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.speed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘speed’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CoordCmdMsg.unit">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unit</span></span><a class="headerlink" href="#necst.definitions.topic.CoordCmdMsg.unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘unit’.</p>
 </dd></dl>
 
 </dd></dl>
@@ -561,6 +759,82 @@
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.DeviceReading">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DeviceReading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.DeviceReading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘DeviceReading’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.DeviceReading.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.DeviceReading.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.DeviceReading.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.DeviceReading.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.DeviceReading.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#necst.definitions.topic.DeviceReading.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘id’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.DeviceReading.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.DeviceReading.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.DeviceReading.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#necst.definitions.topic.DeviceReading.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘value’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.LocalSignal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LocalSignal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.LocalSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘LocalSignal’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.LocalSignal.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.LocalSignal.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.LocalSignal.freq">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">freq</span></span><a class="headerlink" href="#necst.definitions.topic.LocalSignal.freq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘freq’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.LocalSignal.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.LocalSignal.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.LocalSignal.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#necst.definitions.topic.LocalSignal.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘id’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.LocalSignal.power">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">power</span></span><a class="headerlink" href="#necst.definitions.topic.LocalSignal.power" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘power’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.LocalSignal.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.LocalSignal.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="necst.definitions.topic.PIDMsg">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PIDMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.PIDMsg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -597,6 +871,77 @@
 <dt class="sig sig-object py" id="necst.definitions.topic.PIDMsg.k_p">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">k_p</span></span><a class="headerlink" href="#necst.definitions.topic.PIDMsg.k_p" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘k_p’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Spectral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Spectral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘Spectral’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.UnboundedSequence</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BoundedString</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BoundedString</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BoundedSequence</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BoundedSequence</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BoundedSequence</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BoundedSequence</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.Spectral.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.ch">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ch</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.ch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘ch’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘data’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Spectral.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘id’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.ifreq">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ifreq</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.ifreq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘ifreq’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.integ">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">integ</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.integ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘integ’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.position">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">position</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘position’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.rfreq">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rfreq</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.rfreq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘rfreq’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Spectral.vlsr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vlsr</span></span><a class="headerlink" href="#necst.definitions.topic.Spectral.vlsr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘vlsr’.</p>
 </dd></dl>
 
 </dd></dl>
@@ -672,29 +1017,41 @@
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.definitions.topic.TimedFloat64">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TimedFloat64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.TimedFloat64" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WeatherMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Message class ‘TimedFloat64’.</p>
+<p>Message class ‘WeatherMsg’.</p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.definitions.topic.TimedFloat64.SLOT_TYPES">
-<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.TimedFloat64.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="necst.definitions.topic.TimedFloat64.data">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#necst.definitions.topic.TimedFloat64.data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Message field ‘data’.</p>
-</dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.definitions.topic.TimedFloat64.get_fields_and_field_types">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.TimedFloat64.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="necst.definitions.topic.TimedFloat64.time">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.TimedFloat64.time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.humidity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">humidity</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.humidity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘humidity’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.pressure">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pressure</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘pressure’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.temperature">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">temperature</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘temperature’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘time’.</p>
 </dd></dl>
 
@@ -702,7 +1059,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="necst.definitions.topic.Topic">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qos_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">rclpy.qos.QoSProfile</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Topic" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qos_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">rclpy.qos.QoSProfile</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">support_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Topic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">T</span></code>]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -711,12 +1068,26 @@
 <li><p><strong>topic</strong> (<em>str</em>) – </p></li>
 <li><p><strong>qos_profile</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>QoSProfile</em><em>]</em>) – </p></li>
 <li><p><strong>namespace</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>support_index</strong> (<em>bool</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.Topic.get_children">
+<span class="sig-name descname"><span class="pre">get_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Topic.get_children" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>node</strong> (<em>Node</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Dict</em>[str, <a class="reference internal" href="necst.utils.ros_interface.html#necst.utils.ros_interface.Topic" title="necst.utils.ros_interface.Topic"><em>Topic</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.Topic.namespace">
 <span class="sig-name descname"><span class="pre">namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#necst.definitions.topic.Topic.namespace" title="Permalink to this definition">¶</a></dt>
@@ -752,6 +1123,11 @@
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.Topic.support_index">
+<span class="sig-name descname"><span class="pre">support_index</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#necst.definitions.topic.Topic.support_index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.Topic.msg_type">
 <span class="sig-name descname"><span class="pre">msg_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#necst.definitions.topic.Topic.msg_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -770,87 +1146,137 @@
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.raw_coord">
-<span class="sig-name descname"><span class="pre">raw_coord</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._coord_msg.CoordMsg'&gt;,</span> <span class="pre">topic='raw_coord',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna')</span></em><a class="headerlink" href="#necst.definitions.topic.raw_coord" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">raw_coord</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._coord_cmd_msg.CoordCmdMsg'&gt;,</span> <span class="pre">topic='raw_coord',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.raw_coord" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.antenna_encoder">
-<span class="sig-name descname"><span class="pre">antenna_encoder</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._coord_msg.CoordMsg'&gt;,</span> <span class="pre">topic='encoder',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna')</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_encoder" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">antenna_encoder</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._coord_msg.CoordMsg'&gt;,</span> <span class="pre">topic='encoder',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_encoder" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.antenna_speed_cmd">
-<span class="sig-name descname"><span class="pre">antenna_speed_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_az_el_float64.TimedAzElFloat64'&gt;,</span> <span class="pre">topic='speed',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna')</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_speed_cmd" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">antenna_speed_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_az_el_float64.TimedAzElFloat64'&gt;,</span> <span class="pre">topic='speed',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_speed_cmd" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.altaz_cmd">
-<span class="sig-name descname"><span class="pre">altaz_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._coord_msg.CoordMsg'&gt;,</span> <span class="pre">topic='altaz',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna')</span></em><a class="headerlink" href="#necst.definitions.topic.altaz_cmd" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">altaz_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._coord_msg.CoordMsg'&gt;,</span> <span class="pre">topic='altaz',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.altaz_cmd" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.drive_range_alert_az">
-<span class="sig-name descname"><span class="pre">drive_range_alert_az</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='antenna_drive_range/az',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert')</span></em><a class="headerlink" href="#necst.definitions.topic.drive_range_alert_az" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">drive_range_alert_az</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='antenna_drive_range/az',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.drive_range_alert_az" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.drive_range_alert_el">
-<span class="sig-name descname"><span class="pre">drive_range_alert_el</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='antenna_drive_range/el',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert')</span></em><a class="headerlink" href="#necst.definitions.topic.drive_range_alert_el" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">drive_range_alert_el</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='antenna_drive_range/el',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.drive_range_alert_el" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.drive_speed_alert_az">
-<span class="sig-name descname"><span class="pre">drive_speed_alert_az</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='antenna_speed/az',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert')</span></em><a class="headerlink" href="#necst.definitions.topic.drive_speed_alert_az" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">drive_speed_alert_az</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='antenna_speed/az',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.drive_speed_alert_az" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.drive_speed_alert_el">
-<span class="sig-name descname"><span class="pre">drive_speed_alert_el</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='antenna_speed/el',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert')</span></em><a class="headerlink" href="#necst.definitions.topic.drive_speed_alert_el" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">drive_speed_alert_el</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='antenna_speed/el',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.drive_speed_alert_el" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.manual_stop_alert">
-<span class="sig-name descname"><span class="pre">manual_stop_alert</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='manual_stop',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert')</span></em><a class="headerlink" href="#necst.definitions.topic.manual_stop_alert" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">manual_stop_alert</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._alert_msg.AlertMsg'&gt;,</span> <span class="pre">topic='manual_stop',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core/alert',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.manual_stop_alert" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.definitions.topic.weather_temperature">
-<span class="sig-name descname"><span class="pre">weather_temperature</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_float64.TimedFloat64'&gt;,</span> <span class="pre">topic='temperature',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M')</span></em><a class="headerlink" href="#necst.definitions.topic.weather_temperature" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="necst.definitions.topic.weather_pressure">
-<span class="sig-name descname"><span class="pre">weather_pressure</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_float64.TimedFloat64'&gt;,</span> <span class="pre">topic='pressure',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M')</span></em><a class="headerlink" href="#necst.definitions.topic.weather_pressure" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="necst.definitions.topic.weather_humidity">
-<span class="sig-name descname"><span class="pre">weather_humidity</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_float64.TimedFloat64'&gt;,</span> <span class="pre">topic='humidity',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M')</span></em><a class="headerlink" href="#necst.definitions.topic.weather_humidity" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.weather">
+<span class="sig-name descname"><span class="pre">weather</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._weather_msg.WeatherMsg'&gt;,</span> <span class="pre">topic='ambient',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/weather',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.weather" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.antenna_motor_speed">
-<span class="sig-name descname"><span class="pre">antenna_motor_speed</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_az_el_float64.TimedAzElFloat64'&gt;,</span> <span class="pre">topic='actual_speed',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna')</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_motor_speed" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">antenna_motor_speed</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_az_el_float64.TimedAzElFloat64'&gt;,</span> <span class="pre">topic='actual_speed',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_motor_speed" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.antenna_motor_step">
-<span class="sig-name descname"><span class="pre">antenna_motor_step</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_az_el_int64.TimedAzElInt64'&gt;,</span> <span class="pre">topic='actual_step',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna')</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_motor_step" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">antenna_motor_step</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._timed_az_el_int64.TimedAzElInt64'&gt;,</span> <span class="pre">topic='actual_step',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_motor_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.antenna_control_status">
+<span class="sig-name descname"><span class="pre">antenna_control_status</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._control_status.ControlStatus'&gt;,</span> <span class="pre">topic='controlled',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.antenna_control_status" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.pid_param">
-<span class="sig-name descname"><span class="pre">pid_param</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._pid_msg.PIDMsg'&gt;,</span> <span class="pre">topic='pid_param',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna')</span></em><a class="headerlink" href="#necst.definitions.topic.pid_param" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">pid_param</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._pid_msg.PIDMsg'&gt;,</span> <span class="pre">topic='pid_param',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.pid_param" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.chopper_cmd">
-<span class="sig-name descname"><span class="pre">chopper_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._chopper_msg.ChopperMsg'&gt;,</span> <span class="pre">topic='chopper_cmd',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/calib')</span></em><a class="headerlink" href="#necst.definitions.topic.chopper_cmd" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">chopper_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._chopper_msg.ChopperMsg'&gt;,</span> <span class="pre">topic='chopper_cmd',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/calib',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.chopper_cmd" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.chopper_status">
-<span class="sig-name descname"><span class="pre">chopper_status</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._chopper_msg.ChopperMsg'&gt;,</span> <span class="pre">topic='chopper_status',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/calib')</span></em><a class="headerlink" href="#necst.definitions.topic.chopper_status" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">chopper_status</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._chopper_msg.ChopperMsg'&gt;,</span> <span class="pre">topic='chopper_status',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/calib',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.chopper_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.quick_spectra">
+<span class="sig-name descname"><span class="pre">quick_spectra</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._spectral.Spectral'&gt;,</span> <span class="pre">topic='quick_spectra',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.quick_spectra" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.spectra_meta">
+<span class="sig-name descname"><span class="pre">spectra_meta</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._spectral.Spectral'&gt;,</span> <span class="pre">topic='spectra_meta',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.spectra_meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.qlook_meta">
+<span class="sig-name descname"><span class="pre">qlook_meta</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._spectral.Spectral'&gt;,</span> <span class="pre">topic='qlook_meta',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.qlook_meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.sis_bias">
+<span class="sig-name descname"><span class="pre">sis_bias</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._bias_msg.BiasMsg'&gt;,</span> <span class="pre">topic='sis_bias',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.sis_bias" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.sis_bias_cmd">
+<span class="sig-name descname"><span class="pre">sis_bias_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._bias_msg.BiasMsg'&gt;,</span> <span class="pre">topic='sis_bias_cmd',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.sis_bias_cmd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.lo_signal_cmd">
+<span class="sig-name descname"><span class="pre">lo_signal_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._local_signal.LocalSignal'&gt;,</span> <span class="pre">topic='lo_signal_cmd',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.lo_signal_cmd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.lo_signal">
+<span class="sig-name descname"><span class="pre">lo_signal</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._local_signal.LocalSignal'&gt;,</span> <span class="pre">topic='lo_signal',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.lo_signal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.clock">
+<span class="sig-name descname"><span class="pre">clock</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._clock.Clock'&gt;,</span> <span class="pre">topic='clock',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.clock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.thermometer">
+<span class="sig-name descname"><span class="pre">thermometer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._device_reading.DeviceReading'&gt;,</span> <span class="pre">topic='thermometer',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.thermometer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.attenuator">
+<span class="sig-name descname"><span class="pre">attenuator</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._device_reading.DeviceReading'&gt;,</span> <span class="pre">topic='attenuator',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.attenuator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.attenuator_cmd">
+<span class="sig-name descname"><span class="pre">attenuator_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._device_reading.DeviceReading'&gt;,</span> <span class="pre">topic='attenuator_cmd',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.attenuator_cmd" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -921,6 +1347,42 @@
 <dt class="sig sig-object py" id="necst.definitions.service.AuthoritySrv.Response">
 <span class="sig-name descname"><span class="pre">Response</span></span><a class="headerlink" href="#necst.definitions.service.AuthoritySrv.Response" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">AuthoritySrv_Response</span></code></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.service.File">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">File</span></span><a class="headerlink" href="#necst.definitions.service.File" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.File.Request">
+<span class="sig-name descname"><span class="pre">Request</span></span><a class="headerlink" href="#necst.definitions.service.File.Request" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">File_Request</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.File.Response">
+<span class="sig-name descname"><span class="pre">Response</span></span><a class="headerlink" href="#necst.definitions.service.File.Response" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">File_Response</span></code></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.service.RecordSrv">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RecordSrv</span></span><a class="headerlink" href="#necst.definitions.service.RecordSrv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.RecordSrv.Request">
+<span class="sig-name descname"><span class="pre">Request</span></span><a class="headerlink" href="#necst.definitions.service.RecordSrv.Request" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">RecordSrv_Request</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.RecordSrv.Response">
+<span class="sig-name descname"><span class="pre">Response</span></span><a class="headerlink" href="#necst.definitions.service.RecordSrv.Response" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">RecordSrv_Response</span></code></p>
 </dd></dl>
 
 </dd></dl>
@@ -1019,6 +1481,16 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.service.privilege_ping">
 <span class="sig-name descname"><span class="pre">privilege_ping</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Service(srv_type=&lt;class</span> <span class="pre">'std_srvs.srv._empty.Empty'&gt;,</span> <span class="pre">srv_name='ping',</span> <span class="pre">namespace='/necst/OMU1P85M/core/auth',</span> <span class="pre">qos_profile=None)</span></em><a class="headerlink" href="#necst.definitions.service.privilege_ping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.record_path">
+<span class="sig-name descname"><span class="pre">record_path</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Service(srv_type=&lt;class</span> <span class="pre">'necst_msgs.srv._record_srv.RecordSrv'&gt;,</span> <span class="pre">srv_name='record_path',</span> <span class="pre">namespace='/necst/OMU1P85M/core',</span> <span class="pre">qos_profile=None)</span></em><a class="headerlink" href="#necst.definitions.service.record_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.record_file">
+<span class="sig-name descname"><span class="pre">record_file</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Service(srv_type=&lt;class</span> <span class="pre">'necst_msgs.srv._file.File'&gt;,</span> <span class="pre">srv_name='record_file',</span> <span class="pre">namespace='/necst/OMU1P85M/core',</span> <span class="pre">qos_profile=None)</span></em><a class="headerlink" href="#necst.definitions.service.record_file" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

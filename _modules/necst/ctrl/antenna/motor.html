@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.ctrl.antenna.motor &#8212; necst 0.3.2 documentation</title>
+    <title>necst.ctrl.antenna.motor &#8212; necst 0.4.0 documentation</title>
     
   <link href="../../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.4.0</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -162,15 +162,30 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeName</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">antenna_motor_speed</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
             <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">antenna_motor_step</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="n">topic</span><span class="o">.</span><span class="n">antenna_speed_cmd</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_command</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_command_frequency</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_speed</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_command_frequency</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_step</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_speed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">10</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_step</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_command</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_cmd_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">motor</span> <span class="o">=</span> <span class="n">AntennaMotorDevice</span><span class="p">()</span>
+
+<div class="viewcode-block" id="AntennaMotor.check_command"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.motor.html#necst.ctrl.antenna.motor.AntennaMotor.check_command">[docs]</a>    <span class="k">def</span> <span class="nf">check_command</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">timelimit</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_command_offset_sec</span>
+        <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_cmd_time</span> <span class="o">&gt;</span> <span class="n">timelimit</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">set_speed</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;az&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">set_speed</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;el&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No command supplied for </span><span class="si">{</span><span class="n">timelimit</span><span class="si">}</span><span class="s2"> s, stopping the antenna&quot;</span><span class="p">,</span>
+                <span class="n">throttle_duration_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="AntennaMotor.speed_command"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.motor.html#necst.ctrl.antenna.motor.AntennaMotor.speed_command">[docs]</a>    <span class="k">def</span> <span class="nf">speed_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">TimedAzElFloat64</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -179,11 +194,13 @@
         <span class="k">while</span> <span class="n">msg</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">():</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1e-5</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">set_speed</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;az&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">set_speed</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">el</span><span class="p">,</span> <span class="s2">&quot;el&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">set_speed</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">el</span><span class="p">,</span> <span class="s2">&quot;el&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_cmd_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="AntennaMotor.stream_speed"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.motor.html#necst.ctrl.antenna.motor.AntennaMotor.stream_speed">[docs]</a>    <span class="k">def</span> <span class="nf">stream_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">readout_az</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">get_speed</span><span class="p">(</span><span class="s2">&quot;az&quot;</span><span class="p">)</span>
-        <span class="n">readout_el</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">get_speed</span><span class="p">(</span><span class="s2">&quot;el&quot;</span><span class="p">)</span>
+        <span class="n">readout_az</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">get_speed</span><span class="p">(</span><span class="s2">&quot;az&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg/s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">readout_el</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">get_speed</span><span class="p">(</span><span class="s2">&quot;el&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg/s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
         <span class="n">speed_msg</span> <span class="o">=</span> <span class="n">TimedAzElFloat64</span><span class="p">(</span>
             <span class="n">az</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">readout_az</span><span class="p">),</span> <span class="n">el</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">readout_el</span><span class="p">),</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="p">)</span>

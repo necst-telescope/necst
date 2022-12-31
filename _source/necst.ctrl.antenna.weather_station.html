@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.ctrl.exec_antenna_sim &#8212; necst 0.3.2 documentation</title>
+    <title>necst.ctrl.antenna.weather_station &#8212; necst 0.4.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.rx" href="necst.rx.html" />
-    <link rel="prev" title="necst.ctrl.exec_antenna_dev" href="necst.ctrl.exec_antenna_dev.html" />
+    <link rel="next" title="necst.ctrl.calibrator" href="necst.ctrl.calibrator.html" />
+    <link rel="prev" title="necst.ctrl.antenna.sim_devices" href="necst.ctrl.antenna.sim_devices.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.4.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -188,6 +188,11 @@
     </ul>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.clock.html">
+     necst.core.clock
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.commander.html">
      necst.core.commander
     </a>
@@ -195,21 +200,6 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.device_node.html">
      necst.core.device_node
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_alert.html">
-     necst.core.exec_alert
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_auth.html">
-     necst.core.exec_auth
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_record.html">
-     necst.core.exec_record
     </a>
    </li>
    <li class="toctree-l2">
@@ -234,16 +224,16 @@
    </i>
   </label>
   <ul class="current">
-   <li class="toctree-l2 has-children">
+   <li class="toctree-l2 current active has-children">
     <a class="reference internal" href="necst.ctrl.antenna.html">
      necst.ctrl.antenna
     </a>
-    <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
     <label for="toctree-checkbox-5">
      <i class="fas fa-chevron-down">
      </i>
     </label>
-    <ul>
+    <ul class="current">
      <li class="toctree-l3">
       <a class="reference internal" href="necst.ctrl.antenna.encoder.html">
        necst.ctrl.antenna.encoder
@@ -269,9 +259,9 @@
        necst.ctrl.antenna.sim_devices
       </a>
      </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.ctrl.antenna.thermometer_reader.html">
-       necst.ctrl.antenna.thermometer_reader
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
+       necst.ctrl.antenna.weather_station
       </a>
      </li>
     </ul>
@@ -293,34 +283,51 @@
      </li>
     </ul>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_cal.html">
-     necst.ctrl.exec_antenna_cal
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_dev.html">
-     necst.ctrl.exec_antenna_dev
-    </a>
-   </li>
-   <li class="toctree-l2 current active">
-    <a class="current reference internal" href="#">
-     necst.ctrl.exec_antenna_sim
-    </a>
-   </li>
   </ul>
  </li>
- <li class="toctree-l1">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.attenuator.html">
+     necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.signal_generator.html">
+     necst.rx.signal_generator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.sis_bias.html">
+     necst.rx.sis_bias
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectrometer.html">
+     necst.rx.spectrometer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.thermometer.html">
+     necst.rx.thermometer
+    </a>
+   </li>
+  </ul>
  </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
-  <label for="toctree-checkbox-7">
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -385,27 +392,33 @@
               
               <div>
                 
-  <section id="module-necst.ctrl.exec_antenna_sim">
-<span id="necst-ctrl-exec-antenna-sim"></span><h1>necst.ctrl.exec_antenna_sim<a class="headerlink" href="#module-necst.ctrl.exec_antenna_sim" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="necst.ctrl.exec_antenna_sim.configure_executor">
-<span class="sig-name descname"><span class="pre">configure_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/exec_antenna_sim.html#configure_executor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.exec_antenna_sim.configure_executor" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><em>MultiThreadedExecutor</em></p>
-</dd>
-</dl>
+  <section id="module-necst.ctrl.antenna.weather_station">
+<span id="necst-ctrl-antenna-weather-station"></span><h1>necst.ctrl.antenna.weather_station<a class="headerlink" href="#module-necst.ctrl.antenna.weather_station" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.weather_station.WeatherStationReader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WeatherStationReader</span></span><a class="reference internal" href="../_modules/necst/ctrl/antenna/weather_station.html#WeatherStationReader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.weather_station.WeatherStationReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.core.device_node.html#necst.core.device_node.DeviceNode" title="necst.core.device_node.DeviceNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceNode</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.weather_station.WeatherStationReader.NodeName">
+<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'thermometer_reader'</span></em><a class="headerlink" href="#necst.ctrl.antenna.weather_station.WeatherStationReader.NodeName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.weather_station.WeatherStationReader.Namespace">
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M'</span></em><a class="headerlink" href="#necst.ctrl.antenna.weather_station.WeatherStationReader.Namespace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.weather_station.WeatherStationReader.stream">
+<span class="sig-name descname"><span class="pre">stream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/weather_station.html#WeatherStationReader.stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.weather_station.WeatherStationReader.stream" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="necst.ctrl.exec_antenna_sim.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/exec_antenna_sim.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.exec_antenna_sim.main" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="necst.ctrl.antenna.weather_station.main">
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/weather_station.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.weather_station.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </section>
 
@@ -415,17 +428,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.ctrl.exec_antenna_dev.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.ctrl.antenna.sim_devices.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.ctrl.exec_antenna_dev</p>
+            <p class="prev-next-title">necst.ctrl.antenna.sim_devices</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.rx.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.ctrl.calibrator.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.rx</p>
+        <p class="prev-next-title">necst.ctrl.calibrator</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

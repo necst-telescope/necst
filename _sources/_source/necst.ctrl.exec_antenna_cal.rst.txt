@@ -1,7 +1,0 @@
-necst.ctrl.exec\_antenna\_cal
-=============================
-
-.. automodule:: necst.ctrl.exec_antenna_cal
-   :members:
-   :undoc-members:
-   :show-inheritance:

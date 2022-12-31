@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst &#8212; necst 0.3.2 documentation</title>
+    <title>necst &#8212; necst 0.4.0 documentation</title>
     
   <link href="_static/css/theme.css" rel="stylesheet">
   <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -121,7 +121,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.4.0</p><form class="bd-search d-flex align-items-center" action="search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -148,11 +148,6 @@
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#features">
    Features
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#installation">
-   Installation
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
@@ -183,8 +178,9 @@
                 
   <section id="necst">
 <h1>necst<a class="headerlink" href="#necst" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="https://pypi.org/pypi/necst/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/necst.svg?label=Python&amp;color=yellow&amp;style=flat-square" /></a>
-<a class="reference external" href="https://github.com/necst-telescope/necst/actions"><img alt="Test" src="https://img.shields.io/github/workflow/status/necst-telescope/necst/Test?logo=github&amp;label=Test&amp;style=flat-square" /></a>
+<p><a class="reference external" href="https://github.com/necst-telescope/necst/pkgs/container/necst"><img alt="Version" src="https://ghcr-badge.deta.dev/necst-telescope/necst/latest_tag?label=Latest" /></a>
+<a class="reference external" href="https://github.com/necst-telescope/necst/pkgs/container/necst"><img alt="Image size" src="https://ghcr-badge.deta.dev/necst-telescope/necst/size?label=Size" /></a>
+<a class="reference external" href="https://github.com/necst-telescope/necst/actions"><img alt="Test status" src="https://img.shields.io/github/actions/workflow/status/necst-telescope/necst/test.yml?branch=main&amp;logo=github&amp;label=Test&amp;style=flat-square" /></a>
 <a class="reference external" href="https://codecov.io/github/necst-telescope/necst"><img alt="codecov" src="https://codecov.io/github/necst-telescope/necst/branch/main/graph/badge.svg?token=XILGYELF61" /></a>
 <a class="reference external" href="https://github.com/necst-telescope/necst/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg?label=License&amp;style=flat-square" /></a></p>
 <p>NEw Control System for Telescope</p>
@@ -192,17 +188,18 @@
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <p>This library provides:</p>
 <ul class="simple">
-<li><p>Telescope control programs based on the middleware ROS2.</p></li>
-<li><p>We will support all the modules using ROS, including receiver controls in this repository.</p></li>
+<li><p>Distributed control system of radio telescopes, implemented on Python and ROS 2</p></li>
+<li><p>Flexibly configurable system, can coexist with current ones, powered by Docker</p></li>
 </ul>
-</section>
-<section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>TBU</p>
 </section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<p>TBU</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker pull ghcr.io/necst-telescope/necst:latest
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>TBU</p></li>
+</ul>
 <hr class="docutils" />
 <p>This library is using <a class="reference external" href="https://semver.org">Semantic Versioning</a>.</p>
 <div class="toctree-wrapper compound">

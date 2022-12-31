@@ -40,11 +40,9 @@ Submodules
 
 .. autosummary::
 
+   necst.core.clock
    necst.core.commander
    necst.core.device_node
-   necst.core.exec_alert
-   necst.core.exec_auth
-   necst.core.exec_record
    necst.core.recorder
    necst.core.server_node
 
@@ -53,10 +51,8 @@ Submodules
    :titlesonly:
    :hidden:
 
+   necst.core.clock
    necst.core.commander
    necst.core.device_node
-   necst.core.exec_alert
-   necst.core.exec_auth
-   necst.core.exec_record
    necst.core.recorder
    necst.core.server_node

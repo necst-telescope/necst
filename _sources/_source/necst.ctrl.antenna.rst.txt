@@ -28,7 +28,7 @@ Submodules
    necst.ctrl.antenna.motor
    necst.ctrl.antenna.pid_controller
    necst.ctrl.antenna.sim_devices
-   necst.ctrl.antenna.thermometer_reader
+   necst.ctrl.antenna.weather_station
 
 .. toctree::
    :maxdepth: 4
@@ -40,4 +40,4 @@ Submodules
    necst.ctrl.antenna.motor
    necst.ctrl.antenna.pid_controller
    necst.ctrl.antenna.sim_devices
-   necst.ctrl.antenna.thermometer_reader
+   necst.ctrl.antenna.weather_station

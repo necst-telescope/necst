@@ -1,7 +1,0 @@
-necst.ctrl.exec\_antenna\_sim
-=============================
-
-.. automodule:: necst.ctrl.exec_antenna_sim
-   :members:
-   :undoc-members:
-   :show-inheritance:

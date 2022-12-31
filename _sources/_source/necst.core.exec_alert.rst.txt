@@ -1,7 +1,0 @@
-necst.core.exec\_alert
-======================
-
-.. automodule:: necst.core.exec_alert
-   :members:
-   :undoc-members:
-   :show-inheritance:

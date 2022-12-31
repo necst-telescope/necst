@@ -1,0 +1,7 @@
+necst.ctrl.antenna.weather\_station
+===================================
+
+.. automodule:: necst.ctrl.antenna.weather_station
+   :members:
+   :undoc-members:
+   :show-inheritance:

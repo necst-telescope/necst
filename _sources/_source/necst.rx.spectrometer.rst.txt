@@ -1,7 +1,7 @@
-necst.core.exec\_auth
+necst.rx.spectrometer
 =====================
 
-.. automodule:: necst.core.exec_auth
+.. automodule:: necst.rx.spectrometer
    :members:
    :undoc-members:
    :show-inheritance:

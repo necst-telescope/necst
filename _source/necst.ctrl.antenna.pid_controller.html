@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.ctrl.antenna.pid_controller &#8212; necst 0.3.2 documentation</title>
+    <title>necst.ctrl.antenna.pid_controller &#8212; necst 0.4.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.4.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -188,6 +188,11 @@
     </ul>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.clock.html">
+     necst.core.clock
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.commander.html">
      necst.core.commander
     </a>
@@ -195,21 +200,6 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.device_node.html">
      necst.core.device_node
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_alert.html">
-     necst.core.exec_alert
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_auth.html">
-     necst.core.exec_auth
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_record.html">
-     necst.core.exec_record
     </a>
    </li>
    <li class="toctree-l2">
@@ -270,8 +260,8 @@
       </a>
      </li>
      <li class="toctree-l3">
-      <a class="reference internal" href="necst.ctrl.antenna.thermometer_reader.html">
-       necst.ctrl.antenna.thermometer_reader
+      <a class="reference internal" href="necst.ctrl.antenna.weather_station.html">
+       necst.ctrl.antenna.weather_station
       </a>
      </li>
     </ul>
@@ -293,34 +283,51 @@
      </li>
     </ul>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_cal.html">
-     necst.ctrl.exec_antenna_cal
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_dev.html">
-     necst.ctrl.exec_antenna_dev
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_sim.html">
-     necst.ctrl.exec_antenna_sim
-    </a>
-   </li>
   </ul>
  </li>
- <li class="toctree-l1">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.attenuator.html">
+     necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.signal_generator.html">
+     necst.rx.signal_generator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.sis_bias.html">
+     necst.rx.sis_bias
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectrometer.html">
+     necst.rx.spectrometer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.thermometer.html">
+     necst.rx.thermometer
+    </a>
+   </li>
+  </ul>
  </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
-  <label for="toctree-checkbox-7">
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -389,8 +396,13 @@
 <span id="necst-ctrl-antenna-pid-controller"></span><h1>necst.ctrl.antenna.pid_controller<a class="headerlink" href="#module-necst.ctrl.antenna.pid_controller" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AntennaPIDController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AntennaPIDController</span></span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="necst.core.alert.alert_handler_node.html#necst.core.alert.alert_handler_node.AlertHandlerNode" title="necst.core.alert.alert_handler_node.AlertHandlerNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlertHandlerNode</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.NodeName">
 <span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'controller'</span></em><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.NodeName" title="Permalink to this definition">¶</a></dt>
@@ -401,25 +413,10 @@
 <span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/ctrl/antenna'</span></em><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.Namespace" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.get_valid_command">
-<span class="sig-name descname"><span class="pre">get_valid_command</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.get_valid_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.get_valid_command" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><em>Tuple</em>[float, float]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.calc_pid">
-<span class="sig-name descname"><span class="pre">calc_pid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.calc_pid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.calc_pid" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.CommandOffsetDuration">
+<span class="sig-name descname"><span class="pre">CommandOffsetDuration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.01</span></em><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.CommandOffsetDuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.update_command">
@@ -448,6 +445,60 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.interpolated_encoder_reading">
+<span class="sig-name descname"><span class="pre">interpolated_encoder_reading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.interpolated_encoder_reading"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.interpolated_encoder_reading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform linear interpolation on encoder reading.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>time</strong> (<em>float</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><em>Optional</em>[<a class="reference internal" href="necst.definitions.html#necst.definitions.topic.CoordMsg" title="necst_msgs.msg._coord_msg.CoordMsg"><em>CoordMsg</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.immediate_stop_no_resume">
+<span class="sig-name descname"><span class="pre">immediate_stop_no_resume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.immediate_stop_no_resume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.immediate_stop_no_resume" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.discard_outdated_commands">
+<span class="sig-name descname"><span class="pre">discard_outdated_commands</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.discard_outdated_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.discard_outdated_commands" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.get_coordinate_command">
+<span class="sig-name descname"><span class="pre">get_coordinate_command</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.get_coordinate_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.get_coordinate_command" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><em>Optional</em>[<em>Tuple</em>[<a class="reference internal" href="necst.definitions.html#necst.definitions.topic.CoordMsg" title="necst_msgs.msg._coord_msg.CoordMsg"><em>CoordMsg</em></a>, <a class="reference internal" href="necst.definitions.html#necst.definitions.topic.CoordMsg" title="necst_msgs.msg._coord_msg.CoordMsg"><em>CoordMsg</em></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.speed_command">
+<span class="sig-name descname"><span class="pre">speed_command</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.speed_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.speed_command" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.change_pid_param">
 <span class="sig-name descname"><span class="pre">change_pid_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.change_pid_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.change_pid_param" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -460,12 +511,17 @@
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.AntennaPIDController.telemetry">
+<span class="sig-name descname"><span class="pre">telemetry</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#AntennaPIDController.telemetry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.AntennaPIDController.telemetry" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.pid_controller.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/pid_controller.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.pid_controller.main" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+</dd></dl>
 
 </section>
 

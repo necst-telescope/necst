@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.core.exec_alert &#8212; necst 0.3.2 documentation</title>
+    <title>necst.rx.attenuator &#8212; necst 0.4.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.core.exec_auth" href="necst.core.exec_auth.html" />
-    <link rel="prev" title="necst.core.device_node" href="necst.core.device_node.html" />
+    <link rel="next" title="necst.rx.signal_generator" href="necst.rx.signal_generator.html" />
+    <link rel="prev" title="necst.rx" href="necst.rx.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -122,22 +122,22 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.4.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
   <div class="bd-toc-item active">
     <ul class="current nav bd-sidenav">
- <li class="toctree-l1 current active has-children">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.core.html">
    necst.core
   </a>
-  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul class="current">
+  <ul>
    <li class="toctree-l2 has-children">
     <a class="reference internal" href="necst.core.alert.html">
      necst.core.alert
@@ -188,6 +188,11 @@
     </ul>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.clock.html">
+     necst.core.clock
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.commander.html">
      necst.core.commander
     </a>
@@ -195,21 +200,6 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.device_node.html">
      necst.core.device_node
-    </a>
-   </li>
-   <li class="toctree-l2 current active">
-    <a class="current reference internal" href="#">
-     necst.core.exec_alert
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_auth.html">
-     necst.core.exec_auth
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_record.html">
-     necst.core.exec_record
     </a>
    </li>
    <li class="toctree-l2">
@@ -270,8 +260,8 @@
       </a>
      </li>
      <li class="toctree-l3">
-      <a class="reference internal" href="necst.ctrl.antenna.thermometer_reader.html">
-       necst.ctrl.antenna.thermometer_reader
+      <a class="reference internal" href="necst.ctrl.antenna.weather_station.html">
+       necst.ctrl.antenna.weather_station
       </a>
      </li>
     </ul>
@@ -293,34 +283,51 @@
      </li>
     </ul>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_cal.html">
-     necst.ctrl.exec_antenna_cal
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_dev.html">
-     necst.ctrl.exec_antenna_dev
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_sim.html">
-     necst.ctrl.exec_antenna_sim
-    </a>
-   </li>
   </ul>
  </li>
- <li class="toctree-l1">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.signal_generator.html">
+     necst.rx.signal_generator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.sis_bias.html">
+     necst.rx.sis_bias
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectrometer.html">
+     necst.rx.spectrometer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.thermometer.html">
+     necst.rx.thermometer
+    </a>
+   </li>
+  </ul>
  </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
-  <label for="toctree-checkbox-7">
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -385,22 +392,61 @@
               
               <div>
                 
-  <section id="module-necst.core.exec_alert">
-<span id="necst-core-exec-alert"></span><h1>necst.core.exec_alert<a class="headerlink" href="#module-necst.core.exec_alert" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="necst.core.exec_alert.get_executor">
-<span class="sig-name descname"><span class="pre">get_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/exec_alert.html#get_executor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.exec_alert.get_executor" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+  <section id="module-necst.rx.attenuator">
+<span id="necst-rx-attenuator"></span><h1>necst.rx.attenuator<a class="headerlink" href="#module-necst.rx.attenuator" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.rx.attenuator.AttenuatorController">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AttenuatorController</span></span><a class="reference internal" href="../_modules/necst/rx/attenuator.html#AttenuatorController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.attenuator.AttenuatorController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.core.device_node.html#necst.core.device_node.DeviceNode" title="necst.core.device_node.DeviceNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceNode</span></code></a></p>
+<dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><em>MultiThreadedExecutor</em></p>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.rx.attenuator.AttenuatorController.NodeName">
+<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'attenuator'</span></em><a class="headerlink" href="#necst.rx.attenuator.AttenuatorController.NodeName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.rx.attenuator.AttenuatorController.Namespace">
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/rx'</span></em><a class="headerlink" href="#necst.rx.attenuator.AttenuatorController.Namespace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.rx.attenuator.AttenuatorController.set_loss">
+<span class="sig-name descname"><span class="pre">set_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/rx/attenuator.html#AttenuatorController.set_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.attenuator.AttenuatorController.set_loss" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>msg</strong> (<a class="reference internal" href="necst.definitions.html#necst.definitions.topic.DeviceReading" title="necst_msgs.msg._device_reading.DeviceReading"><em>DeviceReading</em></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="necst.core.exec_alert.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/exec_alert.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.exec_alert.main" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.rx.attenuator.AttenuatorController.check_publisher">
+<span class="sig-name descname"><span class="pre">check_publisher</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/rx/attenuator.html#AttenuatorController.check_publisher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.attenuator.AttenuatorController.check_publisher" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.rx.attenuator.AttenuatorController.stream">
+<span class="sig-name descname"><span class="pre">stream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/rx/attenuator.html#AttenuatorController.stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.attenuator.AttenuatorController.stream" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
 
 </section>
 
@@ -410,17 +456,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.core.device_node.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.rx.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.core.device_node</p>
+            <p class="prev-next-title">necst.rx</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.core.exec_auth.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.rx.signal_generator.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.core.exec_auth</p>
+        <p class="prev-next-title">necst.rx.signal_generator</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

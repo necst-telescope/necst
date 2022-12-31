@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.core.commander &#8212; necst 0.3.2 documentation</title>
+    <title>necst.core.commander &#8212; necst 0.4.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="necst.core.device_node" href="necst.core.device_node.html" />
-    <link rel="prev" title="necst.core.auth.privileged_node" href="necst.core.auth.privileged_node.html" />
+    <link rel="prev" title="necst.core.clock" href="necst.core.clock.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.3.2</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.4.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -187,6 +187,11 @@
      </li>
     </ul>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.clock.html">
+     necst.core.clock
+    </a>
+   </li>
    <li class="toctree-l2 current active">
     <a class="current reference internal" href="#">
      necst.core.commander
@@ -195,21 +200,6 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.device_node.html">
      necst.core.device_node
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_alert.html">
-     necst.core.exec_alert
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_auth.html">
-     necst.core.exec_auth
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.core.exec_record.html">
-     necst.core.exec_record
     </a>
    </li>
    <li class="toctree-l2">
@@ -270,8 +260,8 @@
       </a>
      </li>
      <li class="toctree-l3">
-      <a class="reference internal" href="necst.ctrl.antenna.thermometer_reader.html">
-       necst.ctrl.antenna.thermometer_reader
+      <a class="reference internal" href="necst.ctrl.antenna.weather_station.html">
+       necst.ctrl.antenna.weather_station
       </a>
      </li>
     </ul>
@@ -293,34 +283,51 @@
      </li>
     </ul>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_cal.html">
-     necst.ctrl.exec_antenna_cal
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_dev.html">
-     necst.ctrl.exec_antenna_dev
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.ctrl.exec_antenna_sim.html">
-     necst.ctrl.exec_antenna_sim
-    </a>
-   </li>
   </ul>
  </li>
- <li class="toctree-l1">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.attenuator.html">
+     necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.signal_generator.html">
+     necst.rx.signal_generator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.sis_bias.html">
+     necst.rx.sis_bias
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectrometer.html">
+     necst.rx.spectrometer
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.thermometer.html">
+     necst.rx.thermometer
+    </a>
+   </li>
+  </ul>
  </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
-  <label for="toctree-checkbox-7">
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -408,20 +415,25 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.get_message">
-<span class="sig-name descname"><span class="pre">get_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.get_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.get_message" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_sec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.get_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.get_message" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – </p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<em>str</em>) – </p></li>
+<li><p><strong>time</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>interp</strong> (<em>bool</em>) – </p></li>
+</ul>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Any</em></p>
+<dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.antenna">
-<span class="sig-name descname"><span class="pre">antenna</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.antenna"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.antenna" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">antenna</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.antenna"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.antenna" title="Permalink to this definition">¶</a></dt>
 <dd><p>Control antenna direction and motion.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -429,6 +441,9 @@
 <li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'stop'</em><em>, </em><em>'point'</em><em>, </em><em>'scan'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
 <li><p><strong>lon</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
 <li><p><strong>lat</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>start</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>end</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>speed</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
 <li><p><strong>unit</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
 <li><p><strong>frame</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
 <li><p><strong>time</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
@@ -444,7 +459,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.chopper">
-<span class="sig-name descname"><span class="pre">chopper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.chopper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.chopper" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">chopper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.chopper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.chopper" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calibrator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -457,13 +472,14 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.core.commander.Commander.wait_convergence">
-<span class="sig-name descname"><span class="pre">wait_convergence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_sec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.wait_convergence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.wait_convergence" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.core.commander.Commander.wait">
+<span class="sig-name descname"><span class="pre">wait</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_sec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.wait"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait until the motion has been converged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target</strong> (<em>Literal</em><em>[</em><em>'antenna'</em><em>, </em><em>'dome'</em><em>]</em>) – </p></li>
+<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'control'</em><em>, </em><em>'error'</em><em>]</em>) – </p></li>
 <li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
 </ul>
 </dd>
@@ -475,15 +491,203 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.pid_parameter">
-<span class="sig-name descname"><span class="pre">pid_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ki</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.pid_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.pid_parameter" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">pid_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ki</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.pid_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.pid_parameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Change PID parameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Kp</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>Ki</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>Kd</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>axis</strong> (<em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.metadata" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>position</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>time</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.quick_look">
+<span class="sig-name descname"><span class="pre">quick_look</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.quick_look"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.quick_look" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'ch'</em><em>, </em><em>'rf'</em><em>, </em><em>'if'</em><em>, </em><em>'vlsr'</em><em>]</em>) – </p></li>
+<li><p><strong>range</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>integ</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.record" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'start'</em><em>, </em><em>'stop'</em><em>, </em><em>'file'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>name</strong> (<em>str</em>) – </p></li>
+<li><p><strong>content</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.sis_bias">
+<span class="sig-name descname"><span class="pre">sis_bias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mV</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.sis_bias"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.sis_bias" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.attenuator">
+<span class="sig-name descname"><span class="pre">attenuator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.attenuator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.attenuator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.thermometer">
+<span class="sig-name descname"><span class="pre">thermometer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'?'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.thermometer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.thermometer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'?'</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.signal_generator">
+<span class="sig-name descname"><span class="pre">signal_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dBm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.signal_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.signal_generator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.sg">
+<span class="sig-name descname"><span class="pre">sg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dBm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.sg" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.patt">
+<span class="sig-name descname"><span class="pre">patt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.patt" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.qlook">
+<span class="sig-name descname"><span class="pre">qlook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.qlook" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'ch'</em><em>, </em><em>'rf'</em><em>, </em><em>'if'</em><em>, </em><em>'vlsr'</em><em>]</em>) – </p></li>
+<li><p><strong>range</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>integ</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.pid">
+<span class="sig-name descname"><span class="pre">pid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ki</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.pid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change PID parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -502,11 +706,11 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.core.auth.privileged_node.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.core.clock.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.core.auth.privileged_node</p>
+            <p class="prev-next-title">necst.core.clock</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="necst.core.device_node.html" title="next page">

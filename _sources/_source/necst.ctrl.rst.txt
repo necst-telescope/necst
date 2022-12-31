@@ -34,21 +34,3 @@ Subpackages
 
 
 
-
-Submodules
-----------
-
-.. autosummary::
-
-   necst.ctrl.exec_antenna_cal
-   necst.ctrl.exec_antenna_dev
-   necst.ctrl.exec_antenna_sim
-
-.. toctree::
-   :maxdepth: 4
-   :titlesonly:
-   :hidden:
-
-   necst.ctrl.exec_antenna_cal
-   necst.ctrl.exec_antenna_dev
-   necst.ctrl.exec_antenna_sim
