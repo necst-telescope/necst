@@ -435,7 +435,7 @@ class Commander(PrivilegedNode):
             msg = DeviceReading(value=float(dB), time=pytime.time(), id=id)
             self.publisher["attenuator"].publish(msg)
         elif CMD == "?":
-            self.get_message("attenuator", timeout_sec=10)
+            return self.get_message("attenuator", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
@@ -468,3 +468,4 @@ class Commander(PrivilegedNode):
     patt = attenuator
     qlook = quick_look
     pid = pid_parameter
+    sis = sis_bias
