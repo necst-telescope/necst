@@ -130,6 +130,7 @@ class Topic(Generic[T]):
                 f"{self.__class__.__name__} object constructed without `support_index` "
                 "option isn't subscriptable"
             )
+        key = key.replace(".", "/")
         return Topic(
             self.msg_type, f"{self.topic}/{key}", self.qos_profile, self.namespace
         )
