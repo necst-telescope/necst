@@ -5,7 +5,7 @@ from neclib.devices import SignalGenerator
 from necst_msgs.msg import LocalSignal
 from rclpy.publisher import Publisher
 
-from .. import config, namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
@@ -27,7 +27,7 @@ class SignalGeneratorController(DeviceNode):
         self.create_timer(1, self.check_publisher)
 
     def check_publisher(self) -> None:
-        for name in config.signal_generator.keys():
+        for name in self.io.keys():
             if name not in self.publisher:
                 self.publisher[name] = topic.lo_signal[name].publisher(self)
 
@@ -38,7 +38,7 @@ class SignalGeneratorController(DeviceNode):
         self.logger.info(f"Set freq = {msg.freq} GHz, power = {msg.power} dBm")
 
     def stream(self) -> None:
-        for name, publisher in self.publisher:
+        for name, publisher in self.publisher.items():
             freq = self.io[name].get_freq().to_value("GHz").item()
             power = self.io[name].get_power().value.item()
             msg = LocalSignal(time=time.time(), freq=float(freq), power=float(power))

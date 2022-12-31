@@ -41,6 +41,6 @@ class SISBias(DeviceNode):
             time.sleep(0.01)
 
     def set_voltage(self, msg: BiasMsg) -> None:
-        self.setter_io[msg.id].set_voltage(voltage_mV=msg.voltage)
+        self.setter_io.set_voltage(mV=msg.voltage, id=msg.id)
         self.setter_io.apply_voltage()
         self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")

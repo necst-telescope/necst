@@ -5,7 +5,7 @@ from neclib.devices import Attenuator
 from necst_msgs.msg import DeviceReading
 from rclpy.publisher import Publisher
 
-from .. import config, namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
@@ -28,14 +28,12 @@ class AttenuatorController(DeviceNode):
         self.logger.info(f"Attenuator loss set to {msg.value} dB for device {msg.id}")
 
     def check_publisher(self) -> None:
-        for dev in config.attenuator.keys():
-            for k in config.attenuator[dev].channel.keys():
-                key = f"{dev}:{k}"
-                if key not in self.publisher:
-                    self.publisher[key] = topic.attenuator[key].publisher(self)
+        for key in self.io.keys():
+            if key not in self.publisher:
+                self.publisher[key] = topic.attenuator[key].publisher(self)
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            loss = self.io.get_loss(id=name)
+            loss = self.io.get_loss(id=name).to_value("dB").item()
             msg = DeviceReading(id=name, value=float(loss), time=time.time())
             publisher.publish(msg)
