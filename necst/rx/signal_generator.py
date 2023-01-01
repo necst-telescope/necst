@@ -41,5 +41,7 @@ class SignalGeneratorController(DeviceNode):
         for name, publisher in self.publisher.items():
             freq = self.io[name].get_freq().to_value("GHz").item()
             power = self.io[name].get_power().value.item()
-            msg = LocalSignal(time=time.time(), freq=float(freq), power=float(power))
+            msg = LocalSignal(
+                time=time.time(), freq=float(freq), power=float(power), id=name
+            )
             publisher.publish(msg)
