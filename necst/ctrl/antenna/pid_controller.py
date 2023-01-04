@@ -6,7 +6,7 @@ from neclib.controllers import PIDController
 from neclib.data import LinearInterp
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
-from necst_msgs.msg import ControlStatus, CoordMsg, PIDMsg, TimedAzElFloat64
+from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -55,9 +55,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_list: List[CoordMsg] = []
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
-        self.status_publisher = topic.antenna_control_status.publisher(self)
         self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
-        self.create_timer(1, self.telemetry)
 
         self.coord_interp = LinearInterp(
             "time", CoordMsg.get_fields_and_field_types().keys()
@@ -174,9 +172,3 @@ class AntennaPIDController(AlertHandlerNode):
         self.controller[axis].k_p = msg.k_p
         self.controller[axis].k_i = msg.k_i
         self.controller[axis].k_d = msg.k_d
-
-    def telemetry(self) -> None:
-        now = pytime.time()
-        controlled = (len(self.command_list) > 0) and (self.command_list[0].time > now)
-        msg = ControlStatus(controlled=controlled, remote=True, time=now)
-        self.status_publisher.publish(msg)

@@ -4,7 +4,8 @@ import time
 from typing import Generator, Optional, Tuple
 
 from neclib.coordinates import DriveLimitChecker, PathFinder
-from necst_msgs.msg import CoordCmdMsg, CoordMsg, WeatherMsg
+from neclib.coordinates.path_finder import ControlStatus as LibControlStatus
+from necst_msgs.msg import ControlStatus, CoordCmdMsg, CoordMsg, WeatherMsg
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -42,6 +43,8 @@ class HorizontalCoord(AlertHandlerNode):
         topic.raw_coord.subscription(self, self._update_cmd)
         topic.antenna_encoder.subscription(self, self._update_enc)
         topic.weather.subscription(self, self.update_weather)
+
+        self.status_publisher = topic.antenna_control_status.publisher(self)
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(0.5, self.convert)
@@ -150,7 +153,8 @@ class HorizontalCoord(AlertHandlerNode):
             return
 
         try:
-            az, el, t = next(self.executing_generator)
+            az, el, t, status = next(self.executing_generator)
+            self.telemetry(status)
         except (StopIteration, TypeError):
             self.cmd = None
             return
@@ -180,3 +184,12 @@ class HorizontalCoord(AlertHandlerNode):
         self.finder.temperature = msg.temperature
         self.finder.pressure = msg.pressure
         self.finder.relative_humidity = msg.humidity
+
+    def telemetry(self, status: LibControlStatus) -> None:
+        msg = ControlStatus(
+            controlled=status.controlled,
+            tight=status.tight,
+            remote=True,
+            time=status.start,
+        )
+        self.status_publisher.publish(msg)
