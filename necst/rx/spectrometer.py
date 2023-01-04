@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple
 from neclib.data import Resize
 from neclib.devices import Spectrometer
 from neclib.recorders import NECSTDBWriter, Recorder
-from necst_msgs.msg import Spectral
+from necst_msgs.msg import ControlStatus, Spectral
 from rclpy.publisher import Publisher
 
 from .. import namespace, topic
@@ -26,6 +26,14 @@ class ObservingModeManager:
 
     def __init__(self) -> None:
         self.mode = []
+        self._enabled = []
+
+    def enabled(self, time: float) -> bool:
+        try:
+            past = [tag for tag in self._enabled if tag[1] < time]
+            return past[-1][0]
+        except IndexError:
+            return False
 
     def set(
         self, time: float, position: Optional[str] = None, id: Optional[str] = None
@@ -47,11 +55,38 @@ class ObservingModeManager:
 
     def get(self, time: float) -> ObservingMode:
         try:
-            return tuple(filter(lambda x: x.time < time, self.mode))[-1]
+            if self.enabled(time):
+                return tuple(filter(lambda x: x.time < time, self.mode))[-1]
+            else:
+                return self.ObservingMode(time=time)
         except IndexError:
             new = self.ObservingMode(time=time)
             self.mode.append(new)
             return new
+
+    def disable(self, start: float) -> None:
+        tag = (False, start)
+        if tag in self._enabled:
+            return
+        self._enabled.append(tag)
+        self._enabled.sort(key=lambda x: x[1])
+
+        now = pytime.time()
+        n_stale = len([tag for tag in self._enabled if tag[1] < now - 30])
+        for _ in range(n_stale):
+            self._enabled.pop(0)
+
+    def enable(self, start: float) -> None:
+        tag = (True, start)
+        if tag in self._enabled:
+            return
+        self._enabled.append(tag)
+        self._enabled.sort(key=lambda x: x[1])
+
+        now = pytime.time()
+        n_stale = len([tag for tag in self._enabled if tag[1] < now - 30])
+        for _ in range(n_stale):
+            self._enabled.pop(0)
 
 
 class SpectralData(DeviceNode):
@@ -84,6 +119,13 @@ class SpectralData(DeviceNode):
 
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
+        topic.antenna_control_status.subscription(self, self.update_control_status)
+
+    def update_control_status(self, msg: ControlStatus) -> None:
+        if msg.tight:
+            self.metadata.enable(start=msg.time)
+        else:
+            self.metadata.disable(start=msg.time)
 
     def update_metadata(self, msg: Spectral) -> None:
         now = pytime.time()
