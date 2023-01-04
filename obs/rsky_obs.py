@@ -12,43 +12,8 @@ $ ./rsky_obs.py -n 1 -i 2
 """
 
 import argparse
-import time
 
-from neclib.parameters import PointingError
-
-from necst import config, utils
-from necst.core import Commander
-
-
-def RSky(n, integ_time):
-    com = Commander()
-    com.get_privilege()
-    com.record("start", name="")
-
-    default_pos = com.get_message("encoder")
-    params = PointingError.from_file(config.antenna_pointing_parameter_path)
-    convert_lon, *_ = params.apparent2refracted(
-        az=default_pos.lon, el=default_pos.lat, unit="deg"
-    )
-
-    com.antenna(
-        "point",
-        lon=convert_lon.to_value("deg"),
-        lat=45,
-        frame="altaz",
-        unit="deg",
-        wait=True,
-    )
-    for _ in range(n):
-        com.chopper("insert")
-        time.sleep(integ_time)
-        com.chopper("remove")
-        time.sleep(integ_time)
-
-    com.record("stop")
-    com.quit_privilege()
-    com.destroy_node()
-
+from necst.observation import RSky
 
 if __name__ == "__main__":
     description = "R sky Observation"
@@ -68,5 +33,4 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    with utils.ros2context():
-        RSky(n=args.n, integ_time=args.integ_time)
+    RSky(n=args.n, integ_time=args.integ_time)
