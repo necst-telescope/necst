@@ -1,7 +1,8 @@
+import time
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Generator, Optional, final
+from typing import Any, Generator, Optional, Union, final
 
 import rclpy
 from neclib import get_logger
@@ -49,3 +50,15 @@ class Observation(ABC):
     @abstractmethod
     def run(self, *args, **kwargs) -> None:
         ...
+
+    def hot(self, integ_time: Union[int, float], id: Any) -> None:
+        self.com.chopper("insert")
+        self.com.metadata("set", position="HOT", id=str(id))
+        time.sleep(integ_time)
+        self.com.metadata("set", position="", id=str(id))
+        self.com.chopper("remove")
+
+    def sky(self, integ_time: Union[int, float], id: Any) -> None:
+        self.com.metadata("set", position="SKY", id=str(id))
+        time.sleep(integ_time)
+        self.com.metadata("set", position="", id=str(id))
