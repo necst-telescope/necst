@@ -157,7 +157,7 @@ class topic:
         TimedAzElInt64, "actual_step", qos.realtime, namespace.antenna
     )
     antenna_control_status = Topic(
-        ControlStatus, "controlled", qos.realtime, namespace.antenna
+        ControlStatus, "controlled", qos.reliable, namespace.antenna
     )
     pid_param = Topic(PIDMsg, "pid_param", qos.reliable, namespace.antenna)
     chopper_cmd = Topic(ChopperMsg, "chopper_cmd", qos.reliable, namespace.calib)
