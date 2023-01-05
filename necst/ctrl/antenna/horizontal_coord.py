@@ -201,6 +201,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.telemetry(status)
         except (StopIteration, TypeError):
             self.cmd = None
+            self.telemetry(None)
             return
 
         az, el = self._validate_drive_range(az, el)
@@ -229,11 +230,19 @@ class HorizontalCoord(AlertHandlerNode):
         self.finder.pressure = msg.pressure
         self.finder.relative_humidity = msg.humidity
 
-    def telemetry(self, status: LibControlStatus) -> None:
-        msg = ControlStatus(
-            controlled=status.controlled,
-            tight=status.tight,
-            remote=True,
-            time=status.start,
-        )
+    def telemetry(self, status: Optional[LibControlStatus]) -> None:
+        if status is None:
+            msg = ControlStatus(
+                controlled=False,
+                tight=False,
+                remote=True,
+                time=time.time(),
+            )
+        else:
+            msg = ControlStatus(
+                controlled=status.controlled,
+                tight=status.tight,
+                remote=True,
+                time=status.start,
+            )
         self.status_publisher.publish(msg)
