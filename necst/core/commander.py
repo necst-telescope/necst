@@ -238,7 +238,9 @@ class Commander(PrivilegedNode):
                     start=start, end=stop, unit=unit, margin=config.antenna_scan_margin
                 )
                 point_kwargs.update(
-                    target=(standby_lon, standby_lat), unit=unit, frame=frame
+                    target=(standby_lon.value, standby_lat.value),
+                    unit=unit,
+                    frame=frame,
                 )
                 scan_kwargs.update(
                     lon=[float(start[0]), float(stop[0])],
