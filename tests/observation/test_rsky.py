@@ -6,8 +6,8 @@ from necst_msgs.msg import ChopperMsg
 from necst import topic
 from necst.core import Authorizer, RecorderController
 from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
+from necst.observation import RSky
 from necst.utils import spinning
-from obs.rsky_obs import RSky
 
 from ..conftest import TesterNode, destroy
 
