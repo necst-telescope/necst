@@ -61,8 +61,8 @@ class TestCommander(TesterNode):
 
         def check(msg: CoordCmdMsg) -> None:
             nonlocal checked
-            assert msg.lon[0] == cmd["lon"]
-            assert msg.lat[0] == cmd["lat"]
+            assert msg.lon[0] == cmd["target"][0]
+            assert msg.lat[0] == cmd["target"][1]
             assert msg.unit == cmd["unit"]
             assert msg.frame == cmd["frame"]
             checked = True
