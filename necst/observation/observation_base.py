@@ -17,7 +17,9 @@ class Observation(ABC):
 
     def __init__(self, *args, **kwargs) -> None:
         self.logger = get_logger(self.__class__.__name__)
+        self.execute()
 
+    def execute(self, *args, **kwargs) -> None:
         with self.ros2env():
             self.com = Commander()
             self.com.get_privilege()
