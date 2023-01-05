@@ -422,6 +422,7 @@ class Commander(PrivilegedNode):
                 future = self.client["record_path"].call_async(req)
                 self.wait_until_future_complete(future)
                 recording = future.result().recording
+            self.logger.info(f"Recording at {name!r}")
             return
         elif CMD == "STOP":
             recording = True
