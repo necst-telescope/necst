@@ -126,7 +126,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.executing_generator = self.finder.track(
                 msg.lon[0], msg.lat[0], frame=msg.frame, unit=msg.unit
             )
-        if (not scan) and (not named) and with_offset:
+        elif (not scan) and (not named) and with_offset:
             self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
             self.executing_generator = self.finder.track_with_offset(
                 msg.lon[0],
@@ -135,17 +135,17 @@ class HorizontalCoord(AlertHandlerNode):
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
             )
-        if (not scan) and named and (not with_offset):
+        elif (not scan) and named and (not with_offset):
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET command: {msg}")
             self.executing_generator = self.finder.track_by_name(msg.name)
-        if (not scan) and named and with_offset:
+        elif (not scan) and named and with_offset:
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET-WITH-OFFSET command: {msg}")
             self.executing_generator = self.finder.track_by_name_with_offset(
                 msg.name,
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
             )
-        if target_scan and (not named):
+        elif target_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-ABSOLUTE-COORD command: {msg}")
             self.executing_generator = self.finder.linear_with_acceleration(
                 start=(msg.lon[0], msg.lat[0]),
@@ -155,7 +155,7 @@ class HorizontalCoord(AlertHandlerNode):
                 unit=msg.unit,
                 margin=config.antenna_scan_margin,
             )
-        if offset_scan and (not named):
+        elif offset_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-RELATIVE-COORD command: {msg}")
             self.executing_generator = self.finder.offset_linear(
                 start=(msg.offset_lon[0], msg.offset_lat[0]),
@@ -165,7 +165,7 @@ class HorizontalCoord(AlertHandlerNode):
                 speed=msg.speed,
                 unit=msg.unit,
             )
-        if offset_scan and named:
+        elif offset_scan and named:
             self.logger.debug(f"Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: {msg}")
             self.executing_generator = self.finder.offset_linear_by_name(
                 start=(msg.offset_lon[0], msg.offset_lat[0]),
