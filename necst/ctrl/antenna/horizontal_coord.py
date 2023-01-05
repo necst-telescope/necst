@@ -112,24 +112,68 @@ class HorizontalCoord(AlertHandlerNode):
         if self.executing_generator is not None:
             self.executing_generator.close()
 
-        if all(len(x) == 2 for x in (msg.lon, msg.lat)):
-            self.logger.debug(f"Got LINEAR drive command: {msg}")
-            start, end = (msg.lon[0], msg.lat[0]), (msg.lon[1], msg.lat[1])
+        target_coord = (msg.lon, msg.lat)
+        offset_coord = (msg.offset_lon, msg.offset_lat)
+
+        target_scan = all(len(x) == 2 for x in target_coord)
+        offset_scan = all(len(x) == 2 for x in offset_coord)
+        scan = target_scan or offset_scan
+        named = msg.name != ""
+        with_offset = any(len(x) != 0 for x in offset_coord)
+
+        if (not scan) and (not named) and (not with_offset):
+            self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
+            self.executing_generator = self.finder.track(
+                msg.lon[0], msg.lat[0], frame=msg.frame, unit=msg.unit
+            )
+        if (not scan) and (not named) and with_offset:
+            self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
+            self.executing_generator = self.finder.track_with_offset(
+                msg.lon[0],
+                msg.lat[0],
+                frame=msg.frame,
+                offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
+                unit=msg.unit,
+            )
+        if (not scan) and named and (not with_offset):
+            self.logger.debug(f"Got POINT-TO-NAMED-TARGET command: {msg}")
+            self.executing_generator = self.finder.track_by_name(msg.name)
+        if (not scan) and named and with_offset:
+            self.logger.debug(f"Got POINT-TO-NAMED-TARGET-WITH-OFFSET command: {msg}")
+            self.executing_generator = self.finder.track_by_name_with_offset(
+                msg.name,
+                offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
+                unit=msg.unit,
+            )
+        if target_scan and (not named):
+            self.logger.debug(f"Got SCAN-IN-ABSOLUTE-COORD command: {msg}")
             self.executing_generator = self.finder.linear_with_acceleration(
-                start=start,
-                end=end,
+                start=(msg.lon[0], msg.lat[0]),
+                end=(msg.lon[1], msg.lat[1]),
                 frame=msg.frame,
                 speed=msg.speed,
                 unit=msg.unit,
                 margin=config.antenna_scan_margin,
             )
-        elif msg.name != "":
-            self.logger.debug(f"Got NAME drive command: {msg}")
-            self.executing_generator = self.finder.track_by_name(msg.name)
-        elif all(len(x) == 1 for x in (msg.lon, msg.lat)):
-            self.logger.debug(f"Got POINT drive command: {msg}")
-            self.executing_generator = self.finder.track(
-                lon=msg.lon[0], lat=msg.lat[0], frame=msg.frame, unit=msg.unit
+        if offset_scan and (not named):
+            self.logger.debug(f"Got SCAN-IN-RELATIVE-COORD command: {msg}")
+            self.executing_generator = self.finder.offset_linear(
+                start=(msg.offset_lon[0], msg.offset_lat[0]),
+                end=(msg.offset_lon[1], msg.offset_lat[1]),
+                frame=msg.offset_frame,
+                reference=(msg.lon, msg.lat, msg.frame),
+                speed=msg.speed,
+                unit=msg.unit,
+            )
+        if offset_scan and named:
+            self.logger.debug(f"Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: {msg}")
+            self.executing_generator = self.finder.offset_linear_by_name(
+                start=(msg.offset_lon[0], msg.offset_lat[0]),
+                end=(msg.offset_lon[1], msg.offset_lat[1]),
+                frame=msg.offset_frame,
+                name=msg.name,
+                speed=msg.speed,
+                unit=msg.unit,
             )
         else:
             raise ValueError(f"Cannot determine command type for {msg}")

@@ -141,81 +141,117 @@ class Commander(PrivilegedNode):
         cmd: Literal["stop", "point", "scan", "?"],
         /,
         *,
-        lon: Optional[Union[int, float]] = None,
-        lat: Optional[Union[int, float]] = None,
         start: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
-        end: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
-        speed: Union[int, float] = 0,
+        stop: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
+        target: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
+        reference: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        offset: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        frame: str = None,
         unit: Optional[str] = None,
-        frame: Optional[str] = None,
-        time: Union[int, float] = 0,
         name: Optional[str] = None,
         wait: bool = True,
+        speed: Optional[Union[int, float]] = None,
     ) -> None:
         """Control antenna direction and motion."""
         CMD = cmd.upper()
         if CMD == "STOP":
-            target = [namespace.antenna]
-            msg = AlertMsg(critical=True, warning=True, target=target)
+            msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
             checker = ConditionChecker(5, reset_on_failure=True)
             now = pytime.time()
             current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
+            # TODO: Add timeout handler
             while not checker.check(
-                (current_speed is not None)
-                and (abs(current_speed.az) < 1e-5)
-                and (abs(current_speed.el) < 1e-5)
+                (abs(current_speed.az) < 1e-5) and (abs(current_speed.el) < 1e-5)
             ):
                 self.publisher["alert_stop"].publish(msg)
                 current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
                 pytime.sleep(1 / config.antenna_command_frequency)
 
-            msg = AlertMsg(critical=False, warning=False, target=target)
+            msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
+            pytime.sleep(0.5)
+            # Avoid time inconsistency between this lift of alert and the next command
             return self.publisher["alert_stop"].publish(msg)
 
         elif CMD == "POINT":
+            kwargs = {}
             if name is not None:
-                msg = CoordCmdMsg(time=[float(time)], name=name)
-            else:
-                msg = CoordCmdMsg(
-                    lon=[float(lon)],
-                    lat=[float(lat)],
-                    unit=unit,
+                kwargs.update(name=name)
+            elif target is not None:
+                kwargs.update(
+                    lon=[float(target[0])],
+                    lat=[float(target[1])],
                     frame=frame,
-                    time=[float(time)],
+                    unit=unit,
                 )
+            elif reference is not None:
+                kwargs.update(
+                    lon=[float(reference[0])],
+                    lat=[float(reference[1])],
+                    frame=reference[2],
+                    unit=unit,
+                )
+            else:
+                raise ValueError("No valid target specified")
+
+            if offset is not None:
+                kwargs.update(
+                    offset_lon=[float(offset[0])],
+                    offset_lat=[float(offset[1])],
+                    offset_frame=offset[2],
+                    unit=unit,
+                )
+            msg = CoordCmdMsg(**kwargs)
             self.publisher["coord"].publish(msg)
             return self.wait("antenna") if wait else None
 
         elif CMD == "SCAN":
-            standby_lon, standby_lat = standby_position(
-                start=start, end=end, unit=unit, margin=config.antenna_scan_margin
-            )
-            standby_lon = float(standby_lon.value)
-            standby_lat = float(standby_lat.value)
-            self.antenna(
-                "point",
-                lon=standby_lon,
-                lat=standby_lat,
-                unit=unit,
-                frame=frame,
-                wait=True,
-            )
+            point_kwargs = dict(wait=True)
+            scan_kwargs = dict(speed=float(speed), unit=unit)
+            if name is not None:
+                self.logger.warning(
+                    "Gentle acceleration before this scan mode isn't implemented yet"
+                )
+                point_kwargs.update(name=name)
+                scan_kwargs.update(
+                    name=name,
+                    offset_lon=[float(start[0]), float(stop[0])],
+                    offset_lat=[float(start[1]), float(stop[1])],
+                    offset_frame=frame,
+                )
+            elif reference is not None:
+                self.logger.warning(
+                    "Gentle acceleration before this scan mode isn't implemented yet"
+                )
+                point_kwargs.update(
+                    lon=reference[0], lat=reference[1], frame=reference[2], unit=unit
+                )
+                scan_kwargs.update(
+                    lon=[float(reference[0])],
+                    lat=[float(reference[1])],
+                    frame=reference[2],
+                    offset_lon=[float(start[0]), float(stop[0])],
+                    offset_lat=[float(start[1]), float(stop[1])],
+                    offset_frame=frame,
+                )
+            else:
+                standby_lon, standby_lat = standby_position(
+                    start=start, end=stop, unit=unit, margin=config.antenna_scan_margin
+                )
+                point_kwargs.update(
+                    lon=standby_lon, lat=standby_lat, unit=unit, frame=frame
+                )
+                scan_kwargs.update(
+                    lon=[float(start[0]), float(stop[0])],
+                    lat=[float(start[1]), float(stop[1])],
+                    frame=frame,
+                )
+            self.antenna("point", **point_kwargs)
 
-            msg = CoordCmdMsg(
-                lon=[float(start[0]), float(end[0])],
-                lat=[float(start[1]), float(end[1])],
-                unit=unit,
-                frame=frame,
-                time=[float(time)],
-                speed=float(speed),
-            )
+            msg = CoordCmdMsg(**scan_kwargs)
             self.publisher["coord"].publish(msg)
-            if wait:
-                self.wait("antenna", mode="control")
-                self.antenna("stop")
-            return
+
         elif CMD in ["?"]:
-            raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
+            return self.get_message("encoder", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
