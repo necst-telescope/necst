@@ -333,10 +333,12 @@ class Commander(PrivilegedNode):
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
-                    controlled = self.get_message(
+                    control_status = self.get_message(
                         CTRL_TOPIC, time=now, timeout_sec=0.01
-                    ).controlled
-                    if checker.check(not controlled):
+                    )
+                    if control_status.time > now:
+                        pytime.sleep(control_status.time - now)
+                    if checker.check(not control_status.controlled):
                         return
                 except NECSTTimeoutError:
                     pass
