@@ -251,6 +251,7 @@ class Commander(PrivilegedNode):
 
             msg = CoordCmdMsg(**scan_kwargs)
             self.publisher["coord"].publish(msg)
+            return self.wait("antenna", "control") if wait else None
 
         elif CMD in ["?"]:
             return self.get_message("encoder", timeout_sec=10)
