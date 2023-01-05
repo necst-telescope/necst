@@ -22,6 +22,7 @@ class Observation(ABC):
             self.com = Commander()
             self.com.get_privilege()
             try:
+                self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.run(*args, **kwargs)
             finally:
