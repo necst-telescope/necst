@@ -1,4 +1,3 @@
-import time
 from typing import Union
 
 from .observation_base import Observation
@@ -9,7 +8,6 @@ class RSky(Observation):
     observation_type = "RSky"
 
     def run(self, n: int, integ_time: Union[int, float]) -> None:
-        self.com.metadata("set", position="", id="")
         current_position = self.com.get_message("encoder")
         self.com.antenna(
             "point",
@@ -20,11 +18,5 @@ class RSky(Observation):
         )
 
         for _ in range(n):
-            self.com.chopper("insert")
-            self.com.metadata("set", position="HOT", id=str(_))
-            time.sleep(integ_time)
-            self.com.metadata("set", position="")
-            self.com.chopper("remove")
-            self.com.metadata("set", position="SKY", id=str(_))
-            time.sleep(integ_time)
-            self.com.metadata("set", position="")
+            self.hot(integ_time, _)
+            self.sky(integ_time, _)
