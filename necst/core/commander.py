@@ -224,9 +224,7 @@ class Commander(PrivilegedNode):
                 self.logger.warning(
                     "Gentle acceleration before this scan mode isn't implemented yet"
                 )
-                point_kwargs.update(
-                    target=(reference[0], reference[1]), frame=reference[2], unit=unit
-                )
+                point_kwargs.update(target=reference, unit=unit)
                 scan_kwargs.update(
                     lon=[float(reference[0])],
                     lat=[float(reference[1])],
@@ -240,9 +238,8 @@ class Commander(PrivilegedNode):
                     start=start, end=stop, unit=unit, margin=config.antenna_scan_margin
                 )
                 point_kwargs.update(
-                    target=(standby_lon.value, standby_lat.value),
+                    target=(standby_lon.value, standby_lat.value, scan_frame),
                     unit=unit,
-                    frame=scan_frame,
                 )
                 scan_kwargs.update(
                     lon=[float(start[0]), float(stop[0])],
