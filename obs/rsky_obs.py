@@ -13,7 +13,7 @@ $ ./rsky_obs.py -n 1 -i 2
 
 import argparse
 
-from necst.observation import RSky
+from necst.procedures import RSky
 
 if __name__ == "__main__":
     description = "R sky Observation"

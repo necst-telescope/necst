@@ -14,7 +14,7 @@ $ ./skydip_obs.py -i 2
 
 import argparse
 
-from necst.observation import Skydip
+from necst.procedures import Skydip
 
 if __name__ == "__main__":
     description = "Skydip Observation"
