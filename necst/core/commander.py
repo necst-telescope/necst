@@ -143,10 +143,10 @@ class Commander(PrivilegedNode):
         *,
         start: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
         stop: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
-        target: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
+        target: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
         reference: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
         offset: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
-        frame: str = None,
+        scan_frame: str = None,
         unit: Optional[str] = None,
         name: Optional[str] = None,
         wait: bool = True,
@@ -180,7 +180,7 @@ class Commander(PrivilegedNode):
                 kwargs.update(
                     lon=[float(target[0])],
                     lat=[float(target[1])],
-                    frame=frame,
+                    frame=target[2],
                     unit=unit,
                 )
             elif reference is not None:
@@ -216,7 +216,7 @@ class Commander(PrivilegedNode):
                     name=name,
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
-                    offset_frame=frame,
+                    offset_frame=scan_frame,
                 )
             elif reference is not None:
                 self.logger.warning(
@@ -231,7 +231,7 @@ class Commander(PrivilegedNode):
                     frame=reference[2],
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
-                    offset_frame=frame,
+                    offset_frame=scan_frame,
                 )
             else:
                 standby_lon, standby_lat = standby_position(
@@ -240,12 +240,12 @@ class Commander(PrivilegedNode):
                 point_kwargs.update(
                     target=(standby_lon.value, standby_lat.value),
                     unit=unit,
-                    frame=frame,
+                    frame=scan_frame,
                 )
                 scan_kwargs.update(
                     lon=[float(start[0]), float(stop[0])],
                     lat=[float(start[1]), float(stop[1])],
-                    frame=frame,
+                    frame=scan_frame,
                 )
             self.antenna("point", **point_kwargs)
 
@@ -260,7 +260,7 @@ class Commander(PrivilegedNode):
 
     @require_privilege(escape_cmd=["?"])
     def chopper(self, cmd: Literal["insert", "remove", "?"], /, *, wait: bool = True):
-        """Calibrator."""
+        """Control the position of ambient temperature radio absorber."""
         CMD = cmd.upper()
         if CMD == "?":
             return self.get_message("chopper", timeout_sec=10)
