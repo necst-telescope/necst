@@ -11,8 +11,7 @@ class RSky(Observation):
         current_position = self.com.get_message("encoder")
         self.com.antenna(
             "point",
-            target=(current_position.lon, 45),
-            frame="altaz",
+            target=(current_position.lon, 45, "altaz"),
             unit="deg",
             wait=True,
         )
