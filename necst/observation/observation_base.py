@@ -59,7 +59,7 @@ class Observation(ABC):
         root = os.environ.get("NECST_ROOT", Path.home() / ".necst")
         for filename in self.parameter_files:
             try:
-                path = f"{root.rstrip('/')}/{filename.lstrip('/')}"
+                path = f"{str(root).rstrip('/')}/{filename.lstrip('/')}"
                 self.com.record("file", name=path)
             except FileNotFoundError:
                 self.logger.error(f"Failed to save parameter file {filename!r}")
