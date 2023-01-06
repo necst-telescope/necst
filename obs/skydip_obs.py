@@ -13,49 +13,8 @@ $ ./skydip_obs.py -i 2
 
 
 import argparse
-import time
 
-from neclib.parameters import PointingError
-
-from necst import config, utils
-from necst.core import Commander
-
-
-def Skydip(integ_time):
-    com = Commander()
-    com.get_privilege()
-
-    default_pos = com.get_message("encoder")
-    params = PointingError.from_file(config.antenna_pointing_parameter_path)
-    convert_lon, *_ = params.apparent2refracted(
-        az=default_pos.lon, el=default_pos.lat, unit="deg"
-    )
-
-    com.chopper("insert")
-    time.sleep(integ_time)
-    com.chopper("remove")
-    time.sleep(integ_time)
-
-    El = [80, 50, 40, 30, 25, 22, 20]
-    for i in El:
-        com.antenna(
-            "point",
-            lon=convert_lon.to_value("deg"),
-            lat=i,
-            frame="altaz",
-            unit="deg",
-            wait=True,
-        )
-        time.sleep(integ_time)
-
-    com.chopper("insert")
-    time.sleep(integ_time)
-    com.chopper("remove")
-    time.sleep(integ_time)
-
-    com.quit_privilege()
-    com.destroy_node()
-
+from necst.procedures import Skydip
 
 if __name__ == "__main__":
     description = "Skydip Observation"
@@ -69,5 +28,4 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    with utils.ros2context():
-        Skydip(integ_time=args.integ_time)
+    Skydip(integ_time=args.integ_time)

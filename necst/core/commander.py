@@ -17,6 +17,8 @@ from necst_msgs.msg import (
     Spectral,
 )
 from necst_msgs.srv import File, RecordSrv
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 
 from .. import NECSTTimeoutError, config, namespace, service, topic
 from ..utils import Topic
@@ -36,7 +38,7 @@ class Commander(PrivilegedNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.__publisher = {
+        self.__publisher: Dict[str, Topic] = {
             "coord": topic.raw_coord,
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
@@ -47,11 +49,11 @@ class Commander(PrivilegedNode):
             "lo_signal": topic.lo_signal_cmd,
             "attenuator": topic.attenuator_cmd,
         }
-        self.publisher = {}
+        self.publisher: Dict[str, Publisher] = {}
 
         _cfg_ant = config.antenna_command
         _altaz_offset = int(_cfg_ant.frequency * _cfg_ant.offset_sec + 1)
-        self.__subscription = {
+        self.__subscription: Dict[str, _SubscriptionCfg] = {
             "encoder": _SubscriptionCfg(topic.antenna_encoder, 1),
             "altaz": _SubscriptionCfg(topic.altaz_cmd, _altaz_offset),
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
@@ -62,7 +64,7 @@ class Commander(PrivilegedNode):
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
         }
-        self.subscription = {}
+        self.subscription: Dict[str, Subscription] = {}
         self.client = {
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
@@ -135,93 +137,135 @@ class Commander(PrivilegedNode):
 
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
-    @require_privilege(escape_cmd=["?", "stop"])
+    @require_privilege(escape_cmd=["?", "stop", "error"])
     def antenna(
         self,
-        cmd: Literal["stop", "point", "scan", "?"],
+        cmd: Literal["stop", "point", "scan", "error", "?"],
         /,
         *,
-        lon: Optional[Union[int, float]] = None,
-        lat: Optional[Union[int, float]] = None,
         start: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
-        end: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
-        speed: Union[int, float] = 0,
+        stop: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
+        target: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        reference: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        offset: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        scan_frame: str = None,
         unit: Optional[str] = None,
-        frame: Optional[str] = None,
-        time: Union[int, float] = 0,
         name: Optional[str] = None,
         wait: bool = True,
+        speed: Optional[Union[int, float]] = None,
     ) -> None:
         """Control antenna direction and motion."""
         CMD = cmd.upper()
         if CMD == "STOP":
-            target = [namespace.antenna]
-            msg = AlertMsg(critical=True, warning=True, target=target)
+            msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
             checker = ConditionChecker(5, reset_on_failure=True)
             now = pytime.time()
             current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
+            # TODO: Add timeout handler
             while not checker.check(
-                (current_speed is not None)
-                and (abs(current_speed.az) < 1e-5)
-                and (abs(current_speed.el) < 1e-5)
+                (abs(current_speed.az) < 1e-5) and (abs(current_speed.el) < 1e-5)
             ):
                 self.publisher["alert_stop"].publish(msg)
                 current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
                 pytime.sleep(1 / config.antenna_command_frequency)
 
-            msg = AlertMsg(critical=False, warning=False, target=target)
+            msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
+            pytime.sleep(0.5)
+            # Avoid time inconsistency between this lift of alert and the next command
             return self.publisher["alert_stop"].publish(msg)
 
         elif CMD == "POINT":
+            kwargs = {}
             if name is not None:
-                msg = CoordCmdMsg(time=[float(time)], name=name)
-            else:
-                msg = CoordCmdMsg(
-                    lon=[float(lon)],
-                    lat=[float(lat)],
+                kwargs.update(name=name)
+            elif target is not None:
+                kwargs.update(
+                    lon=[float(target[0])],
+                    lat=[float(target[1])],
+                    frame=target[2],
                     unit=unit,
-                    frame=frame,
-                    time=[float(time)],
                 )
+            elif reference is not None:
+                kwargs.update(
+                    lon=[float(reference[0])],
+                    lat=[float(reference[1])],
+                    frame=reference[2],
+                    unit=unit,
+                )
+            else:
+                raise ValueError("No valid target specified")
+
+            if offset is not None:
+                kwargs.update(
+                    offset_lon=[float(offset[0])],
+                    offset_lat=[float(offset[1])],
+                    offset_frame=offset[2],
+                    unit=unit,
+                )
+            msg = CoordCmdMsg(**kwargs)
             self.publisher["coord"].publish(msg)
             return self.wait("antenna") if wait else None
 
         elif CMD == "SCAN":
-            standby_lon, standby_lat = standby_position(
-                start=start, end=end, unit=unit, margin=config.antenna_scan_margin
-            )
-            standby_lon = float(standby_lon.value)
-            standby_lat = float(standby_lat.value)
-            self.antenna(
-                "point",
-                lon=standby_lon,
-                lat=standby_lat,
-                unit=unit,
-                frame=frame,
-                wait=True,
-            )
+            point_kwargs = dict(wait=True)
+            scan_kwargs = dict(speed=float(speed), unit=unit)
+            if name is not None:
+                self.logger.warning(
+                    "Gentle acceleration before this scan mode isn't implemented yet"
+                )
+                point_kwargs.update(name=name)
+                scan_kwargs.update(
+                    name=name,
+                    offset_lon=[float(start[0]), float(stop[0])],
+                    offset_lat=[float(start[1]), float(stop[1])],
+                    offset_frame=scan_frame,
+                )
+            elif reference is not None:
+                self.logger.warning(
+                    "Gentle acceleration before this scan mode isn't implemented yet"
+                )
+                point_kwargs.update(target=reference, unit=unit)
+                scan_kwargs.update(
+                    lon=[float(reference[0])],
+                    lat=[float(reference[1])],
+                    frame=reference[2],
+                    offset_lon=[float(start[0]), float(stop[0])],
+                    offset_lat=[float(start[1]), float(stop[1])],
+                    offset_frame=scan_frame,
+                )
+            else:
+                standby_lon, standby_lat = standby_position(
+                    start=start, end=stop, unit=unit, margin=config.antenna_scan_margin
+                )
+                point_kwargs.update(
+                    target=(standby_lon.value, standby_lat.value, scan_frame),
+                    unit=unit,
+                )
+                scan_kwargs.update(
+                    lon=[float(start[0]), float(stop[0])],
+                    lat=[float(start[1]), float(stop[1])],
+                    frame=scan_frame,
+                )
+            self.antenna("point", **point_kwargs)
 
-            msg = CoordCmdMsg(
-                lon=[float(start[0]), float(end[0])],
-                lat=[float(start[1]), float(end[1])],
-                unit=unit,
-                frame=frame,
-                time=[float(time)],
-                speed=float(speed),
-            )
+            msg = CoordCmdMsg(**scan_kwargs)
             self.publisher["coord"].publish(msg)
-            if wait:
-                self.wait("antenna", mode="control")
-                self.antenna("stop")
-            return
+            return self.wait("antenna", mode="control") if wait else None
+
+        elif CMD == "ERROR":
+            now = pytime.time()
+            enc = self.get_message("encoder", time=now, timeout_sec=0.01)
+            cmd = self.get_message("altaz", time=now, timeout_sec=0.01, interp=True)
+            return enc.lon - cmd.lon, enc.lat - cmd.lat
+
         elif CMD in ["?"]:
-            raise NotImplementedError(f"Command {cmd!r} isn't implemented yet.")
+            return self.get_message("encoder", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
     @require_privilege(escape_cmd=["?"])
     def chopper(self, cmd: Literal["insert", "remove", "?"], /, *, wait: bool = True):
-        """Calibrator."""
+        """Control the position of ambient temperature radio absorber."""
         CMD = cmd.upper()
         if CMD == "?":
             return self.get_message("chopper", timeout_sec=10)
@@ -251,8 +295,7 @@ class Commander(PrivilegedNode):
         TARGET, MODE = target.upper(), mode.upper()
 
         if TARGET == "ANTENNA":
-            ENC_TOPIC = "encoder"
-            CMD_TOPIC = "altaz"
+            ERROR_GETTER = self.antenna
             CTRL_TOPIC = "antenna_control"
             THRESHOLD = config.antenna_pointing_accuracy.to_value("deg")
             WAIT_DURATION = config.antenna_command_offset_sec
@@ -271,16 +314,11 @@ class Commander(PrivilegedNode):
 
         if MODE == "ERROR":
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-                now = pytime.time()
                 try:
-                    enc = self.get_message(ENC_TOPIC, time=now, timeout_sec=0.01)
-                    cmd = self.get_message(
-                        CMD_TOPIC, time=now, timeout_sec=0.01, interp=True
-                    )
-                    error_az, error_el = enc.lon - cmd.lon, enc.lat - cmd.lat
+                    error_az, error_el = ERROR_GETTER("error")
                     error = (error_az**2 + error_el**2) ** 0.5
                     self.logger.debug(
-                        f"Error = {error:10.6f} deg"
+                        f"Error = {error:9.6f} deg"
                         f" {'[OK]' if error < THRESHOLD else '[NG]'}",
                         throttle_duration_sec=0.1,
                     )
@@ -294,10 +332,20 @@ class Commander(PrivilegedNode):
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
-                    controlled = self.get_message(
+                    error_az, error_el = ERROR_GETTER("error")
+                    error = (error_az**2 + error_el**2) ** 0.5
+                    self.logger.debug(
+                        f"Error = {error:9.6f} deg"
+                        f" {'[OK]' if error < THRESHOLD else '[NG]'}",
+                        throttle_duration_sec=0.1,
+                    )
+
+                    control_status = self.get_message(
                         CTRL_TOPIC, time=now, timeout_sec=0.01
-                    ).controlled
-                    if checker.check(not controlled):
+                    )
+                    if control_status.time > now:
+                        pytime.sleep(control_status.time - now)
+                    if checker.check(not control_status.controlled):
                         return
                 except NECSTTimeoutError:
                     pass
@@ -384,6 +432,7 @@ class Commander(PrivilegedNode):
                 future = self.client["record_path"].call_async(req)
                 self.wait_until_future_complete(future)
                 recording = future.result().recording
+            self.logger.info(f"Recording at {name!r}")
             return
         elif CMD == "STOP":
             recording = True

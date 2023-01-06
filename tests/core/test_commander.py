@@ -56,15 +56,15 @@ class TestCommander(TesterNode):
         com = Commander()
         auth_server = Authorizer()
 
-        cmd = {"lon": 30.0, "lat": 45.0, "unit": "deg", "frame": "fk5"}
+        cmd = {"target": (30.0, 45.0, "fk5"), "unit": "deg"}
         checked = False
 
         def check(msg: CoordCmdMsg) -> None:
             nonlocal checked
-            assert msg.lon[0] == cmd["lon"]
-            assert msg.lat[0] == cmd["lat"]
+            assert msg.lon[0] == cmd["target"][0]
+            assert msg.lat[0] == cmd["target"][1]
             assert msg.unit == cmd["unit"]
-            assert msg.frame == cmd["frame"]
+            assert msg.frame == cmd["target"][2]
             checked = True
 
         sub = topic.raw_coord.subscription(self.node, check)
@@ -94,7 +94,7 @@ class TestCommander(TesterNode):
         dev.enc.position.az = 29.0
         dev.enc.position.el = 44.0
 
-        cmd = {"lon": 30.0, "lat": 45.0, "unit": "deg", "frame": "altaz"}
+        cmd = {"target": (30.0, 45.0, "altaz"), "unit": "deg"}
 
         with spinning([auth_server, horizontal, pid, dev], n_thread=5):
             com.get_privilege()
@@ -113,7 +113,7 @@ class TestCommander(TesterNode):
         with spinning([auth_server, horizontal, pid, dev], n_thread=5):
             com.get_privilege()
             com.antenna(
-                "point", lon=340, lat=80, frame="altaz", unit="deg", wait=False
+                "point", target=(340, 80, "altaz"), unit="deg", wait=False
             )  # To accelerate to non-zero speed.
             _ = com.get_message("speed")
             time.sleep(5)  # Additional acceleration time
@@ -138,14 +138,14 @@ class TestCommander(TesterNode):
             com.get_privilege()
 
             com.antenna(
-                "point", lon=340, lat=80, frame="altaz", unit="deg", wait=False
+                "point", target=(340, 80, "altaz"), unit="deg", wait=False
             )  # To accelerate to non-zero speed.
             _ = com.get_message("speed")
             time.sleep(5)  # Additional acceleration time
             assert com.get_message("speed").az > 1e-4
             assert com.get_message("speed").el > 1e-4
 
-            com.antenna("stop", lon=30, lat=45, frame="altaz", unit="deg")
+            com.antenna("stop", target=(30, 45, "altaz"), unit="deg")
             assert com.get_message("speed").az < 1e-5
             assert com.get_message("speed").el < 1e-5
 
