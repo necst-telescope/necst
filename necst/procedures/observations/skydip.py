@@ -21,7 +21,7 @@ class Skydip(Observation):
         )
         self.com.antenna(
             "point",
-            target=(current_lon, self.elevations[0], "altaz"),
+            target=(current_lon.to_value("deg"), self.elevations[0], "altaz"),
             unit="deg",
             wait=True,
         )
@@ -31,7 +31,7 @@ class Skydip(Observation):
         for el in self.elevations:
             self.com.antenna(
                 "point",
-                target=(current_position.lon, el, "altaz"),
+                target=(current_lon.to_value("deg"), el, "altaz"),
                 unit="deg",
                 wait=True,
             )
