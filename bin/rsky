@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Observation program for rsky.
+"""R-Sky observation.
 
 Elevation angle fixed at 45deg.
 Repeats the blackbody in and out the specified number of times.
@@ -7,7 +7,7 @@ For each, integrate over the specified time.
 
 Examples
 --------
-$ ./rsky_obs.py -n 1 -i 2
+$ rsky -n 1 -i 2
 
 """
 
@@ -16,7 +16,7 @@ import argparse
 from necst.procedures import RSky
 
 if __name__ == "__main__":
-    description = "R sky Observation"
+    description = "R-Sky Observation"
     p = argparse.ArgumentParser(description=description)
     p.add_argument(
         "-n",
@@ -26,11 +26,11 @@ if __name__ == "__main__":
     )
     p.add_argument(
         "-i",
-        "--integ_time",
+        "--integ",
         type=float,
-        help="Integration time for the R-sky obs.",
+        help="Integration time for the R-Sky observation.",
         default=2,
     )
     args = p.parse_args()
 
-    RSky(n=args.n, integ_time=args.integ_time)
+    RSky(n=args.n, integ_time=args.integ)
