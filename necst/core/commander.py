@@ -17,6 +17,8 @@ from necst_msgs.msg import (
     Spectral,
 )
 from necst_msgs.srv import File, RecordSrv
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 
 from .. import NECSTTimeoutError, config, namespace, service, topic
 from ..utils import Topic
@@ -36,7 +38,7 @@ class Commander(PrivilegedNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.__publisher = {
+        self.__publisher: Dict[str, Topic] = {
             "coord": topic.raw_coord,
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
@@ -47,11 +49,11 @@ class Commander(PrivilegedNode):
             "lo_signal": topic.lo_signal_cmd,
             "attenuator": topic.attenuator_cmd,
         }
-        self.publisher = {}
+        self.publisher: Dict[str, Publisher] = {}
 
         _cfg_ant = config.antenna_command
         _altaz_offset = int(_cfg_ant.frequency * _cfg_ant.offset_sec + 1)
-        self.__subscription = {
+        self.__subscription: Dict[str, _SubscriptionCfg] = {
             "encoder": _SubscriptionCfg(topic.antenna_encoder, 1),
             "altaz": _SubscriptionCfg(topic.altaz_cmd, _altaz_offset),
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
@@ -62,7 +64,7 @@ class Commander(PrivilegedNode):
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
         }
-        self.subscription = {}
+        self.subscription: Dict[str, Subscription] = {}
         self.client = {
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
