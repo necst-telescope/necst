@@ -6,7 +6,7 @@ from necst_msgs.msg import ChopperMsg
 from necst import topic
 from necst.core import Authorizer, RecorderController
 from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
-from necst.observation import RSky
+from necst.procedures import Skydip
 from necst.utils import spinning
 
 from ..conftest import TesterNode, destroy
@@ -17,11 +17,11 @@ def record_root(tmp_path_factory) -> Path:
     return tmp_path_factory.mktemp("data")
 
 
-class TestRSky(TesterNode):
+class TestSkydip(TesterNode):
 
-    NodeName = "test_rsky"
+    NodeName = "test_skydip"
 
-    def test_rsky(self, record_root):
+    def test_skydip(self, record_root):
         auth = Authorizer()
         dev = AntennaDeviceSimulator()
         horizontal = HorizontalCoord()
@@ -36,7 +36,7 @@ class TestRSky(TesterNode):
 
         sub = topic.chopper_cmd.subscription(self.node, update)
         with spinning([self.node, dev, horizontal, pid]):
-            RSky(1, 2)
+            Skydip(2)
 
         destroy([auth, dev, horizontal, pid, recorder])
         destroy([sub, pub], node=self.node)
