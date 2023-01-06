@@ -9,7 +9,7 @@ from typing import Any, Generator, Optional, Union, final
 import rclpy
 from neclib import get_logger
 
-from ..core import Commander
+from ...core import Commander
 
 
 class Observation(ABC):
