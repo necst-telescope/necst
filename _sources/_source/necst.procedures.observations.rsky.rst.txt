@@ -1,0 +1,7 @@
+necst.procedures.observations.rsky
+==================================
+
+.. automodule:: necst.procedures.observations.rsky
+   :members:
+   :undoc-members:
+   :show-inheritance:

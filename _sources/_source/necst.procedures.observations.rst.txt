@@ -1,0 +1,39 @@
+
+
+
+necst.procedures.observations
+=============================
+
+
+
+
+.. automodule:: necst.procedures.observations
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+Submodules
+----------
+
+.. autosummary::
+
+   necst.procedures.observations.observation_base
+   necst.procedures.observations.radio_pointing
+   necst.procedures.observations.rsky
+   necst.procedures.observations.skydip
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.procedures.observations.observation_base
+   necst.procedures.observations.radio_pointing
+   necst.procedures.observations.rsky
+   necst.procedures.observations.skydip

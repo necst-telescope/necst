@@ -22,6 +22,7 @@ Subpackages
 
    necst.core
    necst.ctrl
+   necst.procedures
    necst.rx
    necst.utils
 
@@ -32,6 +33,7 @@ Subpackages
 
    necst.core
    necst.ctrl
+   necst.procedures
    necst.rx
    necst.utils
 

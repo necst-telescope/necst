@@ -1,0 +1,34 @@
+
+
+
+necst.procedures
+================
+
+
+
+
+.. automodule:: necst.procedures
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+Subpackages
+-----------
+
+.. autosummary::
+
+   necst.procedures.observations
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.procedures.observations
+
+
+
+

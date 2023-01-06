@@ -1,0 +1,7 @@
+necst.procedures.observations.skydip
+====================================
+
+.. automodule:: necst.procedures.observations.skydip
+   :members:
+   :undoc-members:
+   :show-inheritance:
