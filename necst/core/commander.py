@@ -140,7 +140,7 @@ class Commander(PrivilegedNode):
     @require_privilege(escape_cmd=["?", "stop"])
     def antenna(
         self,
-        cmd: Literal["stop", "point", "scan", "?"],
+        cmd: Literal["stop", "point", "scan", "error", "?"],
         /,
         *,
         start: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
@@ -255,6 +255,12 @@ class Commander(PrivilegedNode):
             self.publisher["coord"].publish(msg)
             return self.wait("antenna", mode="control") if wait else None
 
+        elif CMD == "ERROR":
+            now = pytime.time()
+            enc = self.get_message("encoder", time=now, timeout_sec=0.01)
+            cmd = self.get_message("altaz", time=now, timeout_sec=0.01, interp=True)
+            return enc.lon - cmd.lon, enc.lat - cmd.lat
+
         elif CMD in ["?"]:
             return self.get_message("encoder", timeout_sec=10)
         else:
@@ -292,8 +298,7 @@ class Commander(PrivilegedNode):
         TARGET, MODE = target.upper(), mode.upper()
 
         if TARGET == "ANTENNA":
-            ENC_TOPIC = "encoder"
-            CMD_TOPIC = "altaz"
+            ERROR_GETTER = self.antenna
             CTRL_TOPIC = "antenna_control"
             THRESHOLD = config.antenna_pointing_accuracy.to_value("deg")
             WAIT_DURATION = config.antenna_command_offset_sec
@@ -314,14 +319,10 @@ class Commander(PrivilegedNode):
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
-                    enc = self.get_message(ENC_TOPIC, time=now, timeout_sec=0.01)
-                    cmd = self.get_message(
-                        CMD_TOPIC, time=now, timeout_sec=0.01, interp=True
-                    )
-                    error_az, error_el = enc.lon - cmd.lon, enc.lat - cmd.lat
+                    error_az, error_el = ERROR_GETTER("error")
                     error = (error_az**2 + error_el**2) ** 0.5
                     self.logger.debug(
-                        f"Error = {error:10.6f} deg"
+                        f"Error = {error:9.6f} deg"
                         f" {'[OK]' if error < THRESHOLD else '[NG]'}",
                         throttle_duration_sec=0.1,
                     )
@@ -335,6 +336,14 @@ class Commander(PrivilegedNode):
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
+                    error_az, error_el = ERROR_GETTER("error")
+                    error = (error_az**2 + error_el**2) ** 0.5
+                    self.logger.debug(
+                        f"Error = {error:9.6f} deg"
+                        f" {'[OK]' if error < THRESHOLD else '[NG]'}",
+                        throttle_duration_sec=0.1,
+                    )
+
                     control_status = self.get_message(
                         CTRL_TOPIC, time=now, timeout_sec=0.01
                     )
