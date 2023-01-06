@@ -345,7 +345,7 @@ class Commander(PrivilegedNode):
                     )
                     if control_status.time > now:
                         pytime.sleep(control_status.time - now)
-                    if checker.check(not control_status.controlled):
+                    if checker.check(not control_status.tight):
                         return
                 except NECSTTimeoutError:
                     pass
