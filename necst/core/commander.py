@@ -387,9 +387,13 @@ class Commander(PrivilegedNode):
         position: Optional[str] = None,
         id: Optional[str] = None,
         time: Optional[float] = None,
+        delay: bool = False,
     ) -> None:
         CMD = cmd.upper()
         if CMD == "SET":
+            if delay:
+                while self.get_message("antenna_control").tight:
+                    pytime.sleep(0.05)
             time = pytime.time() if time is None else time
             msg = Spectral(position=position, id=str(id), time=time)
             return self.publisher["spectra_meta"].publish(msg)
