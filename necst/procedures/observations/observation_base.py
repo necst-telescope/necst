@@ -76,6 +76,19 @@ class Observation(ABC):
         self.com.chopper("remove")
 
     def sky(self, integ_time: Union[int, float], id: Any) -> None:
+        self.com.chopper("remove")
         self.com.metadata("set", position="SKY", id=str(id))
+        time.sleep(integ_time)
+        self.com.metadata("set", position="", id=str(id))
+
+    def off(self, integ_time: Union[int, float], id: Any) -> None:
+        self.com.chopper("remove")
+        self.com.metadata("set", position="OFF", id=str(id))
+        time.sleep(integ_time)
+        self.com.metadata("set", position="", id=str(id))
+
+    def on(self, integ_time: Union[int, float], id: Any) -> None:
+        self.com.chopper("remove")
+        self.com.metadata("set", position="ON", id=str(id))
         time.sleep(integ_time)
         self.com.metadata("set", position="", id=str(id))
