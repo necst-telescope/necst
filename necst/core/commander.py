@@ -137,7 +137,7 @@ class Commander(PrivilegedNode):
 
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
 
-    @require_privilege(escape_cmd=["?", "stop"])
+    @require_privilege(escape_cmd=["?", "stop", "error"])
     def antenna(
         self,
         cmd: Literal["stop", "point", "scan", "error", "?"],
@@ -314,7 +314,6 @@ class Commander(PrivilegedNode):
 
         if MODE == "ERROR":
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-                now = pytime.time()
                 try:
                     error_az, error_el = ERROR_GETTER("error")
                     error = (error_az**2 + error_el**2) ** 0.5
