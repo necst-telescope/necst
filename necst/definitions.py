@@ -112,6 +112,7 @@ class topic:
     from necst_msgs.msg import (
         AlertMsg,
         BiasMsg,
+        Boolean,
         ChopperMsg,
         Clock,
         ControlStatus,
@@ -123,6 +124,7 @@ class topic:
         Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
+        TrackingStatus,
         WeatherMsg,
     )
 
@@ -175,6 +177,12 @@ class topic:
     thermometer = Topic(DeviceReading, "thermometer", qos.realtime, namespace.rx, True)
     attenuator = Topic(DeviceReading, "attenuator", qos.realtime, namespace.rx, True)
     attenuator_cmd = Topic(DeviceReading, "attenuator_cmd", qos.reliable, namespace.rx)
+    antenna_tracking = Topic(
+        TrackingStatus, "tracking_status", qos.realtime, namespace.antenna
+    )
+    antenna_cmd_transition = Topic(
+        Boolean, "cmd_trans", qos.reliable, namespace.antenna
+    )
 
 
 class service:

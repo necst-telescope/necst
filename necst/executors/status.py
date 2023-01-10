@@ -2,12 +2,14 @@ import rclpy
 from rclpy.executors import SingleThreadedExecutor
 
 from ..core import ObserverInfo
+from ..ctrl.antenna import AntennaTrackingStatus
 
 
 def configure_executor() -> SingleThreadedExecutor:
     executor = SingleThreadedExecutor()
     nodes = [
         ObserverInfo(),
+        AntennaTrackingStatus(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
