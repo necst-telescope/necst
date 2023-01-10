@@ -51,11 +51,10 @@ class Commander(PrivilegedNode):
         }
         self.publisher: Dict[str, Publisher] = {}
 
-        _cfg_ant = config.antenna_command
-        _altaz_offset = int(_cfg_ant.frequency * _cfg_ant.offset_sec + 1)
         self.__subscription: Dict[str, _SubscriptionCfg] = {
+            "antenna_track": _SubscriptionCfg(topic.antenna_tracking, 1),
             "encoder": _SubscriptionCfg(topic.antenna_encoder, 1),
-            "altaz": _SubscriptionCfg(topic.altaz_cmd, _altaz_offset),
+            "altaz": _SubscriptionCfg(topic.altaz_cmd, 1),
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
@@ -106,7 +105,6 @@ class Commander(PrivilegedNode):
         *,
         time: Optional[Union[int, float]] = None,
         timeout_sec: Optional[Union[int, float]] = None,
-        interp: bool = False,
     ) -> Dict[str, Any]:
         if time is None:
             time = pytime.time()
@@ -127,12 +125,8 @@ class Commander(PrivilegedNode):
                 if "time" not in msg_fields:
                     message[k] = msgs[-1]
 
-                if interp:
-                    interpolate = LinearInterp("time", msg_fields)
-                    message[k] = interpolate(msg_type(time=time), msgs)
-                else:
-                    nearest, *_ = sorted(msgs, key=lambda x: abs(x.time - time))
-                    message[k] = nearest
+                nearest, *_ = sorted(msgs, key=lambda x: abs(x.time - time))
+                message[k] = nearest
             return message[key] if set(message.keys()) == {key} else message
 
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
@@ -245,9 +239,7 @@ class Commander(PrivilegedNode):
 
         elif CMD == "ERROR":
             now = pytime.time()
-            enc = self.get_message("encoder", time=now, timeout_sec=0.01)
-            cmd = self.get_message("altaz", time=now, timeout_sec=0.01, interp=True)
-            return enc.lon - cmd.lon, enc.lat - cmd.lat
+            return self.get_message("antenna_track", time=now, timeout_sec=0.01)
 
         elif CMD in ["?"]:
             return self.get_message("encoder", timeout_sec=10)
@@ -288,7 +280,6 @@ class Commander(PrivilegedNode):
         if TARGET == "ANTENNA":
             ERROR_GETTER = self.antenna
             CTRL_TOPIC = "antenna_control"
-            THRESHOLD = config.antenna_pointing_accuracy.to_value("deg")
             WAIT_DURATION = config.antenna_command_offset_sec
         elif TARGET == "DOME":
             raise NotImplementedError(
@@ -306,14 +297,12 @@ class Commander(PrivilegedNode):
         if MODE == "ERROR":
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 try:
-                    error_az, error_el = ERROR_GETTER("error")
-                    error = (error_az**2 + error_el**2) ** 0.5
+                    error = ERROR_GETTER("error")
                     self.logger.debug(
-                        f"Error = {error:9.6f} deg"
-                        f" {'[OK]' if error < THRESHOLD else '[NG]'}",
-                        throttle_duration_sec=0.1,
+                        f"Error={error.error:9.6f}deg [{'OK' if error.ok else 'NG'}]",
+                        throttle_duration_sec=0.3,
                     )
-                    if checker.check(error < THRESHOLD):
+                    if checker.check(error.ok):
                         self.logger.debug("Tracking OK")
                         return
                 except NECSTTimeoutError:
@@ -323,19 +312,15 @@ class Commander(PrivilegedNode):
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
-                    error_az, error_el = ERROR_GETTER("error")
-                    error = (error_az**2 + error_el**2) ** 0.5
+                    error = ERROR_GETTER("error")
                     self.logger.debug(
-                        f"Error = {error:9.6f} deg"
-                        f" {'[OK]' if error < THRESHOLD else '[NG]'}",
-                        throttle_duration_sec=0.1,
+                        f"Error={error.error:9.6f}deg [{'OK' if error.ok else 'NG'}]",
+                        throttle_duration_sec=0.3,
                     )
 
-                    control_status = self.get_message(
-                        CTRL_TOPIC, time=now, timeout_sec=0.01
-                    )
+                    control_status = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
                     if control_status.time > now:
-                        pytime.sleep(control_status.time - now)
+                        continue
                     if checker.check(not control_status.tight):
                         return
                 except NECSTTimeoutError:
