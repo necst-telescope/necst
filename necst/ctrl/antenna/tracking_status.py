@@ -34,14 +34,18 @@ class AntennaTrackingStatus(Node):
 
     def antenna_tracking_status(self) -> None:
         now = time.time()
-        if any(not isinstance(x, CoordMsg) for x in self.cmd):
+        if all(not isinstance(x, CoordMsg) for x in self.cmd):
+            self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
-        elif any(not isinstance(x, CoordMsg) for x in self.enc):
+        elif all(not isinstance(x, CoordMsg) for x in self.enc):
+            self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
             (enc,) = self.enc
-            cmd, *_ = sorted(self.cmd, key=lambda msg: abs(msg.time - now))
+            cmd_msgs = [msg for msg in self.cmd if isinstance(msg, CoordMsg)]
+            cmd, *_ = sorted(cmd_msgs, key=lambda msg: abs(msg.time - now))
 
             error = ((enc.lon - cmd.lon) ** 2 + (enc.lat - cmd.lat) ** 2) ** 0.5
-            msg = TrackingStatus(ok=error < self.threshold, error=error, time=now)
+            ok = self.tracking_checker.check(error < self.threshold)
+            msg = TrackingStatus(ok=ok, error=error, time=now)
         self.pub.publish(msg)
