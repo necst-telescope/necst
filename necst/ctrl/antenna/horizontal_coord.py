@@ -1,11 +1,11 @@
 __all__ = ["HorizontalCoord"]
 
 import time
-from typing import Generator, Optional, Tuple
+from typing import Optional, Tuple
 
-from neclib.coordinates import DriveLimitChecker, PathFinder
+from neclib.coordinates import CoordinateGeneratorManager, DriveLimitChecker, PathFinder
 from neclib.coordinates.path_finder import ControlStatus as LibControlStatus
-from necst_msgs.msg import ControlStatus, CoordCmdMsg, CoordMsg, WeatherMsg
+from necst_msgs.msg import Boolean, ControlStatus, CoordCmdMsg, CoordMsg, WeatherMsg
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -42,7 +42,8 @@ class HorizontalCoord(AlertHandlerNode):
         self.publisher = topic.altaz_cmd.publisher(self)
         topic.raw_coord.subscription(self, self._update_cmd)
         topic.antenna_encoder.subscription(self, self._update_enc)
-        topic.weather.subscription(self, self.update_weather)
+        topic.weather.subscription(self, self._update_weather)
+        topic.antenna_cmd_transition.subscription(self, self.next)
 
         self.status_publisher = topic.antenna_control_status.publisher(self)
 
@@ -50,8 +51,8 @@ class HorizontalCoord(AlertHandlerNode):
         self.create_timer(0.5, self.convert)
 
         self.result_queue = []
-
-        self.executing_generator: Optional[Generator] = None
+        self.tracking_ok = False
+        self.executing_generator = CoordinateGeneratorManager()
 
         self.gc = self.create_guard_condition(self._clear_cmd)
 
@@ -109,9 +110,6 @@ class HorizontalCoord(AlertHandlerNode):
             self.publisher.publish(msg)
 
     def _parse_cmd(self, msg: CoordCmdMsg) -> None:
-        if self.executing_generator is not None:
-            self.executing_generator.close()
-
         target_coord = (msg.lon, msg.lat)
         offset_coord = (msg.offset_lon, msg.offset_lat)
 
@@ -123,12 +121,12 @@ class HorizontalCoord(AlertHandlerNode):
 
         if (not scan) and (not named) and (not with_offset):
             self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
-            self.executing_generator = self.finder.track(
+            new_generator = self.finder.track(
                 msg.lon[0], msg.lat[0], frame=msg.frame, unit=msg.unit
             )
         elif (not scan) and (not named) and with_offset:
             self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
-            self.executing_generator = self.finder.track_with_offset(
+            new_generator = self.finder.track_with_offset(
                 msg.lon[0],
                 msg.lat[0],
                 frame=msg.frame,
@@ -137,17 +135,17 @@ class HorizontalCoord(AlertHandlerNode):
             )
         elif (not scan) and named and (not with_offset):
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET command: {msg}")
-            self.executing_generator = self.finder.track_by_name(msg.name)
+            new_generator = self.finder.track_by_name(msg.name)
         elif (not scan) and named and with_offset:
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET-WITH-OFFSET command: {msg}")
-            self.executing_generator = self.finder.track_by_name_with_offset(
+            new_generator = self.finder.track_by_name_with_offset(
                 msg.name,
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
             )
         elif target_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-ABSOLUTE-COORD command: {msg}")
-            self.executing_generator = self.finder.linear_with_acceleration(
+            new_generator = self.finder.linear_with_acceleration(
                 start=(msg.lon[0], msg.lat[0]),
                 end=(msg.lon[1], msg.lat[1]),
                 frame=msg.frame,
@@ -157,7 +155,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
         elif offset_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-RELATIVE-COORD command: {msg}")
-            self.executing_generator = self.finder.offset_linear(
+            new_generator = self.finder.offset_linear(
                 start=(msg.offset_lon[0], msg.offset_lat[0]),
                 end=(msg.offset_lon[1], msg.offset_lat[1]),
                 frame=msg.offset_frame,
@@ -167,7 +165,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
         elif offset_scan and named:
             self.logger.debug(f"Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: {msg}")
-            self.executing_generator = self.finder.offset_linear_by_name(
+            new_generator = self.finder.offset_linear_by_name(
                 start=(msg.offset_lon[0], msg.offset_lat[0]),
                 end=(msg.offset_lon[1], msg.offset_lat[1]),
                 frame=msg.offset_frame,
@@ -177,6 +175,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
         else:
             raise ValueError(f"Cannot determine command type for {msg}")
+        self.executing_generator.attach(new_generator)
 
     def convert(self) -> None:
         if (self.cmd is not None) and (self.enc_time < time.time() - 5):
@@ -202,6 +201,7 @@ class HorizontalCoord(AlertHandlerNode):
         except (StopIteration, TypeError):
             self.cmd = None
             self.telemetry(None)
+            self.executing_generator.attach(None)
             return
 
         az, el = self._validate_drive_range(az, el)
@@ -225,7 +225,7 @@ class HorizontalCoord(AlertHandlerNode):
             return _az, _el
         return [], []
 
-    def update_weather(self, msg: WeatherMsg) -> None:
+    def _update_weather(self, msg: WeatherMsg) -> None:
         self.finder.temperature = msg.temperature
         self.finder.pressure = msg.pressure
         self.finder.relative_humidity = msg.humidity
@@ -246,3 +246,6 @@ class HorizontalCoord(AlertHandlerNode):
                 time=status.start,
             )
         self.status_publisher.publish(msg)
+
+    def next(self, msg: Boolean) -> None:
+        self.executing_generator.will_send(True)

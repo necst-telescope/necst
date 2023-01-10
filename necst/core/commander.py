@@ -3,12 +3,11 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Literal, Optional, Tuple, Union
 
-from neclib.coordinates import standby_position
-from neclib.data import LinearInterp
 from neclib.utils import ConditionChecker, ParameterList, read_file
 from necst_msgs.msg import (
     AlertMsg,
     BiasMsg,
+    Boolean,
     ChopperMsg,
     CoordCmdMsg,
     DeviceReading,
@@ -40,6 +39,7 @@ class Commander(PrivilegedNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.__publisher: Dict[str, Topic] = {
             "coord": topic.raw_coord,
+            "cmd_trans": topic.antenna_cmd_transition,
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
             "chopper": topic.chopper_cmd,
@@ -207,13 +207,11 @@ class Commander(PrivilegedNode):
             return self.wait("antenna") if wait else None
 
         elif CMD == "SCAN":
-            point_kwargs = dict(wait=True)
             scan_kwargs = dict(speed=float(speed), unit=unit)
             if name is not None:
                 self.logger.warning(
                     "Gentle acceleration before this scan mode isn't implemented yet"
                 )
-                point_kwargs.update(name=name)
                 scan_kwargs.update(
                     name=name,
                     offset_lon=[float(start[0]), float(stop[0])],
@@ -224,7 +222,6 @@ class Commander(PrivilegedNode):
                 self.logger.warning(
                     "Gentle acceleration before this scan mode isn't implemented yet"
                 )
-                point_kwargs.update(target=reference, unit=unit)
                 scan_kwargs.update(
                     lon=[float(reference[0])],
                     lat=[float(reference[1])],
@@ -234,22 +231,16 @@ class Commander(PrivilegedNode):
                     offset_frame=scan_frame,
                 )
             else:
-                standby_lon, standby_lat = standby_position(
-                    start=start, end=stop, unit=unit, margin=config.antenna_scan_margin
-                )
-                point_kwargs.update(
-                    target=(standby_lon.value, standby_lat.value, scan_frame),
-                    unit=unit,
-                )
                 scan_kwargs.update(
                     lon=[float(start[0]), float(stop[0])],
                     lat=[float(start[1]), float(stop[1])],
                     frame=scan_frame,
                 )
-            self.antenna("point", **point_kwargs)
 
             msg = CoordCmdMsg(**scan_kwargs)
             self.publisher["coord"].publish(msg)
+            self.wait("antenna")
+            self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
             return self.wait("antenna", mode="control") if wait else None
 
         elif CMD == "ERROR":
