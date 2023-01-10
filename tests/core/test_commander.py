@@ -4,7 +4,12 @@ from necst_msgs.msg import ChopperMsg, CoordCmdMsg, CoordMsg
 
 from necst import topic
 from necst.core import Authorizer, Commander
-from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
+from necst.ctrl import (
+    AntennaDeviceSimulator,
+    AntennaPIDController,
+    AntennaTrackingStatus,
+    HorizontalCoord,
+)
 from necst.utils import spinning
 
 from ..conftest import TesterNode, destroy
@@ -26,6 +31,7 @@ class TestCommander(TesterNode):
 
         enc = topic.antenna_encoder.publisher(self.node)
         cmd = topic.altaz_cmd.publisher(self.node)
+        tracking = AntennaTrackingStatus()
 
         start = time.monotonic()
 
@@ -44,13 +50,13 @@ class TestCommander(TesterNode):
 
         timer = self.node.create_timer(0.1, lambda: publish())
 
-        with spinning(self.node):
+        with spinning([self.node, tracking]):
             com.wait("antenna")
             assert time.monotonic() - start > 0.99
             # It takes at least 0.99826s to converge `x` within 10arcsec
 
         destroy([enc, cmd, timer], node=self.node)
-        destroy(com)
+        destroy([com, tracking])
 
     def test_antenna_point(self):
         com = Commander()
@@ -90,18 +96,19 @@ class TestCommander(TesterNode):
         horizontal = HorizontalCoord()
         pid = AntennaPIDController()
         dev = AntennaDeviceSimulator()
+        tracking = AntennaTrackingStatus()
 
         dev.enc.position.az = 29.0
         dev.enc.position.el = 44.0
 
         cmd = {"target": (30.0, 45.0, "altaz"), "unit": "deg"}
 
-        with spinning([auth_server, horizontal, pid, dev], n_thread=5):
+        with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
             com.get_privilege()
             com.antenna("point", **cmd, wait=True)
             com.quit_privilege()
 
-        destroy([com, auth_server, horizontal, pid, dev])
+        destroy([com, auth_server, horizontal, pid, dev, tracking])
 
     def test_antenna_stop(self):
         com = Commander()
