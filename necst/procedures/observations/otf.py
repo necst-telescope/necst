@@ -90,6 +90,7 @@ class OTF(Observation):
                 off_observation_interval_manager.update(idx)
 
             start, stop = self.get_scan_coord(idx, p)
+            self.com.metadata("set", position="ON", id=idx, intercept=False)
             self.com.antenna(
                 "scan",
                 start=start,
@@ -100,6 +101,7 @@ class OTF(Observation):
                 unit="deg",
                 wait=True,
             )
+            self.com.metadata("set", position="", id=idx, intercept=False)
 
         self.drive_to_off_position(p)
 

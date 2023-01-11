@@ -363,11 +363,11 @@ class Commander(PrivilegedNode):
         position: Optional[str] = None,
         id: Optional[str] = None,
         time: Optional[float] = None,
-        delay: bool = False,
+        intercept: bool = True,
     ) -> None:
         CMD = cmd.upper()
         if CMD == "SET":
-            if delay:
+            if not intercept:
                 while self.get_message("antenna_control").tight:
                     pytime.sleep(0.05)
             time = pytime.time() if time is None else time
