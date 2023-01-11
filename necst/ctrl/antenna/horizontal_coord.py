@@ -91,8 +91,7 @@ class HorizontalCoord(AlertHandlerNode):
         if self.status.critical():
             self.logger.warning("Guard condition activated", throttle_duration_sec=1)
             # Avoid sudden resumption of telescope drive
-            self.gc.trigger()
-            return
+            return self.gc.trigger()
 
         # No realtime-ness check is performed, just filter outdated commands out
         now = time.time()
@@ -186,7 +185,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
             self.cmd = None
         if self.cmd is None:
-            return
+            return self.telemetry(None)
 
         if (len(self.result_queue) > 1) and (
             self.result_queue[-1][2] > time.time() + config.antenna_command_offset_sec
@@ -200,9 +199,8 @@ class HorizontalCoord(AlertHandlerNode):
             self.telemetry(status)
         except (StopIteration, TypeError):
             self.cmd = None
-            self.telemetry(None)
             self.executing_generator.attach(None)
-            return
+            return self.telemetry(None)
 
         az, el = self._validate_drive_range(az, el)
         for _az, _el, _t in zip(az, el, t):
