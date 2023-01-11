@@ -13,6 +13,7 @@ from necst_msgs.msg import (
     DeviceReading,
     LocalSignal,
     PIDMsg,
+    Sampling,
     Spectral,
 )
 from necst_msgs.srv import File, RecordSrv
@@ -48,6 +49,7 @@ class Commander(PrivilegedNode):
             "sis_bias": topic.sis_bias_cmd,
             "lo_signal": topic.lo_signal_cmd,
             "attenuator": topic.attenuator_cmd,
+            "spectra_smpl": topic.spectra_rec,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -398,11 +400,12 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "?"],
+        cmd: Literal["start", "stop", "file", "reduce", "?"],
         /,
         *,
         name: str = "",
         content: Optional[str] = None,
+        nth: Optional[int] = None,
     ) -> None:
         CMD = cmd.upper()
         if CMD == "START":
@@ -428,6 +431,9 @@ class Commander(PrivilegedNode):
             req = File.Request(data=str(content), path=name)
             future = self.client["record_file"].call_async(req)
             return self.wait_until_future_complete(future)
+        elif CMD == "REDUCE":
+            msg = Sampling(nth=nth)
+            return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:

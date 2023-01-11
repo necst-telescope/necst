@@ -121,6 +121,7 @@ class topic:
         DeviceReading,
         LocalSignal,
         PIDMsg,
+        Sampling,
         Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
@@ -183,6 +184,7 @@ class topic:
     antenna_cmd_transition = Topic(
         Boolean, "cmd_trans", qos.reliable, namespace.antenna
     )
+    spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
 
 
 class service:
