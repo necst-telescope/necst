@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Generator, Optional, Union, final
 
 import rclpy
-from neclib import get_logger
+from neclib import NECSTAuthorityError, get_logger
 
 from ...core import Commander
 
@@ -26,8 +26,10 @@ class Observation(ABC):
     def execute(self, *args, **kwargs) -> None:
         with self.ros2env():
             self.com = Commander()
-            self.com.get_privilege()
+            privileged = self.com.get_privilege()
             try:
+                if not privileged:
+                    raise NECSTAuthorityError("Couldn't acquire privilege")
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
