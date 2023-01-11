@@ -23,9 +23,13 @@ class OTF(Observation):
         return pa
 
     @classmethod
-    def offset_coord_repr(cls, p: ObsParams):
+    def validate_frame(cls, frame: str) -> str:
         conversion_table = {"j2000": "fk5", "b1950": "fk4"}
-        frame = conversion_table.get(p.COORD_SYS.lower(), p.COORD_SYS)
+        return conversion_table.get(frame.lower(), frame)
+
+    @classmethod
+    def offset_coord_repr(cls, p: ObsParams):
+        frame = cls.validate_frame(p.COORD_SYS)
         pa = cls.position_angle(p)
         return f"origin={frame}({p.LambdaOn}, {p.BetaOn}), rotation={pa}rad"
 
@@ -35,19 +39,19 @@ class OTF(Observation):
             source = (
                 p.LambdaOn.to_value("deg"),
                 p.BetaOn.to_value("deg"),
-                self.offset_coord_repr(p),
+                self.validate_frame(p.COORD_SYS),
             )
             offset = (
                 p.deltaLambda.to_value("deg"),
                 p.deltaBeta.to_value("deg"),
-                self.offset_coord_repr(p),
+                self.validate_frame(p.COORD_SYS),
             )
             kwargs.update(offset=offset, reference=source)
         else:
             target = (
                 p.LambdaOff.to_value("deg"),
                 p.BetaOff.to_value("deg"),
-                self.offset_coord_repr(p),
+                self.validate_frame(p.COORD_SYS),
             )
             kwargs.update(target=target)
         self.com.antenna("point", **kwargs)
