@@ -32,18 +32,22 @@ class OTF(Observation):
     def drive_to_off_position(self, p: ObsParams) -> None:
         kwargs = dict(unit="deg", wait=True)
         if p.RELATIVE:
-            source = (p.LambdaOn.to_value("deg"), p.BetaOn.to_value("deg"), p.COORD_SYS)
+            source = (
+                p.LambdaOn.to_value("deg"),
+                p.BetaOn.to_value("deg"),
+                self.offset_coord_repr(p),
+            )
             offset = (
                 p.deltaLambda.to_value("deg"),
                 p.deltaBeta.to_value("deg"),
-                p.COORD_SYS,
+                self.offset_coord_repr(p),
             )
             kwargs.update(offset=offset, reference=source)
         else:
             target = (
                 p.LambdaOff.to_value("deg"),
                 p.BetaOff.to_value("deg"),
-                p.COORD_SYS,
+                self.offset_coord_repr(p),
             )
             kwargs.update(target=target)
         self.com.antenna("point", **kwargs)
