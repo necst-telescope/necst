@@ -62,7 +62,7 @@ class OTF(Observation):
             start[0] + scan_length * math.cos(pa),
             start[1] + scan_length * math.sin(pa),
         )
-        return start, stop
+        return start.to_value("deg"), stop.to_value("deg")
 
     def run(self, path: str) -> None:
         p = ObsParams.from_file(path)
