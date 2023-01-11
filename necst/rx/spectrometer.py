@@ -10,10 +10,11 @@ from typing import Dict, List, Optional, Tuple
 from neclib.data import Resize
 from neclib.devices import Spectrometer
 from neclib.recorders import NECSTDBWriter, Recorder
+from neclib.utils import ConditionChecker
 from necst_msgs.msg import ControlStatus, Spectral
 from rclpy.publisher import Publisher
 
-from .. import namespace, topic
+from .. import config, namespace, topic
 from ..core import DeviceNode
 
 
@@ -112,6 +113,9 @@ class SpectralData(DeviceNode):
         self.recorder = Recorder(record_root or Path.home() / "data")
         if not any(isinstance(w, NECSTDBWriter) for w in self.recorder.writers):
             self.recorder.add_writer(NECSTDBWriter())
+        self.record_condition = ConditionChecker(
+            config.record_every_n_spectral_data or 1, True
+        )
         self.create_timer(0.02, self.record)
         self.create_timer(0.02, self.fetch_data)
 
@@ -190,6 +194,12 @@ class SpectralData(DeviceNode):
         _data = self.get_data()
         if _data is None:
             return
+
+        if not self.record_condition.check(True):  # Skip recording
+            return
+        else:
+            self.record_condition.check(False)
+
         if not self.recorder.is_recording:
             self.logger.warning(
                 "Recorder not started, skipping recording", throttle_duration_sec=30
