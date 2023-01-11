@@ -40,6 +40,7 @@ class RadioPointing(Observation):
 
         if method <= 0:
             for idx in iterate_counter:
+                self.logger.info(f"Starting {idx}th sequence")
                 self.discrete(
                     idx,
                     method,
@@ -65,6 +66,7 @@ class RadioPointing(Observation):
     ) -> None:
         offsets = self.get_offset(method, separation)
         for i, (offset_lon, offset_lat) in enumerate(offsets):
+            self.logger.info(f"Starting integration at {i}th point")
             self.com.antenna(
                 "point",
                 offset=(offset_lon, offset_lat, offset_frame),
@@ -73,11 +75,14 @@ class RadioPointing(Observation):
             self.sky(integ_time, f"{id}-{i}")
 
     def scan(self, id: Any, width: float, antenna_scan_kwargs) -> None:
+        self.logger.info("Starting X-scan")
         self.com.metadata("set", position="SKY", id=f"{id}-x", delay=True)
         self.com.antenna(
             "scan", start=(-1 * width, 0), stop=(width, 0), **antenna_scan_kwargs
         )
         self.com.metadata("set", position="", id="")
+
+        self.logger.info("Starting Y-scan")
         self.com.metadata("set", position="SKY", id=f"{id}-y", delay=True)
         self.com.antenna(
             "scan", start=(0, -1 * width), stop=(0, width), **antenna_scan_kwargs

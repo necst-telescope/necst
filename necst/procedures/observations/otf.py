@@ -88,6 +88,7 @@ class OTF(Observation):
         )
 
         for idx in range(int(p.n)):
+            self.logger.info(f"Starting {idx}th scan")
             if hot_observation_interval_manager.check(idx):
                 self.hot(p.integ_hot.to_value("s"), idx)
                 hot_observation_interval_manager.update(idx)

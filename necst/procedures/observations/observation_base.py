@@ -25,6 +25,7 @@ class Observation(ABC):
 
     def execute(self, *args, **kwargs) -> None:
         with self.ros2env():
+            self.start = time.time()
             self.com = Commander()
             privileged = self.com.get_privilege()
             try:
@@ -35,6 +36,9 @@ class Observation(ABC):
                 self.record_parameter_files()
                 self.run(*args, **kwargs)
             finally:
+                self.logger.info(
+                    f"Observation finished, took {(time.time() - self.start)/60:.2f}min"
+                )
                 self.com.record("stop")
                 self.com.quit_privilege()
                 self.com.destroy_node()
@@ -71,26 +75,34 @@ class Observation(ABC):
         ...
 
     def hot(self, integ_time: Union[int, float], id: Any) -> None:
+        self.logger.debug("Starting HOT...")
         self.com.chopper("insert")
         self.com.metadata("set", position="HOT", id=str(id))
         time.sleep(integ_time)
         self.com.metadata("set", position="", id=str(id))
         self.com.chopper("remove")
+        self.logger.debug("Complete HOT")
 
     def sky(self, integ_time: Union[int, float], id: Any) -> None:
+        self.logger.debug("Starting SKY...")
         self.com.chopper("remove")
         self.com.metadata("set", position="SKY", id=str(id))
         time.sleep(integ_time)
         self.com.metadata("set", position="", id=str(id))
+        self.logger.debug("Complete SKY")
 
     def off(self, integ_time: Union[int, float], id: Any) -> None:
+        self.logger.debug("Starting OFF...")
         self.com.chopper("remove")
         self.com.metadata("set", position="OFF", id=str(id))
         time.sleep(integ_time)
         self.com.metadata("set", position="", id=str(id))
+        self.logger.debug("Complete OFF")
 
     def on(self, integ_time: Union[int, float], id: Any) -> None:
+        self.logger.debug("Starting ON...")
         self.com.chopper("remove")
         self.com.metadata("set", position="ON", id=str(id))
         time.sleep(integ_time)
         self.com.metadata("set", position="", id=str(id))
+        self.logger.debug("Complete ON")
