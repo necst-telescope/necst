@@ -34,14 +34,16 @@ class Observation(ABC):
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
+                rclpy.uninstall_signal_handlers()
                 self.run(*args, **kwargs)
             finally:
-                self.logger.info(
-                    f"Observation finished, took {(time.time() - self.start)/60:.2f}min"
-                )
                 self.com.record("stop")
                 self.com.quit_privilege()
                 self.com.destroy_node()
+                self.logger.info(
+                    f"Observation finished, took {(time.time() - self.start)/60:.2f}min"
+                )
+                rclpy.install_signal_handlers()
 
     @contextmanager
     def ros2env(self) -> Generator[None, None, None]:
