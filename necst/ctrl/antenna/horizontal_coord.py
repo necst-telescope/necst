@@ -144,7 +144,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
         elif target_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-ABSOLUTE-COORD command: {msg}")
-            new_generator = self.finder.linear_with_acceleration(
+            new_generator = self.finder.linear(
                 start=(msg.lon[0], msg.lat[0]),
                 end=(msg.lon[1], msg.lat[1]),
                 frame=msg.frame,
@@ -161,6 +161,7 @@ class HorizontalCoord(AlertHandlerNode):
                 reference=(msg.lon, msg.lat, msg.frame),
                 speed=msg.speed,
                 unit=msg.unit,
+                margin=config.antenna_scan_margin,
             )
         elif offset_scan and named:
             self.logger.debug(f"Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: {msg}")
@@ -171,6 +172,7 @@ class HorizontalCoord(AlertHandlerNode):
                 name=msg.name,
                 speed=msg.speed,
                 unit=msg.unit,
+                margin=config.antenna_scan_margin,
             )
         else:
             raise ValueError(f"Cannot determine command type for {msg}")
