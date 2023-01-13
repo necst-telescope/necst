@@ -43,6 +43,7 @@ class Observation(ABC):
                 self.logger.info(
                     f"Observation finished, took {(time.time() - self.start)/60:.2f}min"
                 )
+                self.logger.info(f"Record name: \033[1m{self.record_name!r}\033[0m")
                 rclpy.install_signal_handlers()
 
     @contextmanager
