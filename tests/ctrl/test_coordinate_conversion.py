@@ -1,13 +1,14 @@
 import time
 
 import pytest
-from necst_msgs.msg import CoordCmdMsg, CoordMsg
+from necst_msgs.msg import CoordMsg
+from necst_msgs.srv import CoordinateCommand
 
-from necst import qos
+from necst import service, topic
 from necst.ctrl import HorizontalCoord
 from necst.utils import spinning
 
-from ..conftest import TesterNode, destroy
+from ..conftest import TesterNode, destroy, send_request
 
 
 class TestHorizontalCoord(TesterNode):
@@ -33,21 +34,16 @@ class TestHorizontalCoord(TesterNode):
             assert msg.frame == "altaz"
             subscribed = True
 
-        ns = converter.get_namespace()
-        raw_cmd = self.node.create_publisher(
-            CoordCmdMsg, f"{ns}/raw_coord", qos.reliable
-        )
-        converted = self.node.create_subscription(
-            CoordMsg, f"{ns}/altaz", update, qos.realtime
-        )
+        raw_cmd = service.raw_coord.client(self.node)
+        converted = topic.altaz_cmd.subscription(self.node, update)
 
         with spinning([converter, self.node]):
             cmd = {"lat": [80.0], "unit": "deg", "frame": "fk5"}
             for lon in [45.0 * i for i in range(8)]:
                 if subscribed:
                     break
-                msg = CoordCmdMsg(lon=[lon], **cmd)
-                raw_cmd.publish(msg)
+                req = CoordinateCommand.Request(lon=[lon], **cmd)
+                _ = send_request(req, raw_cmd, self.node)
 
                 timelimit = time.time() + 5
                 while not subscribed:
@@ -73,19 +69,14 @@ class TestHorizontalCoord(TesterNode):
             assert msg.frame == "altaz"
             subscribed = True
 
-        ns = converter.get_namespace()
-        raw_cmd = self.node.create_publisher(
-            CoordCmdMsg, f"{ns}/raw_coord", qos.reliable
-        )
-        converted = self.node.create_subscription(
-            CoordMsg, f"{ns}/altaz", update, qos.realtime
-        )
+        raw_cmd = service.raw_coord.client(self.node)
+        converted = topic.altaz_cmd.subscription(self.node, update)
 
         with spinning([converter, self.node]):
             targets = ["Spica", "IRC+10216", "Procyon", "M42", "M33", "M2", "M22"]
             for name in targets:
-                msg = CoordMsg(name=name, time=[time.time() + 2])
-                raw_cmd.publish(msg)
+                req = CoordinateCommand.Request(name=name)
+                _ = send_request(req, raw_cmd, self.node)
 
                 timelimit = time.time() + 3
                 while not subscribed:
@@ -110,19 +101,14 @@ class TestHorizontalCoord(TesterNode):
             assert msg.frame == "altaz"
             subscribed = True
 
-        ns = converter.get_namespace()
-        raw_cmd = self.node.create_publisher(
-            CoordCmdMsg, f"{ns}/raw_coord", qos.reliable
-        )
-        converted = self.node.create_subscription(
-            CoordMsg, f"{ns}/altaz", update, qos.realtime
-        )
+        raw_cmd = service.raw_coord.client(self.node)
+        converted = topic.altaz_cmd.subscription(self.node, update)
 
         with spinning([converter, self.node]):
             cmd = {"lat": [80.0], "unit": "deg", "frame": "fk5"}
             for lon in [45.0 * i for i in range(8)]:
-                msg = CoordCmdMsg(lon=[lon], **cmd, time=[time.time() - 1])
-                raw_cmd.publish(msg)
+                req = CoordinateCommand.Request(lon=[lon], **cmd)
+                _ = send_request(req, raw_cmd, self.node)
 
                 timelimit = time.time() + 1
                 while not subscribed:
@@ -146,19 +132,14 @@ class TestHorizontalCoord(TesterNode):
             assert msg.frame == "altaz"
             subscribed = True
 
-        ns = converter.get_namespace()
-        raw_cmd = self.node.create_publisher(
-            CoordCmdMsg, f"{ns}/raw_coord", qos.realtime
-        )
-        converted = self.node.create_subscription(
-            CoordMsg, f"{ns}/altaz", update, qos.realtime
-        )
+        raw_cmd = service.raw_coord.client(self.node)
+        converted = topic.altaz_cmd.subscription(self.node, update)
 
         with spinning([converter, self.node]):
-            msg = CoordCmdMsg(
+            req = CoordinateCommand.Request(
                 lon=[45.0], lat=[-90.0], unit="deg", frame="fk5", time=[time.time() + 1]
             )
-            raw_cmd.publish(msg)
+            _ = send_request(req, raw_cmd, self.node)
 
             timelimit = time.time() + 1
             while not subscribed:

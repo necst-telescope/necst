@@ -1,8 +1,9 @@
 import time
 
-from necst_msgs.msg import ChopperMsg, CoordCmdMsg, CoordMsg
+from necst_msgs.msg import ChopperMsg, CoordMsg
+from necst_msgs.srv import CoordinateCommand
 
-from necst import topic
+from necst import service, topic
 from necst.core import Authorizer, Commander
 from necst.ctrl import (
     AntennaDeviceSimulator,
@@ -65,15 +66,18 @@ class TestCommander(TesterNode):
         cmd = {"target": (30.0, 45.0, "fk5"), "unit": "deg"}
         checked = False
 
-        def check(msg: CoordCmdMsg) -> None:
+        def check(
+            req: CoordinateCommand.Request, res: CoordinateCommand.Response
+        ) -> None:
             nonlocal checked
-            assert msg.lon[0] == cmd["target"][0]
-            assert msg.lat[0] == cmd["target"][1]
-            assert msg.unit == cmd["unit"]
-            assert msg.frame == cmd["target"][2]
+            assert req.lon[0] == cmd["target"][0]
+            assert req.lat[0] == cmd["target"][1]
+            assert req.unit == cmd["unit"]
+            assert req.frame == cmd["target"][2]
             checked = True
+            return res
 
-        sub = topic.raw_coord.subscription(self.node, check)
+        sub = service.raw_coord.service(self.node, check)
 
         start = time.monotonic()
         with spinning([self.node, auth_server]):
