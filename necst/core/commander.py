@@ -412,25 +412,22 @@ class Commander(PrivilegedNode):
             recording = False
             while not recording:
                 req = RecordSrv.Request(name=name.lstrip("/"), stop=False)
-                future = self.client["record_path"].call_async(req)
-                self.wait_until_future_complete(future)
-                recording = future.result().recording
+                res = self._send_request(req, self.client["record_path"])
+                recording = res.recording
             self.logger.info(f"Recording at {name!r}")
             return
         elif CMD == "STOP":
             recording = True
             while recording:
                 req = RecordSrv.Request(name=name, stop=True)
-                future = self.client["record_path"].call_async(req)
-                self.wait_until_future_complete(future)
-                recording = future.result().recording
+                res = self._send_request(req, self.client["record_path"])
+                recording = res.recording
             return
         elif CMD == "FILE":
             if content is None:
                 content = read_file(name)
             req = File.Request(data=str(content), path=name)
-            future = self.client["record_file"].call_async(req)
-            return self.wait_until_future_complete(future)
+            return self._send_request(req, self.client["record_file"])
         elif CMD == "REDUCE":
             msg = Sampling(nth=nth)
             return self.publisher["spectra_smpl"].publish(msg)
