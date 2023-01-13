@@ -201,7 +201,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.telemetry(status)
         except (StopIteration, TypeError):
             self.cmd = None
-            self.executing_generator.attach(None)
+            self.executing_generator.clear()
             return self.telemetry(None)
 
         az, el = self._validate_drive_range(az, el)
@@ -236,6 +236,8 @@ class HorizontalCoord(AlertHandlerNode):
                 controlled=False,
                 tight=False,
                 remote=True,
+                id=id(self.executing_generator.get()),
+                interrupt_ok=True,
                 time=time.time(),
             )
         else:
@@ -243,6 +245,8 @@ class HorizontalCoord(AlertHandlerNode):
                 controlled=status.controlled,
                 tight=status.tight,
                 remote=True,
+                id=id(self.executing_generator.get()),
+                interrupt_ok=status.infinite and (not status.waypoint),
                 time=status.start,
             )
         self.status_publisher.publish(msg)
