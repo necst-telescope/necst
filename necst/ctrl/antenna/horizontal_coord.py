@@ -244,7 +244,7 @@ class HorizontalCoord(AlertHandlerNode):
                 remote=True,
                 id=str(id(self.executing_generator.get())),
                 interrupt_ok=True,
-                time=time.time(),
+                time=time.time() + config.antenna_command_offset_sec,
             )
         else:
             msg = ControlStatus(
