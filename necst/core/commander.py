@@ -9,14 +9,13 @@ from necst_msgs.msg import (
     BiasMsg,
     Boolean,
     ChopperMsg,
-    CoordCmdMsg,
     DeviceReading,
     LocalSignal,
     PIDMsg,
     Sampling,
     Spectral,
 )
-from necst_msgs.srv import File, RecordSrv
+from necst_msgs.srv import CoordinateCommand, File, RecordSrv
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -39,7 +38,6 @@ class Commander(PrivilegedNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.__publisher: Dict[str, Topic] = {
-            "coord": topic.raw_coord,
             "cmd_trans": topic.antenna_cmd_transition,
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
@@ -69,6 +67,7 @@ class Commander(PrivilegedNode):
         self.client = {
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
+            "raw_coord": service.raw_coord.client(self),
         }
         self.__check_topic()
 
@@ -198,8 +197,8 @@ class Commander(PrivilegedNode):
                     offset_frame=offset[2],
                     unit=unit,
                 )
-            msg = CoordCmdMsg(**kwargs)
-            self.publisher["coord"].publish(msg)
+            req = CoordinateCommand.Request(**kwargs)
+            _ = self._send_request(req, self.client["raw_coord"])
             return self.wait("antenna") if wait else None
 
         elif CMD == "SCAN":
@@ -233,11 +232,12 @@ class Commander(PrivilegedNode):
                     frame=scan_frame,
                 )
 
-            msg = CoordCmdMsg(**scan_kwargs)
-            self.publisher["coord"].publish(msg)
+            req = CoordinateCommand.Request(**scan_kwargs)
+            # self.publisher["coord"].publish(msg)
+            res = self._send_request(req, self.client["raw_coord"])
             self.wait("antenna")
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
-            return self.wait("antenna", mode="control") if wait else None
+            return self.wait("antenna", mode="control", id=res.id) if wait else None
 
         elif CMD == "ERROR":
             now = pytime.time()

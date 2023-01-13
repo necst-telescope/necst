@@ -116,7 +116,6 @@ class topic:
         ChopperMsg,
         Clock,
         ControlStatus,
-        CoordCmdMsg,
         CoordMsg,
         DeviceReading,
         LocalSignal,
@@ -131,7 +130,7 @@ class topic:
 
     from .utils import Topic
 
-    raw_coord = Topic(CoordCmdMsg, "raw_coord", qos.reliable, namespace.antenna)
+    # raw_coord = Topic(CoordCmdMsg, "raw_coord", qos.reliable, namespace.antenna)
     antenna_encoder = Topic(CoordMsg, "encoder", qos.realtime, namespace.antenna)
     antenna_speed_cmd = Topic(
         TimedAzElFloat64, "speed", qos.realtime, namespace.antenna
@@ -188,7 +187,7 @@ class topic:
 
 
 class service:
-    from necst_msgs.srv import AuthoritySrv, File, RecordSrv
+    from necst_msgs.srv import AuthoritySrv, CoordinateCommand, File, RecordSrv
     from std_srvs.srv import Empty
 
     from .utils import Service
@@ -197,3 +196,4 @@ class service:
     privilege_ping = Service(Empty, "ping", namespace.auth)
     record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
+    raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)

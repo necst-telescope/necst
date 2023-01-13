@@ -5,9 +5,10 @@ from typing import Optional, Tuple
 
 from neclib.coordinates import CoordinateGeneratorManager, DriveLimitChecker, PathFinder
 from neclib.coordinates.path_finder import ControlStatus as LibControlStatus
-from necst_msgs.msg import Boolean, ControlStatus, CoordCmdMsg, CoordMsg, WeatherMsg
+from necst_msgs.msg import Boolean, ControlStatus, CoordMsg, WeatherMsg
+from necst_msgs.srv import CoordinateCommand
 
-from ... import config, namespace, topic
+from ... import config, namespace, service, topic
 from ...core import AlertHandlerNode
 
 
@@ -40,10 +41,10 @@ class HorizontalCoord(AlertHandlerNode):
         }
 
         self.publisher = topic.altaz_cmd.publisher(self)
-        topic.raw_coord.subscription(self, self._update_cmd)
         topic.antenna_encoder.subscription(self, self._update_enc)
         topic.weather.subscription(self, self._update_weather)
         topic.antenna_cmd_transition.subscription(self, self.next)
+        service.raw_coord.service(self, self._update_cmd)
 
         self.status_publisher = topic.antenna_control_status.publisher(self)
 
@@ -60,7 +61,9 @@ class HorizontalCoord(AlertHandlerNode):
         self.cmd = None
         self.result_queue.clear()
 
-    def _update_cmd(self, msg: CoordCmdMsg) -> None:
+    def _update_cmd(
+        self, request: CoordinateCommand.Request, response: CoordinateCommand.Response
+    ) -> CoordinateCommand.Response:
         """Update the target coordinate command.
 
         When new command has been received, conversion result will stop for a moment,
@@ -75,9 +78,12 @@ class HorizontalCoord(AlertHandlerNode):
         command only contains start/stop position and scan speed.
 
         """
-        self.cmd = msg
-        self._parse_cmd(msg)
+        self.cmd = request
+        self._parse_cmd(request)
         self.result_queue.clear()
+
+        response.id = id(self.executing_generator.get())
+        return response
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
@@ -108,7 +114,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
             self.publisher.publish(msg)
 
-    def _parse_cmd(self, msg: CoordCmdMsg) -> None:
+    def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
         target_coord = (msg.lon, msg.lat)
         offset_coord = (msg.offset_lon, msg.offset_lat)
 
