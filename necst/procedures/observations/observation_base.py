@@ -25,7 +25,7 @@ class Observation(ABC):
 
     def execute(self, *args, **kwargs) -> None:
         with self.ros2env():
-            self.start = time.time()
+            self.start = time.monotonic()
             self.com = Commander()
             privileged = self.com.get_privilege()
             try:
@@ -40,8 +40,9 @@ class Observation(ABC):
                 self.com.record("stop")
                 self.com.quit_privilege()
                 self.com.destroy_node()
+                _observing_duration = (time.monotonic() - self.start) / 60
                 self.logger.info(
-                    f"Observation finished, took {(time.time() - self.start)/60:.2f}min"
+                    f"Observation finished, took {_observing_duration:.2f} min."
                 )
                 self.logger.info(f"Record name: \033[1m{self.record_name!r}\033[0m")
                 rclpy.install_signal_handlers()
