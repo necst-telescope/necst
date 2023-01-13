@@ -274,6 +274,7 @@ class Commander(PrivilegedNode):
         /,
         *,
         mode: Literal["control", "error"] = "error",
+        id: Optional[str] = None,
         timeout_sec: Optional[Union[int, float]] = None,
     ) -> None:
         """Wait until the motion has been converged."""
@@ -320,10 +321,10 @@ class Commander(PrivilegedNode):
                         throttle_duration_sec=0.3,
                     )
 
-                    control_status = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
-                    if control_status.time > now:
-                        continue
-                    if checker.check(not control_status.tight):
+                    ctrl = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
+                    if checker.check((not ctrl.tight) and (ctrl.id == id)):
+                        if ctrl.time > now:
+                            pytime.sleep(ctrl.time - now)
                         return
                 except NECSTTimeoutError:
                     pass
