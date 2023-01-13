@@ -4,9 +4,11 @@ from typing import Any, Dict, Sequence, Union
 import pytest
 import rclpy
 from neclib import config
+from rclpy.client import Client
 from rclpy.executors import Executor, MultiThreadedExecutor, SingleThreadedExecutor
 from rclpy.node import Node
 
+from necst import utils
 from necst.core import AlertHandlerNode
 
 
@@ -95,3 +97,22 @@ def temp_config(temp_values: Dict[str, Any]):
         yield
     finally:
         [setattr(config, k, v) for k, v in original_values.items()]
+
+
+def send_request(
+    self, request: Any, client: Client, node: Node, timeout_sec: Union[int, float] = 1
+) -> Any:
+    srv_name = client.srv_name
+    if not utils.wait_for_server_to_pick_up(client):
+        raise RuntimeError(f"Server for {srv_name!r} not responding.")
+
+    if node.executor is None:
+        raise RuntimeError("Service client not spinning.")
+
+    future = client.call_async(request)
+    node.executor.spin_until_future_complete(future, timeout_sec)
+
+    result = future.result()
+    if result is None:
+        raise RuntimeError(f"Server for {srv_name!r} not responding.")
+    return result
