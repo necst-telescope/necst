@@ -35,7 +35,7 @@ class TestRSky(TesterNode):
             pub.publish(msg)
 
         sub = topic.chopper_cmd.subscription(self.node, update)
-        with spinning([self.node, dev, horizontal, pid]):
+        with spinning([self.node, dev, horizontal, pid, auth]):
             RSky(1, 2)
 
         destroy([auth, dev, horizontal, pid, recorder])

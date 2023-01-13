@@ -41,7 +41,7 @@ class TestSkydip(TesterNode):
             pub.publish(msg)
 
         sub = topic.chopper_cmd.subscription(self.node, update)
-        with spinning([self.node, dev, horizontal, pid, tracking], n_thread=5):
+        with spinning([self.node, dev, horizontal, pid, tracking, auth], n_thread=5):
             Skydip(2)
 
         destroy([auth, dev, horizontal, pid, recorder, tracking])
