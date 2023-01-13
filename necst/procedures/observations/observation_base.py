@@ -62,7 +62,7 @@ class Observation(ABC):
     def record_name(self) -> str:
         now = datetime.utcnow().strftime("%Y%m%d_%H%M%S_")
         target = "" if self.target is None else f"_{self.target}"
-        return f"necst_{now}{self.observation_type}{target}"
+        return f"necst_{now}{self.observation_type}{target}".lower()
 
     def record_parameter_files(self) -> None:
         root = os.environ.get("NECST_ROOT", Path.home() / ".necst")
