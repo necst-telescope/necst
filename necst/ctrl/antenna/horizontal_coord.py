@@ -154,7 +154,7 @@ class HorizontalCoord(AlertHandlerNode):
                 start=(msg.lon[0], msg.lat[0]),
                 end=(msg.lon[1], msg.lat[1]),
                 frame=msg.frame,
-                speed=msg.speed,
+                speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=config.antenna_scan_margin,
             )
@@ -165,7 +165,7 @@ class HorizontalCoord(AlertHandlerNode):
                 end=(msg.offset_lon[1], msg.offset_lat[1]),
                 frame=msg.offset_frame,
                 reference=(msg.lon, msg.lat, msg.frame),
-                speed=msg.speed,
+                speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=config.antenna_scan_margin,
             )
@@ -176,7 +176,7 @@ class HorizontalCoord(AlertHandlerNode):
                 end=(msg.offset_lon[1], msg.offset_lat[1]),
                 frame=msg.offset_frame,
                 name=msg.name,
-                speed=msg.speed,
+                speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=config.antenna_scan_margin,
             )
