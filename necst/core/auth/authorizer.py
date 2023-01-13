@@ -3,15 +3,16 @@ __all__ = ["Authorizer"]
 from typing import Optional
 
 import rclpy
+from neclib import NECSTAuthorityError
 from necst_msgs.srv import AuthoritySrv
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.node import Node
 from std_srvs.srv import Empty
 
 from ... import config, namespace, service, utils
-from ..server_node import ServerNode
 
 
-class Authorizer(ServerNode):
+class Authorizer(Node):
     """Singleton privilege server.
 
     To interact with this server, subclass `PrivilegeNode`.
@@ -44,13 +45,11 @@ class Authorizer(ServerNode):
         self.__approved: Optional[str] = None
 
         self.request_srv = service.privilege_request.service(
-            self, self._authorize, callback_group=ReentrantCallbackGroup()
+            self, self._authorize, callback_group=MutuallyExclusiveCallbackGroup()
         )
         self.ping_cli = service.privilege_ping.client(
-            self, callback_group=ReentrantCallbackGroup()
+            self, callback_group=MutuallyExclusiveCallbackGroup()
         )
-
-        self.start_server()
 
     @property
     def approved(self) -> Optional[str]:
@@ -67,9 +66,11 @@ class Authorizer(ServerNode):
         if timeout_sec is None:
             timeout_sec = config.ros_service_timeout_sec
 
+        if self.executor is None:
+            raise NECSTAuthorityError("Authorizer isn't spinning.")
         request = Empty.Request()
         future = self.ping_cli.call_async(request)
-        self.wait_until_future_complete(future, timeout_sec)
+        self.executor.spin_until_future_complete(future, timeout_sec)
         # NOTE: Use of `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock. Reason unknown.
 
