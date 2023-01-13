@@ -21,6 +21,7 @@ class Observation(ABC):
 
     def __init__(self, *args, **kwargs) -> None:
         self.logger = get_logger(self.__class__.__name__)
+        self._record_name: Optional[str] = None
         self.execute(*args, **kwargs)
 
     def execute(self, *args, **kwargs) -> None:
@@ -62,9 +63,12 @@ class Observation(ABC):
     @final
     @property
     def record_name(self) -> str:
-        now = datetime.utcnow().strftime("%Y%m%d_%H%M%S_")
-        target = "" if self.target is None else f"_{self.target}"
-        return f"necst_{now}{self.observation_type}{target}".lower()
+        # TODO: Make configurable, and make target name available.
+        if self._record_name is None:
+            now = datetime.utcnow().strftime("%Y%m%d_%H%M%S_")
+            target = "" if self.target is None else f"_{self.target}"
+            self._record_name = f"necst_{now}{self.observation_type}{target}".lower()
+        return self._record_name
 
     def record_parameter_files(self) -> None:
         root = os.environ.get("NECST_ROOT", Path.home() / ".necst")
