@@ -100,7 +100,7 @@ def temp_config(temp_values: Dict[str, Any]):
 
 
 def send_request(
-    self, request: Any, client: Client, node: Node, timeout_sec: Union[int, float] = 1
+    request: Any, client: Client, node: Node, timeout_sec: Union[int, float] = 1
 ) -> Any:
     srv_name = client.srv_name
     if not utils.wait_for_server_to_pick_up(client):
