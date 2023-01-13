@@ -302,7 +302,7 @@ class Commander(PrivilegedNode):
                 try:
                     error = ERROR_GETTER("error")
                     self.logger.debug(
-                        f"Error={error.error:9.6f}deg [{'OK' if error.ok else 'NG'}]",
+                        f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
                         throttle_duration_sec=0.3,
                     )
                     if checker.check(error.ok):
@@ -312,17 +312,22 @@ class Commander(PrivilegedNode):
                     pass
                 pytime.sleep(0.05)
         elif MODE == "CONTROL":
+            experienced = False
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
                     error = ERROR_GETTER("error")
                     self.logger.debug(
-                        f"Error={error.error:9.6f}deg [{'OK' if error.ok else 'NG'}]",
+                        f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
                         throttle_duration_sec=0.3,
                     )
 
                     ctrl = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
-                    if checker.check((not ctrl.tight) and (ctrl.id == id)):
+                    if ctrl.id == id:
+                        experienced = True
+                    finished = experienced and (ctrl.id != id)
+                    trail = (not ctrl.interrupt_ok) and (ctrl.id == id)
+                    if checker.check(finished or trail):
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)
                         return
