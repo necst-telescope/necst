@@ -5,8 +5,10 @@ import uuid
 from typing import Any, Callable, List, Optional
 
 import rclpy
+from neclib import NECSTTimeoutError
 from necst_msgs.srv import AuthoritySrv
 from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.client import Client
 from rclpy.exceptions import InvalidHandle
 
 from ... import config, namespace, service, utils
@@ -106,13 +108,14 @@ class PrivilegedNode(ServerNode):
                 self.ping_srv.destroy()
             self.ping_srv = None
 
-    def _send_request(self, request: AuthoritySrv.Request) -> AuthoritySrv.Response:
-        default_response = AuthoritySrv.Response(privilege=False)
+    def _send_request(self, request: Any, client: Client) -> Any:
+        srv_name = client.srv_name
+        if not utils.wait_for_server_to_pick_up(client):
+            raise NECSTTimeoutError(
+                f"Server for {srv_name!r} not responding. Make sure it's spinning."
+            )
 
-        if not utils.wait_for_server_to_pick_up(self.request_cli):
-            return default_response
-
-        future = self.request_cli.call_async(request)
+        future = client.call_async(request)
         self.wait_until_future_complete(future, 2 * config.ros_service_timeout_sec)
         # NOTE: Using `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock. Reason unknown.
@@ -121,10 +124,9 @@ class PrivilegedNode(ServerNode):
 
         result = future.result()
         if result is None:
-            self.logger.error(
-                "Authority server not responding. Make sure it's running via `spin`."
+            raise NECSTTimeoutError(
+                f"Server for {srv_name!r} not responding. Make sure it's spinning."
             )
-            return default_response
         return result
 
     def get_privilege(self) -> bool:
@@ -141,7 +143,11 @@ class PrivilegedNode(ServerNode):
             return self.has_privilege
 
         request = AuthoritySrv.Request(requester=self.identity)
-        response = self._send_request(request)
+        try:
+            response = self._send_request(request, self.request_cli)
+        except NECSTTimeoutError:
+            self.logger.error("Failed to get privilege; server not responding.")
+            return
 
         self._set_privilege(response.privilege)
 
@@ -165,7 +171,13 @@ class PrivilegedNode(ServerNode):
             return self.has_privilege
 
         request = AuthoritySrv.Request(requester=self.identity, remove=True)
-        response = self._send_request(request)
+        try:
+            response = self._send_request(request, self.request_cli)
+        except NECSTTimeoutError:
+            self.logger.error(
+                "Released privilege without authorization; server not responding"
+            )
+            response = AuthoritySrv.Response(privilege=False)
 
         self._set_privilege(response.privilege)
 
