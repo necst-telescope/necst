@@ -38,6 +38,7 @@ class Observation(ABC):
                 self.run(*args, **kwargs)
             finally:
                 self.com.record("stop")
+                self.com.antenna("stop")
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.monotonic() - self.start) / 60
