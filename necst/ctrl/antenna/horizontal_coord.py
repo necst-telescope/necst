@@ -82,7 +82,7 @@ class HorizontalCoord(AlertHandlerNode):
         self._parse_cmd(request)
         self.result_queue.clear()
 
-        response.id = id(self.executing_generator.get())
+        response.id = str(id(self.executing_generator.get()))
         return response
 
     def _update_enc(self, msg: CoordMsg) -> None:
@@ -242,7 +242,7 @@ class HorizontalCoord(AlertHandlerNode):
                 controlled=False,
                 tight=False,
                 remote=True,
-                id=id(self.executing_generator.get()),
+                id=str(id(self.executing_generator.get())),
                 interrupt_ok=True,
                 time=time.time(),
             )
@@ -251,7 +251,7 @@ class HorizontalCoord(AlertHandlerNode):
                 controlled=status.controlled,
                 tight=status.tight,
                 remote=True,
-                id=id(self.executing_generator.get()),
+                id=str(id(self.executing_generator.get())),
                 interrupt_ok=status.infinite and (not status.waypoint),
                 time=status.start,
             )
