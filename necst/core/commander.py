@@ -326,7 +326,7 @@ class Commander(PrivilegedNode):
                     if ctrl.id == id:
                         experienced = True
                     finished = experienced and (ctrl.id != id)
-                    trail = (not ctrl.interrupt_ok) and (ctrl.id == id)
+                    trail = ctrl.interrupt_ok and (ctrl.id == id)
                     if checker.check(finished or trail):
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)
