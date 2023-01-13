@@ -204,9 +204,6 @@ class Commander(PrivilegedNode):
         elif CMD == "SCAN":
             scan_kwargs = dict(speed=float(speed), unit=unit)
             if name is not None:
-                self.logger.warning(
-                    "Gentle acceleration before this scan mode isn't implemented yet"
-                )
                 scan_kwargs.update(
                     name=name,
                     offset_lon=[float(start[0]), float(stop[0])],
@@ -214,9 +211,6 @@ class Commander(PrivilegedNode):
                     offset_frame=scan_frame,
                 )
             elif reference is not None:
-                self.logger.warning(
-                    "Gentle acceleration before this scan mode isn't implemented yet"
-                )
                 scan_kwargs.update(
                     lon=[float(reference[0])],
                     lat=[float(reference[1])],
