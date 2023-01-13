@@ -72,7 +72,7 @@ class OTF(Observation):
         )
         return [x.to_value("deg") for x in start], [x.to_value("deg") for x in stop]
 
-    def run(self, path: str) -> None:
+    def run(self, path: str, resume_scan: int = 1) -> None:
         p = ObsParams.from_file(path)
 
         hot_interval_in_time = p.load_interval.unit.is_equivalent("s")
@@ -87,8 +87,8 @@ class OTF(Observation):
             off_interval_in_time,
         )
 
-        for idx in range(int(p.n)):
-            self.logger.info(f"Starting {idx}th scan")
+        for idx in range(int(resume_scan) - 1, int(p.n)):
+            self.logger.info(f"Starting {idx + 1}th scan")
             if hot_observation_interval_manager.check(idx):
                 self.hot(p.integ_hot.to_value("s"), idx)
                 hot_observation_interval_manager.update(idx)
