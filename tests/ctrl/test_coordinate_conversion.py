@@ -37,7 +37,7 @@ class TestHorizontalCoord(TesterNode):
         raw_cmd = service.raw_coord.client(self.node)
         converted = topic.altaz_cmd.subscription(self.node, update)
 
-        with spinning([converter, self.node], n_thread=5):
+        with spinning([converter, self.node], n_thread=6):
             cmd = {"lat": [80.0], "unit": "deg", "frame": "fk5"}
             for lon in [45.0 * i for i in range(8)]:
                 if subscribed:
