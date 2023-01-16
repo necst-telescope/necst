@@ -84,7 +84,7 @@ class Observation(ABC):
         ...
 
     def hot(self, integ_time: Union[int, float], id: Any) -> None:
-        self.logger.debug("Starting HOT...")
+        self.logger.info("Starting HOT...")
         self.com.chopper("insert")
         self.com.metadata("set", position="HOT", id=str(id))
         time.sleep(integ_time)
@@ -93,7 +93,7 @@ class Observation(ABC):
         self.logger.debug("Complete HOT")
 
     def sky(self, integ_time: Union[int, float], id: Any) -> None:
-        self.logger.debug("Starting SKY...")
+        self.logger.info("Starting SKY...")
         self.com.chopper("remove")
         self.com.metadata("set", position="SKY", id=str(id))
         time.sleep(integ_time)
@@ -101,7 +101,7 @@ class Observation(ABC):
         self.logger.debug("Complete SKY")
 
     def off(self, integ_time: Union[int, float], id: Any) -> None:
-        self.logger.debug("Starting OFF...")
+        self.logger.info("Starting OFF...")
         self.com.chopper("remove")
         self.com.metadata("set", position="OFF", id=str(id))
         time.sleep(integ_time)
@@ -109,7 +109,7 @@ class Observation(ABC):
         self.logger.debug("Complete OFF")
 
     def on(self, integ_time: Union[int, float], id: Any) -> None:
-        self.logger.debug("Starting ON...")
+        self.logger.info("Starting ON...")
         self.com.chopper("remove")
         self.com.metadata("set", position="ON", id=str(id))
         time.sleep(integ_time)
