@@ -58,7 +58,7 @@ if __name__ == "__main__":
         unit="deg",
         speed=args.speed,
         separation=args.separation,
-        frame="altaz",
+        offset_frame="altaz",
         method=args.points,
         target=args.target,
     )
