@@ -99,7 +99,6 @@ class OTF(Observation):
                 off_observation_interval_manager.update(idx)
 
             start, stop = self.get_scan_coord(idx, p)
-            self.com.antenna("stop")  # Cut current tight (tracking) control
             self.com.metadata("set", position="ON", id=idx, intercept=False)
             self.com.antenna(
                 "scan",

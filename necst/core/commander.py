@@ -371,6 +371,7 @@ class Commander(PrivilegedNode):
         CMD = cmd.upper()
         if CMD == "SET":
             if not intercept:
+                self.antenna("stop")
                 while self.get_message("antenna_control").tight:
                     pytime.sleep(0.05)
             time = pytime.time() if time is None else time
