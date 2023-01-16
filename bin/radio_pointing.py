@@ -30,7 +30,7 @@ if __name__ == "__main__":
         help="Integration time for the R-sky obs.",
         default=2,
     )
-    p.add_argument("--speed", type=float, help="Scan speed in [deg/s].", default=1 / 15)
+    p.add_argument("--speed", type=float, help="Scan speed in [deg/s].", default=1 / 30)
     p.add_argument(
         "-s",
         "--separation",

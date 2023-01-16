@@ -14,7 +14,7 @@ class RadioPointing(Observation):
         method: int = 9,
         offset_frame: str = "altaz",
         separation: float = 1 / 60,
-        speed: float = 1 / 15,
+        speed: float = 1 / 30,
         unit: str = "deg",
         n_iter: int = 0,
         integ_time: Union[int, float] = 5,
@@ -38,7 +38,7 @@ class RadioPointing(Observation):
 
         iterate_counter = range(n_iter) if n_iter > 0 else count()
 
-        if method <= 0:
+        if method > 0:
             for idx in iterate_counter:
                 self.logger.info(f"Starting {idx}th sequence")
                 self.discrete(
