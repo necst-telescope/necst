@@ -76,14 +76,14 @@ class RadioPointing(Observation):
 
     def scan(self, id: Any, width: float, antenna_scan_kwargs) -> None:
         self.logger.info("Starting X-scan")
-        self.com.metadata("set", position="SKY", id=f"{id}-x", delay=True)
+        self.com.metadata("set", position="SKY", id=f"{id}-x", intercept=False)
         self.com.antenna(
             "scan", start=(-1 * width, 0), stop=(width, 0), **antenna_scan_kwargs
         )
         self.com.metadata("set", position="", id="")
 
         self.logger.info("Starting Y-scan")
-        self.com.metadata("set", position="SKY", id=f"{id}-y", delay=True)
+        self.com.metadata("set", position="SKY", id=f"{id}-y", intercept=False)
         self.com.antenna(
             "scan", start=(0, -1 * width), stop=(0, width), **antenna_scan_kwargs
         )
