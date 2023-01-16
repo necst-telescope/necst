@@ -24,7 +24,7 @@ class RadioPointing(Observation):
 
         antenna_point_kwargs = dict(wait=True, unit=unit)
         antenna_scan_kwargs = dict(
-            frame=offset_frame, unit=unit, speed=speed, wait=True
+            scan_frame=offset_frame, unit=unit, speed=speed, wait=True
         )
         if isinstance(target, str):
             antenna_point_kwargs.update(name=target)
