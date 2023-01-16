@@ -127,10 +127,9 @@ class SpectralData(DeviceNode):
         topic.spectra_rec.subscription(self, self.change_record_frequency)
 
     def change_record_frequency(self, msg: Sampling) -> None:
-        self.record_condition = ConditionChecker(msg.nth or 1, True)
-        self.logger.info(
-            f"Record frequency changed; every {msg.nth or 1}th data will be saved"
-        )
+        nth = max(msg.nth, 1)
+        self.record_condition = ConditionChecker(nth, True)
+        self.logger.info(f"Record frequency changed; every {nth}th data will be saved")
 
     def update_control_status(self, msg: ControlStatus) -> None:
         if msg.tight:
