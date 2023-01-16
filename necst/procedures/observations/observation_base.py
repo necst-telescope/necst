@@ -92,7 +92,9 @@ class Observation(ABC):
             enc = self.com.get_message("encoder")
             params = PointingError.from_file(config.antenna_pointing_parameter_path)
             az, el = params.apparent2refracted(az=enc.lon, el=enc.lat, unit="deg")
-            self.com.antenna("point", target=(az.value, el.value, "altaz"))
+            self.com.antenna(
+                "point", target=(az.value, el.value, "altaz"), unit="deg", wait=False
+            )
 
         self.logger.info("Starting HOT...")
         self.com.chopper("insert")
