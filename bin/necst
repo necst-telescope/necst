@@ -3,16 +3,31 @@ __commands=$(for __fn in $(ls $(dirname $0)/*.py); do echo "  $(basename $__fn .
 __help="\033[4mNECST; NEw Control System for Telescope\033[0m (version $__version)
 
 \033[1mUSAGE\033[0m
-  \033[4mnecst\033[0m <observation> [<options>]
+  \033[4mnecst\033[0m [-h] <observation> [<options>]
 
 \033[1mARGUMENTS\033[0m
   <observation>\t\tName of observation to run, see below for the available ones
-  <options>\t\tObservation specific options, run \033[1mnecst <observation> -h\033[0m for \
-more
+  <options>\t\tObservation specific options, run \033[1mnecst <observation> -h\033[0m \
+for more
+
+\033[1mOPTIONS\033[0m
+  -h (--help)\t\tShow this help message
 
 \033[1mAVAILABLE OBSERVATIONS\033[0m
 $__commands
 "
+
+function __show_help() {
+    echo -r $__usage
+}
+
+while getopts 'hu:' option
+do
+    case "$option" in
+        h)  echo -e "$__help"
+            exit 0 ;;
+    esac
+done
 
 if [ -z $1 ]; then
     echo -e "$__help"
