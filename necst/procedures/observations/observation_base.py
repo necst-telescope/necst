@@ -8,7 +8,9 @@ from typing import Any, Generator, Optional, Union, final
 
 import rclpy
 from neclib import NECSTAuthorityError, get_logger
+from neclib.parameters import PointingError
 
+from ... import config
 from ...core import Commander
 
 
@@ -84,6 +86,14 @@ class Observation(ABC):
         ...
 
     def hot(self, integ_time: Union[int, float], id: Any) -> None:
+        # TODO: Remove this workaround, by attaching control section ID to spectra
+        # metadata command
+        if not self.com.get_message("antenna_control").tight:
+            enc = self.com.get_message("encoder")
+            params = PointingError.from_file(config.antenna_pointing_parameter_path)
+            az, el = params.apparent2refracted(az=enc.lon, el=enc.lat, unit="deg")
+            self.com.antenna("point", target=(az.value, el.value, "altaz"))
+
         self.logger.info("Starting HOT...")
         self.com.chopper("insert")
         self.com.metadata("set", position="HOT", id=str(id))
