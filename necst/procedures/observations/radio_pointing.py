@@ -28,8 +28,8 @@ class RadioPointing(Observation):
             antenna_scan_kwargs.update(reference=on)
 
         self.track_off_point(p)
-        self.hot(p.integ_hot, -1)
-        self.off(p.integ_off, id=-1)
+        self.hot(p.integ_hot.to_value("s"), -1)
+        self.off(p.integ_off.to_value("s"), id=-1)
         # TODO: Run every time interval is met
 
         iterate_counter = range(p.n) if p.n > 0 else count()
