@@ -87,7 +87,7 @@ class Observation(ABC):
 
     def hot(self, integ_time: Union[int, float], id: Any) -> None:
         # TODO: Remove this workaround, by attaching control section ID to spectra
-        # metadata command
+        # metadata command; if it's "", don't require tight control
         if not self.com.get_message("antenna_control").tight:
             enc = self.com.get_message("encoder")
             params = PointingError.from_file(config.antenna_pointing_parameter_path)
