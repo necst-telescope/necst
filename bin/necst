@@ -17,10 +17,6 @@ for more
 $__commands
 "
 
-function __show_help() {
-    echo -r $__usage
-}
-
 while getopts 'hu:' option
 do
     case "$option" in
