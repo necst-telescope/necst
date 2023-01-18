@@ -7,7 +7,7 @@ __help="\033[4mNECST; NEw Control System for Telescope\033[0m (version $__versio
 
 \033[1mARGUMENTS\033[0m
   <observation>\t\tName of observation to run, see below for the available ones
-  <options>\t\tObservation specific options, run \033[1mnecst <observation> -h\033[0m \
+  <options>\t\tObservation specific options, run \033[1;32mnecst <observation> -h\033[0m \
 for more
 
 \033[1mOPTIONS\033[0m
