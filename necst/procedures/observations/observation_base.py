@@ -127,3 +127,7 @@ class Observation(ABC):
         time.sleep(integ_time)
         self.com.metadata("set", position="", id=str(id))
         self.logger.debug("Complete ON")
+
+    def valid_frame(self, frame: str) -> str:
+        conversion_table = {"j2000": "fk5", "b1950": "fk4"}
+        return conversion_table.get(frame.lower(), frame)

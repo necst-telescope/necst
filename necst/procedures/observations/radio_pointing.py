@@ -19,12 +19,19 @@ class RadioPointing(Observation):
             raise ValueError("Invalid pointing method")
 
         antenna_scan_kwargs = dict(
-            scan_frame=p.delta_coord, unit="deg", speed=p.speed, wait=True
+            scan_frame=self.valid_frame(p.delta_coord),
+            unit="deg",
+            speed=p.speed,
+            wait=True,
         )
         if any(p[x] is None for x in ["lambda_on", "beta_on"]):
             antenna_scan_kwargs.update(name=p.target)
         else:
-            on = (p.lambda_on.to_value("deg"), p.beta_on.to_value("deg"), p.coord_sys)
+            on = (
+                p.lambda_on.to_value("deg"),
+                p.beta_on.to_value("deg"),
+                self.valid_frame(p.coord_sys),
+            )
             antenna_scan_kwargs.update(reference=on)
 
         self.track_off_point(p)
@@ -57,7 +64,10 @@ class RadioPointing(Observation):
         offsets = self.get_offset(spec.method, separation)
         for i, (offset_lon, offset_lat) in enumerate(offsets):
             self.logger.info(f"Starting integration at {i}th point")
-            self.track_on_point(spec, offset=(offset_lon, offset_lat, spec.delta_coord))
+            self.track_on_point(
+                spec,
+                offset=(offset_lon, offset_lat, self.valid_frame(spec.delta_coord)),
+            )
             self.sky(spec.integ_on.to_value("s"), f"{id}-{i}")
 
     def scan(self, id: Any, width: Tuple[float, float], antenna_scan_kwargs) -> None:
@@ -92,13 +102,13 @@ class RadioPointing(Observation):
             offset = (
                 spec.delta_lambda.to_value("deg"),
                 spec.delta_beta.to_value("deg"),
-                spec.delta_coord,
+                self.valid_frame(spec.delta_coord),
             )
             self.track_on_point(spec, offset=offset)
         off = (
             spec.lambda_off.to_value("deg"),
             spec.beta_off.to_value("deg"),
-            spec.coord_sys,
+            self.valid_frame(spec.coord_sys),
         )
         kwargs = dict(wait=True, unit="deg", target=off)
         self.com.antenna("point", **kwargs)
@@ -113,7 +123,7 @@ class RadioPointing(Observation):
             on = (
                 spec.lambda_on.to_value("deg"),
                 spec.beta_on.to_value("deg"),
-                spec.coord_sys,
+                self.valid_frame(spec.coord_sys),
             )
             kwargs.update(target=on)
         self.com.antenna("point", offset=offset, **kwargs)
