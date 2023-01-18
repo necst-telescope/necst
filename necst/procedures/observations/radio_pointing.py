@@ -68,20 +68,20 @@ class RadioPointing(Observation):
                 spec,
                 offset=(offset_lon, offset_lat, self.valid_frame(spec.delta_coord)),
             )
-            self.sky(spec.integ_on.to_value("s"), f"{id}-{i}")
+            self.on(spec.integ_on.to_value("s"), f"{id}-{i}")
 
     def scan(self, id: Any, width: Tuple[float, float], antenna_scan_kwargs) -> None:
         width_x, width_y = width
 
         self.logger.info("Starting X-scan")
-        self.com.metadata("set", position="SKY", id=f"{id}-x", intercept=False)
+        self.com.metadata("set", position="ON", id=f"{id}-x", intercept=False)
         self.com.antenna(
             "scan", start=(-1 * width_x, 0), stop=(width_x, 0), **antenna_scan_kwargs
         )
         self.com.metadata("set", position="", id="")
 
         self.logger.info("Starting Y-scan")
-        self.com.metadata("set", position="SKY", id=f"{id}-y", intercept=False)
+        self.com.metadata("set", position="ON", id=f"{id}-y", intercept=False)
         self.com.antenna(
             "scan", start=(0, -1 * width_y), stop=(0, width_y), **antenna_scan_kwargs
         )
