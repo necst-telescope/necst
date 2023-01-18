@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.procedures.observations.radio_pointing &#8212; necst 0.4.1 documentation</title>
+    <title>necst.procedures.observations.radio_pointing &#8212; necst 0.5.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="necst.procedures.observations.rsky" href="necst.procedures.observations.rsky.html" />
-    <link rel="prev" title="necst.procedures.observations.observation_base" href="necst.procedures.observations.observation_base.html" />
+    <link rel="prev" title="necst.procedures.observations.otf" href="necst.procedures.observations.otf.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.4.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -260,6 +260,11 @@
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.antenna.tracking_status.html">
+       necst.ctrl.antenna.tracking_status
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.ctrl.antenna.weather_station.html">
        necst.ctrl.antenna.weather_station
       </a>
@@ -308,6 +313,11 @@
      <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.observation_base.html">
        necst.procedures.observations.observation_base
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.otf.html">
+       necst.procedures.observations.otf
       </a>
      </li>
      <li class="toctree-l3 current active">
@@ -454,16 +464,41 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.procedures.observations.radio_pointing.RadioPointing.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'altaz'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.016666666666666666</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'deg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integ_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/radio_pointing.html#RadioPointing.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.radio_pointing.RadioPointing.run" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/radio_pointing.html#RadioPointing.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.radio_pointing.RadioPointing.run" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>PathLike</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.radio_pointing.RadioPointing.discrete">
+<span class="sig-name descname"><span class="pre">discrete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/radio_pointing.html#RadioPointing.discrete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.radio_pointing.RadioPointing.discrete" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>str</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>method</strong> (<em>int</em>) – </p></li>
-<li><p><strong>frame</strong> (<em>str</em>) – </p></li>
-<li><p><strong>separation</strong> (<em>float</em>) – </p></li>
-<li><p><strong>unit</strong> (<em>str</em>) – </p></li>
-<li><p><strong>integ_time</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Any</em>) – </p></li>
+<li><p><strong>spec</strong> (<em>ObservationSpec</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.radio_pointing.RadioPointing.scan">
+<span class="sig-name descname"><span class="pre">scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_scan_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/radio_pointing.html#RadioPointing.scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.radio_pointing.RadioPointing.scan" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> (<em>Any</em>) – </p></li>
+<li><p><strong>width</strong> (<em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -479,11 +514,40 @@
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>int</em>) – </p></li>
-<li><p><strong>separation</strong> (<em>float</em>) – </p></li>
+<li><p><strong>separation</strong> (<em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><em>Generator</em>[<em>Tuple</em>[float, float], None, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.radio_pointing.RadioPointing.track_off_point">
+<span class="sig-name descname"><span class="pre">track_off_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/radio_pointing.html#RadioPointing.track_off_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.radio_pointing.RadioPointing.track_off_point" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>spec</strong> (<em>ObservationSpec</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.radio_pointing.RadioPointing.track_on_point">
+<span class="sig-name descname"><span class="pre">track_on_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/radio_pointing.html#RadioPointing.track_on_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.radio_pointing.RadioPointing.track_on_point" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spec</strong> (<em>ObservationSpec</em>) – </p></li>
+<li><p><strong>offset</strong> (<em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -498,11 +562,11 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.procedures.observations.observation_base.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.procedures.observations.otf.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.procedures.observations.observation_base</p>
+            <p class="prev-next-title">necst.procedures.observations.otf</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="necst.procedures.observations.rsky.html" title="next page">

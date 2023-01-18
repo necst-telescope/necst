@@ -1,0 +1,7 @@
+necst.procedures.observations.otf
+=================================
+
+.. automodule:: necst.procedures.observations.otf
+   :members:
+   :undoc-members:
+   :show-inheritance:

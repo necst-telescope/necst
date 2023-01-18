@@ -28,6 +28,7 @@ Submodules
    necst.ctrl.antenna.motor
    necst.ctrl.antenna.pid_controller
    necst.ctrl.antenna.sim_devices
+   necst.ctrl.antenna.tracking_status
    necst.ctrl.antenna.weather_station
 
 .. toctree::
@@ -40,4 +41,5 @@ Submodules
    necst.ctrl.antenna.motor
    necst.ctrl.antenna.pid_controller
    necst.ctrl.antenna.sim_devices
+   necst.ctrl.antenna.tracking_status
    necst.ctrl.antenna.weather_station
