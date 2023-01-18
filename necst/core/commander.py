@@ -3,20 +3,19 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Literal, Optional, Tuple, Union
 
-from neclib.coordinates import standby_position
-from neclib.data import LinearInterp
 from neclib.utils import ConditionChecker, ParameterList, read_file
 from necst_msgs.msg import (
     AlertMsg,
     BiasMsg,
+    Boolean,
     ChopperMsg,
-    CoordCmdMsg,
     DeviceReading,
     LocalSignal,
     PIDMsg,
+    Sampling,
     Spectral,
 )
-from necst_msgs.srv import File, RecordSrv
+from necst_msgs.srv import CoordinateCommand, File, RecordSrv
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -39,7 +38,7 @@ class Commander(PrivilegedNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.__publisher: Dict[str, Topic] = {
-            "coord": topic.raw_coord,
+            "cmd_trans": topic.antenna_cmd_transition,
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
             "chopper": topic.chopper_cmd,
@@ -48,14 +47,14 @@ class Commander(PrivilegedNode):
             "sis_bias": topic.sis_bias_cmd,
             "lo_signal": topic.lo_signal_cmd,
             "attenuator": topic.attenuator_cmd,
+            "spectra_smpl": topic.spectra_rec,
         }
         self.publisher: Dict[str, Publisher] = {}
 
-        _cfg_ant = config.antenna_command
-        _altaz_offset = int(_cfg_ant.frequency * _cfg_ant.offset_sec + 1)
         self.__subscription: Dict[str, _SubscriptionCfg] = {
+            "antenna_track": _SubscriptionCfg(topic.antenna_tracking, 1),
             "encoder": _SubscriptionCfg(topic.antenna_encoder, 1),
-            "altaz": _SubscriptionCfg(topic.altaz_cmd, _altaz_offset),
+            "altaz": _SubscriptionCfg(topic.altaz_cmd, 1),
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
@@ -68,11 +67,13 @@ class Commander(PrivilegedNode):
         self.client = {
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
+            "raw_coord": service.raw_coord.client(self),
         }
-        self.__check_topic()
 
         self.parameters: Dict[str, ParameterList] = {}
         self.create_timer(1, self.__check_topic)
+
+        self.__check_topic()
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -106,7 +107,6 @@ class Commander(PrivilegedNode):
         *,
         time: Optional[Union[int, float]] = None,
         timeout_sec: Optional[Union[int, float]] = None,
-        interp: bool = False,
     ) -> Dict[str, Any]:
         if time is None:
             time = pytime.time()
@@ -127,12 +127,8 @@ class Commander(PrivilegedNode):
                 if "time" not in msg_fields:
                     message[k] = msgs[-1]
 
-                if interp:
-                    interpolate = LinearInterp("time", msg_fields)
-                    message[k] = interpolate(msg_type(time=time), msgs)
-                else:
-                    nearest, *_ = sorted(msgs, key=lambda x: abs(x.time - time))
-                    message[k] = nearest
+                nearest, *_ = sorted(msgs, key=lambda x: abs(x.time - time))
+                message[k] = nearest
             return message[key] if set(message.keys()) == {key} else message
 
         raise NECSTTimeoutError(f"No message has been received on topic {key!r}")
@@ -202,18 +198,13 @@ class Commander(PrivilegedNode):
                     offset_frame=offset[2],
                     unit=unit,
                 )
-            msg = CoordCmdMsg(**kwargs)
-            self.publisher["coord"].publish(msg)
+            req = CoordinateCommand.Request(**kwargs)
+            _ = self._send_request(req, self.client["raw_coord"])
             return self.wait("antenna") if wait else None
 
         elif CMD == "SCAN":
-            point_kwargs = dict(wait=True)
             scan_kwargs = dict(speed=float(speed), unit=unit)
             if name is not None:
-                self.logger.warning(
-                    "Gentle acceleration before this scan mode isn't implemented yet"
-                )
-                point_kwargs.update(name=name)
                 scan_kwargs.update(
                     name=name,
                     offset_lon=[float(start[0]), float(stop[0])],
@@ -221,10 +212,6 @@ class Commander(PrivilegedNode):
                     offset_frame=scan_frame,
                 )
             elif reference is not None:
-                self.logger.warning(
-                    "Gentle acceleration before this scan mode isn't implemented yet"
-                )
-                point_kwargs.update(target=reference, unit=unit)
                 scan_kwargs.update(
                     lon=[float(reference[0])],
                     lat=[float(reference[1])],
@@ -234,29 +221,22 @@ class Commander(PrivilegedNode):
                     offset_frame=scan_frame,
                 )
             else:
-                standby_lon, standby_lat = standby_position(
-                    start=start, end=stop, unit=unit, margin=config.antenna_scan_margin
-                )
-                point_kwargs.update(
-                    target=(standby_lon.value, standby_lat.value, scan_frame),
-                    unit=unit,
-                )
                 scan_kwargs.update(
                     lon=[float(start[0]), float(stop[0])],
                     lat=[float(start[1]), float(stop[1])],
                     frame=scan_frame,
                 )
-            self.antenna("point", **point_kwargs)
 
-            msg = CoordCmdMsg(**scan_kwargs)
-            self.publisher["coord"].publish(msg)
-            return self.wait("antenna", mode="control") if wait else None
+            req = CoordinateCommand.Request(**scan_kwargs)
+            # self.publisher["coord"].publish(msg)
+            res = self._send_request(req, self.client["raw_coord"])
+            self.wait("antenna")
+            self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
+            return self.wait("antenna", mode="control", id=res.id) if wait else None
 
         elif CMD == "ERROR":
             now = pytime.time()
-            enc = self.get_message("encoder", time=now, timeout_sec=0.01)
-            cmd = self.get_message("altaz", time=now, timeout_sec=0.01, interp=True)
-            return enc.lon - cmd.lon, enc.lat - cmd.lat
+            return self.get_message("antenna_track", time=now, timeout_sec=0.01)
 
         elif CMD in ["?"]:
             return self.get_message("encoder", timeout_sec=10)
@@ -289,6 +269,7 @@ class Commander(PrivilegedNode):
         /,
         *,
         mode: Literal["control", "error"] = "error",
+        id: Optional[str] = None,
         timeout_sec: Optional[Union[int, float]] = None,
     ) -> None:
         """Wait until the motion has been converged."""
@@ -297,7 +278,6 @@ class Commander(PrivilegedNode):
         if TARGET == "ANTENNA":
             ERROR_GETTER = self.antenna
             CTRL_TOPIC = "antenna_control"
-            THRESHOLD = config.antenna_pointing_accuracy.to_value("deg")
             WAIT_DURATION = config.antenna_command_offset_sec
         elif TARGET == "DOME":
             raise NotImplementedError(
@@ -315,37 +295,36 @@ class Commander(PrivilegedNode):
         if MODE == "ERROR":
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 try:
-                    error_az, error_el = ERROR_GETTER("error")
-                    error = (error_az**2 + error_el**2) ** 0.5
+                    error = ERROR_GETTER("error")
                     self.logger.debug(
-                        f"Error = {error:9.6f} deg"
-                        f" {'[OK]' if error < THRESHOLD else '[NG]'}",
-                        throttle_duration_sec=0.1,
+                        f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
+                        throttle_duration_sec=0.3,
                     )
-                    if checker.check(error < THRESHOLD):
+                    if checker.check(error.ok):
                         self.logger.debug("Tracking OK")
                         return
                 except NECSTTimeoutError:
                     pass
                 pytime.sleep(0.05)
         elif MODE == "CONTROL":
+            experienced = False
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 now = pytime.time()
                 try:
-                    error_az, error_el = ERROR_GETTER("error")
-                    error = (error_az**2 + error_el**2) ** 0.5
+                    error = ERROR_GETTER("error")
                     self.logger.debug(
-                        f"Error = {error:9.6f} deg"
-                        f" {'[OK]' if error < THRESHOLD else '[NG]'}",
-                        throttle_duration_sec=0.1,
+                        f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
+                        throttle_duration_sec=0.3,
                     )
 
-                    control_status = self.get_message(
-                        CTRL_TOPIC, time=now, timeout_sec=0.01
-                    )
-                    if control_status.time > now:
-                        pytime.sleep(control_status.time - now)
-                    if checker.check(not control_status.controlled):
+                    ctrl = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
+                    if ctrl.id == id:
+                        experienced = True
+                    finished = experienced and (ctrl.id != id)
+                    appendix = ctrl.interrupt_ok and (ctrl.id == id)
+                    if checker.check(finished or appendix):
+                        if ctrl.time > now:
+                            pytime.sleep(ctrl.time - now)
                         return
                 except NECSTTimeoutError:
                     pass
@@ -387,9 +366,14 @@ class Commander(PrivilegedNode):
         position: Optional[str] = None,
         id: Optional[str] = None,
         time: Optional[float] = None,
+        intercept: bool = True,
     ) -> None:
         CMD = cmd.upper()
         if CMD == "SET":
+            if not intercept:
+                self.antenna("stop")
+                while self.get_message("antenna_control").tight:
+                    pytime.sleep(0.05)
             time = pytime.time() if time is None else time
             msg = Spectral(position=position, id=str(id), time=time)
             return self.publisher["spectra_meta"].publish(msg)
@@ -418,36 +402,37 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "?"],
+        cmd: Literal["start", "stop", "file", "reduce", "?"],
         /,
         *,
         name: str = "",
         content: Optional[str] = None,
+        nth: Optional[int] = None,
     ) -> None:
         CMD = cmd.upper()
         if CMD == "START":
             recording = False
             while not recording:
                 req = RecordSrv.Request(name=name.lstrip("/"), stop=False)
-                future = self.client["record_path"].call_async(req)
-                self.wait_until_future_complete(future)
-                recording = future.result().recording
+                res = self._send_request(req, self.client["record_path"])
+                recording = res.recording
             self.logger.info(f"Recording at {name!r}")
             return
         elif CMD == "STOP":
             recording = True
             while recording:
                 req = RecordSrv.Request(name=name, stop=True)
-                future = self.client["record_path"].call_async(req)
-                self.wait_until_future_complete(future)
-                recording = future.result().recording
+                res = self._send_request(req, self.client["record_path"])
+                recording = res.recording
             return
         elif CMD == "FILE":
             if content is None:
                 content = read_file(name)
             req = File.Request(data=str(content), path=name)
-            future = self.client["record_file"].call_async(req)
-            return self.wait_until_future_complete(future)
+            return self._send_request(req, self.client["record_file"])
+        elif CMD == "REDUCE":
+            msg = Sampling(nth=nth)
+            return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:

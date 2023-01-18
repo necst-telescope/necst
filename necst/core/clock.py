@@ -36,5 +36,5 @@ class ObserverInfo(Node):
             unit=self.encoder_reading.unit,
             time=calc_time,
         )
-        msg = Clock(time=calc_time, lst=lst, v_obs=v_obs)
+        msg = Clock(time=calc_time, lst=float(lst.hour), v_obs=v_obs.to_value("km/s"))
         self.pub.publish(msg)

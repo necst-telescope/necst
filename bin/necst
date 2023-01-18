@@ -1,0 +1,36 @@
+__version=$(echo $(ros2 pkg xml necst) | sed -ze s/.*\<version\>// -e s/\<.*//)
+__commands=$(for __fn in $(ls $(dirname $0)/*.py); do echo "  $(basename $__fn .py)"; done)
+__help="\033[4mNECST; NEw Control System for Telescope\033[0m (version $__version)
+
+\033[1mUSAGE\033[0m
+  \033[4mnecst\033[0m [-h] <observation> [<options>]
+
+\033[1mARGUMENTS\033[0m
+  <observation>\t\tName of observation to run, see below for the available ones
+  <options>\t\tObservation specific options, run \033[1;32mnecst <observation> -h\033[0m \
+for more
+
+\033[1mOPTIONS\033[0m
+  -h (--help)\t\tShow this help message
+
+\033[1mAVAILABLE OBSERVATIONS\033[0m
+$__commands
+"
+
+while getopts 'hu:' option
+do
+    case "$option" in
+        h)  echo -e "$__help"
+            exit 0 ;;
+    esac
+done
+
+if [ -z $1 ]; then
+    echo -e "$__help"
+    exit 0
+fi
+
+__script=$(dirname $0)/$(echo $1 | sed -e s/\.py$// -e 's#.*/##' -e s/$/.py/)
+shift
+__args="$*"
+python3 ${__script} ${__args}

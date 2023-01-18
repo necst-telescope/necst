@@ -1,26 +1,26 @@
 import rclpy
-from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
 
 from ..core import Authorizer
 
 
-def configure_server() -> Node:
-    node = Authorizer()
-    return node
+def configure_executor() -> MultiThreadedExecutor:
+    executor = MultiThreadedExecutor()
+    nodes = [Authorizer()]
+    [executor.add_node(n) for n in nodes]
+    return executor
 
 
 def main(args=None) -> None:
     rclpy.init(args=args)
 
-    node = configure_server()
-    executor = rclpy.get_global_executor()
+    executor = configure_executor()
 
     try:
         executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
         executor.shutdown()
         _ = [n.destroy_node() for n in executor.get_nodes()]
         rclpy.try_shutdown()

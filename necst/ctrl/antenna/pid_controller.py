@@ -17,7 +17,7 @@ class AntennaPIDController(AlertHandlerNode):
     NodeName = "controller"
     Namespace = namespace.antenna
 
-    CommandOffsetDuration: float = 0.01
+    CommandOffsetDuration: float = 0.075
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
@@ -51,7 +51,7 @@ class AntennaPIDController(AlertHandlerNode):
         topic.antenna_encoder.subscription(self, self.update_encoder_reading)
         topic.pid_param.subscription(self, self.change_pid_param)
 
-        self.enc = ParameterList.new(2, CoordMsg)
+        self.enc = ParameterList.new(5, CoordMsg)
         self.command_list: List[CoordMsg] = []
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
@@ -74,7 +74,7 @@ class AntennaPIDController(AlertHandlerNode):
 
     def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
         """Perform linear interpolation on encoder reading."""
-        _, newer = self.enc
+        *_, newer = self.enc
         if any(not isinstance(p.time, float) for p in self.enc) or (
             newer.time < time - 1
         ):
@@ -153,6 +153,20 @@ class AntennaPIDController(AlertHandlerNode):
         try:
             _az_speed = self.controller["az"].get_speed(cmd.lon, enc.lon, time=cmd.time)
             _el_speed = self.controller["el"].get_speed(cmd.lat, enc.lat, time=cmd.time)
+
+            self.logger.debug(
+                f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
+                f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
+                throttle_duration_sec=0.5,
+            )
+            self.logger.debug(
+                f"El. Error={self.controller['el'].error[-1]:9.6f}deg "
+                f"V_target={self.controller['el'].target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
+                throttle_duration_sec=0.5,
+            )
+
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd.time)

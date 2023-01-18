@@ -5,7 +5,12 @@ from necst_msgs.msg import ChopperMsg
 
 from necst import topic
 from necst.core import Authorizer, RecorderController
-from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
+from necst.ctrl import (
+    AntennaDeviceSimulator,
+    AntennaPIDController,
+    AntennaTrackingStatus,
+    HorizontalCoord,
+)
 from necst.procedures import Skydip
 from necst.utils import spinning
 
@@ -27,6 +32,7 @@ class TestSkydip(TesterNode):
         horizontal = HorizontalCoord()
         pid = AntennaPIDController()
         recorder = RecorderController()
+        tracking = AntennaTrackingStatus()
         recorder.recorder.record_root = record_root
 
         pub = topic.chopper_status.publisher(self.node)
@@ -35,8 +41,8 @@ class TestSkydip(TesterNode):
             pub.publish(msg)
 
         sub = topic.chopper_cmd.subscription(self.node, update)
-        with spinning([self.node, dev, horizontal, pid]):
+        with spinning([self.node, dev, horizontal, pid, tracking, auth], n_thread=5):
             Skydip(2)
 
-        destroy([auth, dev, horizontal, pid, recorder])
+        destroy([auth, dev, horizontal, pid, recorder, tracking])
         destroy([sub, pub], node=self.node)

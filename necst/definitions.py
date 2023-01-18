@@ -112,23 +112,25 @@ class topic:
     from necst_msgs.msg import (
         AlertMsg,
         BiasMsg,
+        Boolean,
         ChopperMsg,
         Clock,
         ControlStatus,
-        CoordCmdMsg,
         CoordMsg,
         DeviceReading,
         LocalSignal,
         PIDMsg,
+        Sampling,
         Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
+        TrackingStatus,
         WeatherMsg,
     )
 
     from .utils import Topic
 
-    raw_coord = Topic(CoordCmdMsg, "raw_coord", qos.reliable, namespace.antenna)
+    # raw_coord = Topic(CoordCmdMsg, "raw_coord", qos.reliable, namespace.antenna)
     antenna_encoder = Topic(CoordMsg, "encoder", qos.realtime, namespace.antenna)
     antenna_speed_cmd = Topic(
         TimedAzElFloat64, "speed", qos.realtime, namespace.antenna
@@ -175,10 +177,17 @@ class topic:
     thermometer = Topic(DeviceReading, "thermometer", qos.realtime, namespace.rx, True)
     attenuator = Topic(DeviceReading, "attenuator", qos.realtime, namespace.rx, True)
     attenuator_cmd = Topic(DeviceReading, "attenuator_cmd", qos.reliable, namespace.rx)
+    antenna_tracking = Topic(
+        TrackingStatus, "tracking_status", qos.realtime, namespace.antenna
+    )
+    antenna_cmd_transition = Topic(
+        Boolean, "cmd_trans", qos.reliable, namespace.antenna
+    )
+    spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
 
 
 class service:
-    from necst_msgs.srv import AuthoritySrv, File, RecordSrv
+    from necst_msgs.srv import AuthoritySrv, CoordinateCommand, File, RecordSrv
     from std_srvs.srv import Empty
 
     from .utils import Service
@@ -187,3 +196,4 @@ class service:
     privilege_ping = Service(Empty, "ping", namespace.auth)
     record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
+    raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)

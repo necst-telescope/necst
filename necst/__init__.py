@@ -30,7 +30,7 @@ if os.environ.get("NECST_DEBUG_MODE", None):
     def __del__(self: Future) -> None:
         if self._exception is not None and not self._exception_fetched:
             exc = traceback.format_exception(self._exception)
-            exc.insert(0, f"[{time.time()}]\n")
+            exc.insert(0, f"[Error at {time.time()}]\n")
             print("".join(exc), file=sys.stderr)
 
     def get_logger(self: Node):

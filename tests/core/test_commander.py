@@ -1,10 +1,16 @@
 import time
 
-from necst_msgs.msg import ChopperMsg, CoordCmdMsg, CoordMsg
+from necst_msgs.msg import ChopperMsg, CoordMsg
+from necst_msgs.srv import CoordinateCommand
 
-from necst import topic
+from necst import service, topic
 from necst.core import Authorizer, Commander
-from necst.ctrl import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
+from necst.ctrl import (
+    AntennaDeviceSimulator,
+    AntennaPIDController,
+    AntennaTrackingStatus,
+    HorizontalCoord,
+)
 from necst.utils import spinning
 
 from ..conftest import TesterNode, destroy
@@ -26,6 +32,7 @@ class TestCommander(TesterNode):
 
         enc = topic.antenna_encoder.publisher(self.node)
         cmd = topic.altaz_cmd.publisher(self.node)
+        tracking = AntennaTrackingStatus()
 
         start = time.monotonic()
 
@@ -44,13 +51,13 @@ class TestCommander(TesterNode):
 
         timer = self.node.create_timer(0.1, lambda: publish())
 
-        with spinning(self.node):
+        with spinning([self.node, tracking]):
             com.wait("antenna")
             assert time.monotonic() - start > 0.99
             # It takes at least 0.99826s to converge `x` within 10arcsec
 
         destroy([enc, cmd, timer], node=self.node)
-        destroy(com)
+        destroy([com, tracking])
 
     def test_antenna_point(self):
         com = Commander()
@@ -59,15 +66,18 @@ class TestCommander(TesterNode):
         cmd = {"target": (30.0, 45.0, "fk5"), "unit": "deg"}
         checked = False
 
-        def check(msg: CoordCmdMsg) -> None:
+        def check(
+            req: CoordinateCommand.Request, res: CoordinateCommand.Response
+        ) -> None:
             nonlocal checked
-            assert msg.lon[0] == cmd["target"][0]
-            assert msg.lat[0] == cmd["target"][1]
-            assert msg.unit == cmd["unit"]
-            assert msg.frame == cmd["target"][2]
+            assert req.lon[0] == cmd["target"][0]
+            assert req.lat[0] == cmd["target"][1]
+            assert req.unit == cmd["unit"]
+            assert req.frame == cmd["target"][2]
             checked = True
+            return res
 
-        sub = topic.raw_coord.subscription(self.node, check)
+        sub = service.raw_coord.service(self.node, check)
 
         start = time.monotonic()
         with spinning([self.node, auth_server]):
@@ -90,18 +100,19 @@ class TestCommander(TesterNode):
         horizontal = HorizontalCoord()
         pid = AntennaPIDController()
         dev = AntennaDeviceSimulator()
+        tracking = AntennaTrackingStatus()
 
         dev.enc.position.az = 29.0
         dev.enc.position.el = 44.0
 
         cmd = {"target": (30.0, 45.0, "altaz"), "unit": "deg"}
 
-        with spinning([auth_server, horizontal, pid, dev], n_thread=5):
+        with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
             com.get_privilege()
             com.antenna("point", **cmd, wait=True)
             com.quit_privilege()
 
-        destroy([com, auth_server, horizontal, pid, dev])
+        destroy([com, auth_server, horizontal, pid, dev, tracking])
 
     def test_antenna_stop(self):
         com = Commander()

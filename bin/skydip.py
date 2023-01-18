@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Observation program for skydip.
+"""Skydip observation.
 
-Keep the Azimuth angles in the facing direction.
-Observe at Elevation angles of 80, 50, 40, 30, 25, 22 and 20deg.
+Keep the azimuth angles in the facing direction.
+Observe at elevation angles of 80, 50, 40, 30, 25, 22 and 20deg.
 For each, integrate over the specified time.
 
 Examples
 --------
-$ ./skydip_obs.py -i 2
+$ skydip -i 2
 
 """
 
@@ -21,11 +21,11 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=description)
     p.add_argument(
         "-i",
-        "--integ_time",
+        "--integ",
         type=float,
-        help="Integration time for the skydip obs.",
+        help="Integration time for the Skydip observation.",
         default=2,
     )
     args = p.parse_args()
 
-    Skydip(integ_time=args.integ_time)
+    Skydip(integ_time=args.integ)

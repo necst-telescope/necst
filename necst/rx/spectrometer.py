@@ -11,7 +11,7 @@ from neclib.data import Resize
 from neclib.devices import Spectrometer
 from neclib.recorders import NECSTDBWriter, Recorder
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import ControlStatus, Spectral
+from necst_msgs.msg import ControlStatus, Sampling, Spectral
 from rclpy.publisher import Publisher
 
 from .. import config, namespace, topic
@@ -124,6 +124,12 @@ class SpectralData(DeviceNode):
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
         topic.antenna_control_status.subscription(self, self.update_control_status)
+        topic.spectra_rec.subscription(self, self.change_record_frequency)
+
+    def change_record_frequency(self, msg: Sampling) -> None:
+        nth = max(msg.nth, 1)
+        self.record_condition = ConditionChecker(nth, True)
+        self.logger.info(f"Record frequency changed; every {nth}th data will be saved")
 
     def update_control_status(self, msg: ControlStatus) -> None:
         if msg.tight:
