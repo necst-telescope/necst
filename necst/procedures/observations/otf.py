@@ -15,7 +15,7 @@ class OTF(Observation):
         if not hasattr(self, "_p"):
             translated = dict(p)
 
-            pa = p.position_angle
+            pa = p.position_angle.to_value("rad")
             if p.StartPositionX.to_value("deg") < 0:
                 pa = math.pi - pa
             if p.StartPositionY.to_value("deg") < 0:
