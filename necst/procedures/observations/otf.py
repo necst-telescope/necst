@@ -74,6 +74,7 @@ class OTF(Observation):
 
     def run(self, path: str, resume_scan: int = 1) -> None:
         p = ObsParams.from_file(path)
+        self.com.record("file", name=path)
 
         hot_interval_in_time = p.load_interval.unit.is_equivalent("s")
         off_interval_in_time = p.off_interval.unit.is_equivalent("s")
