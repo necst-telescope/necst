@@ -88,7 +88,7 @@ class RadioPointing(Observation):
             yield (0.0, offset * separation_y)
 
     def track_off_point(self, spec: ObservationSpec) -> None:
-        if spec.relateve:
+        if spec.relative:
             offset = (
                 spec.delta_lambda.to_value("deg"),
                 spec.delta_beta.to_value("deg"),
