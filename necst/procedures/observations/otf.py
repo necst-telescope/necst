@@ -11,26 +11,33 @@ class OTF(Observation):
 
     observation_type = "OTF"
 
-    @staticmethod
-    def position_angle(p: ObsParams) -> float:
-        pa = p.position_angle.to_value("rad")
-        if p.StartPositionX.to_value("deg") < 0:
-            pa = math.pi - pa
-        if p.StartPositionY.to_value("deg") < 0:
-            pa *= -1
-        if p.SCAN_DIRECTION.upper() == "Y":
-            pa -= math.pi / 4
-        return pa
+    def translate(self, p: ObsParams) -> ObsParams:
+        if not hasattr(self, "_p"):
+            translated = dict(p)
 
-    @classmethod
-    def validate_frame(cls, frame: str) -> str:
-        conversion_table = {"j2000": "fk5", "b1950": "fk4"}
-        return conversion_table.get(frame.lower(), frame)
+            pa = p.position_angle
+            if p.StartPositionX.to_value("deg") < 0:
+                pa = math.pi - pa
+            if p.StartPositionY.to_value("deg") < 0:
+                pa *= -1
+            if p.SCAN_DIRECTION.upper() == "Y":
+                pa -= math.pi / 4
+            translated["position_angle"] = pa
 
-    @classmethod
-    def offset_coord_repr(cls, p: ObsParams):
-        frame = cls.validate_frame(p.COORD_SYS)
-        pa = cls.position_angle(p)
+            if p.SCAN_DIRECTION.upper() == "X":
+                if (p.StartPositionY < 0) and (p.scan_spacing > 0):
+                    translated["scan_spacing"] *= -1
+            if p.SCAN_DIRECTION.upper() == "Y":
+                if (p.StartPositionX < 0) and (p.scan_spacing > 0):
+                    translated["scan_spacing"] *= -1
+
+            translated["COORD_SYS"] = self.valid_frame(p.COORD_SYS)
+            self._p = ObsParams(**translated)
+        return self._p
+
+    def offset_coord_repr(self, p: ObsParams):
+        frame = self.translate(p).COORD_SYS
+        pa = self.translate(p).position_angle
         return f"origin={frame}({p.LambdaOn}, {p.BetaOn}), rotation={pa}rad"
 
     def drive_to_off_position(self, p: ObsParams) -> None:
@@ -39,19 +46,19 @@ class OTF(Observation):
             source = (
                 p.LambdaOn.to_value("deg"),
                 p.BetaOn.to_value("deg"),
-                self.validate_frame(p.COORD_SYS),
+                self.translate(p).COORD_SYS,
             )
             offset = (
                 p.deltaLambda.to_value("deg"),
                 p.deltaBeta.to_value("deg"),
-                self.validate_frame(p.COORD_SYS),
+                self.translate(p).COORD_SYS,
             )
             kwargs.update(offset=offset, reference=source)
         else:
             target = (
                 p.LambdaOff.to_value("deg"),
                 p.BetaOff.to_value("deg"),
-                self.validate_frame(p.COORD_SYS),
+                self.translate(p).COORD_SYS,
             )
             kwargs.update(target=target)
         self.com.antenna("point", **kwargs)
@@ -60,7 +67,7 @@ class OTF(Observation):
         self, idx: int, p: ObsParams
     ) -> Tuple[Tuple[float, float], Tuple[float, float]]:
         scan_length = p.scan_length * p.scan_velocity
-        pa = self.position_angle(p)
+        pa = self.translate(p).position_angle
         x_scan = p.SCAN_DIRECTION.upper() == "X"
         start = (
             p.StartPositionX * math.cos(pa) + (0 if x_scan else p.scan_spacing * idx),
