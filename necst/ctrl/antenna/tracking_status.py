@@ -16,7 +16,7 @@ class AntennaTrackingStatus(Node):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
         self.tracking_checker = ConditionChecker(
-            int(0.5 / config.antenna_command_frequency), reset_on_failure=True
+            int(0.5 * config.antenna_command_frequency), reset_on_failure=True
         )
 
         cfg = config.antenna_command
