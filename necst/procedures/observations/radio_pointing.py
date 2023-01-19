@@ -101,7 +101,7 @@ class RadioPointing(Observation):
                 spec.delta_beta.to_value("deg"),
                 self.valid_frame(spec.delta_coord),
             )
-            self.track_on_point(spec, offset=offset)
+            return self.track_on_point(spec, offset=offset)
         off = (
             spec.lambda_off.to_value("deg"),
             spec.beta_off.to_value("deg"),
