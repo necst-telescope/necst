@@ -64,10 +64,7 @@ class RadioPointing(Observation):
         offsets = self.get_offset(spec.method, separation)
         for i, (offset_lon, offset_lat) in enumerate(offsets):
             self.logger.info(f"Starting integration at {i}th point")
-            self.track_on_point(
-                spec,
-                offset=(offset_lon, offset_lat, self.valid_frame(spec.delta_coord)),
-            )
+            self.track_on_point(spec, offset=(offset_lon, offset_lat, "altaz"))
             self.on(spec.integ_on.to_value("s"), f"{id}-{i}")
 
     def scan(self, id: Any, width: Tuple[float, float], antenna_scan_kwargs) -> None:
