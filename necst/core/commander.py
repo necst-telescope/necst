@@ -218,7 +218,8 @@ class Commander(PrivilegedNode):
            * -
              - ``name``, ``offset`` and ``unit``
            * - ``scan``
-             - ``start``, ``stop``, ``reference``, ``scan_frame``, ``unit`` and ``speed``
+             - ``start``, ``stop``, ``reference``, ``scan_frame``, ``unit`` and
+               ``speed``
            * -
              - ``start``, ``stop``, ``reference``, ``offset``, ``scan_frame``, ``unit``
                 and ``speed``
