@@ -229,7 +229,7 @@ class Commander(PrivilegedNode):
              - ``start``, ``stop``, ``name``, ``offset``, ``scan_frame``, ``unit`` and
                 ``speed``
            * - ``error``
-                - None (all arguments except ``cmd`` are ignored)
+             - None (all arguments except ``cmd`` are ignored)
 
         Examples
         --------
