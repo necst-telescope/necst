@@ -240,8 +240,8 @@ class PrivilegedNode(ServerNode):
                     return _callable(self, *args, **kwargs)
 
                 self.logger.error(
-                    f"Executing {_callable!r} requires privilege, "
-                    "but this node doesn't have one."
+                    f"Executing {_callable!r} requires privilege, but this node doesn't"
+                    " have one. Run `get_privilege()` method to acquire it."
                 )
                 return
 

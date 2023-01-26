@@ -1,3 +1,5 @@
+"""Interface to send command to any remotely controlled part of telescope."""
+
 import time as pytime
 from dataclasses import dataclass
 from functools import partial
@@ -31,6 +33,25 @@ class _SubscriptionCfg:
 
 
 class Commander(PrivilegedNode):
+    """Send command to drive any remotely controlled devices.
+
+    The execution of some commands require privilege, to reject conflicting commands
+    from different users.
+
+    Examples
+    --------
+    You can stop the antenna without privilege, for safety reason
+    >>> from necst.core import Commander
+    >>> com = Commander()
+    >>> com.antenna("stop")
+
+    Driving the antenna to certain position requires privilege
+    >>> from necst.core import Commander
+    >>> com = Commander()
+    >>> com.get_privilege()
+    >>> com.antenna("point", target=(30, 45, "altaz"))
+
+    """
 
     NodeName = "commander"
     Namespace = namespace.core
@@ -108,6 +129,7 @@ class Commander(PrivilegedNode):
         time: Optional[Union[int, float]] = None,
         timeout_sec: Optional[Union[int, float]] = None,
     ) -> Dict[str, Any]:
+        """Get the latest message on the topic."""
         if time is None:
             time = pytime.time()
         start = pytime.monotonic()
@@ -139,9 +161,9 @@ class Commander(PrivilegedNode):
         cmd: Literal["stop", "point", "scan", "error", "?"],
         /,
         *,
+        target: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
         start: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
         stop: Optional[Tuple[Union[int, float], Union[int, float]]] = None,
-        target: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
         reference: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
         offset: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
         scan_frame: str = None,
@@ -150,7 +172,105 @@ class Commander(PrivilegedNode):
         wait: bool = True,
         speed: Optional[Union[int, float]] = None,
     ) -> None:
-        """Control antenna direction and motion."""
+        """Control antenna direction and motion.
+
+        Parameters
+        ----------
+        cmd
+            Command to be sent to the antenna.
+        target
+            Position (longitude, latitude, coordinate frame) to point the antenna to.
+        start
+            Start position (longitude, latitude) of the scan in the ``scan_frame``.
+        stop
+            Stop position (longitude, latitude) of the scan in the ``scan_frame``.
+        reference
+            Reference position (longitude, latitude, coordinate frame) of scan drive.
+        offset
+            Offset amount (longitude, latitude, coordinate frame) to add to command
+            coordinate.
+        scan_frame
+            Coordinate frame the scan will be performed in.
+        unit
+            Unit of the all the angular value supplied as arguments.
+        name
+            Name of the target to point the antenna to.
+        wait
+            Whether to wait for the command to be completed.
+        speed
+            Speed of the scan in ``unit``/s.
+
+        Notes
+        -----
+        .. list-table:: Allowed argument combinations
+           :header-rows: 1
+
+           * - ``cmd``
+             - arguments
+           * - ``stop``
+             - None (all arguments except ``cmd`` are ignored)
+           * - ``point``
+             - ``target`` and ``unit``
+           * -
+             - ``target``, ``offset`` and ``unit``
+           * -
+             - ``name``
+           * -
+             - ``name``, ``offset`` and ``unit``
+           * - ``scan``
+             - ``start``, ``stop``, ``reference``, ``scan_frame``, ``unit`` and
+               ``speed``
+           * -
+             - ``start``, ``stop``, ``reference``, ``offset``, ``scan_frame``, ``unit``
+                and ``speed``
+           * -
+             - ``start``, ``stop``, ``name``, ``scan_frame``, ``unit`` and ``speed``
+           * -
+             - ``start``, ``stop``, ``name``, ``offset``, ``scan_frame``, ``unit`` and
+                ``speed``
+           * - ``error``
+             - None (all arguments except ``cmd`` are ignored)
+
+        Examples
+        --------
+        Stop the antenna immediately
+        >>> com.antenna("stop")
+
+        The following also stops the antenna immediately. Arguments are ignored.
+        >>> com.antenna("stop", wait=False)
+
+        Drive to certain position (Az., El.) = (30, 45)deg
+        >>> com.antenna("point", target=(30, 45, "azel"))
+
+        Drive to certain position and track the target (RA, Dec.) = (0, 45)deg
+        >>> com.antenna("point", target=(0, 45, "radec"))
+
+        Send command to drive to (Az., El.) = (30, 45)deg but don't wait for the command
+        to complete
+        >>> com.antenna("point", target=(30, 45, "azel"), wait=False)
+
+        Point to a position defined as "0.25deg east (negative azimuth) of center of the
+        moon"
+        >>> com.antenna("point", offset=(-0.25, 0, "altaz"), name="moon")
+
+        Scan the moon in the azimuth direction, starting from 0.5deg to the east from
+        the target, at speed of 600 arcsec/s
+        >>> com.antenna(
+        ...     "scan", start=(-0.5, 0), stop=(0.5, 0), name="moon",
+        ...     scan_frame="altaz", speed=1/6, unit="deg"
+        ... )
+
+        Scan the target (RA, Dec.) = (0, 45)deg in constant galactic longitude, at speed
+        150 arcsec/s
+        >>> com.antenna(
+        ...     "scan", start=(0, 1), stop=(0, -1), target=(0, 45, "radec"),
+        ...     scan_frame="galactic", speed=1/150, unit="deg"
+        ... )
+
+        Get current error between the commanded and actual antenna position
+        >>> com.antenna("error")
+
+        """
         CMD = cmd.upper()
         if CMD == "STOP":
             msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
@@ -166,9 +286,10 @@ class Commander(PrivilegedNode):
                 pytime.sleep(1 / config.antenna_command_frequency)
 
             msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
-            pytime.sleep(0.5)
-            # Avoid time inconsistency between this lift of alert and the next command
-            return self.publisher["alert_stop"].publish(msg)
+            self.publisher["alert_stop"].publish(msg)
+
+            # Ensure the next command is executed after the lift of alert
+            return pytime.sleep(0.5)
 
         elif CMD == "POINT":
             kwargs = {}
@@ -245,7 +366,25 @@ class Commander(PrivilegedNode):
 
     @require_privilege(escape_cmd=["?"])
     def chopper(self, cmd: Literal["insert", "remove", "?"], /, *, wait: bool = True):
-        """Control the position of ambient temperature radio absorber."""
+        """Control the position of ambient temperature radio absorber.
+
+        Parameters
+        ----------
+        cmd : {"insert", "remove", "?"}
+            Command to be sent to the chopper.
+        wait : bool, optional
+            If True, wait until the chopper has been moved to the target position.
+            The default is True.
+
+        Examples
+        --------
+        Insert the absorber
+        >>> com.chopper("insert")
+
+        Remove the absorber but don't wait until it has been removed
+        >>> com.chopper("remove", wait=False)
+
+        """
         CMD = cmd.upper()
         if CMD == "?":
             return self.get_message("chopper", timeout_sec=10)
@@ -345,7 +484,27 @@ class Commander(PrivilegedNode):
         Kd: Optional[Union[int, float]] = None,
         axis: Optional[Literal["az", "el"]] = None,
     ) -> None:
-        """Change PID parameters."""
+        """Change PID parameters.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+        Kp
+            Proportional gain.
+        Ki
+            Integral gain.
+        Kd
+            Derivative gain.
+        axis
+            Axis to change the parameter.
+
+        Examples
+        --------
+        Change the PID parameters of the azimuth axis to (0.1, 0.1, 0.1)
+        >>> com.pid_parameter("set", Kp=0.1, Ki=0.1, Kd=0.1, axis="az")
+
+        """
         CMD = cmd.upper()
         if CMD == "SET":
             if axis.lower() not in ("az", "el"):
@@ -368,6 +527,39 @@ class Commander(PrivilegedNode):
         time: Optional[float] = None,
         intercept: bool = True,
     ) -> None:
+        """Set metadata of the spectral data.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+        position
+            Type of the current observation, may be "SKY", "ON", "OFF", etc. Should be
+            less than or equal to 8 characters.
+        id
+            ID of the current observation, for sequential control. Should be less than
+            or equal to 16 characters.
+        time
+            Time to change the metadata, in UNIX time.
+        intercept
+            If True, the change will be done immediately. Otherwise, the change will be
+            done after the current control section is finished.
+
+        Examples
+        --------
+        Set the metadata to (position="ON", id="scan01") immediately after current
+        control section is finished
+        >>> com.metadata("set", position="ON", id="scan01")
+
+        Set the metadata to (position="SKY", id="calib01"), without waiting for the
+        current control section to finish
+        >>> com.metadata("set", position="SKY", id="calib01", intercept=False)
+
+        Set the metadata to (position="OFF", id="scan02") at 2021-01-01 00:00:00
+        >>> com.metadata(
+        ...     "set", position="OFF", id="scan02", time=1609459200, intercept=False)
+
+        """
         CMD = cmd.upper()
         if CMD == "SET":
             if not intercept:
@@ -391,6 +583,24 @@ class Commander(PrivilegedNode):
         range: Tuple[Union[int, float], Union[int, float]],
         integ: Union[float, int] = 1,
     ) -> None:
+        """Configure the quick look mode.
+
+        Parameters
+        ----------
+        mode
+            Mode to configure.
+        range
+            Upper and lower limit of ``mode`` to show.
+        integ
+            Integration time in second.
+
+        Examples
+        --------
+        Configure the quick look to show the spectrometer channel of (24000, 25000)
+        with 1 second integration time
+        >>> com.quick_look("ch", (24000, 25000), integ=1)
+
+        """
         MODE = mode.upper()
         if MODE == "CH":
             range = tuple(map(int, range))
@@ -409,6 +619,42 @@ class Commander(PrivilegedNode):
         content: Optional[str] = None,
         nth: Optional[int] = None,
     ) -> None:
+        """Control the recording.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+        name
+            Name of the file to record when ``cmd`` is ``file``. Otherwise, name of the
+            directory to save the record.
+        content
+            Content of the file to record.
+        nth
+            Every $n$th spectral data will be recorded.
+
+        Examples
+        --------
+        Start recording at ``otf_2021-01-01`` (the directory will be created under the
+        path specified by environment variable ``NECST_RECORD_ROOT``)
+        >>> com.record("start", name="otf_2021-01-01")
+
+        Stop recording
+        >>> com.record("stop")
+
+        Record the file ``test.txt`` with the content ``Hello, world!``
+        >>> com.record("file", name="test.txt", content="Hello, world!")
+
+        Record the local file ``/home/user/test.txt``
+        >>> com.record("file", name="/home/user/test.txt")
+
+        Record the remote file ``http://192.168.xx.xx:/files/test.txt``
+        >>> com.record("file", name="http://192.168.xx.xx:/files/test.txt")
+
+        Reduce the sampling rate to 1/10
+        >>> com.record("reduce", nth=10)
+
+        """
         CMD = cmd.upper()
         if CMD == "START":
             recording = False
@@ -447,6 +693,26 @@ class Commander(PrivilegedNode):
         mV: Optional[Union[int, float]] = None,
         id: Optional[str] = None,
     ) -> None:
+        """Control the SIS bias voltage.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+        mV
+            Bias voltage in mV.
+        id
+            Device identifier, may be defined in the configuration file.
+
+        Examples
+        --------
+        Set the SIS bias voltage to 100 mV on the device ``LSB``
+        >>> com.sis_bias("set", mV=100, id="LSB")
+
+        Read the SIS bias voltage on the device ``USB``
+        >>> com.sis_bias("?", id="USB")
+
+        """
         CMD = cmd.upper()
         if CMD == "SET":
             self.publisher["sis_bias"].publish(BiasMsg(voltage=float(mV), id=id))
@@ -464,6 +730,26 @@ class Commander(PrivilegedNode):
         dB: Optional[Union[int, float]] = None,
         id: Optional[str] = None,
     ) -> None:
+        """Control the attenuator.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+        dB
+            Loss in dB.
+        id
+            Device identifier, may be defined in the configuration file.
+
+        Examples
+        --------
+        Set the loss to 10 dB on the device ``LSB``
+        >>> com.attenuator("set", dB=10, id="LSB")
+
+        Read the loss on the device ``USB``
+        >>> com.attenuator("?", id="USB")
+
+        """
         CMD = cmd.upper()
         if CMD == "SET":
             msg = DeviceReading(value=float(dB), time=pytime.time(), id=id)
@@ -474,6 +760,19 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
     def thermometer(self, cmd: Literal["?"] = "?", /) -> None:
+        """Get the thermometer reading.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+
+        Examples
+        --------
+        Get the thermometer reading
+        >>> com.thermometer("?")
+
+        """
         CMD = cmd.upper()
         if CMD == "?":
             return self.get_message("thermometer", timeout_sec=10)
@@ -488,10 +787,33 @@ class Commander(PrivilegedNode):
         *,
         GHz: Optional[Union[int, float]] = None,
         dBm: Optional[Union[int, float]] = None,
+        id: Optional[str] = None,
     ) -> None:
+        """Control the signal generator.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+        GHz
+            Frequency in GHz.
+        dBm
+            Power in dBm.
+        id
+            Device identifier, may be defined in the configuration file.
+
+        Examples
+        --------
+        Set the frequency to 100 GHz and the power to 10 dBm on the device ``LSB2nd``
+        >>> com.signal_generator("set", GHz=100, dBm=10, id="LSB2nd")
+
+        Read the frequency and the power on the device ``1st``
+        >>> com.signal_generator("?", id="1st")
+
+        """
         CMD = cmd.upper()
         if CMD == "SET":
-            msg = LocalSignal(freq=float(GHz), power=float(dBm))
+            msg = LocalSignal(freq=float(GHz), power=float(dBm), id=id)
             self.publisher["local_signal"].publish(msg)
         elif CMD == "?":
             return self.get_message("lo_signal", timeout_sec=10)
