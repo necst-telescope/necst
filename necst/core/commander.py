@@ -3,7 +3,7 @@
 import time as pytime
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Dict, Literal, Optional, Tuple, Union, overload
+from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 from neclib.utils import ConditionChecker, ParameterList, read_file
 from necst_msgs.msg import (
