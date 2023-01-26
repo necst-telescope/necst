@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.core.commander &#8212; necst 0.5.0 documentation</title>
+    <title>necst.core.commander &#8212; necst 0.5.1 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -448,10 +448,24 @@
                 
   <section id="module-necst.core.commander">
 <span id="necst-core-commander"></span><h1>necst.core.commander<a class="headerlink" href="#module-necst.core.commander" title="Permalink to this headline">¶</a></h1>
+<p>Interface to send command to any remotely controlled part of telescope.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="necst.core.commander.Commander">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Commander</span></span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode" title="necst.core.auth.privileged_node.PrivilegedNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrivilegedNode</span></code></a></p>
+<p>Send command to drive any remotely controlled devices.</p>
+<p>The execution of some commands require privilege, to reject conflicting commands
+from different users.</p>
+<p class="rubric">Examples</p>
+<p>You can stop the antenna without privilege, for safety reason
+&gt;&gt;&gt; from necst.core import Commander
+&gt;&gt;&gt; com = Commander()
+&gt;&gt;&gt; com.antenna(“stop”)</p>
+<p>Driving the antenna to certain position requires privilege
+&gt;&gt;&gt; from necst.core import Commander
+&gt;&gt;&gt; com = Commander()
+&gt;&gt;&gt; com.get_privilege()
+&gt;&gt;&gt; com.antenna(“point”, target=(30, 45, “altaz”))</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>None</p>
@@ -470,7 +484,8 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.get_message">
 <span class="sig-name descname"><span class="pre">get_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_sec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.get_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.get_message" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Get the latest message on the topic.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>key</strong> (<em>str</em>) – </p></li>
@@ -486,28 +501,114 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.antenna">
-<span class="sig-name descname"><span class="pre">antenna</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.antenna"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.antenna" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">antenna</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.antenna"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.antenna" title="Permalink to this definition">¶</a></dt>
 <dd><p>Control antenna direction and motion.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'stop'</em><em>, </em><em>'point'</em><em>, </em><em>'scan'</em><em>, </em><em>'error'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>start</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>stop</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>target</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>str</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>reference</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>str</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>offset</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>str</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>scan_frame</strong> (<em>str</em>) – </p></li>
-<li><p><strong>unit</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>wait</strong> (<em>bool</em>) – </p></li>
-<li><p><strong>speed</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'stop'</em><em>, </em><em>'point'</em><em>, </em><em>'scan'</em><em>, </em><em>'error'</em><em>, </em><em>'?'</em><em>]</em>) – Command to be sent to the antenna.</p></li>
+<li><p><strong>target</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>str</em><em>]</em><em>]</em>) – Position (longitude, latitude, coordinate frame) to point the antenna to.</p></li>
+<li><p><strong>start</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em><em>]</em>) – Start position (longitude, latitude) of the scan in the <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>.</p></li>
+<li><p><strong>stop</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em><em>]</em>) – Stop position (longitude, latitude) of the scan in the <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>.</p></li>
+<li><p><strong>reference</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>str</em><em>]</em><em>]</em>) – Reference position (longitude, latitude, coordinate frame) of scan drive.</p></li>
+<li><p><strong>offset</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>str</em><em>]</em><em>]</em>) – Offset amount (longitude, latitude, coordinate frame) to add to command
+coordinate.</p></li>
+<li><p><strong>scan_frame</strong> (<em>str</em>) – Coordinate frame the scan will be performed in.</p></li>
+<li><p><strong>unit</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Unit of the all the angular value supplied as arguments.</p></li>
+<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the target to point the antenna to.</p></li>
+<li><p><strong>wait</strong> (<em>bool</em>) – Whether to wait for the command to be completed.</p></li>
+<li><p><strong>speed</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Speed of the scan in <code class="docutils literal notranslate"><span class="pre">unit</span></code>/s.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<div class="admonition-notes admonition">
+<p class="admonition-title">Notes</p>
+<table class="table" id="id1">
+<caption><span class="caption-text">Allowed argument combinations</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">cmd</span></code></p></th>
+<th class="head"><p>arguments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">stop</span></code></p></td>
+<td><p>None (all arguments except <code class="docutils literal notranslate"><span class="pre">cmd</span></code> are ignored)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">point</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">target</span></code> and <code class="docutils literal notranslate"><span class="pre">unit</span></code></p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">target</span></code>, <code class="docutils literal notranslate"><span class="pre">offset</span></code> and <code class="docutils literal notranslate"><span class="pre">unit</span></code></p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">offset</span></code> and <code class="docutils literal notranslate"><span class="pre">unit</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scan</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">reference</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code> and
+<code class="docutils literal notranslate"><span class="pre">speed</span></code></p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">reference</span></code>, <code class="docutils literal notranslate"><span class="pre">offset</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code></dt><dd><p>and <code class="docutils literal notranslate"><span class="pre">speed</span></code></p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code> and <code class="docutils literal notranslate"><span class="pre">speed</span></code></p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">offset</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code> and</dt><dd><p><code class="docutils literal notranslate"><span class="pre">speed</span></code></p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">error</span></code></p></td>
+<td><p>None (all arguments except <code class="docutils literal notranslate"><span class="pre">cmd</span></code> are ignored)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Examples</p>
+<p>Stop the antenna immediately
+&gt;&gt;&gt; com.antenna(“stop”)</p>
+<p>The following also stops the antenna immediately. Arguments are ignored.
+&gt;&gt;&gt; com.antenna(“stop”, wait=False)</p>
+<p>Drive to certain position (Az., El.) = (30, 45)deg
+&gt;&gt;&gt; com.antenna(“point”, target=(30, 45, “azel”))</p>
+<p>Drive to certain position and track the target (RA, Dec.) = (0, 45)deg
+&gt;&gt;&gt; com.antenna(“point”, target=(0, 45, “radec”))</p>
+<p>Send command to drive to (Az., El.) = (30, 45)deg but don’t wait for the command
+to complete
+&gt;&gt;&gt; com.antenna(“point”, target=(30, 45, “azel”), wait=False)</p>
+<p>Point to a position defined as “0.25deg east (negative azimuth) of center of the
+moon”
+&gt;&gt;&gt; com.antenna(“point”, offset=(-0.25, 0, “altaz”), name=”moon”)</p>
+<p>Scan the moon in the azimuth direction, starting from 0.5deg to the east from
+the target, at speed of 600 arcsec/s
+&gt;&gt;&gt; com.antenna(
+…     “scan”, start=(-0.5, 0), stop=(0.5, 0), name=”moon”,
+…     scan_frame=”altaz”, speed=1/6, unit=”deg”
+… )</p>
+<p>Scan the target (RA, Dec.) = (0, 45)deg in constant galactic longitude, at speed
+150 arcsec/s
+&gt;&gt;&gt; com.antenna(
+…     “scan”, start=(0, 1), stop=(0, -1), target=(0, 45, “radec”),
+…     scan_frame=”galactic”, speed=1/150, unit=”deg”
+… )</p>
+<p>Get current error between the commanded and actual antenna position
+&gt;&gt;&gt; com.antenna(“error”)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -517,11 +618,17 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'insert'</em><em>, </em><em>'remove'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>wait</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>{&quot;insert&quot;</em><em>, </em><em>&quot;remove&quot;</em><em>, </em><em>&quot;?&quot;}</em>) – Command to be sent to the chopper.</p></li>
+<li><p><strong>wait</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, wait until the chopper has been moved to the target position.
+The default is True.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Insert the absorber
+&gt;&gt;&gt; com.chopper(“insert”)</p>
+<p>Remove the absorber but don’t wait until it has been removed
+&gt;&gt;&gt; com.chopper(“remove”, wait=False)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -550,186 +657,265 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Proportional gain.</p></li>
+<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Integral gain.</p></li>
+<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Derivative gain.</p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – Axis to change the parameter.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Change the PID parameters of the azimuth axis to (0.1, 0.1, 0.1)
+&gt;&gt;&gt; com.pid_parameter(“set”, Kp=0.1, Ki=0.1, Kd=0.1, axis=”az”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.metadata">
 <span class="sig-name descname"><span class="pre">metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intercept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.metadata" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Set metadata of the spectral data.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>position</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>time</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>intercept</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>position</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Type of the current observation, may be “SKY”, “ON”, “OFF”, etc. Should be
+less than or equal to 8 characters.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – ID of the current observation, for sequential control. Should be less than
+or equal to 16 characters.</p></li>
+<li><p><strong>time</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – Time to change the metadata, in UNIX time.</p></li>
+<li><p><strong>intercept</strong> (<em>bool</em>) – If True, the change will be done immediately. Otherwise, the change will be
+done after the current control section is finished.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Set the metadata to (position=”ON”, id=”scan01”) immediately after current
+control section is finished
+&gt;&gt;&gt; com.metadata(“set”, position=”ON”, id=”scan01”)</p>
+<p>Set the metadata to (position=”SKY”, id=”calib01”), without waiting for the
+current control section to finish
+&gt;&gt;&gt; com.metadata(“set”, position=”SKY”, id=”calib01”, intercept=False)</p>
+<p>Set the metadata to (position=”OFF”, id=”scan02”) at 2021-01-01 00:00:00
+&gt;&gt;&gt; com.metadata(
+…     “set”, position=”OFF”, id=”scan02”, time=1609459200, intercept=False)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.quick_look">
 <span class="sig-name descname"><span class="pre">quick_look</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.quick_look"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.quick_look" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Configure the quick look mode.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'ch'</em><em>, </em><em>'rf'</em><em>, </em><em>'if'</em><em>, </em><em>'vlsr'</em><em>]</em>) – </p></li>
-<li><p><strong>range</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>integ</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – </p></li>
+<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'ch'</em><em>, </em><em>'rf'</em><em>, </em><em>'if'</em><em>, </em><em>'vlsr'</em><em>]</em>) – Mode to configure.</p></li>
+<li><p><strong>range</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Upper and lower limit of <code class="docutils literal notranslate"><span class="pre">mode</span></code> to show.</p></li>
+<li><p><strong>integ</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – Integration time in second.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Configure the quick look to show the spectrometer channel of (24000, 25000)
+with 1 second integration time
+&gt;&gt;&gt; com.quick_look(“ch”, (24000, 25000), integ=1)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.record">
 <span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.record" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Control the recording.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'start'</em><em>, </em><em>'stop'</em><em>, </em><em>'file'</em><em>, </em><em>'reduce'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>name</strong> (<em>str</em>) – </p></li>
-<li><p><strong>content</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>nth</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'start'</em><em>, </em><em>'stop'</em><em>, </em><em>'file'</em><em>, </em><em>'reduce'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Name of the file to record when <code class="docutils literal notranslate"><span class="pre">cmd</span></code> is <code class="docutils literal notranslate"><span class="pre">file</span></code>. Otherwise, name of the
+directory to save the record.</p></li>
+<li><p><strong>content</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Content of the file to record.</p></li>
+<li><p><strong>nth</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Every $n$th spectral data will be recorded.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Start recording at <code class="docutils literal notranslate"><span class="pre">otf_2021-01-01</span></code> (the directory will be created under the
+path specified by environment variable <code class="docutils literal notranslate"><span class="pre">NECST_RECORD_ROOT</span></code>)
+&gt;&gt;&gt; com.record(“start”, name=”otf_2021-01-01”)</p>
+<p>Stop recording
+&gt;&gt;&gt; com.record(“stop”)</p>
+<p>Record the file <code class="docutils literal notranslate"><span class="pre">test.txt</span></code> with the content <code class="docutils literal notranslate"><span class="pre">Hello,</span> <span class="pre">world!</span></code>
+&gt;&gt;&gt; com.record(“file”, name=”test.txt”, content=”Hello, world!”)</p>
+<p>Record the local file <code class="docutils literal notranslate"><span class="pre">/home/user/test.txt</span></code>
+&gt;&gt;&gt; com.record(“file”, name=”/home/user/test.txt”)</p>
+<p>Record the remote file <code class="docutils literal notranslate"><span class="pre">http://192.168.xx.xx:/files/test.txt</span></code>
+&gt;&gt;&gt; com.record(“file”, name=”<a class="reference external" href="http://192.168.xx.xx:/files/test.txt">http://192.168.xx.xx:/files/test.txt</a>”)</p>
+<p>Reduce the sampling rate to 1/10
+&gt;&gt;&gt; com.record(“reduce”, nth=10)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.sis_bias">
 <span class="sig-name descname"><span class="pre">sis_bias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mV</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.sis_bias"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.sis_bias" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Control the SIS bias voltage.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Bias voltage in mV.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Set the SIS bias voltage to 100 mV on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code>
+&gt;&gt;&gt; com.sis_bias(“set”, mV=100, id=”LSB”)</p>
+<p>Read the SIS bias voltage on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
+&gt;&gt;&gt; com.sis_bias(“?”, id=”USB”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.attenuator">
 <span class="sig-name descname"><span class="pre">attenuator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.attenuator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.attenuator" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Control the attenuator.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Loss in dB.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Set the loss to 10 dB on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code>
+&gt;&gt;&gt; com.attenuator(“set”, dB=10, id=”LSB”)</p>
+<p>Read the loss on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
+&gt;&gt;&gt; com.attenuator(“?”, id=”USB”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.thermometer">
 <span class="sig-name descname"><span class="pre">thermometer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'?'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.thermometer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.thermometer" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Get the thermometer reading.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'?'</em><em>]</em>) – </p>
+<dd class="field-odd"><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'?'</em><em>]</em>) – Command to execute.</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Get the thermometer reading
+&gt;&gt;&gt; com.thermometer(“?”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.signal_generator">
-<span class="sig-name descname"><span class="pre">signal_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dBm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.signal_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.signal_generator" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<span class="sig-name descname"><span class="pre">signal_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dBm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.signal_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.signal_generator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Control the signal generator.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Frequency in GHz.</p></li>
+<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Power in dBm.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Set the frequency to 100 GHz and the power to 10 dBm on the device <code class="docutils literal notranslate"><span class="pre">LSB2nd</span></code>
+&gt;&gt;&gt; com.signal_generator(“set”, GHz=100, dBm=10, id=”LSB2nd”)</p>
+<p>Read the frequency and the power on the device <code class="docutils literal notranslate"><span class="pre">1st</span></code>
+&gt;&gt;&gt; com.signal_generator(“?”, id=”1st”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.sg">
-<span class="sig-name descname"><span class="pre">sg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dBm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.sg" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<span class="sig-name descname"><span class="pre">sg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dBm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.sg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Control the signal generator.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Frequency in GHz.</p></li>
+<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Power in dBm.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Set the frequency to 100 GHz and the power to 10 dBm on the device <code class="docutils literal notranslate"><span class="pre">LSB2nd</span></code>
+&gt;&gt;&gt; com.signal_generator(“set”, GHz=100, dBm=10, id=”LSB2nd”)</p>
+<p>Read the frequency and the power on the device <code class="docutils literal notranslate"><span class="pre">1st</span></code>
+&gt;&gt;&gt; com.signal_generator(“?”, id=”1st”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.patt">
 <span class="sig-name descname"><span class="pre">patt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.patt" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Control the attenuator.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Loss in dB.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Set the loss to 10 dB on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code>
+&gt;&gt;&gt; com.attenuator(“set”, dB=10, id=”LSB”)</p>
+<p>Read the loss on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
+&gt;&gt;&gt; com.attenuator(“?”, id=”USB”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.qlook">
 <span class="sig-name descname"><span class="pre">qlook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.qlook" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Configure the quick look mode.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'ch'</em><em>, </em><em>'rf'</em><em>, </em><em>'if'</em><em>, </em><em>'vlsr'</em><em>]</em>) – </p></li>
-<li><p><strong>range</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>integ</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – </p></li>
+<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'ch'</em><em>, </em><em>'rf'</em><em>, </em><em>'if'</em><em>, </em><em>'vlsr'</em><em>]</em>) – Mode to configure.</p></li>
+<li><p><strong>range</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Upper and lower limit of <code class="docutils literal notranslate"><span class="pre">mode</span></code> to show.</p></li>
+<li><p><strong>integ</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – Integration time in second.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Configure the quick look to show the spectrometer channel of (24000, 25000)
+with 1 second integration time
+&gt;&gt;&gt; com.quick_look(“ch”, (24000, 25000), integ=1)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -739,34 +925,43 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Proportional gain.</p></li>
+<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Integral gain.</p></li>
+<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Derivative gain.</p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – Axis to change the parameter.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Change the PID parameters of the azimuth axis to (0.1, 0.1, 0.1)
+&gt;&gt;&gt; com.pid_parameter(“set”, Kp=0.1, Ki=0.1, Kd=0.1, axis=”az”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.sis">
 <span class="sig-name descname"><span class="pre">sis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mV</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.sis" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Control the SIS bias voltage.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
-<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Bias voltage in mV.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Set the SIS bias voltage to 100 mV on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code>
+&gt;&gt;&gt; com.sis_bias(“set”, mV=100, id=”LSB”)</p>
+<p>Read the SIS bias voltage on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
+&gt;&gt;&gt; com.sis_bias(“?”, id=”USB”)</p>
 </dd></dl>
 
 </dd></dl>
