@@ -8,7 +8,7 @@ from typing import Any, Dict, Literal, Optional, Tuple, Union
 from neclib.utils import ConditionChecker, ParameterList, read_file
 from necst_msgs.msg import (
     AlertMsg,
-    BiasMsg,
+    SISBias,
     Boolean,
     ChopperMsg,
     DeviceReading,
@@ -715,7 +715,7 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "SET":
-            self.publisher["sis_bias"].publish(BiasMsg(voltage=float(mV), id=id))
+            self.publisher["sis_bias"].publish(SISBias(voltage=float(mV), id=id))
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)
         else:
