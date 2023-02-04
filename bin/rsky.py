@@ -33,4 +33,5 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    RSky(n=args.n, integ_time=args.integ)
+    obs = RSky(n=args.n, integ_time=args.integ)
+    obs.execute()

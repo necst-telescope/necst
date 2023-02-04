@@ -1,6 +1,6 @@
 from typing import Union
 
-from neclib.parameters import PointingError
+from neclib.coordinates import PointingError
 
 from ... import config
 from .observation_base import Observation
