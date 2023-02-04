@@ -18,7 +18,6 @@ def record_root(tmp_path_factory) -> Path:
 
 
 class TestRSky(TesterNode):
-
     NodeName = "test_rsky"
 
     def test_rsky(self, record_root):
@@ -36,7 +35,7 @@ class TestRSky(TesterNode):
 
         sub = topic.chopper_cmd.subscription(self.node, update)
         with spinning([self.node, dev, horizontal, pid, auth]):
-            RSky(1, 2)
+            RSky(n=1, integ_time=2)
 
         destroy([auth, dev, horizontal, pid, recorder])
         destroy([sub, pub], node=self.node)
