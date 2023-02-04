@@ -223,12 +223,12 @@ class Commander(PrivilegedNode):
                ``speed``
            * -
              - ``start``, ``stop``, ``reference``, ``offset``, ``scan_frame``, ``unit``
-                and ``speed``
+               and ``speed``
            * -
              - ``start``, ``stop``, ``name``, ``scan_frame``, ``unit`` and ``speed``
            * -
              - ``start``, ``stop``, ``name``, ``offset``, ``scan_frame``, ``unit`` and
-                ``speed``
+               ``speed``
            * - ``error``
              - None (all arguments except ``cmd`` are ignored)
 
