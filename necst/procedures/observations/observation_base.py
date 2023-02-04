@@ -8,7 +8,7 @@ from typing import Any, Generator, Optional, Union, final
 
 import rclpy
 from neclib import NECSTAuthorityError, get_logger
-from neclib.parameters import PointingError
+from neclib.coordinates import PointingError
 
 from ... import config
 from ...core import Commander

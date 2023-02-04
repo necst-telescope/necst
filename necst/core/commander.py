@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Literal, Optional, Tuple, Union
 
-from neclib.utils import ConditionChecker, ParameterList, read_file
+from neclib.core import read
+from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import (
     AlertMsg,
     BiasMsg,
@@ -695,7 +696,7 @@ class Commander(PrivilegedNode):
             return
         elif CMD == "FILE":
             if content is None:
-                content = read_file(name)
+                content = read(name)
             req = File.Request(data=str(content), path=name)
             return self._send_request(req, self.client["record_file"])
         elif CMD == "REDUCE":
