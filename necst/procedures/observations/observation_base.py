@@ -119,7 +119,7 @@ class Observation(ABC):
         if not self.com.get_message("antenna_control").tight:
             enc = self.com.get_message("encoder")
             params = PointingError.from_file(config.antenna_pointing_parameter_path)
-            az, el = params.apparent2refracted(az=enc.lon, el=enc.lat, unit="deg")
+            az, el = params.apparent_to_refracted(az=enc.lon, el=enc.lat, unit="deg")
             self.com.antenna(
                 "point", target=(az.value, el.value, "altaz"), unit="deg", wait=False
             )
