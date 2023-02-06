@@ -45,6 +45,7 @@ class Observation(ABC):
         self._start: Optional[float] = None
 
     def execute(self) -> None:
+        self._start = time.monotonic()
         with self.ros2env():
             self.com = Commander()
             privileged = self.com.get_privilege()
@@ -69,10 +70,12 @@ class Observation(ABC):
                 rclpy.install_signal_handlers()
 
     @property
-    def start_datetime(self) -> str:
+    def start_datetime(self) -> Optional[str]:
+        if self._start is None:
+            return None
         if not hasattr(self, "_start_datetime"):
-            self._start_datetime = datetime.utcnow().strftime(r"%Y%m%d_%H%M%S")
-            self._start = time.monotonic()
+            dt = datetime.fromtimestamp(self._start)
+            self._start_datetime = dt.strftime(r"%Y%m%d_%H%M%S")
         return self._start_datetime
 
     @contextmanager
