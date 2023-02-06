@@ -94,7 +94,7 @@ class Observation(ABC):
     def record_name(self) -> str:
         if self._record_qualname is None:
             obstype = self.observation_type
-            self._record_qualname = f"necst_{obstype}_{self._start_datetime}"
+            self._record_qualname = f"necst_{obstype}_{self.start_datetime}"
             if self._record_suffix:
                 self._record_qualname += f"_{self._record_suffix}"
         return self._record_qualname.lower()
