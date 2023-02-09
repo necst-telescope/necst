@@ -30,7 +30,7 @@ class FileBasedObservation(Observation):
         self.com.record("file", name=file)
         for waypoint in self.obsspec:
             if waypoint.mode == ObservationMode.HOT:  # Hot observation
-                self.hot(waypoint.integration.to_value("s"))
+                self.hot(waypoint.integration.to_value("s"), waypoint.id)
                 continue
 
             kwargs = dict(unit="deg")
@@ -54,7 +54,7 @@ class FileBasedObservation(Observation):
             if waypoint.mode in (ObservationMode.OFF, ObservationMode.SKY):
                 if not waypoint.is_scan:
                     self.com.antenna("point", **kwargs)
-                    self.off(waypoint.integration.to_value("s"))
+                    self.off(waypoint.integration.to_value("s"), waypoint.id)
                 else:
                     raise ValueError("Scan drive is not supported for OFF/SKY mode.")
 
@@ -67,7 +67,7 @@ class FileBasedObservation(Observation):
                     self.com.metadata("set", position="", id="")
                 else:
                     self.com.antenna("scan", **kwargs)
-                    self.on(waypoint.integration.to_value("s"))
+                    self.on(waypoint.integration.to_value("s"), waypoint.id)
 
 
 class OTF(FileBasedObservation):
