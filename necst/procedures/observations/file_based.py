@@ -14,7 +14,7 @@ class FileBasedObservation(Observation):
     SpecParser: Type[ObservationSpec]
 
     def __init__(self, record_name: Optional[str] = None, /, **kwargs) -> None:
-        file = kwargs.pop("file")
+        file = kwargs["file"]
         self.obsspec = self.SpecParser.from_file(file)
         _record_name = record_name or f"{self.obsspec.target}"
         super().__init__(_record_name, **kwargs)
