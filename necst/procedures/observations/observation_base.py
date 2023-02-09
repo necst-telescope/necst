@@ -45,7 +45,7 @@ class Observation(ABC):
         self._start: Optional[float] = None
 
     def execute(self) -> None:
-        self._start = time.monotonic()
+        self._start = time.time()
         with self.ros2env():
             self.com = Commander()
             privileged = self.com.get_privilege()
@@ -62,7 +62,7 @@ class Observation(ABC):
                 self.com.antenna("stop")
                 self.com.quit_privilege()
                 self.com.destroy_node()
-                _observing_duration = (time.monotonic() - self._start) / 60
+                _observing_duration = (time.time() - self._start) / 60
                 self.logger.info(
                     f"Observation finished, took {_observing_duration:.2f} min."
                 )
