@@ -60,6 +60,7 @@ class FileBasedObservation(Observation):
 
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
+                    self.logger.info("Starting ON...")
                     self.com.metadata(
                         "set", position="ON", id=waypoint.id, intercept=False
                     )
