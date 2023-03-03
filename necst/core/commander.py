@@ -80,6 +80,7 @@ class Commander(PrivilegedNode):
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
+            "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
@@ -720,6 +721,37 @@ class Commander(PrivilegedNode):
             return self.get_message("sis_bias", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+        
+    @require_privilege(escape_cmd=["?"])
+    def hemt_bias(
+        self,
+        cmd: Literal["?"],
+        /,
+        *,
+        id: Optional[str] = None,
+    ) -> None:
+        """Read the HEMT bias voltage.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+        
+        id
+            Device identifier, may be defined in the configuration file.
+
+        Examples
+        --------
+        Read the HEMT bias voltage on the device ``USB``
+        >>> com.hemt_bias("?", id="USB")
+
+        """
+        CMD = cmd.upper()
+
+        if CMD == "?":
+            return self.get_message("hemt_bias", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
 
     @require_privilege(escape_cmd=["?"])
     def attenuator(
@@ -825,3 +857,4 @@ class Commander(PrivilegedNode):
     qlook = quick_look
     pid = pid_parameter
     sis = sis_bias
+    hemt = hemt_bias
