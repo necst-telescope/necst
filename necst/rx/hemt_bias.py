@@ -5,7 +5,7 @@ from neclib.devices import BiasReader
 from necst_msgs.msg import HEMTBias
 from rclpy.publisher import Publisher
 
-from .. import config, namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
@@ -31,7 +31,11 @@ class HEMTBias(DeviceNode):
             v_gate1 = self.reader_io.get_voltage(f"{id}_Vg1").to_value("V").item()
             v_gate2 = self.reader_io.get_voltage(f"{id}_Vg2").to_value("V").item()
             msg = HEMTBias(
-                time=time.time(), v_drain=v_drain, v_gate1=v_gate1, v_gate2=v_gate2, id=id
+                time=time.time(),
+                v_drain=v_drain,
+                v_gate1=v_gate1,
+                v_gate2=v_gate2,
+                id=id
             )
             if id not in self.pub:
                 self.pub[id] = topic.sis_bias[id].publisher(self)
