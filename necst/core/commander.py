@@ -721,7 +721,7 @@ class Commander(PrivilegedNode):
             return self.get_message("sis_bias", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
-        
+
     @require_privilege(escape_cmd=["?"])
     def hemt_bias(
         self,
@@ -736,7 +736,7 @@ class Commander(PrivilegedNode):
         ----------
         cmd
             Command to execute.
-        
+
         id
             Device identifier, may be defined in the configuration file.
 
