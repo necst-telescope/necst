@@ -10,7 +10,6 @@ from ..core import DeviceNode
 
 
 class HEMTBias(DeviceNode):
-
     NodeName = "hemt_bias"
     Namespace = namespace.rx
 
@@ -35,7 +34,7 @@ class HEMTBias(DeviceNode):
                 v_drain=v_drain,
                 v_gate1=v_gate1,
                 v_gate2=v_gate2,
-                id=id
+                id=id,
             )
             if id not in self.pub:
                 self.pub[id] = topic.sis_bias[id].publisher(self)
