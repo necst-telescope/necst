@@ -91,7 +91,6 @@ class ObservingModeManager:
 
 
 class SpectralData(DeviceNode):
-
     NodeName = "spectrometer"
     Namespace = namespace.rx
 
@@ -100,6 +99,13 @@ class SpectralData(DeviceNode):
         self.logger = self.get_logger()
 
         self.resizers = defaultdict(lambda: Resize(1))
+
+        try:
+            from neclib.devices import Spectrometer
+        except ImportError:
+            self.logger.error("Spectrometer not found; shutting down")
+            return
+
         self.io = Spectrometer()
 
         self.metadata = ObservingModeManager()
