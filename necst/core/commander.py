@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Literal, Optional, Tuple, Union
 
-from neclib.utils import ConditionChecker, ParameterList, read_file
+from neclib.core import read
+from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import (
     AlertMsg,
     SISBias,
@@ -223,39 +224,46 @@ class Commander(PrivilegedNode):
                ``speed``
            * -
              - ``start``, ``stop``, ``reference``, ``offset``, ``scan_frame``, ``unit``
-                and ``speed``
+               and ``speed``
            * -
              - ``start``, ``stop``, ``name``, ``scan_frame``, ``unit`` and ``speed``
            * -
              - ``start``, ``stop``, ``name``, ``offset``, ``scan_frame``, ``unit`` and
-                ``speed``
+               ``speed``
            * - ``error``
              - None (all arguments except ``cmd`` are ignored)
 
         Examples
         --------
         Stop the antenna immediately
+
         >>> com.antenna("stop")
 
         The following also stops the antenna immediately. Arguments are ignored.
+
         >>> com.antenna("stop", wait=False)
 
         Drive to certain position (Az., El.) = (30, 45)deg
+
         >>> com.antenna("point", target=(30, 45, "azel"))
 
         Drive to certain position and track the target (RA, Dec.) = (0, 45)deg
+
         >>> com.antenna("point", target=(0, 45, "radec"))
 
         Send command to drive to (Az., El.) = (30, 45)deg but don't wait for the command
         to complete
+
         >>> com.antenna("point", target=(30, 45, "azel"), wait=False)
 
         Point to a position defined as "0.25deg east (negative azimuth) of center of the
         moon"
+
         >>> com.antenna("point", offset=(-0.25, 0, "altaz"), name="moon")
 
         Scan the moon in the azimuth direction, starting from 0.5deg to the east from
         the target, at speed of 600 arcsec/s
+
         >>> com.antenna(
         ...     "scan", start=(-0.5, 0), stop=(0.5, 0), name="moon",
         ...     scan_frame="altaz", speed=1/6, unit="deg"
@@ -263,12 +271,14 @@ class Commander(PrivilegedNode):
 
         Scan the target (RA, Dec.) = (0, 45)deg in constant galactic longitude, at speed
         150 arcsec/s
+
         >>> com.antenna(
         ...     "scan", start=(0, 1), stop=(0, -1), target=(0, 45, "radec"),
         ...     scan_frame="galactic", speed=1/150, unit="deg"
         ... )
 
         Get current error between the commanded and actual antenna position
+
         >>> com.antenna("error")
 
         """
@@ -380,9 +390,11 @@ class Commander(PrivilegedNode):
         Examples
         --------
         Insert the absorber
+
         >>> com.chopper("insert")
 
         Remove the absorber but don't wait until it has been removed
+
         >>> com.chopper("remove", wait=False)
 
         """
@@ -503,6 +515,7 @@ class Commander(PrivilegedNode):
         Examples
         --------
         Change the PID parameters of the azimuth axis to (0.1, 0.1, 0.1)
+
         >>> com.pid_parameter("set", Kp=0.1, Ki=0.1, Kd=0.1, axis="az")
 
         """
@@ -550,13 +563,16 @@ class Commander(PrivilegedNode):
         --------
         Set the metadata to (position="ON", id="scan01") immediately after current
         control section is finished
+
         >>> com.metadata("set", position="ON", id="scan01")
 
         Set the metadata to (position="SKY", id="calib01"), without waiting for the
         current control section to finish
+
         >>> com.metadata("set", position="SKY", id="calib01", intercept=False)
 
         Set the metadata to (position="OFF", id="scan02") at 2021-01-01 00:00:00
+
         >>> com.metadata(
         ...     "set", position="OFF", id="scan02", time=1609459200, intercept=False)
 
@@ -599,6 +615,7 @@ class Commander(PrivilegedNode):
         --------
         Configure the quick look to show the spectrometer channel of (24000, 25000)
         with 1 second integration time
+
         >>> com.quick_look("ch", (24000, 25000), integ=1)
 
         """
@@ -638,21 +655,27 @@ class Commander(PrivilegedNode):
         --------
         Start recording at ``otf_2021-01-01`` (the directory will be created under the
         path specified by environment variable ``NECST_RECORD_ROOT``)
+
         >>> com.record("start", name="otf_2021-01-01")
 
         Stop recording
+
         >>> com.record("stop")
 
         Record the file ``test.txt`` with the content ``Hello, world!``
+
         >>> com.record("file", name="test.txt", content="Hello, world!")
 
         Record the local file ``/home/user/test.txt``
+
         >>> com.record("file", name="/home/user/test.txt")
 
         Record the remote file ``http://192.168.xx.xx:/files/test.txt``
+
         >>> com.record("file", name="http://192.168.xx.xx:/files/test.txt")
 
         Reduce the sampling rate to 1/10
+
         >>> com.record("reduce", nth=10)
 
         """
@@ -674,7 +697,7 @@ class Commander(PrivilegedNode):
             return
         elif CMD == "FILE":
             if content is None:
-                content = read_file(name)
+                content = read(name)
             req = File.Request(data=str(content), path=name)
             return self._send_request(req, self.client["record_file"])
         elif CMD == "REDUCE":
@@ -708,9 +731,11 @@ class Commander(PrivilegedNode):
         Examples
         --------
         Set the SIS bias voltage to 100 mV on the device ``LSB``
+
         >>> com.sis_bias("set", mV=100, id="LSB")
 
         Read the SIS bias voltage on the device ``USB``
+
         >>> com.sis_bias("?", id="USB")
 
         """
@@ -776,9 +801,11 @@ class Commander(PrivilegedNode):
         Examples
         --------
         Set the loss to 10 dB on the device ``LSB``
+
         >>> com.attenuator("set", dB=10, id="LSB")
 
         Read the loss on the device ``USB``
+
         >>> com.attenuator("?", id="USB")
 
         """
@@ -802,6 +829,7 @@ class Commander(PrivilegedNode):
         Examples
         --------
         Get the thermometer reading
+
         >>> com.thermometer("?")
 
         """
@@ -837,9 +865,11 @@ class Commander(PrivilegedNode):
         Examples
         --------
         Set the frequency to 100 GHz and the power to 10 dBm on the device ``LSB2nd``
+
         >>> com.signal_generator("set", GHz=100, dBm=10, id="LSB2nd")
 
         Read the frequency and the power on the device ``1st``
+
         >>> com.signal_generator("?", id="1st")
 
         """
@@ -853,8 +883,14 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
     sg = signal_generator
+    """Alias of :meth:`signal_generator`."""
     patt = attenuator
+    """Alias of :meth:`attenuator`."""
     qlook = quick_look
+    """Alias of :meth:`quick_look`."""
     pid = pid_parameter
+    """Alias of :meth:`pid_parameter`."""
     sis = sis_bias
+    """Alias of :meth:`sis_bias`."""
     hemt = hemt_bias
+    """Alias of :meth:`hemt_bias`."""
