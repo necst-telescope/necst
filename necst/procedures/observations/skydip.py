@@ -7,7 +7,6 @@ from .observation_base import Observation
 
 
 class Skydip(Observation):
-
     observation_type = "Skydip"
 
     elevations = [80, 50, 40, 30, 25, 22, 20]

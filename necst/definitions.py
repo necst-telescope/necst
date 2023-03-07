@@ -112,6 +112,7 @@ class topic:
     from necst_msgs.msg import (
         AlertMsg,
         SISBias,
+        HEMTBias,
         Boolean,
         ChopperMsg,
         Clock,
@@ -171,6 +172,7 @@ class topic:
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
     sis_bias = Topic(SISBias, "sis_bias", qos.realtime, namespace.rx, True)
     sis_bias_cmd = Topic(SISBias, "sis_bias_cmd", qos.reliable, namespace.rx)
+    hemt_bias = Topic(HEMTBias, "hemt_bias", qos.realtime, namespace.rx, True)
     lo_signal_cmd = Topic(LocalSignal, "lo_signal_cmd", qos.reliable, namespace.rx)
     lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx, True)
     clock = Topic(Clock, "clock", qos.realtime, namespace.root)
