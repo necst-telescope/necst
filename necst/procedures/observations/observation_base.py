@@ -8,27 +8,45 @@ from typing import Any, Generator, Optional, Union, final
 
 import rclpy
 from neclib import NECSTAuthorityError, get_logger
-from neclib.parameters import PointingError
+from neclib.coordinates import PointingError
 
 from ... import config
 from ...core import Commander
 
 
 class Observation(ABC):
+    r"""Observation runner.
+
+    Parameters
+    ----------
+    record_name
+        Record name. This will prefixed by auto-generated observation identifier
+        ``necst_{start_datetime}_{observation_type}``.
+    **kwargs
+        Keyword arguments passed to :meth:`run`.
+
+    Examples
+    --------
+    >>> obs = necst.procedures.Observation(...)
+    >>> obs.execute()
+
+    """
 
     observation_type: str
     target: Optional[str] = None
 
     parameter_files = ("config.toml", "pointing_param.toml")
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, record_name: Optional[str] = None, /, **kwargs) -> None:
         self.logger = get_logger(self.__class__.__name__)
-        self._record_name: Optional[str] = None
-        self.execute(*args, **kwargs)
+        self._record_suffix: Optional[str] = record_name
+        self._record_qualname = None
+        self._kwargs = kwargs
+        self._start: Optional[float] = None
 
-    def execute(self, *args, **kwargs) -> None:
+    def execute(self) -> None:
+        self._start = time.time()
         with self.ros2env():
-            self.start = time.monotonic()
             self.com = Commander()
             privileged = self.com.get_privilege()
             try:
@@ -38,18 +56,27 @@ class Observation(ABC):
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
                 rclpy.uninstall_signal_handlers()
-                self.run(*args, **kwargs)
+                self.run(**self._kwargs)
             finally:
                 self.com.record("stop")
                 self.com.antenna("stop")
                 self.com.quit_privilege()
                 self.com.destroy_node()
-                _observing_duration = (time.monotonic() - self.start) / 60
+                _observing_duration = (time.time() - self._start) / 60
                 self.logger.info(
                     f"Observation finished, took {_observing_duration:.2f} min."
                 )
                 self.logger.info(f"Record name: \033[1m{self.record_name!r}\033[0m")
                 rclpy.install_signal_handlers()
+
+    @property
+    def start_datetime(self) -> Optional[str]:
+        if self._start is None:
+            return None
+        if not hasattr(self, "_start_datetime"):
+            dt = datetime.fromtimestamp(self._start)
+            self._start_datetime = dt.strftime(r"%Y%m%d_%H%M%S")
+        return self._start_datetime
 
     @contextmanager
     def ros2env(self) -> Generator[None, None, None]:
@@ -65,12 +92,12 @@ class Observation(ABC):
     @final
     @property
     def record_name(self) -> str:
-        # TODO: Make configurable, and make target name available.
-        if self._record_name is None:
-            now = datetime.utcnow().strftime("%Y%m%d_%H%M%S_")
-            target = "" if self.target is None else f"_{self.target}"
-            self._record_name = f"necst_{now}{self.observation_type}{target}".lower()
-        return self._record_name
+        if self._record_qualname is None:
+            obstype = self.observation_type
+            self._record_qualname = f"necst_{obstype}_{self.start_datetime}"
+            if self._record_suffix:
+                self._record_qualname += f"_{self._record_suffix}"
+        return self._record_qualname.lower()
 
     def record_parameter_files(self) -> None:
         root = os.environ.get("NECST_ROOT", Path.home() / ".necst")
@@ -88,10 +115,11 @@ class Observation(ABC):
     def hot(self, integ_time: Union[int, float], id: Any) -> None:
         # TODO: Remove this workaround, by attaching control section ID to spectra
         # metadata command; if it's "", don't require tight control
+        # This will use SpectralMetadata.srv
         if not self.com.get_message("antenna_control").tight:
             enc = self.com.get_message("encoder")
             params = PointingError.from_file(config.antenna_pointing_parameter_path)
-            az, el = params.apparent2refracted(az=enc.lon, el=enc.lat, unit="deg")
+            az, el = params.apparent_to_refracted(az=enc.lon, el=enc.lat, unit="deg")
             self.com.antenna(
                 "point", target=(az.value, el.value, "altaz"), unit="deg", wait=False
             )
@@ -127,7 +155,3 @@ class Observation(ABC):
         time.sleep(integ_time)
         self.com.metadata("set", position="", id=str(id))
         self.logger.debug("Complete ON")
-
-    def valid_frame(self, frame: str) -> str:
-        conversion_table = {"j2000": "fk5", "b1950": "fk4"}
-        return conversion_table.get(frame.lower(), frame)

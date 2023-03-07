@@ -3,7 +3,6 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
-    "postCreateCommand": "git config --global --add safe.directory '*'",
     "customizations": {
         "vscode": {
             "extensions": [

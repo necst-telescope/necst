@@ -1,6 +1,6 @@
 from typing import Union
 
-from neclib.parameters import PointingError
+from neclib.coordinates import PointingError
 
 from ... import config
 from .observation_base import Observation
@@ -16,7 +16,7 @@ class Skydip(Observation):
         self.com.metadata("set", position="", id="")
         current_position = self.com.get_message("encoder")
         params = PointingError.from_file(config.antenna_pointing_parameter_path)
-        current_lon, *_ = params.apparent2refracted(
+        current_lon, *_ = params.apparent_to_refracted(
             az=current_position.lon, el=current_position.lat, unit="deg"
         )
         self.com.antenna(
