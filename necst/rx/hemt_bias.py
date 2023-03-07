@@ -2,7 +2,7 @@ import time
 from typing import Dict
 
 from neclib.devices import BiasReader
-from necst_msgs.msg import HEMTBias
+from necst_msgs.msg import HEMTBias as HEMTBiasMsg
 from rclpy.publisher import Publisher
 
 from .. import namespace, topic
@@ -30,7 +30,7 @@ class HEMTBias(DeviceNode):
             v_drain = self.reader_io.get_voltage(f"{id}_Vdr").to_value("V").item()
             v_gate1 = self.reader_io.get_voltage(f"{id}_Vg1").to_value("V").item()
             v_gate2 = self.reader_io.get_voltage(f"{id}_Vg2").to_value("V").item()
-            msg = HEMTBias(
+            msg = HEMTBiasMsg(
                 time=time.time(),
                 v_drain=v_drain,
                 v_gate1=v_gate1,
