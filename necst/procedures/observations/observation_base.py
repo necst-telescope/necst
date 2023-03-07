@@ -8,14 +8,13 @@ from typing import Any, Generator, Optional, Union, final
 
 import rclpy
 from neclib import NECSTAuthorityError, get_logger
-from neclib.parameters import PointingError
+from neclib.coordinates.pointing_error import PointingError
 
 from ... import config
 from ...core import Commander
 
 
 class Observation(ABC):
-
     observation_type: str
     target: Optional[str] = None
 
