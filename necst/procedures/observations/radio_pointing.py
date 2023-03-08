@@ -4,7 +4,7 @@ from typing import Any, Generator, Tuple, Union
 
 from neclib.parameters import ObservationSpec
 
-from .observation_base import Observation
+from ..observation_base import Observation
 
 
 class RadioPointing(Observation):

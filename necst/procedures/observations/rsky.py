@@ -1,6 +1,6 @@
 from typing import Union
 
-from .observation_base import Observation
+from ..observation_base import Observation
 
 
 class RSky(Observation):
