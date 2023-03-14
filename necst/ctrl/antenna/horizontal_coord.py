@@ -126,23 +126,23 @@ class HorizontalCoord(AlertHandlerNode):
         if (not scan) and (not named) and (not with_offset):
             self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
             new_generator = self.finder.track(
-                msg.lon[0], msg.lat[0], frame=msg.frame, unit=msg.unit
+                msg.lon[0], msg.lat[0], msg.frame, unit=msg.unit
             )
         elif (not scan) and (not named) and with_offset:
             self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
-            new_generator = self.finder.track_with_offset(
+            new_generator = self.finder.track(
                 msg.lon[0],
                 msg.lat[0],
-                frame=msg.frame,
+                msg.frame,
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
             )
         elif (not scan) and named and (not with_offset):
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET command: {msg}")
-            new_generator = self.finder.track_by_name(msg.name)
+            new_generator = self.finder.track(msg.name)
         elif (not scan) and named and with_offset:
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET-WITH-OFFSET command: {msg}")
-            new_generator = self.finder.track_by_name_with_offset(
+            new_generator = self.finder.track(
                 msg.name,
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
@@ -152,29 +152,29 @@ class HorizontalCoord(AlertHandlerNode):
             new_generator = self.finder.linear(
                 start=(msg.lon[0], msg.lat[0]),
                 end=(msg.lon[1], msg.lat[1]),
-                frame=msg.frame,
+                scan_frame=msg.frame,
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=config.antenna_scan_margin,
             )
         elif offset_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-RELATIVE-COORD command: {msg}")
-            new_generator = self.finder.offset_linear(
+            new_generator = self.finder.linear(
+                msg.lon, msg.lat, msg.frame,
                 start=(msg.offset_lon[0], msg.offset_lat[0]),
                 end=(msg.offset_lon[1], msg.offset_lat[1]),
-                frame=msg.offset_frame,
-                reference=(msg.lon, msg.lat, msg.frame),
+                scan_frame=msg.offset_frame,
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=config.antenna_scan_margin,
-            )
+            )  # TODO: fix
         elif offset_scan and named:
             self.logger.debug(f"Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: {msg}")
-            new_generator = self.finder.offset_linear_by_name(
+            new_generator = self.finder.linear(
+                msg.name,
                 start=(msg.offset_lon[0], msg.offset_lat[0]),
                 end=(msg.offset_lon[1], msg.offset_lat[1]),
-                frame=msg.offset_frame,
-                name=msg.name,
+                scan_frame=msg.offset_frame,
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=config.antenna_scan_margin,
@@ -202,15 +202,15 @@ class HorizontalCoord(AlertHandlerNode):
             return
 
         try:
-            az, el, t, status = next(self.executing_generator)
-            self.telemetry(status)
+            coord = next(self.executing_generator)
+            self.telemetry(coord.context)
         except (StopIteration, TypeError):
             self.cmd = None
             self.executing_generator.clear()
             return self.telemetry(None)
 
-        az, el = self._validate_drive_range(az, el)
-        for _az, _el, _t in zip(az, el, t):
+        az, el = self._validate_drive_range(coord.az, coord.el)
+        for _az, _el, _t in zip(az, el, coord.time):
             if any(x is None for x in [_az, _el, _t]):
                 continue
             # Remove chronologically duplicated/overlapping commands
