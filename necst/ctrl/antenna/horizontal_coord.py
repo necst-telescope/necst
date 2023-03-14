@@ -27,8 +27,7 @@ class HorizontalCoord(AlertHandlerNode):
 
         self.finder = PathFinder(
             config.location,
-            config.antenna_pointing_parameter_path,
-            obsfreq=config.observation_frequency,  # TODO: Make ``obsfreq`` changeable.
+            config.antenna_pointing_parameter_path
         )
         drive_limit = config.antenna_drive
         self.optimizer = {
