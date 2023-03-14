@@ -4,7 +4,7 @@ import time
 from typing import Optional, Tuple
 
 from neclib.coordinates import CoordinateGeneratorManager, DriveLimitChecker, PathFinder
-from neclib.coordinates.path_finder import ControlStatus as LibControlStatus
+from neclib.coordinates.paths import ControlContext
 from necst_msgs.msg import Boolean, ControlStatus, CoordMsg, WeatherMsg
 from necst_msgs.srv import CoordinateCommand
 
@@ -235,7 +235,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.finder.pressure = msg.pressure
         self.finder.relative_humidity = msg.humidity
 
-    def telemetry(self, status: Optional[LibControlStatus]) -> None:
+    def telemetry(self, status: Optional[ControlContext]) -> None:
         if status is None:
             msg = ControlStatus(
                 controlled=False,
