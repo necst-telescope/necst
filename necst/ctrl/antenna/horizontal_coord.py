@@ -247,7 +247,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
         else:
             msg = ControlStatus(
-                controlled=status.controlled,
+                controlled=True,
                 tight=status.tight,
                 remote=True,
                 id=str(id(self.executing_generator.get())),
