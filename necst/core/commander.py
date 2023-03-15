@@ -9,13 +9,13 @@ from neclib.core import read
 from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import (
     AlertMsg,
-    SISBias,
     Boolean,
     ChopperMsg,
     DeviceReading,
     LocalSignal,
     PIDMsg,
     Sampling,
+    SISBias,
     Spectral,
 )
 from necst_msgs.srv import CoordinateCommand, File, RecordSrv
@@ -330,9 +330,10 @@ class Commander(PrivilegedNode):
                     offset_frame=offset[2],
                     unit=unit,
                 )
-            req = CoordinateCommand.Request(**kwargs)
-            _ = self._send_request(req, self.client["raw_coord"])
-            return self.wait("antenna") if wait else None
+            self._send_request(req, self.client["raw_coord"])
+            if wait:
+                self.wait("antenna")
+            return res.id
 
         elif CMD == "SCAN":
             scan_kwargs = dict(speed=float(speed), unit=unit)
@@ -360,11 +361,12 @@ class Commander(PrivilegedNode):
                 )
 
             req = CoordinateCommand.Request(**scan_kwargs)
-            # self.publisher["coord"].publish(msg)
             res = self._send_request(req, self.client["raw_coord"])
             self.wait("antenna")
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
-            return self.wait("antenna", mode="control", id=res.id) if wait else None
+            if wait:
+                self.wait("antenna", mode="control", id=res.id)
+            return res.id
 
         elif CMD == "ERROR":
             now = pytime.time()
@@ -540,6 +542,8 @@ class Commander(PrivilegedNode):
         id: Optional[str] = None,
         time: Optional[float] = None,
         intercept: bool = True,
+        # require_track: bool = True,
+        # section_id: Optional[str] = None,
     ) -> None:
         """Set metadata of the spectral data.
 
