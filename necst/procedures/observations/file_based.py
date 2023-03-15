@@ -67,7 +67,7 @@ class FileBasedObservation(Observation):
                     self.com.antenna("scan", **kwargs)
                     self.com.metadata("set", position="", id="")
                 else:
-                    self.com.antenna("scan", **kwargs)
+                    self.com.antenna("point", **kwargs)
                     self.on(waypoint.integration.to_value("s"), waypoint.id)
 
 
