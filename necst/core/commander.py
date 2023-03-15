@@ -330,7 +330,8 @@ class Commander(PrivilegedNode):
                     offset_frame=offset[2],
                     unit=unit,
                 )
-            self._send_request(req, self.client["raw_coord"])
+            req = CoordinateCommand.Request(**kwargs)
+            res = self._send_request(req, self.client["raw_coord"])
             if wait:
                 self.wait("antenna")
             return res.id
