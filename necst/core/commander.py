@@ -245,21 +245,21 @@ class Commander(PrivilegedNode):
 
         Drive to certain position (Az., El.) = (30, 45)deg
 
-        >>> com.antenna("point", target=(30, 45, "azel"))
+        >>> com.antenna("point", target=(30, 45, "altaz"), unit="deg")
 
-        Drive to certain position and track the target (RA, Dec.) = (0, 45)deg
+        Drive to certain position and track the target (R.A., Dec.) = (0, 45)deg
 
-        >>> com.antenna("point", target=(0, 45, "radec"))
+        >>> com.antenna("point", target=(0, 45, "fk5"), unit="deg")
 
         Send command to drive to (Az., El.) = (30, 45)deg but don't wait for the command
         to complete
 
-        >>> com.antenna("point", target=(30, 45, "azel"), wait=False)
+        >>> com.antenna("point", target=(30, 45, "azel"), unit="deg", wait=False)
 
         Point to a position defined as "0.25deg east (negative azimuth) of center of the
         moon"
 
-        >>> com.antenna("point", offset=(-0.25, 0, "altaz"), name="moon")
+        >>> com.antenna("point", offset=(-0.25, 0, "altaz"), unit="deg", name="moon")
 
         Scan the moon in the azimuth direction, starting from 0.5deg to the east from
         the target, at speed of 600 arcsec/s
