@@ -111,7 +111,6 @@ class qos:
 class topic:
     from necst_msgs.msg import (
         AlertMsg,
-        SISBias,
         HEMTBias,
         Boolean,
         ChopperMsg,
@@ -120,8 +119,10 @@ class topic:
         CoordMsg,
         DeviceReading,
         LocalSignal,
+        ObservingMode,
         PIDMsg,
         Sampling,
+        SISBias,
         Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
@@ -186,10 +187,17 @@ class topic:
         Boolean, "cmd_trans", qos.reliable, namespace.antenna
     )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
+    obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
 
 
 class service:
-    from necst_msgs.srv import AuthoritySrv, CoordinateCommand, File, RecordSrv
+    from necst_msgs.srv import (
+        AuthoritySrv,
+        CoordinateCommand,
+        File,
+        ObservationMode,
+        RecordSrv,
+    )
     from std_srvs.srv import Empty
 
     from .utils import Service
@@ -199,3 +207,4 @@ class service:
     record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
+    obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
