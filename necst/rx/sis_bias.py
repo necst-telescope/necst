@@ -18,8 +18,8 @@ class SISBias(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        self.reader_io = BiasReader()
-        self.setter_io = BiasSetter()
+        self.reader_io = ADConverter()
+        self.setter_io = DAConverter()
 
         self.pub: Dict[str, Publisher] = {}
 
