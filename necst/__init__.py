@@ -15,7 +15,7 @@ except:  # noqa: E722
 logger = get_logger("necst")
 config = neclib.config
 
-from neclib.exceptions import *  # noqa: E402, F401, F403
+from neclib.core.exceptions import *  # noqa: E402, F401, F403
 
 from .definitions import *  # noqa: E402, F401, F403
 

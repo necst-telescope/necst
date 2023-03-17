@@ -28,4 +28,5 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    Skydip(integ_time=args.integ)
+    obs = Skydip(integ_time=args.integ)
+    obs.execute()

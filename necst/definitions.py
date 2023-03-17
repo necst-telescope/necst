@@ -111,7 +111,7 @@ class qos:
 class topic:
     from necst_msgs.msg import (
         AlertMsg,
-        SISBias,
+        HEMTBias,
         Boolean,
         ChopperMsg,
         Clock,
@@ -119,8 +119,10 @@ class topic:
         CoordMsg,
         DeviceReading,
         LocalSignal,
+        ObservingMode,
         PIDMsg,
         Sampling,
+        SISBias,
         Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
@@ -171,6 +173,7 @@ class topic:
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
     sis_bias = Topic(SISBias, "sis_bias", qos.realtime, namespace.rx, True)
     sis_bias_cmd = Topic(SISBias, "sis_bias_cmd", qos.reliable, namespace.rx)
+    hemt_bias = Topic(HEMTBias, "hemt_bias", qos.realtime, namespace.rx, True)
     lo_signal_cmd = Topic(LocalSignal, "lo_signal_cmd", qos.reliable, namespace.rx)
     lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx, True)
     clock = Topic(Clock, "clock", qos.realtime, namespace.root)
@@ -184,10 +187,17 @@ class topic:
         Boolean, "cmd_trans", qos.reliable, namespace.antenna
     )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
+    obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
 
 
 class service:
-    from necst_msgs.srv import AuthoritySrv, CoordinateCommand, File, RecordSrv
+    from necst_msgs.srv import (
+        AuthoritySrv,
+        CoordinateCommand,
+        File,
+        ObservationMode,
+        RecordSrv,
+    )
     from std_srvs.srv import Empty
 
     from .utils import Service
@@ -197,3 +207,4 @@ class service:
     record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
+    obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
