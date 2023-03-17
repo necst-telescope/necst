@@ -53,6 +53,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.result_queue = []
         self.tracking_ok = False
         self.executing_generator = CoordinateGeneratorManager()
+        self.last_status = None
 
         self.gc = self.create_guard_condition(self._clear_cmd)
 
@@ -231,6 +232,14 @@ class HorizontalCoord(AlertHandlerNode):
         return [], []
 
     def _update_weather(self, msg: WeatherMsg) -> None:
+        if (
+            (self.last_status is not None)
+            and (self.last_status.tight)
+        ):
+            # Updating weather data may cause jump in calculated coordinate, so the
+            # parameter update is disabled while antenna is in tight control.
+            return
+
         self.finder.temperature = msg.temperature
         self.finder.pressure = msg.pressure
         self.finder.relative_humidity = msg.humidity
@@ -254,6 +263,7 @@ class HorizontalCoord(AlertHandlerNode):
                 interrupt_ok=status.infinite and (not status.waypoint),
                 time=status.start,
             )
+        self.last_status = msg
         self.status_publisher.publish(msg)
 
     def next(self, msg: Boolean) -> None:
