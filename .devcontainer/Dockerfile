@@ -26,25 +26,26 @@ RUN apt-get update \
 USER $USERNAME
 
 RUN pip3 install \
-        "docker-launch>=0.2.1" \
-        "git+https://github.com/necst-telescope/neclib.git" \
+    "docker-launch>=0.2.1" \
+    "git+https://github.com/necst-telescope/neclib.git" \
     && pip3 install \
-        "black>=22.3" \
-        "flake8>=3.8" \
-        "ipykernel>=6.3" \
-        "jupyter>=1.0" \
-        "myst-parser==0.18.0" \
-        "notebook>=6.4" \
-        "pydata-sphinx-theme==0.7.2" \
-        "pytest>=5.2" \
-        "pytest-cov==3.0.0" \
-        "sphinx==4.5.0"
+    "black>=22.3" \
+    "flake8>=3.8" \
+    "ipykernel>=6.3" \
+    "jupyter>=1.0" \
+    "myst-parser==0.18.0" \
+    "notebook>=6.4" \
+    "pydata-sphinx-theme==0.7.2" \
+    "pytest>=5.2" \
+    "pytest-cov==3.0.0" \
+    "sphinx==4.5.0"
 
 RUN mkdir -p $ROS2_WS/src \
     && git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
     && . /opt/ros/${DISTRO}/setup.bash \
     && ( cd $ROS2_WS && colcon build --symlink-install ) \
-    && echo ". /opt/ros/${DISTRO}/setup.bash" >> /home/$USERNAME/.bashrc \
-    && echo ". $ROS2_WS/install/setup.bash" >> /home/$USERNAME/.bashrc \
-    && curl -o /home/$USERNAME/.bashgit https://raw.githubusercontent.com/oyvindstegard/bashgit/master/.bashgit \
-    && echo "if [ -f /home/$USERNAME/.bashgit ]; then . ~/.bashgit; fi" >> /home/$USERNAME/.bashrc
+    && echo ". /opt/ros/${DISTRO}/setup.bash" >> $HOME/.bashrc \
+    && echo ". $ROS2_WS/install/setup.bash" >> $HOME/.bashrc \
+    && curl -o $HOME/.bashgit https://raw.githubusercontent.com/oyvindstegard/bashgit/master/.bashgit \
+    && echo "if [ -f $HOME/.bashgit ]; then . ~/.bashgit; fi" >> $HOME/.bashrc \
+    && echo "export PATH=$ROS2_WS/src/necst/bin:$PATH" >> $HOME/.bashrc

@@ -23,7 +23,6 @@ def record_root(tmp_path_factory) -> Path:
 
 
 class TestSkydip(TesterNode):
-
     NodeName = "test_skydip"
 
     def test_skydip(self, record_root):
@@ -42,7 +41,7 @@ class TestSkydip(TesterNode):
 
         sub = topic.chopper_cmd.subscription(self.node, update)
         with spinning([self.node, dev, horizontal, pid, tracking, auth], n_thread=5):
-            Skydip(2)
+            Skydip(integ_time=2)
 
         destroy([auth, dev, horizontal, pid, recorder, tracking])
         destroy([sub, pub], node=self.node)
