@@ -1,6 +1,6 @@
 import time
 
-from neclib.devcices import ADConverter, DAConverter
+# from neclib.devcices import BiasSetter, BiasReader
 from necst_msgs.msg import SISIV as SISIVMsg
 
 from ..observation_base import Observation
@@ -12,8 +12,8 @@ class SIS_IV(Observation):
 
     def __init__(self) -> None:
         self.publisher_ = self.create_publisher(SISIVMsg, "SIS_IVdata", 10)
-        self.da_converter = DAConverter()
-        self.ad_converter = ADConverter()
+        # self.da_converter = DAConverter()
+        # self.ad_converter = ADConverter()
 
     def run(
         self,
