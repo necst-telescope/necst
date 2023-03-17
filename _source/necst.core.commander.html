@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.core.commander &#8212; necst 0.5.1 documentation</title>
+    <title>necst.core.commander &#8212; necst 0.6.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.6.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -311,18 +311,13 @@
     </label>
     <ul>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.file_based.html">
+       necst.procedures.observations.file_based
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.observation_base.html">
        necst.procedures.observations.observation_base
-      </a>
-     </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.otf.html">
-       necst.procedures.observations.otf
-      </a>
-     </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.radio_pointing.html">
-       necst.procedures.observations.radio_pointing
       </a>
      </li>
      <li class="toctree-l3">
@@ -352,6 +347,11 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.attenuator.html">
      necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.hemt_bias.html">
+     necst.rx.hemt_bias
     </a>
    </li>
    <li class="toctree-l2">
@@ -489,8 +489,8 @@ from different users.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>key</strong> (<em>str</em>) – </p></li>
-<li><p><strong>time</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>time</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -517,7 +517,7 @@ coordinate.</p></li>
 <li><p><strong>unit</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Unit of the all the angular value supplied as arguments.</p></li>
 <li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the target to point the antenna to.</p></li>
 <li><p><strong>wait</strong> (<em>bool</em>) – Whether to wait for the command to be completed.</p></li>
-<li><p><strong>speed</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Speed of the scan in <code class="docutils literal notranslate"><span class="pre">unit</span></code>/s.</p></li>
+<li><p><strong>speed</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Speed of the scan in <code class="docutils literal notranslate"><span class="pre">unit</span></code>/s.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -558,21 +558,15 @@ coordinate.</p></li>
 <code class="docutils literal notranslate"><span class="pre">speed</span></code></p></td>
 </tr>
 <tr class="row-even"><td></td>
-<td><dl class="simple">
-<dt><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">reference</span></code>, <code class="docutils literal notranslate"><span class="pre">offset</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code></dt><dd><p>and <code class="docutils literal notranslate"><span class="pre">speed</span></code></p>
-</dd>
-</dl>
-</td>
+<td><p><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">reference</span></code>, <code class="docutils literal notranslate"><span class="pre">offset</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code>
+and <code class="docutils literal notranslate"><span class="pre">speed</span></code></p></td>
 </tr>
 <tr class="row-odd"><td></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code> and <code class="docutils literal notranslate"><span class="pre">speed</span></code></p></td>
 </tr>
 <tr class="row-even"><td></td>
-<td><dl class="simple">
-<dt><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">offset</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code> and</dt><dd><p><code class="docutils literal notranslate"><span class="pre">speed</span></code></p>
-</dd>
-</dl>
-</td>
+<td><p><code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">stop</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">offset</span></code>, <code class="docutils literal notranslate"><span class="pre">scan_frame</span></code>, <code class="docutils literal notranslate"><span class="pre">unit</span></code> and
+<code class="docutils literal notranslate"><span class="pre">speed</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">error</span></code></p></td>
 <td><p>None (all arguments except <code class="docutils literal notranslate"><span class="pre">cmd</span></code> are ignored)</p></td>
@@ -581,34 +575,52 @@ coordinate.</p></li>
 </table>
 </div>
 <p class="rubric">Examples</p>
-<p>Stop the antenna immediately
-&gt;&gt;&gt; com.antenna(“stop”)</p>
-<p>The following also stops the antenna immediately. Arguments are ignored.
-&gt;&gt;&gt; com.antenna(“stop”, wait=False)</p>
-<p>Drive to certain position (Az., El.) = (30, 45)deg
-&gt;&gt;&gt; com.antenna(“point”, target=(30, 45, “azel”))</p>
-<p>Drive to certain position and track the target (RA, Dec.) = (0, 45)deg
-&gt;&gt;&gt; com.antenna(“point”, target=(0, 45, “radec”))</p>
+<p>Stop the antenna immediately</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;stop&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The following also stops the antenna immediately. Arguments are ignored.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Drive to certain position (Az., El.) = (30, 45)deg</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="s2">&quot;altaz&quot;</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Drive to certain position and track the target (R.A., Dec.) = (0, 45)deg</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="s2">&quot;fk5&quot;</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>Send command to drive to (Az., El.) = (30, 45)deg but don’t wait for the command
-to complete
-&gt;&gt;&gt; com.antenna(“point”, target=(30, 45, “azel”), wait=False)</p>
+to complete</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="s2">&quot;azel&quot;</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>Point to a position defined as “0.25deg east (negative azimuth) of center of the
-moon”
-&gt;&gt;&gt; com.antenna(“point”, offset=(-0.25, 0, “altaz”), name=”moon”)</p>
+moon”</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;altaz&quot;</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;moon&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>Scan the moon in the azimuth direction, starting from 0.5deg to the east from
-the target, at speed of 600 arcsec/s
-&gt;&gt;&gt; com.antenna(
-…     “scan”, start=(-0.5, 0), stop=(0.5, 0), name=”moon”,
-…     scan_frame=”altaz”, speed=1/6, unit=”deg”
-… )</p>
+the target, at speed of 600 arcsec/s</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;scan&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">stop</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;moon&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">scan_frame</span><span class="o">=</span><span class="s2">&quot;altaz&quot;</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
 <p>Scan the target (RA, Dec.) = (0, 45)deg in constant galactic longitude, at speed
-150 arcsec/s
-&gt;&gt;&gt; com.antenna(
-…     “scan”, start=(0, 1), stop=(0, -1), target=(0, 45, “radec”),
-…     scan_frame=”galactic”, speed=1/150, unit=”deg”
-… )</p>
-<p>Get current error between the commanded and actual antenna position
-&gt;&gt;&gt; com.antenna(“error”)</p>
+150 arcsec/s</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;scan&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">stop</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">target</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="s2">&quot;radec&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">scan_frame</span><span class="o">=</span><span class="s2">&quot;galactic&quot;</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mi">150</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Get current error between the commanded and actual antenna position</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -625,10 +637,14 @@ The default is True.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>Insert the absorber
-&gt;&gt;&gt; com.chopper(“insert”)</p>
-<p>Remove the absorber but don’t wait until it has been removed
-&gt;&gt;&gt; com.chopper(“remove”, wait=False)</p>
+<p>Insert the absorber</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">chopper</span><span class="p">(</span><span class="s2">&quot;insert&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Remove the absorber but don’t wait until it has been removed</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">chopper</span><span class="p">(</span><span class="s2">&quot;remove&quot;</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -641,7 +657,7 @@ The default is True.</p></li>
 <li><p><strong>target</strong> (<em>Literal</em><em>[</em><em>'antenna'</em><em>, </em><em>'dome'</em><em>]</em>) – </p></li>
 <li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'control'</em><em>, </em><em>'error'</em><em>]</em>) – </p></li>
 <li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -658,9 +674,9 @@ The default is True.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
-<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Proportional gain.</p></li>
-<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Integral gain.</p></li>
-<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Derivative gain.</p></li>
+<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Proportional gain.</p></li>
+<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Integral gain.</p></li>
+<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Derivative gain.</p></li>
 <li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – Axis to change the parameter.</p></li>
 </ul>
 </dd>
@@ -669,8 +685,10 @@ The default is True.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>Change the PID parameters of the azimuth axis to (0.1, 0.1, 0.1)
-&gt;&gt;&gt; com.pid_parameter(“set”, Kp=0.1, Ki=0.1, Kd=0.1, axis=”az”)</p>
+<p>Change the PID parameters of the azimuth axis to (0.1, 0.1, 0.1)</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">pid_parameter</span><span class="p">(</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">Kp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">Ki</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">Kd</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;az&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -696,14 +714,20 @@ done after the current control section is finished.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <p>Set the metadata to (position=”ON”, id=”scan01”) immediately after current
-control section is finished
-&gt;&gt;&gt; com.metadata(“set”, position=”ON”, id=”scan01”)</p>
+control section is finished</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;scan01&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>Set the metadata to (position=”SKY”, id=”calib01”), without waiting for the
-current control section to finish
-&gt;&gt;&gt; com.metadata(“set”, position=”SKY”, id=”calib01”, intercept=False)</p>
-<p>Set the metadata to (position=”OFF”, id=”scan02”) at 2021-01-01 00:00:00
-&gt;&gt;&gt; com.metadata(
-…     “set”, position=”OFF”, id=”scan02”, time=1609459200, intercept=False)</p>
+current control section to finish</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="s2">&quot;SKY&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;calib01&quot;</span><span class="p">,</span> <span class="n">intercept</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Set the metadata to (position=”OFF”, id=”scan02”) at 2021-01-01 00:00:00</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="s2">&quot;OFF&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;scan02&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">1609459200</span><span class="p">,</span> <span class="n">intercept</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -724,8 +748,10 @@ current control section to finish
 </dl>
 <p class="rubric">Examples</p>
 <p>Configure the quick look to show the spectrometer channel of (24000, 25000)
-with 1 second integration time
-&gt;&gt;&gt; com.quick_look(“ch”, (24000, 25000), integ=1)</p>
+with 1 second integration time</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">quick_look</span><span class="p">(</span><span class="s2">&quot;ch&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">24000</span><span class="p">,</span> <span class="mi">25000</span><span class="p">),</span> <span class="n">integ</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -748,18 +774,30 @@ directory to save the record.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <p>Start recording at <code class="docutils literal notranslate"><span class="pre">otf_2021-01-01</span></code> (the directory will be created under the
-path specified by environment variable <code class="docutils literal notranslate"><span class="pre">NECST_RECORD_ROOT</span></code>)
-&gt;&gt;&gt; com.record(“start”, name=”otf_2021-01-01”)</p>
-<p>Stop recording
-&gt;&gt;&gt; com.record(“stop”)</p>
-<p>Record the file <code class="docutils literal notranslate"><span class="pre">test.txt</span></code> with the content <code class="docutils literal notranslate"><span class="pre">Hello,</span> <span class="pre">world!</span></code>
-&gt;&gt;&gt; com.record(“file”, name=”test.txt”, content=”Hello, world!”)</p>
-<p>Record the local file <code class="docutils literal notranslate"><span class="pre">/home/user/test.txt</span></code>
-&gt;&gt;&gt; com.record(“file”, name=”/home/user/test.txt”)</p>
-<p>Record the remote file <code class="docutils literal notranslate"><span class="pre">http://192.168.xx.xx:/files/test.txt</span></code>
-&gt;&gt;&gt; com.record(“file”, name=”<a class="reference external" href="http://192.168.xx.xx:/files/test.txt">http://192.168.xx.xx:/files/test.txt</a>”)</p>
-<p>Reduce the sampling rate to 1/10
-&gt;&gt;&gt; com.record(“reduce”, nth=10)</p>
+path specified by environment variable <code class="docutils literal notranslate"><span class="pre">NECST_RECORD_ROOT</span></code>)</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;otf_2021-01-01&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Stop recording</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;stop&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Record the file <code class="docutils literal notranslate"><span class="pre">test.txt</span></code> with the content <code class="docutils literal notranslate"><span class="pre">Hello,</span> <span class="pre">world!</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;test.txt&quot;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="s2">&quot;Hello, world!&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Record the local file <code class="docutils literal notranslate"><span class="pre">/home/user/test.txt</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;/home/user/test.txt&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Record the remote file <code class="docutils literal notranslate"><span class="pre">http://192.168.xx.xx:/files/test.txt</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;http://192.168.xx.xx:/files/test.txt&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Reduce the sampling rate to 1/10</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;reduce&quot;</span><span class="p">,</span> <span class="n">nth</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -770,7 +808,7 @@ path specified by environment variable <code class="docutils literal notranslate
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
-<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Bias voltage in mV.</p></li>
+<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Bias voltage in mV.</p></li>
 <li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
@@ -779,10 +817,34 @@ path specified by environment variable <code class="docutils literal notranslate
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>Set the SIS bias voltage to 100 mV on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code>
-&gt;&gt;&gt; com.sis_bias(“set”, mV=100, id=”LSB”)</p>
-<p>Read the SIS bias voltage on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
-&gt;&gt;&gt; com.sis_bias(“?”, id=”USB”)</p>
+<p>Set the SIS bias voltage to 100 mV on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">sis_bias</span><span class="p">(</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">mV</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;LSB&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Read the SIS bias voltage on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">sis_bias</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;USB&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.hemt_bias">
+<span class="sig-name descname"><span class="pre">hemt_bias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.hemt_bias"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.hemt_bias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the HEMT bias voltage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Read the HEMT bias voltage on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
+&gt;&gt;&gt; com.hemt_bias(“?”, id=”USB”)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -793,7 +855,7 @@ path specified by environment variable <code class="docutils literal notranslate
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
-<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Loss in dB.</p></li>
+<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Loss in dB.</p></li>
 <li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
@@ -802,10 +864,14 @@ path specified by environment variable <code class="docutils literal notranslate
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>Set the loss to 10 dB on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code>
-&gt;&gt;&gt; com.attenuator(“set”, dB=10, id=”LSB”)</p>
-<p>Read the loss on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
-&gt;&gt;&gt; com.attenuator(“?”, id=”USB”)</p>
+<p>Set the loss to 10 dB on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">attenuator</span><span class="p">(</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">dB</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;LSB&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Read the loss on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">attenuator</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;USB&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -821,8 +887,10 @@ path specified by environment variable <code class="docutils literal notranslate
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>Get the thermometer reading
-&gt;&gt;&gt; com.thermometer(“?”)</p>
+<p>Get the thermometer reading</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">thermometer</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -833,8 +901,8 @@ path specified by environment variable <code class="docutils literal notranslate
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
-<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Frequency in GHz.</p></li>
-<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Power in dBm.</p></li>
+<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Frequency in GHz.</p></li>
+<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Power in dBm.</p></li>
 <li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
 </ul>
 </dd>
@@ -843,125 +911,124 @@ path specified by environment variable <code class="docutils literal notranslate
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p>Set the frequency to 100 GHz and the power to 10 dBm on the device <code class="docutils literal notranslate"><span class="pre">LSB2nd</span></code>
-&gt;&gt;&gt; com.signal_generator(“set”, GHz=100, dBm=10, id=”LSB2nd”)</p>
-<p>Read the frequency and the power on the device <code class="docutils literal notranslate"><span class="pre">1st</span></code>
-&gt;&gt;&gt; com.signal_generator(“?”, id=”1st”)</p>
+<p>Set the frequency to 100 GHz and the power to 10 dBm on the device <code class="docutils literal notranslate"><span class="pre">LSB2nd</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">signal_generator</span><span class="p">(</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">GHz</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">dBm</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;LSB2nd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Read the frequency and the power on the device <code class="docutils literal notranslate"><span class="pre">1st</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">signal_generator</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;1st&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.sg">
 <span class="sig-name descname"><span class="pre">sg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dBm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.sg" title="Permalink to this definition">¶</a></dt>
-<dd><p>Control the signal generator.</p>
+<dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.signal_generator" title="necst.core.commander.Commander.signal_generator"><code class="xref py py-meth docutils literal notranslate"><span class="pre">signal_generator()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
-<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Frequency in GHz.</p></li>
-<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Power in dBm.</p></li>
-<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>GHz</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>dBm</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<p>Set the frequency to 100 GHz and the power to 10 dBm on the device <code class="docutils literal notranslate"><span class="pre">LSB2nd</span></code>
-&gt;&gt;&gt; com.signal_generator(“set”, GHz=100, dBm=10, id=”LSB2nd”)</p>
-<p>Read the frequency and the power on the device <code class="docutils literal notranslate"><span class="pre">1st</span></code>
-&gt;&gt;&gt; com.signal_generator(“?”, id=”1st”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.patt">
 <span class="sig-name descname"><span class="pre">patt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.patt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Control the attenuator.</p>
+<dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.attenuator" title="necst.core.commander.Commander.attenuator"><code class="xref py py-meth docutils literal notranslate"><span class="pre">attenuator()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
-<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Loss in dB.</p></li>
-<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>dB</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<p>Set the loss to 10 dB on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code>
-&gt;&gt;&gt; com.attenuator(“set”, dB=10, id=”LSB”)</p>
-<p>Read the loss on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
-&gt;&gt;&gt; com.attenuator(“?”, id=”USB”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.qlook">
 <span class="sig-name descname"><span class="pre">qlook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.qlook" title="Permalink to this definition">¶</a></dt>
-<dd><p>Configure the quick look mode.</p>
+<dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.quick_look" title="necst.core.commander.Commander.quick_look"><code class="xref py py-meth docutils literal notranslate"><span class="pre">quick_look()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'ch'</em><em>, </em><em>'rf'</em><em>, </em><em>'if'</em><em>, </em><em>'vlsr'</em><em>]</em>) – Mode to configure.</p></li>
-<li><p><strong>range</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – Upper and lower limit of <code class="docutils literal notranslate"><span class="pre">mode</span></code> to show.</p></li>
-<li><p><strong>integ</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – Integration time in second.</p></li>
+<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>'ch'</em><em>, </em><em>'rf'</em><em>, </em><em>'if'</em><em>, </em><em>'vlsr'</em><em>]</em>) – </p></li>
+<li><p><strong>range</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>integ</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<p>Configure the quick look to show the spectrometer channel of (24000, 25000)
-with 1 second integration time
-&gt;&gt;&gt; com.quick_look(“ch”, (24000, 25000), integ=1)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.pid">
 <span class="sig-name descname"><span class="pre">pid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ki</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.pid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Change PID parameters.</p>
+<dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.pid_parameter" title="necst.core.commander.Commander.pid_parameter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pid_parameter()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
-<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Proportional gain.</p></li>
-<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Integral gain.</p></li>
-<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Derivative gain.</p></li>
-<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – Axis to change the parameter.</p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>Kp</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>Ki</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>Kd</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>axis</strong> (<em>Optional</em><em>[</em><em>Literal</em><em>[</em><em>'az'</em><em>, </em><em>'el'</em><em>]</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<p>Change the PID parameters of the azimuth axis to (0.1, 0.1, 0.1)
-&gt;&gt;&gt; com.pid_parameter(“set”, Kp=0.1, Ki=0.1, Kd=0.1, axis=”az”)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.sis">
 <span class="sig-name descname"><span class="pre">sis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mV</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.sis" title="Permalink to this definition">¶</a></dt>
-<dd><p>Control the SIS bias voltage.</p>
+<dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.sis_bias" title="necst.core.commander.Commander.sis_bias"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sis_bias()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – Command to execute.</p></li>
-<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>int</em><em>]</em><em>]</em>) – Bias voltage in mV.</p></li>
-<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Device identifier, may be defined in the configuration file.</p></li>
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'set'</em><em>, </em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>mV</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<p>Set the SIS bias voltage to 100 mV on the device <code class="docutils literal notranslate"><span class="pre">LSB</span></code>
-&gt;&gt;&gt; com.sis_bias(“set”, mV=100, id=”LSB”)</p>
-<p>Read the SIS bias voltage on the device <code class="docutils literal notranslate"><span class="pre">USB</span></code>
-&gt;&gt;&gt; com.sis_bias(“?”, id=”USB”)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.hemt">
+<span class="sig-name descname"><span class="pre">hemt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.hemt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.hemt_bias" title="necst.core.commander.Commander.hemt_bias"><code class="xref py py-meth docutils literal notranslate"><span class="pre">hemt_bias()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'?'</em><em>]</em>) – </p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

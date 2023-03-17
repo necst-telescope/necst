@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.procedures.observations.otf &#8212; necst 0.5.1 documentation</title>
+    <title>necst.rx.hemt_bias &#8212; necst 0.6.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.procedures.observations.radio_pointing" href="necst.procedures.observations.radio_pointing.html" />
-    <link rel="prev" title="necst.procedures.observations.observation_base" href="necst.procedures.observations.observation_base.html" />
+    <link rel="next" title="necst.rx.signal_generator" href="necst.rx.signal_generator.html" />
+    <link rel="prev" title="necst.rx.attenuator" href="necst.rx.attenuator.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.6.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -290,39 +290,34 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 current active has-children">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.procedures.html">
    necst.procedures
   </a>
-  <input checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
   <label for="toctree-checkbox-7">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul class="current">
-   <li class="toctree-l2 current active has-children">
+  <ul>
+   <li class="toctree-l2 has-children">
     <a class="reference internal" href="necst.procedures.observations.html">
      necst.procedures.observations
     </a>
-    <input checked="" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
     <label for="toctree-checkbox-8">
      <i class="fas fa-chevron-down">
      </i>
     </label>
-    <ul class="current">
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.file_based.html">
+       necst.procedures.observations.file_based
+      </a>
+     </li>
      <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.observation_base.html">
        necst.procedures.observations.observation_base
-      </a>
-     </li>
-     <li class="toctree-l3 current active">
-      <a class="current reference internal" href="#">
-       necst.procedures.observations.otf
-      </a>
-     </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.radio_pointing.html">
-       necst.procedures.observations.radio_pointing
       </a>
      </li>
      <li class="toctree-l3">
@@ -339,19 +334,24 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
   <label for="toctree-checkbox-9">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
+  <ul class="current">
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.attenuator.html">
      necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     necst.rx.hemt_bias
     </a>
    </li>
    <li class="toctree-l2">
@@ -446,86 +446,33 @@
               
               <div>
                 
-  <section id="module-necst.procedures.observations.otf">
-<span id="necst-procedures-observations-otf"></span><h1>necst.procedures.observations.otf<a class="headerlink" href="#module-necst.procedures.observations.otf" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.rx.hemt_bias">
+<span id="necst-rx-hemt-bias"></span><h1>necst.rx.hemt_bias<a class="headerlink" href="#module-necst.rx.hemt_bias" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.procedures.observations.otf.OTF">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OTF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/otf.html#OTF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.otf.OTF" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation" title="necst.procedures.observations.observation_base.Observation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Observation</span></code></a></p>
+<dt class="sig sig-object py" id="necst.rx.hemt_bias.HEMTBias">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HEMTBias</span></span><a class="reference internal" href="../_modules/necst/rx/hemt_bias.html#HEMTBias"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.hemt_bias.HEMTBias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.core.device_node.html#necst.core.device_node.DeviceNode" title="necst.core.device_node.DeviceNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceNode</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.procedures.observations.otf.OTF.observation_type">
-<span class="sig-name descname"><span class="pre">observation_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'OTF'</span></em><a class="headerlink" href="#necst.procedures.observations.otf.OTF.observation_type" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.rx.hemt_bias.HEMTBias.NodeName">
+<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'hemt_bias'</span></em><a class="headerlink" href="#necst.rx.hemt_bias.HEMTBias.NodeName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.rx.hemt_bias.HEMTBias.Namespace">
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/rx'</span></em><a class="headerlink" href="#necst.rx.hemt_bias.HEMTBias.Namespace" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.otf.OTF.translate">
-<span class="sig-name descname"><span class="pre">translate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/otf.html#OTF.translate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.otf.OTF.translate" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.rx.hemt_bias.HEMTBias.stream">
+<span class="sig-name descname"><span class="pre">stream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/rx/hemt_bias.html#HEMTBias.stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.hemt_bias.HEMTBias.stream" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>p</strong> (<em>ObsParams</em>) – </p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>ObsParams</em></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.otf.OTF.offset_coord_repr">
-<span class="sig-name descname"><span class="pre">offset_coord_repr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/otf.html#OTF.offset_coord_repr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.otf.OTF.offset_coord_repr" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>p</strong> (<em>ObsParams</em>) – </p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.otf.OTF.drive_to_off_position">
-<span class="sig-name descname"><span class="pre">drive_to_off_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/otf.html#OTF.drive_to_off_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.otf.OTF.drive_to_off_position" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>p</strong> (<em>ObsParams</em>) – </p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.otf.OTF.get_scan_coord">
-<span class="sig-name descname"><span class="pre">get_scan_coord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/otf.html#OTF.get_scan_coord"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.otf.OTF.get_scan_coord" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>idx</strong> (<em>int</em>) – </p></li>
-<li><p><strong>p</strong> (<em>ObsParams</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Tuple</em>[<em>Tuple</em>[float, float], <em>Tuple</em>[float, float]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.otf.OTF.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resume_scan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/otf.html#OTF.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.otf.OTF.run" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> (<em>str</em>) – </p></li>
-<li><p><strong>resume_scan</strong> (<em>int</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -540,17 +487,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.procedures.observations.observation_base.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.rx.attenuator.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.procedures.observations.observation_base</p>
+            <p class="prev-next-title">necst.rx.attenuator</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.procedures.observations.radio_pointing.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.rx.signal_generator.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.procedures.observations.radio_pointing</p>
+        <p class="prev-next-title">necst.rx.signal_generator</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.procedures.observations.rsky &#8212; necst 0.5.1 documentation</title>
+    <title>necst.procedures.observations.rsky &#8212; necst 0.6.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="necst.procedures.observations.skydip" href="necst.procedures.observations.skydip.html" />
-    <link rel="prev" title="necst.procedures.observations.radio_pointing" href="necst.procedures.observations.radio_pointing.html" />
+    <link rel="prev" title="necst.procedures.observations.observation_base" href="necst.procedures.observations.observation_base.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -122,7 +122,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.6.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -311,18 +311,13 @@
     </label>
     <ul class="current">
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.file_based.html">
+       necst.procedures.observations.file_based
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.observation_base.html">
        necst.procedures.observations.observation_base
-      </a>
-     </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.otf.html">
-       necst.procedures.observations.otf
-      </a>
-     </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.radio_pointing.html">
-       necst.procedures.observations.radio_pointing
       </a>
      </li>
      <li class="toctree-l3 current active">
@@ -352,6 +347,11 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.attenuator.html">
      necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.hemt_bias.html">
+     necst.rx.hemt_bias
     </a>
    </li>
    <li class="toctree-l2">
@@ -450,11 +450,14 @@
 <span id="necst-procedures-observations-rsky"></span><h1>necst.procedures.observations.rsky<a class="headerlink" href="#module-necst.procedures.observations.rsky" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="necst.procedures.observations.rsky.RSky">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RSky</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/rsky.html#RSky"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.rsky.RSky" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RSky</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/rsky.html#RSky"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.rsky.RSky" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation" title="necst.procedures.observations.observation_base.Observation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Observation</span></code></a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -488,11 +491,11 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.procedures.observations.radio_pointing.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.procedures.observations.observation_base.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.procedures.observations.radio_pointing</p>
+            <p class="prev-next-title">necst.procedures.observations.observation_base</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="necst.procedures.observations.skydip.html" title="next page">

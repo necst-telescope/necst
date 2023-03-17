@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.definitions &#8212; necst 0.5.1 documentation</title>
+    <title>necst.definitions &#8212; necst 0.6.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -121,7 +121,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.6.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -310,18 +310,13 @@
     </label>
     <ul>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.file_based.html">
+       necst.procedures.observations.file_based
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.observation_base.html">
        necst.procedures.observations.observation_base
-      </a>
-     </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.otf.html">
-       necst.procedures.observations.otf
-      </a>
-     </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.radio_pointing.html">
-       necst.procedures.observations.radio_pointing
       </a>
      </li>
      <li class="toctree-l3">
@@ -351,6 +346,11 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.attenuator.html">
      necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.hemt_bias.html">
+     necst.rx.hemt_bias
     </a>
    </li>
    <li class="toctree-l2">
@@ -555,48 +555,48 @@
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BiasMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.BiasMsg" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.HEMTBias">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HEMTBias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.HEMTBias" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Message class ‘BiasMsg’.</p>
+<p>Message class ‘HEMTBias’.</p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.SLOT_TYPES">
-<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.BiasMsg.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.HEMTBias.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.HEMTBias.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.current">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">current</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.current" title="Permalink to this definition">¶</a></dt>
-<dd><p>Message field ‘current’.</p>
-</dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.get_fields_and_field_types">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.HEMTBias.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.HEMTBias.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.id">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.HEMTBias.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#necst.definitions.topic.HEMTBias.id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘id’.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.power">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">power</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.power" title="Permalink to this definition">¶</a></dt>
-<dd><p>Message field ‘power’.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.time">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.definitions.topic.HEMTBias.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.HEMTBias.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘time’.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="necst.definitions.topic.BiasMsg.voltage">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">voltage</span></span><a class="headerlink" href="#necst.definitions.topic.BiasMsg.voltage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Message field ‘voltage’.</p>
+<dt class="sig sig-object py" id="necst.definitions.topic.HEMTBias.v_drain">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">v_drain</span></span><a class="headerlink" href="#necst.definitions.topic.HEMTBias.v_drain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘v_drain’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.HEMTBias.v_gate1">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">v_gate1</span></span><a class="headerlink" href="#necst.definitions.topic.HEMTBias.v_gate1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘v_gate1’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.HEMTBias.v_gate2">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">v_gate2</span></span><a class="headerlink" href="#necst.definitions.topic.HEMTBias.v_gate2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘v_gate2’.</p>
 </dd></dl>
 
 </dd></dl>
@@ -877,6 +877,35 @@
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.ObservingMode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ObservingMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.ObservingMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘ObservingMode’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.ObservingMode.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BoundedString</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.ObservingMode.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.ObservingMode.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.ObservingMode.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.ObservingMode.mode">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mode</span></span><a class="headerlink" href="#necst.definitions.topic.ObservingMode.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘mode’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.ObservingMode.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.ObservingMode.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="necst.definitions.topic.PIDMsg">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PIDMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.PIDMsg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -942,6 +971,53 @@
 <dt class="sig sig-object py" id="necst.definitions.topic.Sampling.time">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.Sampling.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.SISBias">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SISBias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.SISBias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘SISBias’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.SISBias.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.SISBias.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.SISBias.current">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">current</span></span><a class="headerlink" href="#necst.definitions.topic.SISBias.current" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘current’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.SISBias.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.SISBias.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.SISBias.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#necst.definitions.topic.SISBias.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘id’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.SISBias.power">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">power</span></span><a class="headerlink" href="#necst.definitions.topic.SISBias.power" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘power’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.SISBias.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.SISBias.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.SISBias.voltage">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">voltage</span></span><a class="headerlink" href="#necst.definitions.topic.SISBias.voltage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘voltage’.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1342,12 +1418,17 @@
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.sis_bias">
-<span class="sig-name descname"><span class="pre">sis_bias</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._bias_msg.BiasMsg'&gt;,</span> <span class="pre">topic='sis_bias',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.sis_bias" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">sis_bias</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._sis_bias.SISBias'&gt;,</span> <span class="pre">topic='sis_bias',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.sis_bias" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.sis_bias_cmd">
-<span class="sig-name descname"><span class="pre">sis_bias_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._bias_msg.BiasMsg'&gt;,</span> <span class="pre">topic='sis_bias_cmd',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.sis_bias_cmd" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">sis_bias_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._sis_bias.SISBias'&gt;,</span> <span class="pre">topic='sis_bias_cmd',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.sis_bias_cmd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.hemt_bias">
+<span class="sig-name descname"><span class="pre">hemt_bias</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._hemt_bias.HEMTBias'&gt;,</span> <span class="pre">topic='hemt_bias',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.hemt_bias" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -1393,6 +1474,11 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.spectra_rec">
 <span class="sig-name descname"><span class="pre">spectra_rec</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._sampling.Sampling'&gt;,</span> <span class="pre">topic='spectra_record',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.spectra_rec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.obsmode">
+<span class="sig-name descname"><span class="pre">obsmode</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._observing_mode.ObservingMode'&gt;,</span> <span class="pre">topic='observing_mode',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.obsmode" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1499,6 +1585,24 @@
 <dt class="sig sig-object py" id="necst.definitions.service.File.Response">
 <span class="sig-name descname"><span class="pre">Response</span></span><a class="headerlink" href="#necst.definitions.service.File.Response" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">File_Response</span></code></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.service.ObservationMode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ObservationMode</span></span><a class="headerlink" href="#necst.definitions.service.ObservationMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.ObservationMode.Request">
+<span class="sig-name descname"><span class="pre">Request</span></span><a class="headerlink" href="#necst.definitions.service.ObservationMode.Request" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">ObservationMode_Request</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.ObservationMode.Response">
+<span class="sig-name descname"><span class="pre">Response</span></span><a class="headerlink" href="#necst.definitions.service.ObservationMode.Response" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">ObservationMode_Response</span></code></p>
 </dd></dl>
 
 </dd></dl>
@@ -1630,6 +1734,11 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.service.raw_coord">
 <span class="sig-name descname"><span class="pre">raw_coord</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Service(srv_type=&lt;class</span> <span class="pre">'necst_msgs.srv._coordinate_command.CoordinateCommand'&gt;,</span> <span class="pre">srv_name='raw_coord',</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl/antenna',</span> <span class="pre">qos_profile=None)</span></em><a class="headerlink" href="#necst.definitions.service.raw_coord" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.service.obsmode">
+<span class="sig-name descname"><span class="pre">obsmode</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Service(srv_type=&lt;class</span> <span class="pre">'necst_msgs.srv._observation_mode.ObservationMode'&gt;,</span> <span class="pre">srv_name='obsmode',</span> <span class="pre">namespace='/necst/OMU1P85M/ctrl',</span> <span class="pre">qos_profile=None)</span></em><a class="headerlink" href="#necst.definitions.service.obsmode" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

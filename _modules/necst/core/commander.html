@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.core.commander &#8212; necst 0.5.1 documentation</title>
+    <title>necst.core.commander &#8212; necst 0.6.0 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.1</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.6.0</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -153,16 +153,17 @@
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">neclib.utils</span> <span class="kn">import</span> <span class="n">ConditionChecker</span><span class="p">,</span> <span class="n">ParameterList</span><span class="p">,</span> <span class="n">read_file</span>
+<span class="kn">from</span> <span class="nn">neclib.core</span> <span class="kn">import</span> <span class="n">read</span>
+<span class="kn">from</span> <span class="nn">neclib.utils</span> <span class="kn">import</span> <span class="n">ConditionChecker</span><span class="p">,</span> <span class="n">ParameterList</span>
 <span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">AlertMsg</span><span class="p">,</span>
-    <span class="n">BiasMsg</span><span class="p">,</span>
     <span class="n">Boolean</span><span class="p">,</span>
     <span class="n">ChopperMsg</span><span class="p">,</span>
     <span class="n">DeviceReading</span><span class="p">,</span>
     <span class="n">LocalSignal</span><span class="p">,</span>
     <span class="n">PIDMsg</span><span class="p">,</span>
     <span class="n">Sampling</span><span class="p">,</span>
+    <span class="n">SISBias</span><span class="p">,</span>
     <span class="n">Spectral</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">necst_msgs.srv</span> <span class="kn">import</span> <span class="n">CoordinateCommand</span><span class="p">,</span> <span class="n">File</span><span class="p">,</span> <span class="n">RecordSrv</span>
@@ -228,6 +229,7 @@
             <span class="s2">&quot;chopper&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">chopper_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;antenna_control&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">antenna_control_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;sis_bias&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">sis_bias</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;hemt_bias&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">hemt_bias</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;lo_signal&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">lo_signal</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;thermometer&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">thermometer</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;attenuator&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">attenuator</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -370,39 +372,46 @@
 <span class="sd">               ``speed``</span>
 <span class="sd">           * -</span>
 <span class="sd">             - ``start``, ``stop``, ``reference``, ``offset``, ``scan_frame``, ``unit``</span>
-<span class="sd">                and ``speed``</span>
+<span class="sd">               and ``speed``</span>
 <span class="sd">           * -</span>
 <span class="sd">             - ``start``, ``stop``, ``name``, ``scan_frame``, ``unit`` and ``speed``</span>
 <span class="sd">           * -</span>
 <span class="sd">             - ``start``, ``stop``, ``name``, ``offset``, ``scan_frame``, ``unit`` and</span>
-<span class="sd">                ``speed``</span>
+<span class="sd">               ``speed``</span>
 <span class="sd">           * - ``error``</span>
 <span class="sd">             - None (all arguments except ``cmd`` are ignored)</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Stop the antenna immediately</span>
+
 <span class="sd">        &gt;&gt;&gt; com.antenna(&quot;stop&quot;)</span>
 
 <span class="sd">        The following also stops the antenna immediately. Arguments are ignored.</span>
+
 <span class="sd">        &gt;&gt;&gt; com.antenna(&quot;stop&quot;, wait=False)</span>
 
 <span class="sd">        Drive to certain position (Az., El.) = (30, 45)deg</span>
-<span class="sd">        &gt;&gt;&gt; com.antenna(&quot;point&quot;, target=(30, 45, &quot;azel&quot;))</span>
 
-<span class="sd">        Drive to certain position and track the target (RA, Dec.) = (0, 45)deg</span>
-<span class="sd">        &gt;&gt;&gt; com.antenna(&quot;point&quot;, target=(0, 45, &quot;radec&quot;))</span>
+<span class="sd">        &gt;&gt;&gt; com.antenna(&quot;point&quot;, target=(30, 45, &quot;altaz&quot;), unit=&quot;deg&quot;)</span>
+
+<span class="sd">        Drive to certain position and track the target (R.A., Dec.) = (0, 45)deg</span>
+
+<span class="sd">        &gt;&gt;&gt; com.antenna(&quot;point&quot;, target=(0, 45, &quot;fk5&quot;), unit=&quot;deg&quot;)</span>
 
 <span class="sd">        Send command to drive to (Az., El.) = (30, 45)deg but don&#39;t wait for the command</span>
 <span class="sd">        to complete</span>
-<span class="sd">        &gt;&gt;&gt; com.antenna(&quot;point&quot;, target=(30, 45, &quot;azel&quot;), wait=False)</span>
+
+<span class="sd">        &gt;&gt;&gt; com.antenna(&quot;point&quot;, target=(30, 45, &quot;azel&quot;), unit=&quot;deg&quot;, wait=False)</span>
 
 <span class="sd">        Point to a position defined as &quot;0.25deg east (negative azimuth) of center of the</span>
 <span class="sd">        moon&quot;</span>
-<span class="sd">        &gt;&gt;&gt; com.antenna(&quot;point&quot;, offset=(-0.25, 0, &quot;altaz&quot;), name=&quot;moon&quot;)</span>
+
+<span class="sd">        &gt;&gt;&gt; com.antenna(&quot;point&quot;, offset=(-0.25, 0, &quot;altaz&quot;), unit=&quot;deg&quot;, name=&quot;moon&quot;)</span>
 
 <span class="sd">        Scan the moon in the azimuth direction, starting from 0.5deg to the east from</span>
 <span class="sd">        the target, at speed of 600 arcsec/s</span>
+
 <span class="sd">        &gt;&gt;&gt; com.antenna(</span>
 <span class="sd">        ...     &quot;scan&quot;, start=(-0.5, 0), stop=(0.5, 0), name=&quot;moon&quot;,</span>
 <span class="sd">        ...     scan_frame=&quot;altaz&quot;, speed=1/6, unit=&quot;deg&quot;</span>
@@ -410,12 +419,14 @@
 
 <span class="sd">        Scan the target (RA, Dec.) = (0, 45)deg in constant galactic longitude, at speed</span>
 <span class="sd">        150 arcsec/s</span>
+
 <span class="sd">        &gt;&gt;&gt; com.antenna(</span>
 <span class="sd">        ...     &quot;scan&quot;, start=(0, 1), stop=(0, -1), target=(0, 45, &quot;radec&quot;),</span>
 <span class="sd">        ...     scan_frame=&quot;galactic&quot;, speed=1/150, unit=&quot;deg&quot;</span>
 <span class="sd">        ... )</span>
 
 <span class="sd">        Get current error between the commanded and actual antenna position</span>
+
 <span class="sd">        &gt;&gt;&gt; com.antenna(&quot;error&quot;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -468,8 +479,10 @@
                     <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="n">req</span> <span class="o">=</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;raw_coord&quot;</span><span class="p">])</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="s2">&quot;antenna&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">wait</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;raw_coord&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="s2">&quot;antenna&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">id</span>
 
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;SCAN&quot;</span><span class="p">:</span>
             <span class="n">scan_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">speed</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">speed</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">)</span>
@@ -497,11 +510,12 @@
                 <span class="p">)</span>
 
             <span class="n">req</span> <span class="o">=</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="o">**</span><span class="n">scan_kwargs</span><span class="p">)</span>
-            <span class="c1"># self.publisher[&quot;coord&quot;].publish(msg)</span>
             <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;raw_coord&quot;</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="s2">&quot;antenna&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;cmd_trans&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">Boolean</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()))</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="s2">&quot;antenna&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;control&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">if</span> <span class="n">wait</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="s2">&quot;antenna&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;control&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">id</span>
 
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">:</span>
             <span class="n">now</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -527,9 +541,11 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Insert the absorber</span>
+
 <span class="sd">        &gt;&gt;&gt; com.chopper(&quot;insert&quot;)</span>
 
 <span class="sd">        Remove the absorber but don&#39;t wait until it has been removed</span>
+
 <span class="sd">        &gt;&gt;&gt; com.chopper(&quot;remove&quot;, wait=False)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -650,6 +666,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Change the PID parameters of the azimuth axis to (0.1, 0.1, 0.1)</span>
+
 <span class="sd">        &gt;&gt;&gt; com.pid_parameter(&quot;set&quot;, Kp=0.1, Ki=0.1, Kd=0.1, axis=&quot;az&quot;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -674,6 +691,8 @@
         <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">time</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">intercept</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="c1"># require_track: bool = True,</span>
+        <span class="c1"># section_id: Optional[str] = None,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Set metadata of the spectral data.</span>
 
@@ -697,13 +716,16 @@
 <span class="sd">        --------</span>
 <span class="sd">        Set the metadata to (position=&quot;ON&quot;, id=&quot;scan01&quot;) immediately after current</span>
 <span class="sd">        control section is finished</span>
+
 <span class="sd">        &gt;&gt;&gt; com.metadata(&quot;set&quot;, position=&quot;ON&quot;, id=&quot;scan01&quot;)</span>
 
 <span class="sd">        Set the metadata to (position=&quot;SKY&quot;, id=&quot;calib01&quot;), without waiting for the</span>
 <span class="sd">        current control section to finish</span>
+
 <span class="sd">        &gt;&gt;&gt; com.metadata(&quot;set&quot;, position=&quot;SKY&quot;, id=&quot;calib01&quot;, intercept=False)</span>
 
 <span class="sd">        Set the metadata to (position=&quot;OFF&quot;, id=&quot;scan02&quot;) at 2021-01-01 00:00:00</span>
+
 <span class="sd">        &gt;&gt;&gt; com.metadata(</span>
 <span class="sd">        ...     &quot;set&quot;, position=&quot;OFF&quot;, id=&quot;scan02&quot;, time=1609459200, intercept=False)</span>
 
@@ -746,6 +768,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        Configure the quick look to show the spectrometer channel of (24000, 25000)</span>
 <span class="sd">        with 1 second integration time</span>
+
 <span class="sd">        &gt;&gt;&gt; com.quick_look(&quot;ch&quot;, (24000, 25000), integ=1)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -785,21 +808,27 @@
 <span class="sd">        --------</span>
 <span class="sd">        Start recording at ``otf_2021-01-01`` (the directory will be created under the</span>
 <span class="sd">        path specified by environment variable ``NECST_RECORD_ROOT``)</span>
+
 <span class="sd">        &gt;&gt;&gt; com.record(&quot;start&quot;, name=&quot;otf_2021-01-01&quot;)</span>
 
 <span class="sd">        Stop recording</span>
+
 <span class="sd">        &gt;&gt;&gt; com.record(&quot;stop&quot;)</span>
 
 <span class="sd">        Record the file ``test.txt`` with the content ``Hello, world!``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.record(&quot;file&quot;, name=&quot;test.txt&quot;, content=&quot;Hello, world!&quot;)</span>
 
 <span class="sd">        Record the local file ``/home/user/test.txt``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.record(&quot;file&quot;, name=&quot;/home/user/test.txt&quot;)</span>
 
 <span class="sd">        Record the remote file ``http://192.168.xx.xx:/files/test.txt``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.record(&quot;file&quot;, name=&quot;http://192.168.xx.xx:/files/test.txt&quot;)</span>
 
 <span class="sd">        Reduce the sampling rate to 1/10</span>
+
 <span class="sd">        &gt;&gt;&gt; com.record(&quot;reduce&quot;, nth=10)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -821,7 +850,7 @@
             <span class="k">return</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;FILE&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">content</span> <span class="o">=</span> <span class="n">read_file</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             <span class="n">req</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">content</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;record_file&quot;</span><span class="p">])</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;REDUCE&quot;</span><span class="p">:</span>
@@ -855,17 +884,50 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Set the SIS bias voltage to 100 mV on the device ``LSB``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.sis_bias(&quot;set&quot;, mV=100, id=&quot;LSB&quot;)</span>
 
 <span class="sd">        Read the SIS bias voltage on the device ``USB``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.sis_bias(&quot;?&quot;, id=&quot;USB&quot;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;SET&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;sis_bias&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">BiasMsg</span><span class="p">(</span><span class="n">voltage</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">mV</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;sis_bias&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">SISBias</span><span class="p">(</span><span class="n">voltage</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">mV</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">))</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;sis_bias&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commander.hemt_bias"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.hemt_bias">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">hemt_bias</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">],</span>
+        <span class="o">/</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Read the HEMT bias voltage.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cmd</span>
+<span class="sd">            Command to execute.</span>
+
+<span class="sd">        id</span>
+<span class="sd">            Device identifier, may be defined in the configuration file.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Read the HEMT bias voltage on the device ``USB``</span>
+<span class="sd">        &gt;&gt;&gt; com.hemt_bias(&quot;?&quot;, id=&quot;USB&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;hemt_bias&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
@@ -892,9 +954,11 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Set the loss to 10 dB on the device ``LSB``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.attenuator(&quot;set&quot;, dB=10, id=&quot;LSB&quot;)</span>
 
 <span class="sd">        Read the loss on the device ``USB``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.attenuator(&quot;?&quot;, id=&quot;USB&quot;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -918,6 +982,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Get the thermometer reading</span>
+
 <span class="sd">        &gt;&gt;&gt; com.thermometer(&quot;?&quot;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -953,9 +1018,11 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Set the frequency to 100 GHz and the power to 10 dBm on the device ``LSB2nd``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.signal_generator(&quot;set&quot;, GHz=100, dBm=10, id=&quot;LSB2nd&quot;)</span>
 
 <span class="sd">        Read the frequency and the power on the device ``1st``</span>
+
 <span class="sd">        &gt;&gt;&gt; com.signal_generator(&quot;?&quot;, id=&quot;1st&quot;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -969,10 +1036,17 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
     <span class="n">sg</span> <span class="o">=</span> <span class="n">signal_generator</span>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`signal_generator`.&quot;&quot;&quot;</span>
     <span class="n">patt</span> <span class="o">=</span> <span class="n">attenuator</span>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`attenuator`.&quot;&quot;&quot;</span>
     <span class="n">qlook</span> <span class="o">=</span> <span class="n">quick_look</span>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`quick_look`.&quot;&quot;&quot;</span>
     <span class="n">pid</span> <span class="o">=</span> <span class="n">pid_parameter</span>
-    <span class="n">sis</span> <span class="o">=</span> <span class="n">sis_bias</span></div>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`pid_parameter`.&quot;&quot;&quot;</span>
+    <span class="n">sis</span> <span class="o">=</span> <span class="n">sis_bias</span>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`sis_bias`.&quot;&quot;&quot;</span>
+    <span class="n">hemt</span> <span class="o">=</span> <span class="n">hemt_bias</span>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`hemt_bias`.&quot;&quot;&quot;</span></div>
 </pre></div>
 
               </div>

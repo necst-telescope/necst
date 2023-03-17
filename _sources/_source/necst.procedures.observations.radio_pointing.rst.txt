@@ -1,7 +1,0 @@
-necst.procedures.observations.radio\_pointing
-=============================================
-
-.. automodule:: necst.procedures.observations.radio_pointing
-   :members:
-   :undoc-members:
-   :show-inheritance:

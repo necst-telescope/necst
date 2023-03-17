@@ -23,9 +23,8 @@ Submodules
 
 .. autosummary::
 
+   necst.procedures.observations.file_based
    necst.procedures.observations.observation_base
-   necst.procedures.observations.otf
-   necst.procedures.observations.radio_pointing
    necst.procedures.observations.rsky
    necst.procedures.observations.skydip
 
@@ -34,8 +33,7 @@ Submodules
    :titlesonly:
    :hidden:
 
+   necst.procedures.observations.file_based
    necst.procedures.observations.observation_base
-   necst.procedures.observations.otf
-   necst.procedures.observations.radio_pointing
    necst.procedures.observations.rsky
    necst.procedures.observations.skydip

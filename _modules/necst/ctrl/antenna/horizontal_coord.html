@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.ctrl.antenna.horizontal_coord &#8212; necst 0.5.1 documentation</title>
+    <title>necst.ctrl.antenna.horizontal_coord &#8212; necst 0.6.0 documentation</title>
     
   <link href="../../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.5.1</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.6.0</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -152,7 +152,7 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span> <span class="nn">neclib.coordinates</span> <span class="kn">import</span> <span class="n">CoordinateGeneratorManager</span><span class="p">,</span> <span class="n">DriveLimitChecker</span><span class="p">,</span> <span class="n">PathFinder</span>
-<span class="kn">from</span> <span class="nn">neclib.coordinates.path_finder</span> <span class="kn">import</span> <span class="n">ControlStatus</span> <span class="k">as</span> <span class="n">LibControlStatus</span>
+<span class="kn">from</span> <span class="nn">neclib.coordinates.paths</span> <span class="kn">import</span> <span class="n">ControlContext</span>
 <span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">ControlStatus</span><span class="p">,</span> <span class="n">CoordMsg</span><span class="p">,</span> <span class="n">WeatherMsg</span>
 <span class="kn">from</span> <span class="nn">necst_msgs.srv</span> <span class="kn">import</span> <span class="n">CoordinateCommand</span>
 
@@ -174,9 +174,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">enc_time</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">finder</span> <span class="o">=</span> <span class="n">PathFinder</span><span class="p">(</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">location</span><span class="p">,</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">antenna_pointing_parameter_path</span><span class="p">,</span>
-            <span class="n">obsfreq</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">observation_frequency</span><span class="p">,</span>  <span class="c1"># TODO: Make ``obsfreq`` changeable.</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">location</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_pointing_parameter_path</span>
         <span class="p">)</span>
         <span class="n">drive_limit</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_drive</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="p">{</span>
@@ -202,6 +200,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tracking_ok</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span> <span class="o">=</span> <span class="n">CoordinateGeneratorManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_status</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">gc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_guard_condition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clear_cmd</span><span class="p">)</span>
 
@@ -275,23 +274,23 @@
         <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">scan</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">named</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">with_offset</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got POINT-TO-COORD command: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">track</span><span class="p">(</span>
-                <span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">frame</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span>
+                <span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="n">scan</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">named</span><span class="p">)</span> <span class="ow">and</span> <span class="n">with_offset</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got POINT-TO-COORD-WITH-OFFSET command: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">track_with_offset</span><span class="p">(</span>
+            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">track</span><span class="p">(</span>
                 <span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                 <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">frame</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span>
+                <span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span>
                 <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_lat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_frame</span><span class="p">),</span>
                 <span class="n">unit</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="n">scan</span><span class="p">)</span> <span class="ow">and</span> <span class="n">named</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">with_offset</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got POINT-TO-NAMED-TARGET command: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">track_by_name</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">track</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="n">scan</span><span class="p">)</span> <span class="ow">and</span> <span class="n">named</span> <span class="ow">and</span> <span class="n">with_offset</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got POINT-TO-NAMED-TARGET-WITH-OFFSET command: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">track_by_name_with_offset</span><span class="p">(</span>
+            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">track</span><span class="p">(</span>
                 <span class="n">msg</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
                 <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_lat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_frame</span><span class="p">),</span>
                 <span class="n">unit</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
@@ -300,30 +299,32 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got SCAN-IN-ABSOLUTE-COORD command: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span>
                 <span class="n">start</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-                <span class="n">end</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-                <span class="n">frame</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span>
+                <span class="n">stop</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">scan_frame</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span>
                 <span class="n">speed</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">speed</span><span class="p">),</span>
                 <span class="n">unit</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
                 <span class="n">margin</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">antenna_scan_margin</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">offset_scan</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">named</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got SCAN-IN-RELATIVE-COORD command: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">offset_linear</span><span class="p">(</span>
+            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span>
+                <span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">,</span>
+                <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span>
+                <span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span>
                 <span class="n">start</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-                <span class="n">end</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_lon</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_lat</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-                <span class="n">frame</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_frame</span><span class="p">,</span>
-                <span class="n">reference</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">),</span>
+                <span class="n">stop</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_lon</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_lat</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">scan_frame</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_frame</span><span class="p">,</span>
                 <span class="n">speed</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">speed</span><span class="p">),</span>
                 <span class="n">unit</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
                 <span class="n">margin</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">antenna_scan_margin</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">offset_scan</span> <span class="ow">and</span> <span class="n">named</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">offset_linear_by_name</span><span class="p">(</span>
+            <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span>
+                <span class="n">msg</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
                 <span class="n">start</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-                <span class="n">end</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_lon</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_lat</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-                <span class="n">frame</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_frame</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">stop</span><span class="o">=</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_lon</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">msg</span><span class="o">.</span><span class="n">offset_lat</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">scan_frame</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">offset_frame</span><span class="p">,</span>
                 <span class="n">speed</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">speed</span><span class="p">),</span>
                 <span class="n">unit</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
                 <span class="n">margin</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">antenna_scan_margin</span><span class="p">,</span>
@@ -351,15 +352,15 @@
             <span class="k">return</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">az</span><span class="p">,</span> <span class="n">el</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+            <span class="n">coord</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">(</span><span class="n">coord</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">StopIteration</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
-        <span class="n">az</span><span class="p">,</span> <span class="n">el</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_drive_range</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="n">el</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">_az</span><span class="p">,</span> <span class="n">_el</span><span class="p">,</span> <span class="n">_t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="n">el</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">az</span><span class="p">,</span> <span class="n">el</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_drive_range</span><span class="p">(</span><span class="n">coord</span><span class="o">.</span><span class="n">az</span><span class="p">,</span> <span class="n">coord</span><span class="o">.</span><span class="n">el</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_az</span><span class="p">,</span> <span class="n">_el</span><span class="p">,</span> <span class="n">_t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="n">el</span><span class="p">,</span> <span class="n">coord</span><span class="o">.</span><span class="n">time</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_az</span><span class="p">,</span> <span class="n">_el</span><span class="p">,</span> <span class="n">_t</span><span class="p">]):</span>
                 <span class="k">continue</span>
             <span class="c1"># Remove chronologically duplicated/overlapping commands</span>
@@ -380,11 +381,16 @@
         <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span>
 
     <span class="k">def</span> <span class="nf">_update_weather</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">WeatherMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_status</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_status</span><span class="o">.</span><span class="n">tight</span><span class="p">):</span>
+            <span class="c1"># Updating weather data may cause jump in calculated coordinate, so the</span>
+            <span class="c1"># parameter update is disabled while antenna is in tight control.</span>
+            <span class="k">return</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">temperature</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">pressure</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">pressure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">relative_humidity</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">humidity</span>
 
-<div class="viewcode-block" id="HorizontalCoord.telemetry"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.telemetry">[docs]</a>    <span class="k">def</span> <span class="nf">telemetry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LibControlStatus</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="HorizontalCoord.telemetry"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.telemetry">[docs]</a>    <span class="k">def</span> <span class="nf">telemetry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ControlContext</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="n">ControlStatus</span><span class="p">(</span>
                 <span class="n">controlled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -396,13 +402,14 @@
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="n">ControlStatus</span><span class="p">(</span>
-                <span class="n">controlled</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">controlled</span><span class="p">,</span>
+                <span class="n">controlled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">tight</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">tight</span><span class="p">,</span>
                 <span class="n">remote</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="o">.</span><span class="n">get</span><span class="p">())),</span>
                 <span class="n">interrupt_ok</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">infinite</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">waypoint</span><span class="p">),</span>
                 <span class="n">time</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_status</span> <span class="o">=</span> <span class="n">msg</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">status_publisher</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HorizontalCoord.next"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Boolean</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
