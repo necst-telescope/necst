@@ -1,7 +1,7 @@
 import time
 from typing import Dict
 
-from neclib.devices import BiasReader, BiasSetter
+from neclib.devices import ADConverter, DAConverter
 from necst_msgs.msg import SISBias as SISBiasMsg
 from rclpy.publisher import Publisher
 
