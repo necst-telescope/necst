@@ -26,8 +26,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.enc_time = 0
 
         self.finder = PathFinder(
-            config.location,
-            config.antenna_pointing_parameter_path
+            config.location, config.antenna_pointing_parameter_path
         )
         drive_limit = config.antenna_drive
         self.optimizer = {
@@ -161,7 +160,9 @@ class HorizontalCoord(AlertHandlerNode):
         elif offset_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-RELATIVE-COORD command: {msg}")
             new_generator = self.finder.linear(
-                msg.lon, msg.lat, msg.frame,
+                msg.lon,
+                msg.lat,
+                msg.frame,
                 start=(msg.offset_lon[0], msg.offset_lat[0]),
                 stop=(msg.offset_lon[1], msg.offset_lat[1]),
                 scan_frame=msg.offset_frame,
@@ -232,10 +233,7 @@ class HorizontalCoord(AlertHandlerNode):
         return [], []
 
     def _update_weather(self, msg: WeatherMsg) -> None:
-        if (
-            (self.last_status is not None)
-            and (self.last_status.tight)
-        ):
+        if (self.last_status is not None) and (self.last_status.tight):
             # Updating weather data may cause jump in calculated coordinate, so the
             # parameter update is disabled while antenna is in tight control.
             return
