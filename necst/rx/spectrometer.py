@@ -103,7 +103,8 @@ class SpectralData(DeviceNode):
             from neclib.devices import Spectrometer
         except ImportError:
             self.logger.error(
-                "Configuration for spectrometer not found; no spectral data would be recorded"
+                "Configuration for spectrometer not found; "
+                "no spectral data would be recorded"
             )
             return
 
