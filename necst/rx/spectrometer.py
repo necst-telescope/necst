@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from neclib.data import Resize
-from neclib.devices import Spectrometer
 from neclib.recorders import NECSTDBWriter, Recorder
 from neclib.utils import ConditionChecker
 from necst_msgs.msg import ControlStatus, Sampling, Spectral
@@ -91,7 +90,6 @@ class ObservingModeManager:
 
 
 class SpectralData(DeviceNode):
-
     NodeName = "spectrometer"
     Namespace = namespace.rx
 
@@ -100,6 +98,16 @@ class SpectralData(DeviceNode):
         self.logger = self.get_logger()
 
         self.resizers = defaultdict(lambda: Resize(1))
+
+        try:
+            from neclib.devices import Spectrometer
+        except ImportError:
+            self.logger.error(
+                "Configuration for spectrometer not found; "
+                "no spectral data would be recorded"
+            )
+            return
+
         self.io = Spectrometer()
 
         self.metadata = ObservingModeManager()
