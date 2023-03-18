@@ -15,14 +15,21 @@ class SIS_IV(Observation):
         self.da_converter = DAConverter()
         self.ad_converter = ADConverter()
 
-    def run(self) -> None:
+    def run(self, sideband: str, min_voltage_mV: float = -8.0, max_voltage_mV: float = 8.0, step_voltage_mV: float = 0.1) -> None:
         msg = SISIVMsg()
-        id = 1
-        for bias_voltage in range(-80, 81, 1):
-            setting_voltage = self.da_converter.set_voltage(bias_voltage / 10.0, id)
+        channels = self.ad_converter.Config.get("bias_setter", "channel")
+        if sideband == "USB":
+            channel = channels["USB"]
+        elif sideband == "LSB":
+            channel = channels["LSB"]
+        else:
+            raise ValueError("sideband must be either 'USB' or 'LSB'.")
+
+        for bias_voltage in range(int(round(1000 * min_voltage_mV)), int(round(1000 * max_voltage_mV) + 1000 * step_voltage_mV), int(round(1000 * step_voltage_mV))):
+            setting_voltage = self.da_converter.set_voltage(bias_voltage / 1000, channel)
             time.sleep(0.1)
-            measured_voltage = self.ad_converter.get_voltage(id).to_value("mV").item()
-            measured_current = self.ad_converter.get_current(id).to_value("uA").item()
+            measured_voltage = self.ad_converter.get_voltage(channel).to_value("mV").item()
+            measured_current = self.ad_converter.get_current(channel).to_value("uA").item()
             msg = SISIVMsg(
                 time = time.time(), setting_voltage = setting_voltage, measured_voltage = measured_voltage, measured_current = measured_current, id = id
             )
