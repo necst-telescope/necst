@@ -1,7 +1,7 @@
 import time
 from typing import Dict
 
-from neclib.devices import BiasReader
+from neclib.devices import HemtBiasReader
 from necst_msgs.msg import HEMTBias as HEMTBiasMsg
 from rclpy.publisher import Publisher
 
@@ -17,7 +17,7 @@ class HEMTBias(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        self.reader_io = BiasReader()
+        self.reader_io = HemtBiasReader()
 
         self.pub: Dict[str, Publisher] = {}
 
