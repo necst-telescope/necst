@@ -25,15 +25,10 @@ if __name__ == "__main__":
         help="Integration time for the R-Sky observation.",
         default=2,
     )
-    p.add_argument(
-        "-m",
-        "--mode",
-        type=str,
-        help="Monitoring Mode",
-        required=True,
-    )
-    
+    #TODO: Add monitoring mode argument. -> Total power or Average(Reduce data).
+    # This source code is reducing data in 1/10.
+
     args = p.parse_args()
 
-    obs = HotMonitor(mode=args.mode, integ_time=args.integ)
+    obs = HotMonitor(nteg_time=args.integ)
     obs.execute()
