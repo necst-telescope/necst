@@ -345,11 +345,12 @@ class Commander(PrivilegedNode):
                     offset_lat=[float(start[1]), float(stop[1])],
                     offset_frame=scan_frame,
                 )
-            elif reference is not None:
+            elif (reference is not None) or (target is not None):
+                given_as = reference if target is None else target
                 scan_kwargs.update(
-                    lon=[float(reference[0])],
-                    lat=[float(reference[1])],
-                    frame=reference[2],
+                    lon=[float(given_as[0])],
+                    lat=[float(given_as[1])],
+                    frame=given_as[2],
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
                     offset_frame=scan_frame,
