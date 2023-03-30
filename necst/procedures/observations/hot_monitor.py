@@ -13,4 +13,5 @@ class HotMonitor(Observation):
         
         self.com.record("reduce", nth = 10)
         self.logger.info(f"Starting {integ_time}s Hot Monitor")
-        self.hot(integ_time, idx)
+        self.integ_sec = integ_time*3600
+        self.hot(self.integ_sec)

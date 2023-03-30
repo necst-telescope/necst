@@ -22,8 +22,8 @@ if __name__ == "__main__":
         "-i",
         "--integ",
         type=float,
-        help="Integration time for the R-Sky observation.",
-        default=2,
+        help="Integration time for the Hot Monitor in unit of hours.",
+        required=True,
     )
     #TODO: Add monitoring mode argument. -> Total power or Average(Reduce data).
     # This source code is reducing data in 1/10.
