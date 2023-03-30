@@ -5,7 +5,7 @@ from ..observation_base import Observation
 
 class SIS_IV(Observation):
 
-    observation_type = "SISIV"
+    observation_type = "SIS_IV"
 
     def run(
         self,
