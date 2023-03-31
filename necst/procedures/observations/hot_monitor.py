@@ -13,5 +13,5 @@ class HotMonitor(Observation):
     def run(self, integ_time: Union[int, float]) -> None:
         self.com.record("reduce", nth=10)
         self.logger.info(f"Starting {integ_time}hours Hot Monitor")
-        self.integ_sec = integ_time*3600
+        self.integ_sec = integ_time * 3600
         self.hot(self.integ_sec, f"{integ_time}h")
