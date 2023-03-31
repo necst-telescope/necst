@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Hot Monitor.
 
-Elevation angle fixed at 45deg.
-Repeats the blackbody in and out the specified number of times.
-For each, integrate over the specified time.
+Inserting the blackbody in the specified integrate time.
+The sampling rate of the recorder is fixed in 1/10 of default rate.
 
 Examples
 --------
-$ hotmonitor -i 3600 -m "ave"
+Hot Monitoring in 5hours
+
+$ hotmonitor -i 5
 
 """
 
@@ -30,5 +31,5 @@ if __name__ == "__main__":
 
     args = p.parse_args()
 
-    obs = HotMonitor(nteg_time=args.integ)
+    obs = HotMonitor(integ_time=args.integ)
     obs.execute()

@@ -9,9 +9,9 @@ class HotMonitor(Observation):
     #TODO: Add monitoring mode argument. -> Total power or Average(Reduce data).
     # This source code is reducing data in 1/10.
 
-    def run(self, integ_time: Union[int, float], mode: str["ave", "total"]) -> None:
+    def run(self, integ_time: Union[int, float]) -> None:
         
         self.com.record("reduce", nth = 10)
-        self.logger.info(f"Starting {integ_time}s Hot Monitor")
+        self.logger.info(f"Starting {integ_time}hours Hot Monitor")
         self.integ_sec = integ_time*3600
-        self.hot(self.integ_sec)
+        self.hot(self.integ_sec, id = f"{self.integ_sec}h")
