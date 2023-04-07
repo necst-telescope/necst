@@ -43,9 +43,10 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    SIS_IV(
+    meas = SIS_IV(
         id=args.id,
         min_voltage_mV=args.min,
         max_voltage_mV=args.max,
         step_voltage_mV=args.step,
     )
+    meas.execute()
