@@ -23,13 +23,7 @@ if __name__ == "__main__":
         help="Path to observation parameter file",
         required=True,
     )
-    p.add_argument(
-        "-r",
-        "--resume-scan",
-        type=int,
-        default=1,
-        help="1-based scan index the observation starts from.",
-    )
     args = p.parse_args()
 
-    OTF(path=args.file, resume_scan=args.resume_scan)
+    obs = OTF(file=args.file)
+    obs.execute()

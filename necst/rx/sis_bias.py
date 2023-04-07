@@ -1,8 +1,8 @@
 import time
 from typing import Dict
 
-from neclib.devices import BiasReader, BiasSetter
-from necst_msgs.msg import SISBias
+from neclib.devices import SisBiasReader, SisBiasSetter
+from necst_msgs.msg import SISBias as SISBiasMsg
 from rclpy.publisher import Publisher
 
 from .. import namespace, topic
@@ -18,8 +18,8 @@ class SISBias(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        self.reader_io = BiasReader()
-        self.setter_io = BiasSetter()
+        self.reader_io = SisBiasReader()
+        self.setter_io = SisBiasSetter()
 
         self.pub: Dict[str, Publisher] = {}
 
@@ -32,7 +32,7 @@ class SISBias(DeviceNode):
             current = self.reader_io.get_current(f"{id}_I").to_value("uA").item()
             voltage = self.reader_io.get_voltage(f"{id}_V").to_value("mV").item()
             power = self.reader_io.get_power(f"{id}_P").to_value("mW").item()
-            msg = SISBias(
+            msg = SISBiasMsg(
                 time=time.time(), current=current, voltage=voltage, power=power, id=id
             )
             if id not in self.pub:
@@ -40,7 +40,7 @@ class SISBias(DeviceNode):
             self.pub[id].publish(msg)
             time.sleep(0.01)
 
-    def set_voltage(self, msg: SISBias) -> None:
+    def set_voltage(self, msg: SISBiasMsg) -> None:
         self.setter_io.set_voltage(mV=msg.voltage, id=msg.id)
         self.setter_io.apply_voltage()
         self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")

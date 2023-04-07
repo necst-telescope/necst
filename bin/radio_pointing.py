@@ -26,4 +26,5 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    RadioPointing(path=args.file)
+    obs = RadioPointing(file=args.file)
+    obs.execute()
