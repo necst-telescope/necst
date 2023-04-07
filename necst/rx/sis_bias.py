@@ -27,7 +27,14 @@ class SISBias(DeviceNode):
         self.create_timer(1, self.stream)
 
     def stream(self) -> None:
-        channels = set(map(lambda x: x[:-2], self.reader_io.Config.channel.keys()))
+        channels = set(
+            map(
+                lambda x: x[:-2],
+                filter(
+                    lambda y: "_" not in y[:-2], self.reader_io.Config.channel.keys()
+                ),
+            )
+        )
         for id in channels:
             current = self.reader_io.get_current(f"{id}_I").to_value("uA").item()
             voltage = self.reader_io.get_voltage(f"{id}_V").to_value("mV").item()

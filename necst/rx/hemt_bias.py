@@ -24,7 +24,12 @@ class HEMTBias(DeviceNode):
         self.create_timer(1, self.stream)
 
     def stream(self) -> None:
-        channels = set(map(lambda x: x[:-4], self.reader_io.Config.channel.keys()))
+        channels = set(
+            map(
+                lambda x: x[:-4],
+                filter(lambda y: "_" in y[:-2], self.reader_io.Config.channel.keys()),
+            )
+        )
         for id in channels:
             v_drain = self.reader_io.get_voltage(f"{id}_Vdr").to_value("V").item()
             v_gate1 = self.reader_io.get_voltage(f"{id}_Vg1").to_value("V").item()
