@@ -6,9 +6,9 @@ The sampling rate of the recorder is fixed in 1/10 of default rate.
 
 Examples
 --------
-Hot Monitoring in 5hours
+Hot Monitoring in 5hours. Recording rate is 1 data in 10s.
 
-$ hotmonitor -i 5
+$ hot_monitor -i 5 -r 10
 
 """
 
@@ -26,10 +26,17 @@ if __name__ == "__main__":
         help="Integration time for the Hot Monitor in unit of hours.",
         required=True,
     )
-    #TODO: Add monitoring mode argument. -> Total power or Average(Reduce data).
-    # This source code is reducing data in 1/10.
+    p.add_argument(
+        "-r",
+        "--rate",
+        type=float,
+        help="Recording time for 1 data in unit of seconds.",
+        required=True,
+    )
+
+    # TODO: Add monitoring mode argument. -> Total power or Average(Reduce data).
 
     args = p.parse_args()
 
-    obs = HotMonitor(integ_time=args.integ)
+    obs = HotMonitor(integ_time=args.integ, rate=args.rate)
     obs.execute()
