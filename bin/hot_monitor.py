@@ -2,7 +2,9 @@
 """Hot Monitor.
 
 Inserting the blackbody in the specified integrate time.
-The sampling rate of the recorder is fixed in 1/10 of default rate.
+The sampling rate cannot be set under 0.1s/1data.
+Recording rate cannot be specified smaller than two decimal places.
+The rate of 0.1s/1data is default rate.
 
 Examples
 --------
