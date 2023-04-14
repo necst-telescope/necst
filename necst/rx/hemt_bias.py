@@ -1,7 +1,7 @@
 import time
 from typing import Dict
 
-from neclib.devices import BiasReader as HemtBiasReader
+from neclib.devices import HemtBiasReader
 from necst_msgs.msg import HEMTBias as HEMTBiasMsg
 from rclpy.publisher import Publisher
 
