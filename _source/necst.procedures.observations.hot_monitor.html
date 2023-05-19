@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.ctrl.antenna.encoder &#8212; necst 0.6.1 documentation</title>
+    <title>necst.procedures.observations.hot_monitor &#8212; necst 0.6.1 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.ctrl.antenna.horizontal_coord" href="necst.ctrl.antenna.horizontal_coord.html" />
-    <link rel="prev" title="necst.ctrl.antenna" href="necst.ctrl.antenna.html" />
+    <link rel="next" title="necst.procedures.observations.observation_base" href="necst.procedures.observations.observation_base.html" />
+    <link rel="prev" title="necst.procedures.observations.file_based" href="necst.procedures.observations.file_based.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -214,28 +214,28 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 current active has-children">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.ctrl.html">
    necst.ctrl
   </a>
-  <input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
   <label for="toctree-checkbox-4">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul class="current">
-   <li class="toctree-l2 current active has-children">
+  <ul>
+   <li class="toctree-l2 has-children">
     <a class="reference internal" href="necst.ctrl.antenna.html">
      necst.ctrl.antenna
     </a>
-    <input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+    <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
     <label for="toctree-checkbox-5">
      <i class="fas fa-chevron-down">
      </i>
     </label>
-    <ul class="current">
-     <li class="toctree-l3 current active">
-      <a class="current reference internal" href="#">
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.antenna.encoder.html">
        necst.ctrl.antenna.encoder
       </a>
      </li>
@@ -290,33 +290,33 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.procedures.html">
    necst.procedures
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
   <label for="toctree-checkbox-7">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
-   <li class="toctree-l2 has-children">
+  <ul class="current">
+   <li class="toctree-l2 current active has-children">
     <a class="reference internal" href="necst.procedures.observations.html">
      necst.procedures.observations
     </a>
-    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
     <label for="toctree-checkbox-8">
      <i class="fas fa-chevron-down">
      </i>
     </label>
-    <ul>
+    <ul class="current">
      <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.file_based.html">
        necst.procedures.observations.file_based
       </a>
      </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.hot_monitor.html">
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
        necst.procedures.observations.hot_monitor
       </a>
      </li>
@@ -451,43 +451,42 @@
               
               <div>
                 
-  <section id="module-necst.ctrl.antenna.encoder">
-<span id="necst-ctrl-antenna-encoder"></span><h1>necst.ctrl.antenna.encoder<a class="headerlink" href="#module-necst.ctrl.antenna.encoder" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.procedures.observations.hot_monitor">
+<span id="necst-procedures-observations-hot-monitor"></span><h1>necst.procedures.observations.hot_monitor<a class="headerlink" href="#module-necst.procedures.observations.hot_monitor" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.encoder.AntennaEncoderController">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AntennaEncoderController</span></span><a class="reference internal" href="../_modules/necst/ctrl/antenna/encoder.html#AntennaEncoderController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.encoder.AntennaEncoderController" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="necst.core.device_node.html#necst.core.device_node.DeviceNode" title="necst.core.device_node.DeviceNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceNode</span></code></a></p>
+<dt class="sig sig-object py" id="necst.procedures.observations.hot_monitor.HotMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HotMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/hot_monitor.html#HotMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.hot_monitor.HotMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation" title="necst.procedures.observations.observation_base.Observation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Observation</span></code></a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.encoder.AntennaEncoderController.NodeName">
-<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'encoder_readout'</span></em><a class="headerlink" href="#necst.ctrl.antenna.encoder.AntennaEncoderController.NodeName" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.encoder.AntennaEncoderController.Namespace">
-<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/ctrl/antenna'</span></em><a class="headerlink" href="#necst.ctrl.antenna.encoder.AntennaEncoderController.Namespace" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.observations.hot_monitor.HotMonitor.observation_type">
+<span class="sig-name descname"><span class="pre">observation_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HotMonitor'</span></em><a class="headerlink" href="#necst.procedures.observations.hot_monitor.HotMonitor.observation_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.encoder.AntennaEncoderController.stream">
-<span class="sig-name descname"><span class="pre">stream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/encoder.html#AntennaEncoderController.stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.encoder.AntennaEncoderController.stream" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.observations.hot_monitor.HotMonitor.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">integ_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/hot_monitor.html#HotMonitor.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.hot_monitor.HotMonitor.run" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>integ_time</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>rate</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 </dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="necst.ctrl.antenna.encoder.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/encoder.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.encoder.main" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </section>
 
@@ -497,17 +496,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.ctrl.antenna.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.procedures.observations.file_based.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.ctrl.antenna</p>
+            <p class="prev-next-title">necst.procedures.observations.file_based</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.ctrl.antenna.horizontal_coord.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.procedures.observations.observation_base.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.ctrl.antenna.horizontal_coord</p>
+        <p class="prev-next-title">necst.procedures.observations.observation_base</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

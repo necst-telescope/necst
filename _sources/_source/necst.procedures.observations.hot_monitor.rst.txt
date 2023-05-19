@@ -1,0 +1,7 @@
+necst.procedures.observations.hot\_monitor
+==========================================
+
+.. automodule:: necst.procedures.observations.hot_monitor
+   :members:
+   :undoc-members:
+   :show-inheritance:
