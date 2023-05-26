@@ -10,7 +10,6 @@ from ..core import DeviceNode
 
 
 class SISBias(DeviceNode):
-
     NodeName = "sis_bias"
     Namespace = namespace.rx
 
@@ -27,7 +26,10 @@ class SISBias(DeviceNode):
         self.create_timer(1, self.stream)
 
     def stream(self) -> None:
-        channels = set(map(lambda x: x[:-2], self.reader_io.Config.channel.keys()))
+        sis_channel = [
+            id for id in self.reader_io.Config.channel.keys() if id.startswith("sis")
+        ]
+        channels = set(map(lambda x: x[:-2], sis_channel))
         for id in channels:
             current = self.reader_io.get_current(f"{id}_I").to_value("uA").item()
             voltage = self.reader_io.get_voltage(f"{id}_V").to_value("mV").item()
