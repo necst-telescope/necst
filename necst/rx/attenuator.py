@@ -34,6 +34,6 @@ class AttenuatorController(DeviceNode):
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            loss = self.io.get_loss(id=name).to_value("dB").item()
+            loss = self.io.get_loss(id=name).value.item()
             msg = DeviceReading(id=name, value=float(loss), time=time.time())
             publisher.publish(msg)
