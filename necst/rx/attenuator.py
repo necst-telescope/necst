@@ -29,7 +29,7 @@ class AttenuatorController(DeviceNode):
 
     def check_publisher(self) -> None:
         for key in self.io.keys():
-	    for name in config.attenuator[key].channel.keys():
+            for name in config.attenuator[key].channel.keys():
                 if key not in self.publisher:
                     self.publisher[f"{key}"+"."+f"{name}"] = topic.attenuator[f"{key}"+"."+f"{name}"].publisher(self)
 
