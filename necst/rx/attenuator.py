@@ -32,7 +32,7 @@ class AttenuatorController(DeviceNode):
             for name in config.attenuator[key].channel.keys():
                 if key not in self.publisher:
                     self.publisher[f"{key}" + "."
-                                   + f"{name}"]
+                                   + f"{name}"] \
                     = topic.attenuator[f"{key}" + "." + f"{name}"].publisher(self)
 
     def stream(self) -> None:
