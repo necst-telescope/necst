@@ -5,12 +5,11 @@ from neclib.devices import Attenuator
 from necst_msgs.msg import DeviceReading
 from rclpy.publisher import Publisher
 
-from .. import namespace, topic
+from .. import namespace, topic, config
 from ..core import DeviceNode
 
 
 class AttenuatorController(DeviceNode):
-
     NodeName = "attenuator"
     Namespace = namespace.rx
 
@@ -29,11 +28,14 @@ class AttenuatorController(DeviceNode):
 
     def check_publisher(self) -> None:
         for key in self.io.keys():
-            if key not in self.publisher:
-                self.publisher[key] = topic.attenuator[key].publisher(self)
+            for name in config.attenuator[key].channel.keys():
+                if key not in self.publisher:
+                    self.publisher[f"{key}" + "." + f"{name}"] = topic.attenuator[
+                        f"{key}" + "." + f"{name}"
+                    ].publisher(self)
 
     def stream(self) -> None:
-        for name, publisher in self.publisher.items():
-            loss = self.io.get_loss(id=name).value.item()
-            msg = DeviceReading(id=name, value=float(loss), time=time.time())
+        for key, publisher in self.publisher.items():
+            loss = self.io[key].get_loss(id=key.rsplit(".")[1]).value.item()
+            msg = DeviceReading(id=key, value=float(loss), time=time.time())
             publisher.publish(msg)
