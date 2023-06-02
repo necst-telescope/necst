@@ -28,12 +28,12 @@ class AttenuatorController(DeviceNode):
         self.logger.info(f"Attenuator loss set to {msg.value} dB for device {msg.id}")
 
     def check_publisher(self) -> None:
-    	for key in self.io.keys():
-    		for name in config.attenuator[key].channel.keys():
-        		if key not in self.publisher:
-    				self.publisher[f"{key}" + "." + f"{name}"] = \
-                    			topic.attenuator[f"{key}" + "." + f"{name}"] \
-                        			.publisher(self)
+        for key in self.io.keys():
+    	    for name in config.attenuator[key].channel.keys():
+                if key not in self.publisher:
+                    self.publisher[f"{key}" + "." + f"{name}"] = \
+                        topic.attenuator[f"{key}" + "." + f"{name}"] \
+                            .publisher(self)
 
     def stream(self) -> None:
         for key, publisher in self.publisher.items():
