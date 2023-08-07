@@ -54,7 +54,7 @@ class Observation(ABC):
                 if not privileged:
                     raise NECSTAuthorityError("Couldn't acquire privilege")
                 if "rate" in self._kwargs.keys():
-                    conv_rate = int(self._kwargs["rate"] * 10)
+                    conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
