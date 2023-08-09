@@ -7,7 +7,7 @@ from ..ctrl.calibrator import ChopperController
 def configure_executor() -> MultiThreadedExecutor:
     executor = MultiThreadedExecutor()
     nodes = [
-        ChopperController,
+        ChopperController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
