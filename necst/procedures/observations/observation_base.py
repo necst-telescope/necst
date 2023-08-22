@@ -56,6 +56,8 @@ class Observation(ABC):
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
+                if self._kwargs["ch"] is not None:
+                    self.com.record("binning", ch=self._kwargs.pop("ch"))
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
