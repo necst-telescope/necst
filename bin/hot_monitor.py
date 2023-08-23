@@ -35,10 +35,16 @@ if __name__ == "__main__":
         help="Recording time for 1 data in unit of seconds.",
         required=True,
     )
+    p.add_argument(
+        "-c",
+        "--channel",
+        type=int,
+        help="Number of spectral channels.",
+    )
 
     # TODO: Add monitoring mode argument. -> Total power or Average(Reduce data).
 
     args = p.parse_args()
 
-    obs = HotMonitor(integ_time=args.integ, rate=args.rate)
+    obs = HotMonitor(integ_time=args.integ, rate=args.rate, ch=args.channel)
     obs.execute()
