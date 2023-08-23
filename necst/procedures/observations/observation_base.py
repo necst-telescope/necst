@@ -163,8 +163,7 @@ class Observation(ABC):
 
     def binning(self, ch):
         if ch is not None:
-            if (ch & (ch-1)) == 0:
+            if (ch & (ch - 1)) == 0:
                 self.com.record("binning", ch=ch)
             else:
                 raise ValueError(f"Input channel number {ch} is not power of 2.")
-            
