@@ -161,9 +161,10 @@ class Observation(ABC):
         self.com.metadata("set", position="", id=str(id))
         self.logger.debug("Complete ON")
 
-    def binning(self,ch):
+    def binning(self, ch):
         if ch is not None:
-            if (ch&(ch-1))==0:
+            if (ch & (ch-1)) == 0:
                 self.com.record("binning", ch=ch)
             else:
                 raise ValueError(f"Input channel number {ch} is not power of 2.")
+            
