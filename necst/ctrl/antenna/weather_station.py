@@ -23,9 +23,9 @@ class WeatherStationReader(DeviceNode):
 
     def stream(self):
         msg = WeatherMsg(
-            temperature=float(self.thermo.get_temperature().to_value("K")),
-            pressure=float(self.thermo.get_pressure().to_value("hPa")),
-            humidity=float(self.thermo.get_humidity()),
+            OutTemp=float(self.thermo.get_temperature().to_value("K")),
+            press=float(self.thermo.get_pressure().to_value("hPa")),
+            OutHum=float(self.thermo.get_humidity()),
             time=time.time(),
         )
         self.publisher.publish(msg)
