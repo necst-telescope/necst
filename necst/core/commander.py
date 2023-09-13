@@ -10,6 +10,7 @@ from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import (
     AlertMsg,
     Boolean,
+    CCDMsg,
     ChopperMsg,
     DeviceReading,
     LocalSignal,
@@ -64,6 +65,7 @@ class Commander(PrivilegedNode):
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
             "chopper": topic.chopper_cmd,
+            "ccd": topic.ccd_cmd,
             "spectra_meta": topic.spectra_meta,
             "qlook_meta": topic.qlook_meta,
             "sis_bias": topic.sis_bias_cmd,
@@ -376,6 +378,28 @@ class Commander(PrivilegedNode):
 
         elif CMD in ["?"]:
             return self.get_message("encoder", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    @require_privilege(escape_cmd=["?"])
+    def ccd_controller(
+        self,
+        cmd: Literal["capture", "?"],
+        /,
+        *,
+        name: str = "",
+    ) -> None:
+        """
+        TODO: add description about this source code.
+        """
+        CMD = cmd.upper()
+        if CMD == "CAPTURE":
+            msg = CCDMsg(capture=True, savepath=name)
+            self.publisher["ccd"].publish(msg)
+        elif CMD == "?":
+            # TODO: Implement.
+            # May return metadata, by subscribing to the resized spectral data.
+            raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 

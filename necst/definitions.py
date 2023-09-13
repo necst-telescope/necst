@@ -113,6 +113,7 @@ class topic:
         AlertMsg,
         HEMTBias,
         Boolean,
+        CCDMsg,
         ChopperMsg,
         Clock,
         ControlStatus,
@@ -168,6 +169,7 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
+    ccd_cmd = Topic(CCDMsg, "ccd_cmd", qos.reliable, namespace.rx)
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
