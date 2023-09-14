@@ -382,16 +382,14 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
     @require_privilege(escape_cmd=["?"])
-    def ccd_controller(
+    def ccd(
         self,
         cmd: Literal["capture", "?"],
         /,
         *,
         name: str = "",
     ) -> None:
-        """
-        TODO: add description about this source code.
-        """
+        # TODO: Add description about this source code.
         CMD = cmd.upper()
         if CMD == "CAPTURE":
             msg = CCDMsg(capture=True, savepath=name)

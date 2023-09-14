@@ -13,19 +13,24 @@ class OpticalPointing(Observation):
         # 何かしらのファイル読み込みの関数（Readlineなど）正直neclibに実装してもいい。
         opt_pointing = OpticalPointingSort(time.time(), "unix")
         sorted_list = opt_pointing.sort(file or list, magnitude)
-        self.logger.info(
-            f"Starting Optical Pointing Observation. Expected observing time is {ex_time} min."
-        )
+        # self.logger.info(  # 天体の個数の表示だけでもいいかも
+        #     f"Starting Optical Pointing Observation. Estimated observing time is {estimated_time} min."
+        # )
         complete = 0
-        for opt_target in len(sorted_list):
+        # 以下 try: / except KeyboardInterrupt:
+        for opt_target in sorted_list:
             com.antenna(
-                "point", target=(opt_target[0], opt_target[1], "fk5"), unit="deg"
+                "point",
+                target=(opt_target[0], opt_target[1], "fk5"),
+                unit="deg",
+                wait=True,
             )
-            time.sleep(5.0)  # 念のため追尾が落ち着くまで数秒待機？
-            com.ccd.capture(savepath)
+            time.sleep(3.0)  # 念のため追尾が落ち着くまで数秒待機？
+            com.ccd(
+                "capture", name=savepath
+            )  # savepath は neclib の config から撮影データの path を読み込んで生成
             complete += 1
-            self.logger.info(f"{complete}/{len(sorted_list)} th target is completed.")
+            self.logger.info(f"Target {complete}/{len(sorted_list)} is completed.")
         self.logger.info(
             f"Optical Pointing is completed: the total pointing number is {complete}."
         )
-        # 以降、ファイルを読み込んだ後の天体を順番に向けて写真を撮ってを繰り返す
