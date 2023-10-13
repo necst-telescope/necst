@@ -9,8 +9,8 @@ from neclib.core import read
 from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import (
     AlertMsg,
-    Boolean,
     Binning,
+    Boolean,
     ChopperMsg,
     DeviceReading,
     LocalSignal,
@@ -720,6 +720,10 @@ class Commander(PrivilegedNode):
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
+            if ch > 100:
+                self.quick_look(
+                    "ch", range=(0, 100), integ=1
+                )  # reset to default values
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
