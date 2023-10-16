@@ -724,6 +724,8 @@ class Commander(PrivilegedNode):
                 self.quick_look(
                     "ch", range=(0, 100), integ=1
                 )  # reset to default values
+            else:
+                self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
