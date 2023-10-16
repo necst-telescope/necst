@@ -28,9 +28,9 @@ class WeatherStationReader(DeviceNode):
             pressure=float(self.thermo.get_pressure().to_value("hPa")),
             humidity=float(self.thermo.get_out_hum()),
             in_humidity=float(self.thermo.get_in_hum()),
-            wind_speed=float(self.get_wind_speed().to_value("m/s")),
-            wind_direction=float(self.get_wind_dir().to_value("deg")),
-            rain_rate=float(self.get_rain_rate()),
+            wind_speed=float(self.thermo.get_wind_speed().to_value("m/s")),
+            wind_direction=float(self.thermo.get_wind_dir().to_value("deg")),
+            rain_rate=float(self.thermo.get_rain_rate()),
             time=time.time()
         )
         self.publisher.publish(msg)
