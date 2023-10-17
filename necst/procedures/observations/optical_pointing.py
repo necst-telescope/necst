@@ -1,37 +1,75 @@
-from typing import Union
+from datetime import datetime
+from typing import Optional, Tuple, Union
 import time
-from .observation_base import Observation
-from neclib import config
 
+from neclib import config
 from neclib.coordinates.observations import OpticalPointingSpec
+
+from .observation_base import Observation
 
 
 class OpticalPointing(Observation):
     observation_type = "OpticalPointing"
 
-    def run(self, file: str, magnitude: int) -> None:
+    def run(
+        self,
+        file: str,
+        magnitude: Tuple[Union[float, int], Union[float, int]],
+        drive_test: bool = False,
+        obstime: Optional[datetime] = None,
+    ) -> None:
         self.com.record("reduce", nth=60)  # 分光計のデータを取りたくない。
-        delay = 0.0  # v3 にあった obstimedelay というパラメータ（常に 0.0 となっていた）
-        opt_pointing = OpticalPointingSpec(time.time() + delay, "unix")
+        if obstime is None:
+            obsdatetime = datetime.now()
+        else:
+            obsdatetime = obstime
+        obsfloattime = obsdatetime.timestamp()
+        opt_pointing = OpticalPointingSpec(obsfloattime, "unix")
         # 何かしらのファイル読み込みの関数（Readlineなど）正直neclibに実装してもいい。-> neclib に実装してみた
-        sorted_list = opt_pointing.sort(target_list=file, magnitude=magnitude)
+        sorted_list = opt_pointing.sort(
+            catalog_file=file, magnitude=(float(magnitude[0]), float(magnitude[1]))
+        )
+        if obstime is None:
+            self.logger.info(
+                f"{len(sorted_list)} stars will be captured. Do you want to start?"
+            )  # 必要なら図を見せて、入力待ち
+            _input = input("(y/n) ")
+            if _input != "y":
+                self.logger.info("System ended.")
+                return None
+        else:
+            self.logger.info(f"{len(sorted_list)} stars will be captured.")
+            return None
         # self.logger.info(  # 天体の個数の表示だけでもいいかも
         #     f"Starting Optical Pointing Observation. Estimated observing time is {estimated_time} min."
         # )
-        complete = 0
-        # 以下 try: / except KeyboardInterrupt:
-        for opt_target in sorted_list:
-            self.com.antenna(
-                "point",
-                target=(opt_target[0], opt_target[1], "fk5"),
-                unit="deg",
-                wait=True,
+        captured_num = 0
+        try:
+            for opt_target in sorted_list:
+                self.com.antenna(
+                    "point",
+                    target=(float(opt_target[1]), float(opt_target[2]), "fk5"),
+                    unit="deg",
+                    wait=True,
+                )
+                time.sleep(3.0)  # 念のため追尾が落ち着くまで数秒待機？
+                save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
+                save_path = (
+                    config.ccd_controller_pic_captured_path
+                    / obsdatetime.strftime("%Y%m%d_%H%M%S")
+                    / save_filename
+                )
+                if drive_test is False:
+                    self.com.ccd("capture", name=save_path)
+                    time.sleep(3.0)
+                captured_num += 1
+                self.logger.info(
+                    f"Target {captured_num}/{len(sorted_list)} is completed."
+                )
+        except KeyboardInterrupt:
+            self.logger.info("Operation was Interrupted. Stopping antenna...")
+            self.com.antenna("stop")
+        else:
+            self.logger.info(
+                f"Optical Pointing is completed: {captured_num} stars were captured."
             )
-            time.sleep(3.0)  # 念のため追尾が落ち着くまで数秒待機？
-            save_path = config.ccd_pic_captured_path
-            self.com.ccd("capture", name=save_path)
-            complete += 1
-            self.logger.info(f"Target {complete}/{len(sorted_list)} is completed.")
-        self.logger.info(
-            f"Optical Pointing is completed: the total pointing number is {complete}."
-        )
