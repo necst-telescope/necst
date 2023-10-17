@@ -9,6 +9,7 @@ from neclib.core import read
 from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import (
     AlertMsg,
+    Binning,
     Boolean,
     ChopperMsg,
     DeviceReading,
@@ -70,6 +71,7 @@ class Commander(PrivilegedNode):
             "lo_signal": topic.lo_signal_cmd,
             "attenuator": topic.attenuator_cmd,
             "spectra_smpl": topic.spectra_rec,
+            "channel_binning": topic.channel_binning,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -636,12 +638,13 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "reduce", "?"],
+        cmd: Literal["start", "stop", "file", "reduce", "binning", "?"],
         /,
         *,
         name: str = "",
         content: Optional[str] = None,
         nth: Optional[int] = None,
+        ch: Optional[int] = None,
     ) -> None:
         """Control the recording.
 
@@ -656,6 +659,8 @@ class Commander(PrivilegedNode):
             Content of the file to record.
         nth
             Every $n$th spectral data will be recorded.
+        ch
+            Number of spectral channels
 
         Examples
         --------
@@ -684,6 +689,10 @@ class Commander(PrivilegedNode):
 
         >>> com.record("reduce", nth=10)
 
+        Change the number of spectral channels
+
+        >>> com.record("binning", ch=8192)
+
         """
         CMD = cmd.upper()
         if CMD == "START":
@@ -709,6 +718,15 @@ class Commander(PrivilegedNode):
         elif CMD == "REDUCE":
             msg = Sampling(nth=nth)
             return self.publisher["spectra_smpl"].publish(msg)
+        elif CMD == "BINNING":
+            msg = Binning(ch=ch)
+            if ch > 100:
+                self.quick_look(
+                    "ch", range=(0, 100), integ=1
+                )  # reset to default values
+            else:
+                self.quick_look("ch", range=(0, ch), integ=1)
+            return self.publisher["channel_binning"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
