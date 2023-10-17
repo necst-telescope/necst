@@ -64,7 +64,7 @@ class Observation(ABC):
             finally:
                 self.com.record("stop")
                 self.com.antenna("stop")
-                self.binning(32768)  # set default channel number
+                self.binning(config.max_ch)  # set max channel number
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60
