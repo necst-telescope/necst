@@ -3,6 +3,7 @@
 
 This terminal command only supports target name specification; target cannot be
 specified by its coordinate.
+The number of channel can be set 2^n.
 
 Examples
 --------

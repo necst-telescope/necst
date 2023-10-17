@@ -2,6 +2,7 @@
 """On-The-Fly observation.
 
 All parameters for the observation should be given as a TOML format parameter file.
+The number of channel can be set 2^n.
 
 Examples
 --------

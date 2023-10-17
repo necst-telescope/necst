@@ -4,6 +4,7 @@
 Keep the azimuth angles in the facing direction.
 Observe at elevation angles of 80, 50, 40, 30, 25, 22 and 20deg.
 For each, integrate over the specified time.
+The number of channel can be set 2^n.
 
 Examples
 --------

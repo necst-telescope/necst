@@ -5,12 +5,13 @@ Inserting the blackbody in the specified integrate time.
 The sampling rate cannot be set under 0.1s/1data.
 Recording rate cannot be specified smaller than two decimal places.
 The rate of 0.1s/1data is default rate.
+The number of channel can be set 2^n.
 
 Examples
 --------
 Hot Monitoring in 5hours. Recording rate is 1 data in 10s.
 
-$ hot_monitor -i 5 -r 10
+$ necst hot_monitor -i 5 -r 10 -c 64
 
 """
 

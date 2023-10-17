@@ -4,6 +4,7 @@
 Elevation angle fixed at 45deg.
 Repeats the blackbody in and out the specified number of times.
 For each, integrate over the specified time.
+The number of channel can be set 2^n.
 
 Examples
 --------
