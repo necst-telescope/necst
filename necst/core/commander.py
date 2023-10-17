@@ -175,6 +175,7 @@ class Commander(PrivilegedNode):
         name: Optional[str] = None,
         wait: bool = True,
         speed: Optional[Union[int, float]] = None,
+        direct_mode: bool = False,
     ) -> None:
         """Control antenna direction and motion.
 
@@ -314,6 +315,7 @@ class Commander(PrivilegedNode):
                     lat=[float(target[1])],
                     frame=target[2],
                     unit=unit,
+                    direct_mode=direct_mode
                 )
             elif reference is not None:
                 kwargs.update(
