@@ -6,13 +6,12 @@ All parameters for the observation should be given as a TOML format parameter fi
 
 Examples: Target file is "target.toml" and the (bright, darkest) magnitude of target is (1, 3).
 --------
-$ necst optical_pointing -f "target.dat" -m (1, 3)
+$ necst optical_pointing -f "target.dat" -m 1 3
 
 """
 
 import argparse
 from datetime import datetime
-from typing import Tuple, Union
 
 from necst.procedures import OpticalPointing
 
@@ -29,8 +28,8 @@ if __name__ == "__main__":
     p.add_argument(
         "-m",
         "--magnitude",
-        type=Tuple[Union[float, int], Union[float, int]],
-        help="The (brightest, darkest) limit of target magnitude. e.g. (1, 3)",
+        type=tuple,
+        help="The (brightest, darkest) limit of target magnitude. e.g. 1 3",
         required=True,
     )
     p.add_argument(
@@ -44,7 +43,7 @@ if __name__ == "__main__":
     p.add_argument(
         "-t",
         "--time",
-        type=datetime,
+        type=str,
         help="Observation time (if inputted, system quits without driving). e.g. 2023-12-01 09:00:00",
         required=False,
     )
@@ -54,6 +53,6 @@ if __name__ == "__main__":
         file=args.file,
         magnitude=args.magnitude,
         drive_test=args.drive_test,
-        obstime=args.time,
+        obstime=datetime.strptime(args.time),
     )
     obs.execute()
