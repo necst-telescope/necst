@@ -4,9 +4,9 @@
 All parameters for the observation should be given as a TOML format parameter file.
 ->Update?
 
-Examples: Target file is "target.toml" and the (bright, darkest) magnitude of target is (1, 3).
+Examples: Target file is "target.toml" and the (bright, darkest) magnitude is (1, 3).
 --------
-$ necst optical_pointing -f "target.dat" -m 1 3
+$ necst optical_pointing -f "target.dat" --magnitude_min 1.0 --magnitude_max 3.0
 
 """
 
@@ -26,10 +26,15 @@ if __name__ == "__main__":
         required=True,
     )
     p.add_argument(
-        "-m",
-        "--magnitude",
-        type=tuple,
-        help="The (brightest, darkest) limit of target magnitude. e.g. 1 3",
+        "--magnitude_min",
+        type=float,
+        help="The brightest limit of target magnitude. e.g. 1.0",
+        required=True,
+    )
+    p.add_argument(
+        "--magnitude_max",
+        type=float,
+        help="The darkest limit of target magnitude. e.g. 3.0",
         required=True,
     )
     p.add_argument(
@@ -51,7 +56,7 @@ if __name__ == "__main__":
 
     obs = OpticalPointing(
         file=args.file,
-        magnitude=args.magnitude,
+        magnitude=(args.magnitude_min, args.magnitude_max),
         drive_test=args.drive_test,
         obstime=datetime.strptime(args.time),
     )

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 import time
 
 from neclib import config
@@ -14,7 +14,7 @@ class OpticalPointing(Observation):
     def run(
         self,
         file: str,
-        magnitude: Tuple[Union[float, int], Union[float, int]],
+        magnitude: Tuple[float, float],
         drive_test: bool = False,
         obstime: Optional[datetime] = None,
     ) -> None:
