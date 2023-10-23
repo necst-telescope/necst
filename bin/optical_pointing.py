@@ -54,10 +54,13 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
+    if args.time is not None:
+        obstime = datetime.strptime(args.time, "%Y/%m/%d %H:%M:%S")
+
     obs = OpticalPointing(
         file=args.file,
         magnitude=(args.magnitude_min, args.magnitude_max),
         drive_test=args.drive_test,
-        obstime=datetime.strptime(args.time, "%Y/%m/%d %H:%M:%S"),
+        obstime=obstime,
     )
     obs.execute()
