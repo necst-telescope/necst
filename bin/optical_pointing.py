@@ -54,7 +54,9 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    if args.time is not None:
+    if args.time is None:
+        obstime = None
+    else:
         obstime = datetime.strptime(args.time, "%Y/%m/%d %H:%M:%S")
 
     obs = OpticalPointing(
