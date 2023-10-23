@@ -58,6 +58,6 @@ if __name__ == "__main__":
         file=args.file,
         magnitude=(args.magnitude_min, args.magnitude_max),
         drive_test=args.drive_test,
-        obstime=datetime.strptime(args.time),
+        obstime=datetime.strptime(args.time, "%Y/%m/%d %H:%M:%S"),
     )
     obs.execute()
