@@ -18,21 +18,20 @@ class OpticalPointing(Observation):
         drive_test: bool = False,
         obstime: Optional[datetime] = None,
     ) -> None:
-        self.com.record("reduce", nth=60)  # 分光計のデータを取りたくない。
+        self.com.record("reduce", nth=60)
         if obstime is None:
             obsdatetime = datetime.now()
         else:
             obsdatetime = obstime
         obsfloattime = obsdatetime.timestamp()
         opt_pointing = OpticalPointingSpec(obsfloattime, "unix")
-        # 何かしらのファイル読み込みの関数（Readlineなど）正直neclibに実装してもいい。-> neclib に実装してみた
         sorted_list = opt_pointing.sort(
             catalog_file=file, magnitude=(float(magnitude[0]), float(magnitude[1]))
         )
         if obstime is None:
             self.logger.info(
                 f"{len(sorted_list)} stars will be captured. Do you want to start?"
-            )  # 必要なら図を見せて、入力待ち
+            )
             _input = input("(y/n) ")
             if _input != "y":
                 self.logger.info("System ended.")
@@ -40,7 +39,8 @@ class OpticalPointing(Observation):
         else:
             self.logger.info(f"{len(sorted_list)} stars will be captured.")
             return None
-        # self.logger.info(  # 天体の個数の表示だけでもいいかも
+        self.logger.info("Starting Optical Pointing Observation.")
+        # self.logger.info(
         #     f"Starting Optical Pointing Observation. Estimated observing time is {estimated_time} min."
         # )
         captured_num = 0
@@ -52,7 +52,7 @@ class OpticalPointing(Observation):
                     unit="deg",
                     wait=True,
                 )
-                time.sleep(3.0)  # 念のため追尾が落ち着くまで数秒待機？
+                time.sleep(3.0)
                 if drive_test is False:
                     save_directory = config.ccd_controller.pic_captured_path
                     save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
