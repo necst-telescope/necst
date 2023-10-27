@@ -13,7 +13,6 @@ from ...core import AlertHandlerNode
 
 
 class HorizontalCoord(AlertHandlerNode):
-
     NodeName = "altaz_coord"
     Namespace = namespace.antenna
 
@@ -129,7 +128,11 @@ class HorizontalCoord(AlertHandlerNode):
         if (not scan) and (not named) and (not with_offset):
             self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
             new_generator = self.finder.track(
-                msg.lon[0], msg.lat[0], msg.frame, unit=msg.unit, direct_mode=msg.direct_mode          
+                msg.lon[0],
+                msg.lat[0],
+                msg.frame,
+                unit=msg.unit,
+                direct_mode=msg.direct_mode,
             )
         elif (not scan) and (not named) and with_offset:
             self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
@@ -240,7 +243,7 @@ class HorizontalCoord(AlertHandlerNode):
             # Updating weather data may cause jump in calculated coordinate, so the
             # parameter update is disabled while antenna is in tight control.
             return
-            
+
         if self.direct_mode:
             self.finder.temperature = 0
             self.finder.pressure = 0
