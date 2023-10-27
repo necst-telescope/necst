@@ -6,7 +6,7 @@ All parameters for the observation should be given as a TOML format parameter fi
 
 Examples: Target file is "target.toml" and the (bright, darkest) magnitude is (1, 3).
 --------
-$ necst optical_pointing -f "target.dat" --magnitude_min 1.0 --magnitude_max 3.0
+$ necst optical_pointing -f "target.dat" -l 1.0 -u 3.0
 
 """
 
@@ -26,15 +26,17 @@ if __name__ == "__main__":
         required=True,
     )
     p.add_argument(
-        "--magnitude_min",
+        "-l",
+        "--lower_mag",
         type=float,
-        help="The brightest limit of target magnitude. e.g. 1.0",
+        help="The lower (brightest) limit of target magnitude. e.g. 1.0",
         required=True,
     )
     p.add_argument(
-        "--magnitude_max",
+        "-u",
+        "--upper_mag",
         type=float,
-        help="The darkest limit of target magnitude. e.g. 3.0",
+        help="The upper (darkest) limit of target magnitude. e.g. 3.0",
         required=True,
     )
     p.add_argument(
@@ -49,7 +51,10 @@ if __name__ == "__main__":
         "-t",
         "--time",
         type=str,
-        help="Observation time (if inputted, system quits without driving). e.g. 2023-12-01 09:00:00",
+        help=(
+            "Observation time (if inputted, system quits without driving)."
+            "e.g. 2023-12-01 09:00:00"
+        ),
         required=False,
     )
     args = p.parse_args()
@@ -61,7 +66,7 @@ if __name__ == "__main__":
 
     obs = OpticalPointing(
         file=args.file,
-        magnitude=(args.magnitude_min, args.magnitude_max),
+        magnitude=(args.lower_mag, args.upper_mag),
         drive_test=args.drive_test,
         obstime=obstime,
     )
