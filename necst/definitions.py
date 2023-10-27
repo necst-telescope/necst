@@ -114,6 +114,7 @@ class topic:
         HEMTBias,
         Boolean,
         CCDMsg,
+        Binning,
         ChopperMsg,
         Clock,
         ControlStatus,
@@ -190,6 +191,7 @@ class topic:
     )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
+    channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
 
 
 class service:

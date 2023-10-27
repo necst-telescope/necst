@@ -3,6 +3,7 @@
 
 This terminal command only supports target name specification; target cannot be
 specified by its coordinate.
+The number of channel can be set 2^n.
 
 Examples
 --------
@@ -24,7 +25,13 @@ if __name__ == "__main__":
         help="Path to observation parameter file",
         required=True,
     )
+    p.add_argument(
+        "-c",
+        "--channel",
+        type=int,
+        help="Number of spectral channels.",
+    )
     args = p.parse_args()
 
-    obs = RadioPointing(file=args.file)
+    obs = RadioPointing(file=args.file, ch=args.channel)
     obs.execute()
