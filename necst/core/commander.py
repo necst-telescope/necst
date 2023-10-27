@@ -315,7 +315,7 @@ class Commander(PrivilegedNode):
                     lat=[float(target[1])],
                     frame=target[2],
                     unit=unit,
-                    direct_mode=direct_mode
+                    direct_mode=direct_mode,
                 )
             elif reference is not None:
                 kwargs.update(
