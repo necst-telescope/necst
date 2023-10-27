@@ -53,13 +53,14 @@ class OpticalPointing(Observation):
                     wait=True,
                 )
                 time.sleep(3.0)  # 念のため追尾が落ち着くまで数秒待機？
-                save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
-                save_path = (
-                    config.ccd_controller_pic_captured_path
-                    / obsdatetime.strftime("%Y%m%d_%H%M%S")
-                    / save_filename
-                )
                 if drive_test is False:
+                    save_directory = config.ccd_controller.pic_captured_path
+                    save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
+                    save_path = (
+                        save_directory
+                        / obsdatetime.strftime("%Y%m%d_%H%M%S")
+                        / save_filename
+                    )
                     self.com.ccd("capture", name=save_path)
                     time.sleep(3.0)
                 captured_num += 1
