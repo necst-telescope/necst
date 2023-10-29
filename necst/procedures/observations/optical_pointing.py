@@ -40,8 +40,7 @@ class OpticalPointing(Observation):
             self.logger.info(f"{len(sorted_list)} stars will be captured.")
             return None
         self.logger.info("Starting Optical Pointing Observation.")
-        # self.logger.info(
-        #     f"Starting Optical Pointing Observation. Estimated observing time is {estimated_time} min."
+        # TODO: Add time estimator before observing.
         # )
         captured_num = 0
         try:
