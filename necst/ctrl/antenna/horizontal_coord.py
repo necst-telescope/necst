@@ -23,7 +23,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.cmd = None
         self.enc_az = self.enc_el = None
         self.enc_time = 0
-        self.direct_mode = None
+        self.direct_mode = False
 
         self.finder = PathFinder(
             config.location, config.antenna_pointing_parameter_path
