@@ -41,7 +41,6 @@ class OpticalPointing(Observation):
             return None
         self.logger.info("Starting Optical Pointing Observation.")
         # TODO: Add time estimator before observing.
-        # )
         captured_num = 0
         try:
             for opt_target in sorted_list:
