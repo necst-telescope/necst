@@ -84,7 +84,10 @@ class OpticalPointing(Observation):
             )
         finally:
             save_filename = obsdatetime.strftime("%Y%m%d_%H%M%S") + ".dat"
-            save_path = save_directory / save_filename
             opt_pointing.write_capture_list(
-                filename=save_path, az=az, el=el, pic_filename=pic_filename
+                directory=save_directory,
+                filename=save_filename,
+                az=az,
+                el=el,
+                pic_filename=pic_filename,
             )
