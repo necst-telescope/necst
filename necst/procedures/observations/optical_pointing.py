@@ -41,6 +41,12 @@ class OpticalPointing(Observation):
             return None
         self.logger.info("Starting Optical Pointing Observation.")
         # TODO: Add time estimator before observing.
+        save_directory = config.ccd_controller.pic_captured_path / obsdatetime.strftime(
+            "%Y%m%d_%H%M%S"
+        )
+        az = []
+        el = []
+        pic_filename = []
         captured_num = 0
         try:
             for opt_target in sorted_list:
@@ -52,15 +58,19 @@ class OpticalPointing(Observation):
                 )
                 time.sleep(3.0)
                 if drive_test is False:
-                    save_directory = config.ccd_controller.pic_captured_path
                     save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
-                    save_path = (
-                        save_directory
-                        / obsdatetime.strftime("%Y%m%d_%H%M%S")
-                        / save_filename
-                    )
+                    save_path = save_directory / save_filename
+                    coord_before = self.com.antenna("?")
+                    az_before = coord_before.lon
+                    el_before = coord_before.lat
                     self.com.ccd("capture", name=save_path)
-                    time.sleep(3.0)
+                    coord_after = self.com.antenna("?")
+                    az_after = coord_after.lon
+                    el_after = coord_after.lat
+                    az.append((az_before + az_after) / 2)
+                    el.append((el_before + el_after) / 2)
+                    pic_filename.append(save_filename)
+                    time.sleep(8.0)
                 captured_num += 1
                 self.logger.info(
                     f"Target {captured_num}/{len(sorted_list)} is completed."
@@ -71,4 +81,10 @@ class OpticalPointing(Observation):
         else:
             self.logger.info(
                 f"Optical Pointing is completed: {captured_num} stars were captured."
+            )
+        finally:
+            save_filename = obsdatetime.strftime("%Y%m%d_%H%M%S") + ".dat"
+            save_path = save_directory / save_filename
+            opt_pointing.write_capture_list(
+                filename=save_path, az=az, el=el, pic_filename=pic_filename
             )
