@@ -337,7 +337,7 @@ class Commander(PrivilegedNode):
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
             if wait:
-                self.wait("antenna", mode="control", id=res.id)
+                self.wait("antenna")
             return res.id
 
         elif CMD == "SCAN":
