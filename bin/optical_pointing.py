@@ -4,7 +4,7 @@
 All parameters for the observation should be given as a TOML format parameter file.
 ->Update?
 
-Examples: Target file is "target.toml" and the (bright, darkest) magnitude is (1, 3).
+Examples: Target file is "target.dat" and the (bright, darkest) magnitude is (1, 3).
 --------
 $ necst optical_pointing -f "target.dat" -l 1.0 -u 3.0
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         "--time",
         type=str,
         help=(
-            "Observation time (if inputted, system quits without driving)."
+            "Observation time (if inputted, system quits without driving). "
             "e.g. 2023-12-01 09:00:00"
         ),
         required=False,
