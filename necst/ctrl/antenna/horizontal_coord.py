@@ -23,7 +23,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.cmd = None
         self.enc_az = self.enc_el = None
         self.enc_time = 0
-        self.direct_mode = False
+        self.direct_mode = None
 
         self.finder = PathFinder(
             config.location, config.antenna_pointing_parameter_path
@@ -123,7 +123,11 @@ class HorizontalCoord(AlertHandlerNode):
         named = msg.name != ""
         with_offset = any(len(x) != 0 for x in offset_coord)
 
-        self.direct_mode = msg.direct_mode
+        if msg.direct_mode:
+            self.direct_mode = True
+        else:
+            self.direct_mode = False
+        self.finder.direct_mode = self.direct_mode
 
         if (not scan) and (not named) and (not with_offset):
             self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
@@ -132,7 +136,6 @@ class HorizontalCoord(AlertHandlerNode):
                 msg.lat[0],
                 msg.frame,
                 unit=msg.unit,
-                direct_mode=msg.direct_mode,
             )
         elif (not scan) and (not named) and with_offset:
             self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
