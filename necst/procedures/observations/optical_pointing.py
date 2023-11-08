@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Tuple
 import os
+import shutil
 import time
 
 from neclib import config
@@ -24,7 +25,11 @@ class OpticalPointing(Observation):
         time: List[float],
     ) -> None:
         os.makedirs(directory, exist_ok=True)
-        with open(filename, mode="w") as file:
+        shutil.copy(
+            config.antenna.pointing_parameter_path,
+            f"{directory}/pointing_param_before.toml",
+        )
+        with open(f"{directory}/{filename}", mode="w") as file:
             for _az, _el, _pic, _ra, _dec, _time in zip(
                 az, el, pic_filename, ra, dec, time
             ):
