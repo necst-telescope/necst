@@ -5,7 +5,7 @@ from ... import namespace, topic
 from ..core import DeviceNode
 
 
-class CCD_Controller(DeviceNode):
+class CCDController(DeviceNode):
     NodeName = "ccd"
     Namespace = namespace.rx
 
