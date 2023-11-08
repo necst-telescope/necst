@@ -1,13 +1,13 @@
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 
-from ..rx.ccd import CCD_Controller
+from ..rx.ccd import CCDController
 
 
 def configure_executor() -> SingleThreadedExecutor:
     executor = SingleThreadedExecutor()
     nodes = [
-        CCD_Controller(),
+        CCDController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
