@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Optical Pointing observation.
 
-All parameters for the observation should be given as a TOML format parameter file.
+All parameters for the observation should be given
+as a TOML format parameter file.
 ->Update?
 
-Examples: Target file is "target.dat" and the (bright, darkest) magnitude is (1, 3).
+Examples
 --------
+Target file is "target.dat" and the (bright, darkest)
+The range of magnitude is (1, 3).
+
 $ necst optical_pointing -f "target.dat" -l 1.0 -u 3.0
 
 """
