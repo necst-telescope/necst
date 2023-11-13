@@ -13,7 +13,6 @@ from ...core import AlertHandlerNode
 
 
 class HorizontalCoord(AlertHandlerNode):
-
     NodeName = "altaz_coord"
     Namespace = namespace.antenna
 
@@ -24,6 +23,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.cmd = None
         self.enc_az = self.enc_el = None
         self.enc_time = 0
+        self.direct_mode = None
 
         self.finder = PathFinder(
             config.location, config.antenna_pointing_parameter_path
@@ -123,10 +123,19 @@ class HorizontalCoord(AlertHandlerNode):
         named = msg.name != ""
         with_offset = any(len(x) != 0 for x in offset_coord)
 
+        if msg.direct_mode:
+            self.direct_mode = True
+        else:
+            self.direct_mode = False
+        self.finder.direct_mode = self.direct_mode
+
         if (not scan) and (not named) and (not with_offset):
             self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
             new_generator = self.finder.track(
-                msg.lon[0], msg.lat[0], msg.frame, unit=msg.unit
+                msg.lon[0],
+                msg.lat[0],
+                msg.frame,
+                unit=msg.unit,
             )
         elif (not scan) and (not named) and with_offset:
             self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
@@ -238,9 +247,15 @@ class HorizontalCoord(AlertHandlerNode):
             # parameter update is disabled while antenna is in tight control.
             return
 
-        self.finder.temperature = msg.temperature
-        self.finder.pressure = msg.pressure
-        self.finder.relative_humidity = msg.humidity
+        if self.direct_mode:
+            self.finder.temperature = 0
+            self.finder.pressure = 0
+            self.finder.relative_humidity = 0
+
+        else:
+            self.finder.temperature = msg.temperature
+            self.finder.pressure = msg.pressure
+            self.finder.relative_humidity = msg.humidity
 
     def telemetry(self, status: Optional[ControlContext]) -> None:
         if status is None:
