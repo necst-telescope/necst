@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.utils.callbacks &#8212; necst 0.7.0 documentation</title>
+    <title>necst.rx.ccd &#8212; necst 0.7.0 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -145,15 +145,30 @@
               
               <div>
                 
-  <h1>Source code for necst.utils.callbacks</h1><div class="highlight"><pre>
-<span></span><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;respond_to_ping&quot;</span><span class="p">]</span>
+  <h1>Source code for necst.rx.ccd</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">neclib.devices</span> <span class="kn">import</span> <span class="n">CcdController</span> <span class="k">as</span> <span class="n">CCD_Device</span>
+<span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">CCDMsg</span>
 
-<span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="n">Empty</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">topic</span>
+<span class="kn">from</span> <span class="nn">..core</span> <span class="kn">import</span> <span class="n">DeviceNode</span>
 
 
-<div class="viewcode-block" id="respond_to_ping"><a class="viewcode-back" href="../../../_source/necst.utils.callbacks.html#necst.utils.callbacks.respond_to_ping">[docs]</a><span class="k">def</span> <span class="nf">respond_to_ping</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Callback function for ping server, which uses ``std_srvs.srv.Empty``.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">response</span></div>
+<div class="viewcode-block" id="CCDController"><a class="viewcode-back" href="../../../_source/necst.rx.ccd.html#necst.rx.ccd.CCDController">[docs]</a><span class="k">class</span> <span class="nc">CCDController</span><span class="p">(</span><span class="n">DeviceNode</span><span class="p">):</span>
+    <span class="n">NodeName</span> <span class="o">=</span> <span class="s2">&quot;ccd&quot;</span>
+    <span class="n">Namespace</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">rx</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeName</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ccd</span> <span class="o">=</span> <span class="n">CCD_Device</span><span class="p">()</span>
+
+        <span class="n">topic</span><span class="o">.</span><span class="n">capture_cmd</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">capture</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CCDController.capture"><a class="viewcode-back" href="../../../_source/necst.rx.ccd.html#necst.rx.ccd.CCDController.capture">[docs]</a>    <span class="k">def</span> <span class="nf">capture</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CCDMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">shot</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ccd</span><span class="o">.</span><span class="n">capture</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">savepath</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Capturing the target is completed.&quot;</span><span class="p">)</span></div></div>
 </pre></div>
 
               </div>

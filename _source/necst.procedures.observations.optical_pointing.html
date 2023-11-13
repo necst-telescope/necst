@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.utils.ros_thread &#8212; necst 0.7.0 documentation</title>
+    <title>necst.procedures.observations.optical_pointing &#8212; necst 0.7.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.definitions" href="necst.definitions.html" />
-    <link rel="prev" title="necst.utils.ros_interface" href="necst.utils.ros_interface.html" />
+    <link rel="next" title="necst.procedures.observations.rsky" href="necst.procedures.observations.rsky.html" />
+    <link rel="prev" title="necst.procedures.observations.observation_base" href="necst.procedures.observations.observation_base.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -290,26 +290,26 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.procedures.html">
    necst.procedures
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
   <label for="toctree-checkbox-7">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
-   <li class="toctree-l2 has-children">
+  <ul class="current">
+   <li class="toctree-l2 current active has-children">
     <a class="reference internal" href="necst.procedures.observations.html">
      necst.procedures.observations
     </a>
-    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
     <label for="toctree-checkbox-8">
      <i class="fas fa-chevron-down">
      </i>
     </label>
-    <ul>
+    <ul class="current">
      <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.file_based.html">
        necst.procedures.observations.file_based
@@ -325,8 +325,8 @@
        necst.procedures.observations.observation_base
       </a>
      </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="necst.procedures.observations.optical_pointing.html">
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
        necst.procedures.observations.optical_pointing
       </a>
      </li>
@@ -391,16 +391,16 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 current active has-children">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input checked="" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
   <label for="toctree-checkbox-10">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul class="current">
+  <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="necst.utils.callbacks.html">
      necst.utils.callbacks
@@ -411,8 +411,8 @@
      necst.utils.ros_interface
     </a>
    </li>
-   <li class="toctree-l2 current active">
-    <a class="current reference internal" href="#">
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.ros_thread.html">
      necst.utils.ros_thread
     </a>
    </li>
@@ -461,26 +461,39 @@
               
               <div>
                 
-  <section id="module-necst.utils.ros_thread">
-<span id="necst-utils-ros-thread"></span><h1>necst.utils.ros_thread<a class="headerlink" href="#module-necst.utils.ros_thread" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.procedures.observations.optical_pointing">
+<span id="necst-procedures-observations-optical-pointing"></span><h1>necst.procedures.observations.optical_pointing<a class="headerlink" href="#module-necst.procedures.observations.optical_pointing" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.utils.ros_thread.spinning">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spinning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">executor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_thread.html#spinning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_thread.spinning" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Run tests with spinning some nodes.</p>
-<p>The implementation is inspired by:
-<a class="reference external" href="https://github.com/ros2/system_tests/blob/rolling/test_cli/test/utils.py#L77">https://github.com/ros2/system_tests/blob/rolling/test_cli/test/utils.py#L77</a></p>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">spinning</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="k">assert</span> <span class="n">my_node</span><span class="o">.</span><span class="n">subscribed_parameter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-</pre></div>
-</div>
+<dt class="sig sig-object py" id="necst.procedures.observations.optical_pointing.OpticalPointing">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OpticalPointing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/optical_pointing.html#OpticalPointing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.optical_pointing.OpticalPointing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation" title="necst.procedures.observations.observation_base.Observation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Observation</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.procedures.observations.optical_pointing.OpticalPointing.observation_type">
+<span class="sig-name descname"><span class="pre">observation_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'OpticalPointing'</span></em><a class="headerlink" href="#necst.procedures.observations.optical_pointing.OpticalPointing.observation_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.optical_pointing.OpticalPointing.write_capture_list">
+<span class="sig-name descname"><span class="pre">write_capture_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">az</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pic_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/optical_pointing.html#OpticalPointing.write_capture_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.optical_pointing.OpticalPointing.write_capture_list" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>node</strong> (<em>Union</em><em>[</em><em>Node</em><em>, </em><em>Sequence</em><em>[</em><em>Node</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>executor</strong> (<em>Optional</em><em>[</em><em>Executor</em><em>]</em>) – </p></li>
-<li><p><strong>n_thread</strong> (<em>int</em>) – </p></li>
+<li><p><strong>directory</strong> (<em>str</em>) – </p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – </p></li>
+<li><p><strong>az</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>el</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>pic_filename</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>ra</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>dec</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>time</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -489,10 +502,25 @@
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="necst.utils.ros_thread.ros2context">
-<span class="sig-name descname"><span class="pre">ros2context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_thread.html#ros2context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_thread.ros2context" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.optical_pointing.OpticalPointing.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drive_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/optical_pointing.html#OpticalPointing.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.optical_pointing.OpticalPointing.run" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file</strong> (<em>str</em>) – </p></li>
+<li><p><strong>magnitude</strong> (<em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>drive_test</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>obstime</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
 
 </section>
 
@@ -502,17 +530,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.utils.ros_interface.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.procedures.observations.observation_base.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.utils.ros_interface</p>
+            <p class="prev-next-title">necst.procedures.observations.observation_base</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.definitions.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.procedures.observations.rsky.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.definitions</p>
+        <p class="prev-next-title">necst.procedures.observations.rsky</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

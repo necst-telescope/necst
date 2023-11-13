@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.utils.ros_thread &#8212; necst 0.7.0 documentation</title>
+    <title>necst.rx.ccd &#8212; necst 0.7.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -36,8 +36,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.definitions" href="necst.definitions.html" />
-    <link rel="prev" title="necst.utils.ros_interface" href="necst.utils.ros_interface.html" />
+    <link rel="next" title="necst.rx.hemt_bias" href="necst.rx.hemt_bias.html" />
+    <link rel="prev" title="necst.rx.attenuator" href="necst.rx.attenuator.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -344,23 +344,23 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
   <label for="toctree-checkbox-9">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
+  <ul class="current">
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.attenuator.html">
      necst.rx.attenuator
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.rx.ccd.html">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
      necst.rx.ccd
     </a>
    </li>
@@ -391,16 +391,16 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 current active has-children">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input checked="" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
   <label for="toctree-checkbox-10">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul class="current">
+  <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="necst.utils.callbacks.html">
      necst.utils.callbacks
@@ -411,8 +411,8 @@
      necst.utils.ros_interface
     </a>
    </li>
-   <li class="toctree-l2 current active">
-    <a class="current reference internal" href="#">
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.ros_thread.html">
      necst.utils.ros_thread
     </a>
    </li>
@@ -461,27 +461,33 @@
               
               <div>
                 
-  <section id="module-necst.utils.ros_thread">
-<span id="necst-utils-ros-thread"></span><h1>necst.utils.ros_thread<a class="headerlink" href="#module-necst.utils.ros_thread" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.rx.ccd">
+<span id="necst-rx-ccd"></span><h1>necst.rx.ccd<a class="headerlink" href="#module-necst.rx.ccd" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.utils.ros_thread.spinning">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spinning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">executor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_thread.html#spinning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_thread.spinning" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Run tests with spinning some nodes.</p>
-<p>The implementation is inspired by:
-<a class="reference external" href="https://github.com/ros2/system_tests/blob/rolling/test_cli/test/utils.py#L77">https://github.com/ros2/system_tests/blob/rolling/test_cli/test/utils.py#L77</a></p>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">spinning</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="k">assert</span> <span class="n">my_node</span><span class="o">.</span><span class="n">subscribed_parameter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-</pre></div>
-</div>
+<dt class="sig sig-object py" id="necst.rx.ccd.CCDController">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CCDController</span></span><a class="reference internal" href="../_modules/necst/rx/ccd.html#CCDController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.ccd.CCDController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.core.device_node.html#necst.core.device_node.DeviceNode" title="necst.core.device_node.DeviceNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceNode</span></code></a></p>
 <dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.rx.ccd.CCDController.NodeName">
+<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ccd'</span></em><a class="headerlink" href="#necst.rx.ccd.CCDController.NodeName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.rx.ccd.CCDController.Namespace">
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/rx'</span></em><a class="headerlink" href="#necst.rx.ccd.CCDController.Namespace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.rx.ccd.CCDController.capture">
+<span class="sig-name descname"><span class="pre">capture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/rx/ccd.html#CCDController.capture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.ccd.CCDController.capture" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>node</strong> (<em>Union</em><em>[</em><em>Node</em><em>, </em><em>Sequence</em><em>[</em><em>Node</em><em>]</em><em>]</em>) – </p></li>
-<li><p><strong>executor</strong> (<em>Optional</em><em>[</em><em>Executor</em><em>]</em>) – </p></li>
-<li><p><strong>n_thread</strong> (<em>int</em>) – </p></li>
-</ul>
+<dd class="field-odd"><p><strong>msg</strong> (<a class="reference internal" href="necst.definitions.html#necst.definitions.topic.CCDMsg" title="necst_msgs.msg._ccd_msg.CCDMsg"><em>CCDMsg</em></a>) – </p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>None</p>
@@ -489,10 +495,7 @@
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="necst.utils.ros_thread.ros2context">
-<span class="sig-name descname"><span class="pre">ros2context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_thread.html#ros2context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_thread.ros2context" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+</dd></dl>
 
 </section>
 
@@ -502,17 +505,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.utils.ros_interface.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.rx.attenuator.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.utils.ros_interface</p>
+            <p class="prev-next-title">necst.rx.attenuator</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.definitions.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.rx.hemt_bias.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.definitions</p>
+        <p class="prev-next-title">necst.rx.hemt_bias</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

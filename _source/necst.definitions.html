@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.definitions &#8212; necst 0.6.6 documentation</title>
+    <title>necst.definitions &#8212; necst 0.7.0 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -121,7 +121,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.6.6</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.7.0</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -325,6 +325,11 @@
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.optical_pointing.html">
+       necst.procedures.observations.optical_pointing
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.rsky.html">
        necst.procedures.observations.rsky
       </a>
@@ -351,6 +356,11 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.attenuator.html">
      necst.rx.attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.ccd.html">
+     necst.rx.ccd
     </a>
    </li>
    <li class="toctree-l2">
@@ -630,6 +640,76 @@
 <dl class="py property">
 <dt class="sig sig-object py" id="necst.definitions.topic.Boolean.time">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.Boolean.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.CCDMsg">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CCDMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.CCDMsg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘CCDMsg’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.CCDMsg.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.UnboundedString</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.CCDMsg.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CCDMsg.capture">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">capture</span></span><a class="headerlink" href="#necst.definitions.topic.CCDMsg.capture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘capture’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.CCDMsg.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.CCDMsg.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CCDMsg.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#necst.definitions.topic.CCDMsg.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘id’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CCDMsg.savepath">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">savepath</span></span><a class="headerlink" href="#necst.definitions.topic.CCDMsg.savepath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘savepath’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.CCDMsg.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.CCDMsg.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.definitions.topic.Binning">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Binning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Binning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Message class ‘Binning’.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.Binning.SLOT_TYPES">
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.Binning.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Binning.ch">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ch</span></span><a class="headerlink" href="#necst.definitions.topic.Binning.ch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘ch’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.definitions.topic.Binning.get_fields_and_field_types">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_fields_and_field_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#necst.definitions.topic.Binning.get_fields_and_field_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.Binning.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.Binning.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘time’.</p>
 </dd></dl>
 
@@ -1210,7 +1290,7 @@
 <p>Message class ‘WeatherMsg’.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.SLOT_TYPES">
-<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">SLOT_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;rosidl_parser.definition.BasicType</span> <span class="pre">object&gt;)</span></em><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.SLOT_TYPES" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1225,9 +1305,27 @@
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.in_humidity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">in_humidity</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.in_humidity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘in_humidity’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.in_temperature">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">in_temperature</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.in_temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘in_temperature’.</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.pressure">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pressure</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.pressure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘pressure’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.rain_rate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rain_rate</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.rain_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘rain_rate’.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -1240,6 +1338,18 @@
 <dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.time">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message field ‘time’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.wind_direction">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wind_direction</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.wind_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘wind_direction’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="necst.definitions.topic.WeatherMsg.wind_speed">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wind_speed</span></span><a class="headerlink" href="#necst.definitions.topic.WeatherMsg.wind_speed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message field ‘wind_speed’.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1407,6 +1517,11 @@
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.ccd_cmd">
+<span class="sig-name descname"><span class="pre">ccd_cmd</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._ccd_msg.CCDMsg'&gt;,</span> <span class="pre">topic='ccd_cmd',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.ccd_cmd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.quick_spectra">
 <span class="sig-name descname"><span class="pre">quick_spectra</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._spectral.Spectral'&gt;,</span> <span class="pre">topic='quick_spectra',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=True)</span></em><a class="headerlink" href="#necst.definitions.topic.quick_spectra" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -1484,6 +1599,11 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="necst.definitions.topic.obsmode">
 <span class="sig-name descname"><span class="pre">obsmode</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._observing_mode.ObservingMode'&gt;,</span> <span class="pre">topic='observing_mode',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/core',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.obsmode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.definitions.topic.channel_binning">
+<span class="sig-name descname"><span class="pre">channel_binning</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Topic(msg_type=&lt;class</span> <span class="pre">'necst_msgs.msg._binning.Binning'&gt;,</span> <span class="pre">topic='channel_binning',</span> <span class="pre">qos_profile=&lt;rclpy.qos.QoSProfile</span> <span class="pre">object&gt;,</span> <span class="pre">namespace='/necst/OMU1P85M/rx',</span> <span class="pre">support_index=False)</span></em><a class="headerlink" href="#necst.definitions.topic.channel_binning" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

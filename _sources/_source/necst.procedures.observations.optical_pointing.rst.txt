@@ -1,0 +1,7 @@
+necst.procedures.observations.optical\_pointing
+===============================================
+
+.. automodule:: necst.procedures.observations.optical_pointing
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -24,6 +24,7 @@ Submodules
 .. autosummary::
 
    necst.rx.attenuator
+   necst.rx.ccd
    necst.rx.hemt_bias
    necst.rx.signal_generator
    necst.rx.sis_bias
@@ -36,6 +37,7 @@ Submodules
    :hidden:
 
    necst.rx.attenuator
+   necst.rx.ccd
    necst.rx.hemt_bias
    necst.rx.signal_generator
    necst.rx.sis_bias
