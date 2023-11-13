@@ -9,8 +9,9 @@ Examples
 --------
 Target file is "target.dat" and the (bright, darkest)
 The range of magnitude is (1, 3).
+The number of channel can be set 2^n.
 
-$ necst optical_pointing -f "target.dat" -l 1.0 -u 3.0
+$ necst optical_pointing -f "target.dat" -l 1.0 -u 3.0 -c 64
 
 """
 
