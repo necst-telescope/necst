@@ -1,7 +1,7 @@
 from neclib.devices import CcdController as CCD_Device
 from necst_msgs.msg import CCDMsg
 
-from ... import namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
