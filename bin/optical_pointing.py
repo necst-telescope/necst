@@ -9,8 +9,9 @@ Examples
 --------
 Target file is "target.dat" and the (bright, darkest)
 The range of magnitude is (1, 3).
+The number of channel can be set 2^n.
 
-$ necst optical_pointing -f "target.dat" -l 1.0 -u 3.0
+$ necst optical_pointing -f "target.dat" -l 1.0 -u 3.0 -c 64
 
 """
 
@@ -60,6 +61,12 @@ if __name__ == "__main__":
             "e.g. 2023-12-01 09:00:00"
         ),
         required=False,
+    )
+    p.add_argument(
+        "-c",
+        "--channel",
+        type=int,
+        help="Number of spectral channels.",
     )
     args = p.parse_args()
 
