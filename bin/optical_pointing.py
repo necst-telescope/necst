@@ -57,6 +57,12 @@ if __name__ == "__main__":
         ),
         required=False,
     )
+    p.add_argument(
+        "-c",
+        "--channel",
+        type=int,
+        help="Number of spectral channels.",
+    )
     args = p.parse_args()
 
     if args.time is None:
