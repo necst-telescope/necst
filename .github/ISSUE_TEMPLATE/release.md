@@ -18,3 +18,4 @@ Then,
 
 - [ ] Update the `version` in `setup.py`
 - [ ] Update the `version` in `package.xml`
+- [ ] Check the update of `neclib` version in `DockerFile`
