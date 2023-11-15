@@ -79,10 +79,14 @@ class OpticalPointing(Observation):
         cap_time = []
         captured_num = 0
         try:
-            for opt_target in sorted_list:
+            for i in range(len(sorted_list)):
                 self.com.antenna(
                     "point",
-                    target=(float(opt_target[1]), float(opt_target[2]), "fk5"),
+                    target=(
+                        float(sorted_list["ra"][i]),
+                        float(sorted_list["dec"][i]),
+                        "fk5",
+                    ),
                     unit="deg",
                     wait=True,
                 )
@@ -90,20 +94,22 @@ class OpticalPointing(Observation):
                 if drive_test is False:
                     save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
                     save_path = save_directory / save_filename
+
                     coord_before = self.com.antenna("?")
-                    az_before = coord_before.lon
-                    el_before = coord_before.lat
+                    az_before, el_before = coord_before.lon, coord_before.lat
                     time_before = time.time()
+
                     self.com.ccd("capture", name=save_path)
+
                     coord_after = self.com.antenna("?")
-                    az_after = coord_after.lon
-                    el_after = coord_after.lat
+                    az_after, el_after = coord_after.lon, coord_after.lat
                     time_after = time.time()
+
                     cap_az.append((az_before + az_after) / 2)
                     cap_el.append((el_before + el_after) / 2)
                     cap_pic_filename.append(save_filename)
-                    cap_ra.append(float(opt_target[1]))
-                    cap_dec.append(float(opt_target[2]))
+                    cap_ra.append(float(sorted_list["ra"][i]))
+                    cap_dec.append(float(sorted_list["dec"][i]))
                     cap_time.append((time_before + time_after) / 2)
                     time.sleep(8.0)
                 captured_num += 1
