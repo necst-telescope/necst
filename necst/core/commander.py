@@ -932,7 +932,7 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
     def weather(self, cmd: Literal["?"] = "?", /) -> None:
-        """Get the thermometer reading.
+        """Get the weather station reading.
 
         Parameters
         ----------
