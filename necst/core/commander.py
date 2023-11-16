@@ -89,6 +89,7 @@ class Commander(PrivilegedNode):
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
+            "weather": _SubscriptionCfg(topic.weather, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
@@ -927,6 +928,27 @@ class Commander(PrivilegedNode):
             self.publisher["local_signal"].publish(msg)
         elif CMD == "?":
             return self.get_message("lo_signal", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    def weather(self, cmd: Literal["?"] = "?", /) -> None:
+        """Get the thermometer reading.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+
+        Examples
+        --------
+        Get the weather station reading
+
+        >>> com.weather("?")
+
+        """
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("weather", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
