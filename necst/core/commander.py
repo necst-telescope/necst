@@ -89,7 +89,7 @@ class Commander(PrivilegedNode):
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
-            "weather": _SubscriptionCfg(topic.weather, 1),
+            "ambient": _SubscriptionCfg(topic.weather, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
@@ -948,7 +948,7 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "?":
-            return self.get_message("weather", timeout_sec=10)
+            return self.get_message("ambient", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
