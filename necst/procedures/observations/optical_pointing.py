@@ -39,8 +39,10 @@ class OpticalPointing(Observation):
         else:
             self.logger.info(f"{len(sorted_list)} stars will be captured.")
             return None
-        self.logger.info("Starting Optical Pointing Observation.")
-        # TODO: Add time estimator before observing.
+        t_tot = opt_pointing.estimate_time(sorted_list)
+        self.logger.info(
+            f"Starting Optical Pointing Observation. It takes about {t_tot/60} minutes."
+        )
         save_directory = config.ccd_controller.pic_captured_path / obsdatetime.strftime(
             "%Y%m%d_%H%M%S"
         )
