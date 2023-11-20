@@ -1,7 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Tuple
-import os
-import shutil
+from typing import Optional, Tuple
 import time
 
 from neclib import config
@@ -12,31 +10,6 @@ from .observation_base import Observation
 
 class OpticalPointing(Observation):
     observation_type = "OpticalPointing"
-
-    def write_capture_list(
-        self,
-        directory: str,
-        filename: str,
-        az: List[float],
-        el: List[float],
-        pic_filename: List[str],
-        ra: List[float],
-        dec: List[float],
-        time: List[float],
-    ) -> None:
-        os.makedirs(directory, exist_ok=True)
-        shutil.copy(
-            config.antenna.pointing_parameter_path,
-            f"{directory}/pointing_param_before.toml",
-        )
-        with open(f"{directory}/{filename}", mode="w") as file:
-            for _az, _el, _pic, _ra, _dec, _time in zip(
-                az, el, pic_filename, ra, dec, time
-            ):
-                file.write(
-                    f"{str(_az)} {str(_el)} {_pic} "
-                    f"{str(_ra)} {str(_dec)} {str(_time)}\n"
-                )
 
     def run(
         self,
@@ -91,27 +64,33 @@ class OpticalPointing(Observation):
                     wait=True,
                 )
                 time.sleep(3.0)
+
+                save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
+                save_path = save_directory / save_filename
+
+                coord_before = self.com.antenna("?")
+                az_before, el_before, time_before = (
+                    coord_before.lon,
+                    coord_before.lat,
+                    coord_before.time,
+                )
                 if drive_test is False:
-                    save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
-                    save_path = save_directory / save_filename
-
-                    coord_before = self.com.antenna("?")
-                    az_before, el_before = coord_before.lon, coord_before.lat
-                    time_before = time.time()
-
                     self.com.ccd("capture", name=save_path)
 
-                    coord_after = self.com.antenna("?")
-                    az_after, el_after = coord_after.lon, coord_after.lat
-                    time_after = time.time()
+                coord_after = self.com.antenna("?")
+                az_after, el_after, time_after = (
+                    coord_after.lon,
+                    coord_after.lat,
+                    coord_after.time,
+                )
 
-                    cap_az.append((az_before + az_after) / 2)
-                    cap_el.append((el_before + el_after) / 2)
-                    cap_pic_filename.append(save_filename)
-                    cap_ra.append(float(sorted_list["ra"][i]))
-                    cap_dec.append(float(sorted_list["dec"][i]))
-                    cap_time.append((time_before + time_after) / 2)
-                    time.sleep(8.0)
+                cap_az.append((az_before + az_after) / 2)
+                cap_el.append((el_before + el_after) / 2)
+                cap_pic_filename.append(save_filename)
+                cap_ra.append(float(sorted_list["ra"][i]))
+                cap_dec.append(float(sorted_list["dec"][i]))
+                cap_time.append((time_before + time_after) / 2)
+                time.sleep(8.0)
                 captured_num += 1
                 self.logger.info(
                     f"Target {captured_num}/{len(sorted_list)} is completed."
@@ -125,13 +104,33 @@ class OpticalPointing(Observation):
             )
         finally:
             save_filename = obsdatetime.strftime("%Y%m%d_%H%M%S") + ".dat"
-            self.write_capture_list(
-                directory=save_directory,
-                filename=save_filename,
-                az=cap_az,
-                el=cap_el,
-                pic_filename=cap_pic_filename,
-                ra=cap_ra,
-                dec=cap_dec,
-                time=cap_time,
+            sorted_list["cap_az"] = cap_az
+            sorted_list["cap_el"] = cap_el
+            sorted_list["cap_time"] = cap_time
+            sorted_list["pic_filename"] = cap_pic_filename
+            self.com.metadata(
+                "set",
+                optical_data=sorted_list["cap_az"].values.tolist(),
+                id="cap_az",
+            )
+            self.com.metadata(
+                "set",
+                optical_data=sorted_list["cap_el"].values.tolist(),
+                id="cap_el",
+            )
+            self.com.metadata(
+                "set", optical_data=sorted_list["ra"].values.tolist(), id="ra"
+            )
+            self.com.metadata(
+                "set", optical_data=sorted_list["dec"].values.tolist(), id="dec"
+            )
+            self.com.metadata(
+                "set",
+                optical_data=sorted_list["cap_time"].values.tolist(),
+                id="cap_time",
+            )
+            self.com.metadata(
+                "set",
+                optical_data=sorted_list["pic_filename"].values.tolist(),
+                id="pic_filename",
             )
