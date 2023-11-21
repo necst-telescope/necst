@@ -570,7 +570,7 @@ class Commander(PrivilegedNode):
         id: Optional[str] = None,
         time: Optional[float] = None,
         intercept: bool = True,
-        optical_data: Optional[list] = None,
+        optical_data: Optional[list] = [],
         # require_track: bool = True,
         # section_id: Optional[str] = None,
     ) -> None:
