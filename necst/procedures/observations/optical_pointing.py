@@ -68,8 +68,12 @@ class OpticalPointing(Observation):
                     wait=True,
                 )
                 time.sleep(3.0)
-                now = datetime.now().strftime("%Y%m%d_%H%M%S")
-                save_filename = now + ".JPG"
+                save_filename = (
+                    obsdatetime.strftime("%Y%m%d_%H%M%S")
+                    + "No"
+                    + str(captured_num + 1)
+                    + ".JPG"
+                )
                 save_path = save_directory + "/" + save_filename
 
                 coord_before = self.com.antenna("?")
@@ -118,31 +122,37 @@ class OpticalPointing(Observation):
             position="",
             id="cap_az",
         )
+        time.sleep(1.0)
         self.com.metadata(
             "set",
             optical_data=sorted_list["cap_el"].values.tolist(),
             position="",
             id="cap_el",
         )
+        time.sleep(1.0)
         self.com.metadata(
             "set", optical_data=sorted_list["ra"].values.tolist(), position="", id="ra"
         )
+        time.sleep(1.0)
         self.com.metadata(
             "set",
             optical_data=sorted_list["dec"].values.tolist(),
             position="",
             id="dec",
         )
+        time.sleep(1.0)
         self.com.metadata(
             "set",
             optical_data=sorted_list["cap_time"].values.tolist(),
             position="",
             id="cap_time",
         )
+        time.sleep(1.0)
         # to check locus
         self.com.metadata(
             "set", optical_data=sorted_list["az"].values.tolist(), position="", id="az"
         )
+        time.sleep(1.0)
         self.com.metadata(
             "set", optical_data=sorted_list["el"].values.tolist(), position="", id="el"
         )
