@@ -106,42 +106,42 @@ class OpticalPointing(Observation):
             self.logger.info(
                 f"Optical Pointing is completed: {captured_num} stars were captured."
             )
-        finally:
-            save_filename = obsdatetime.strftime("%Y%m%d_%H%M%S") + ".dat"
-            sorted_list["cap_az"] = cap_az
-            sorted_list["cap_el"] = cap_el
-            sorted_list["cap_time"] = cap_time
-            sorted_list["pic_filename"] = cap_pic_filename
-            self.com.metadata(
-                "set",
-                optical_data=sorted_list["cap_az"].values.tolist(),
-                id="cap_az",
-            )
-            self.com.metadata(
-                "set",
-                optical_data=sorted_list["cap_el"].values.tolist(),
-                id="cap_el",
-            )
-            self.com.metadata(
-                "set", optical_data=sorted_list["ra"].values.tolist(), id="ra"
-            )
-            self.com.metadata(
-                "set", optical_data=sorted_list["dec"].values.tolist(), id="dec"
-            )
-            self.com.metadata(
-                "set",
-                optical_data=sorted_list["cap_time"].values.tolist(),
-                id="cap_time",
-            )
-            self.com.metadata(
-                "set",
-                optical_data=sorted_list["pic_filename"].values.tolist(),
-                id="pic_filename",
-            )
-            # to check locus
-            self.com.metadata(
-                "set", optical_data=sorted_list["az"].values.tolist(), id="az"
-            )
-            self.com.metadata(
-                "set", optical_data=sorted_list["el"].values.tolist(), id="el"
-            )
+
+        save_filename = obsdatetime.strftime("%Y%m%d_%H%M%S") + ".dat"
+        sorted_list["cap_az"] = cap_az
+        sorted_list["cap_el"] = cap_el
+        sorted_list["cap_time"] = cap_time
+        sorted_list["pic_filename"] = cap_pic_filename
+        self.com.metadata(
+            "set",
+            optical_data=sorted_list["cap_az"].values.tolist(),
+            id="cap_az",
+        )
+        self.com.metadata(
+            "set",
+            optical_data=sorted_list["cap_el"].values.tolist(),
+            id="cap_el",
+        )
+        self.com.metadata(
+            "set", optical_data=sorted_list["ra"].values.tolist(), id="ra"
+        )
+        self.com.metadata(
+            "set", optical_data=sorted_list["dec"].values.tolist(), id="dec"
+        )
+        self.com.metadata(
+            "set",
+            optical_data=sorted_list["cap_time"].values.tolist(),
+            id="cap_time",
+        )
+        self.com.metadata(
+            "set",
+            optical_data=sorted_list["pic_filename"].values.tolist(),
+            id="pic_filename",
+        )
+        # to check locus
+        self.com.metadata(
+            "set", optical_data=sorted_list["az"].values.tolist(), id="az"
+        )
+        self.com.metadata(
+            "set", optical_data=sorted_list["el"].values.tolist(), id="el"
+        )
