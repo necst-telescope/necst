@@ -115,6 +115,7 @@ class OpticalPointing(Observation):
         self.com.metadata(
             "set",
             optical_data=sorted_list["cap_az"].values.tolist(),
+            position="",
             id="cap_az",
         )
         self.com.metadata(

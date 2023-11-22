@@ -616,7 +616,7 @@ class Commander(PrivilegedNode):
                 while self.get_message("antenna_control").tight:
                     pytime.sleep(0.05)
             time = pytime.time() if time is None else time
-            msg = Spectral(position=position, id=str(id), time=time, data=optical_data)
+            msg = Spectral(data=optical_data, position=position, id=str(id), time=time)
             return self.publisher["spectra_meta"].publish(msg)
         elif CMD == "?":
             # May return metadata, by subscribing to the resized spectral data.
