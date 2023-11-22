@@ -121,28 +121,34 @@ class OpticalPointing(Observation):
         self.com.metadata(
             "set",
             optical_data=sorted_list["cap_el"].values.tolist(),
+            position="",
             id="cap_el",
         )
         self.com.metadata(
-            "set", optical_data=sorted_list["ra"].values.tolist(), id="ra"
+            "set", optical_data=sorted_list["ra"].values.tolist(), position="", id="ra"
         )
         self.com.metadata(
-            "set", optical_data=sorted_list["dec"].values.tolist(), id="dec"
+            "set",
+            optical_data=sorted_list["dec"].values.tolist(),
+            position="",
+            id="dec",
         )
         self.com.metadata(
             "set",
             optical_data=sorted_list["cap_time"].values.tolist(),
+            position="",
             id="cap_time",
         )
         self.com.metadata(
             "set",
             optical_data=sorted_list["pic_filename"].values.tolist(),
+            position="",
             id="pic_filename",
         )
         # to check locus
         self.com.metadata(
-            "set", optical_data=sorted_list["az"].values.tolist(), id="az"
+            "set", optical_data=sorted_list["az"].values.tolist(), position="", id="az"
         )
         self.com.metadata(
-            "set", optical_data=sorted_list["el"].values.tolist(), id="el"
+            "set", optical_data=sorted_list["el"].values.tolist(), position="", id="el"
         )
