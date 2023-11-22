@@ -138,3 +138,10 @@ class OpticalPointing(Observation):
                 optical_data=sorted_list["pic_filename"].values.tolist(),
                 id="pic_filename",
             )
+            # to check locus
+            self.com.metadata(
+                "set", optical_data=sorted_list["az"].values.tolist(), id="az"
+            )
+            self.com.metadata(
+                "set", optical_data=sorted_list["el"].values.tolist(), id="el"
+            )
