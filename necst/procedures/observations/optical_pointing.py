@@ -70,7 +70,7 @@ class OpticalPointing(Observation):
                 time.sleep(3.0)
 
                 save_filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".JPG"
-                save_path = save_directory / save_filename
+                save_path = save_directory + "/" + save_filename
 
                 coord_before = self.com.antenna("?")
                 az_before, el_before, time_before = (
