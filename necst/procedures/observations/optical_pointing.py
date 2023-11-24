@@ -103,6 +103,14 @@ class OpticalPointing(Observation):
                 self.logger.info(
                     f"Target {captured_num}/{len(sorted_list)} is completed."
                 )
+                data = [cap_az[i], cap_el[i], cap_ra[i], cap_dec[i]]
+                self.com.metadata(
+                    "set",
+                    optical_data=data,
+                    position=f"No{i}",
+                    id=obsdatetime.strftime("%Y%m%d_%H%M%S"),
+                    time=cap_time[i],
+                )
         except KeyboardInterrupt:
             self.logger.info("Operation was Interrupted. Stopping antenna...")
             self.com.antenna("stop")
@@ -111,7 +119,7 @@ class OpticalPointing(Observation):
                 f"Optical Pointing is completed: {captured_num} stars were captured."
             )
 
-        save_filename = obsdatetime.strftime("%Y%m%d_%H%M%S") + ".dat"
+        """"
         sorted_list["cap_az"] = cap_az
         sorted_list["cap_el"] = cap_el
         sorted_list["cap_time"] = cap_time
@@ -156,3 +164,4 @@ class OpticalPointing(Observation):
         self.com.metadata(
             "set", optical_data=sorted_list["el"].values.tolist(), position="", id="el"
         )
+        """
