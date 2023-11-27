@@ -43,11 +43,8 @@ class OpticalPointing(Observation):
         self.logger.info(
             f"Starting Optical Pointing Observation. It takes about {t_tot/60} minutes."
         )
-        save_directory = (
-            config.ccd_controller.pic_captured_path
-            + "/"
-            + obsdatetime.strftime("%Y%m%d_%H%M%S")
-        )
+        date = obsdatetime.strftime("%Y%m%d_%H%M%S")
+        save_directory = config.ccd_controller.pic_captured_path + "/" + date
         cap_az = []
         cap_el = []
         cap_pic_filename = []
@@ -68,12 +65,7 @@ class OpticalPointing(Observation):
                     wait=True,
                 )
                 time.sleep(3.0)
-                save_filename = (
-                    obsdatetime.strftime("%Y%m%d_%H%M%S")
-                    + "No"
-                    + str(captured_num + 1)
-                    + ".JPG"
-                )
+                save_filename = date + "No" + str(i) + ".JPG"
                 save_path = save_directory + "/" + save_filename
 
                 coord_before = self.com.antenna("?")
