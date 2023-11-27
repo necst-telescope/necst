@@ -45,14 +45,7 @@ class OpticalPointing(Observation):
         )
         date = obsdatetime.strftime("%Y%m%d_%H%M%S")
         save_directory = config.ccd_controller.pic_captured_path + "/" + date
-        """""
-        cap_az = []
-        cap_el = []
-        cap_pic_filename = []
-        cap_ra = []
-        cap_dec = []
-        cap_time = []
-        """
+
         captured_num = 0
 
         try:
@@ -87,14 +80,6 @@ class OpticalPointing(Observation):
                     coord_after.time,
                 )
 
-                """""
-                cap_az.append((az_before + az_after) / 2)
-                cap_el.append((el_before + el_after) / 2)
-                cap_pic_filename.append(save_filename)
-                cap_ra.append(float(sorted_list["ra"][i]))
-                cap_dec.append(float(sorted_list["dec"][i]))
-                cap_time.append((time_before + time_after) / 2)
-                """
                 cap_az = (az_before + az_after) / 2
                 cap_el = (el_before + el_after) / 2
                 ra = float(sorted_list["ra"][i])
@@ -118,50 +103,3 @@ class OpticalPointing(Observation):
             self.logger.info(
                 f"Optical Pointing is completed: {captured_num} stars were captured."
             )
-
-        """"
-        sorted_list["cap_az"] = cap_az
-        sorted_list["cap_el"] = cap_el
-        sorted_list["cap_time"] = cap_time
-        sorted_list["pic_filename"] = cap_pic_filename
-        self.com.metadata(
-            "set",
-            optical_data=sorted_list["cap_az"].values.tolist(),
-            position="",
-            id="cap_az",
-        )
-        time.sleep(1.0)
-        self.com.metadata(
-            "set",
-            optical_data=sorted_list["cap_el"].values.tolist(),
-            position="",
-            id="cap_el",
-        )
-        time.sleep(1.0)
-        self.com.metadata(
-            "set", optical_data=sorted_list["ra"].values.tolist(), position="", id="ra"
-        )
-        time.sleep(1.0)
-        self.com.metadata(
-            "set",
-            optical_data=sorted_list["dec"].values.tolist(),
-            position="",
-            id="dec",
-        )
-        time.sleep(1.0)
-        self.com.metadata(
-            "set",
-            optical_data=sorted_list["cap_time"].values.tolist(),
-            position="",
-            id="cap_time",
-        )
-        time.sleep(1.0)
-        # to check locus
-        self.com.metadata(
-            "set", optical_data=sorted_list["az"].values.tolist(), position="", id="az"
-        )
-        time.sleep(1.0)
-        self.com.metadata(
-            "set", optical_data=sorted_list["el"].values.tolist(), position="", id="el"
-        )
-        """
