@@ -31,7 +31,7 @@ class OpticalPointing(Observation):
         t_tot = opt_pointing.estimate_time(sorted_list)
         if obstime is None:
             self.logger.info(f"{len(sorted_list)} stars will be captured. ")
-            self.logger.info(f"It takes about {t_tot/60} minutes.")
+            self.logger.info(f"It takes about {round(t_tot/60)} minutes.")
             self.logger.info("Do you want to start?")
             _input = input("(y/n) ")
             if _input != "y":
