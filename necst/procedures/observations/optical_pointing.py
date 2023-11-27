@@ -91,10 +91,7 @@ class OpticalPointing(Observation):
                 cap_dec.append(float(sorted_list["dec"][i]))
                 cap_time.append((time_before + time_after) / 2)
                 time.sleep(8.0)
-                captured_num += 1
-                self.logger.info(
-                    f"Target {captured_num}/{len(sorted_list)} is completed."
-                )
+                self.logger.info(f"Target {i+1}/{len(sorted_list)} is completed.")
                 data = [cap_az[i], cap_el[i], cap_ra[i], cap_dec[i]]
                 self.com.metadata(
                     "set",
