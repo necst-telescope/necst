@@ -98,7 +98,7 @@ class OpticalPointing(Observation):
                 cap_az = (az_before + az_after) / 2
                 cap_el = (el_before + el_after) / 2
                 ra = float(sorted_list["ra"][i])
-                dec = float(sorted_list["dec"[i]])
+                dec = float(sorted_list["dec"][i])
                 cap_time = (time_before + time_after) / 2
                 captured_num += 1
                 time.sleep(8.0)
