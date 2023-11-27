@@ -45,13 +45,16 @@ class OpticalPointing(Observation):
         )
         date = obsdatetime.strftime("%Y%m%d_%H%M%S")
         save_directory = config.ccd_controller.pic_captured_path + "/" + date
+        """""
         cap_az = []
         cap_el = []
         cap_pic_filename = []
         cap_ra = []
         cap_dec = []
         cap_time = []
+        """
         captured_num = 0
+
         try:
             for i in range(len(sorted_list)):
                 self.com.antenna(
@@ -84,21 +87,29 @@ class OpticalPointing(Observation):
                     coord_after.time,
                 )
 
+                """""
                 cap_az.append((az_before + az_after) / 2)
                 cap_el.append((el_before + el_after) / 2)
                 cap_pic_filename.append(save_filename)
                 cap_ra.append(float(sorted_list["ra"][i]))
                 cap_dec.append(float(sorted_list["dec"][i]))
                 cap_time.append((time_before + time_after) / 2)
+                """
+                cap_az = (az_before + az_after) / 2
+                cap_el = (el_before + el_after) / 2
+                ra = float(sorted_list["ra"][i])
+                dec = float(sorted_list["dec"[i]])
+                cap_time = (time_before + time_after) / 2
+                captured_num += 1
                 time.sleep(8.0)
                 self.logger.info(f"Target {i+1}/{len(sorted_list)} is completed.")
-                data = [cap_az[i], cap_el[i], cap_ra[i], cap_dec[i]]
+                data = [cap_az, cap_el, ra, dec]
                 self.com.metadata(
                     "set",
                     optical_data=data,
                     position=f"No{i}",
-                    id=obsdatetime.strftime("%Y%m%d_%H%M%S"),
-                    time=cap_time[i],
+                    id=date,
+                    time=cap_time,
                 )
         except KeyboardInterrupt:
             self.logger.info("Operation was Interrupted. Stopping antenna...")
