@@ -570,6 +570,7 @@ class Commander(PrivilegedNode):
         id: Optional[str] = None,
         time: Optional[float] = None,
         intercept: bool = True,
+        optical_data: Optional[list] = [],
         # require_track: bool = True,
         # section_id: Optional[str] = None,
     ) -> None:
@@ -590,7 +591,6 @@ class Commander(PrivilegedNode):
         intercept
             If True, the change will be done immediately. Otherwise, the change will be
             done after the current control section is finished.
-
         Examples
         --------
         Set the metadata to (position="ON", id="scan01") immediately after current
@@ -616,7 +616,7 @@ class Commander(PrivilegedNode):
                 while self.get_message("antenna_control").tight:
                     pytime.sleep(0.05)
             time = pytime.time() if time is None else time
-            msg = Spectral(position=position, id=str(id), time=time)
+            msg = Spectral(data=optical_data, position=position, id=str(id), time=time)
             return self.publisher["spectra_meta"].publish(msg)
         elif CMD == "?":
             # May return metadata, by subscribing to the resized spectral data.

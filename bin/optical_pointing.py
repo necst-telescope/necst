@@ -80,5 +80,6 @@ if __name__ == "__main__":
         magnitude=(args.lower_mag, args.upper_mag),
         drive_test=args.drive_test,
         obstime=obstime,
+        ch=args.channel,
     )
     obs.execute()
