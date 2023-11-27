@@ -28,10 +28,11 @@ class OpticalPointing(Observation):
         sorted_list = opt_pointing.sort(
             catalog_file=file, magnitude=(float(magnitude[0]), float(magnitude[1]))
         )
+        t_tot = opt_pointing.estimate_time(sorted_list)
         if obstime is None:
-            self.logger.info(
-                f"{len(sorted_list)} stars will be captured. Do you want to start?"
-            )
+            self.logger.info(f"{len(sorted_list)} stars will be captured. ")
+            self.logger.info(f"It takes about {t_tot/60} minutes.")
+            self.logger.info("Do you want to start?")
             _input = input("(y/n) ")
             if _input != "y":
                 self.logger.info("System ended.")
@@ -39,10 +40,7 @@ class OpticalPointing(Observation):
         else:
             self.logger.info(f"{len(sorted_list)} stars will be captured.")
             return None
-        t_tot = opt_pointing.estimate_time(sorted_list)
-        self.logger.info(
-            f"Starting Optical Pointing Observation. It takes about {t_tot/60} minutes."
-        )
+        self.logger.info("Starting Optical Pointing Observation.")
         date = obsdatetime.strftime("%Y%m%d_%H%M%S")
         save_directory = config.ccd_controller.pic_captured_path + "/" + date
 
