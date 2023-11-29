@@ -15,7 +15,7 @@ class CCDController(DeviceNode):
 
         self.ccd = CCD_Device()
 
-        topic.capture_cmd.subscription(self, self.capture)
+        topic.ccd_cmd.subscription(self, self.capture)
 
     def capture(self, msg: CCDMsg) -> None:
         if msg.shot:
