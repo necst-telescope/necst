@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.procedures.observations.optical_pointing &#8212; necst 0.7.0 documentation</title>
+    <title>necst.procedures.observations.optical_pointing &#8212; necst 0.7.1 documentation</title>
     
   <link href="../../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -119,7 +119,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.7.0</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v0.7.1</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -147,9 +147,7 @@
                 
   <h1>Source code for necst.procedures.observations.optical_pointing</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">time</span>
 
 <span class="kn">from</span> <span class="nn">neclib</span> <span class="kn">import</span> <span class="n">config</span>
@@ -160,31 +158,6 @@
 
 <div class="viewcode-block" id="OpticalPointing"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.optical_pointing.html#necst.procedures.observations.optical_pointing.OpticalPointing">[docs]</a><span class="k">class</span> <span class="nc">OpticalPointing</span><span class="p">(</span><span class="n">Observation</span><span class="p">):</span>
     <span class="n">observation_type</span> <span class="o">=</span> <span class="s2">&quot;OpticalPointing&quot;</span>
-
-<div class="viewcode-block" id="OpticalPointing.write_capture_list"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.optical_pointing.html#necst.procedures.observations.optical_pointing.OpticalPointing.write_capture_list">[docs]</a>    <span class="k">def</span> <span class="nf">write_capture_list</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">az</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-        <span class="n">el</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-        <span class="n">pic_filename</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">ra</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-        <span class="n">dec</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-        <span class="n">time</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">antenna</span><span class="o">.</span><span class="n">pointing_parameter_path</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">/pointing_param_before.toml&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">_az</span><span class="p">,</span> <span class="n">_el</span><span class="p">,</span> <span class="n">_pic</span><span class="p">,</span> <span class="n">_ra</span><span class="p">,</span> <span class="n">_dec</span><span class="p">,</span> <span class="n">_time</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-                <span class="n">az</span><span class="p">,</span> <span class="n">el</span><span class="p">,</span> <span class="n">pic_filename</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">time</span>
-            <span class="p">):</span>
-                <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">_az</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">_el</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_pic</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">_ra</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">_dec</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">_time</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="OpticalPointing.run"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.optical_pointing.html#necst.procedures.observations.optical_pointing.OpticalPointing.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -203,10 +176,11 @@
         <span class="n">sorted_list</span> <span class="o">=</span> <span class="n">opt_pointing</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span>
             <span class="n">catalog_file</span><span class="o">=</span><span class="n">file</span><span class="p">,</span> <span class="n">magnitude</span><span class="o">=</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">magnitude</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">magnitude</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
         <span class="p">)</span>
+        <span class="n">t_tot</span> <span class="o">=</span> <span class="n">opt_pointing</span><span class="o">.</span><span class="n">estimate_time</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">obstime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> stars will be captured. Do you want to start?&quot;</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> stars will be captured. &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;It takes about </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">t_tot</span><span class="o">/</span><span class="mi">60</span><span class="p">)</span><span class="si">}</span><span class="s2"> minutes.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Do you want to start?&quot;</span><span class="p">)</span>
             <span class="n">_input</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;(y/n) &quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">_input</span> <span class="o">!=</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;System ended.&quot;</span><span class="p">)</span>
@@ -215,48 +189,58 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> stars will be captured.&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting Optical Pointing Observation.&quot;</span><span class="p">)</span>
-        <span class="c1"># TODO: Add time estimator before observing.</span>
-        <span class="n">save_directory</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">ccd_controller</span><span class="o">.</span><span class="n">pic_captured_path</span> <span class="o">/</span> <span class="n">obsdatetime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-            <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span>
-        <span class="p">)</span>
-        <span class="n">cap_az</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">cap_el</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">cap_pic_filename</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">cap_ra</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">cap_dec</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">cap_time</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">date</span> <span class="o">=</span> <span class="n">obsdatetime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">)</span>
+        <span class="n">save_directory</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">ccd_controller</span><span class="o">.</span><span class="n">pic_captured_path</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">date</span>
+
         <span class="n">captured_num</span> <span class="o">=</span> <span class="mi">0</span>
+
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">opt_target</span> <span class="ow">in</span> <span class="n">sorted_list</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">)):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span>
                     <span class="s2">&quot;point&quot;</span><span class="p">,</span>
-                    <span class="n">target</span><span class="o">=</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">opt_target</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">opt_target</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s2">&quot;fk5&quot;</span><span class="p">),</span>
+                    <span class="n">target</span><span class="o">=</span><span class="p">(</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]),</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]),</span>
+                        <span class="s2">&quot;fk5&quot;</span><span class="p">,</span>
+                    <span class="p">),</span>
                     <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">,</span>
                     <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
+                <span class="n">save_filename</span> <span class="o">=</span> <span class="n">date</span> <span class="o">+</span> <span class="s2">&quot;No&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.JPG&quot;</span>
+                <span class="n">save_path</span> <span class="o">=</span> <span class="n">save_directory</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">save_filename</span>
+
+                <span class="n">coord_before</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">)</span>
+                <span class="n">az_before</span><span class="p">,</span> <span class="n">el_before</span><span class="p">,</span> <span class="n">time_before</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">coord_before</span><span class="o">.</span><span class="n">lon</span><span class="p">,</span>
+                    <span class="n">coord_before</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span>
+                    <span class="n">coord_before</span><span class="o">.</span><span class="n">time</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="k">if</span> <span class="n">drive_test</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-                    <span class="n">save_filename</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.JPG&quot;</span>
-                    <span class="n">save_path</span> <span class="o">=</span> <span class="n">save_directory</span> <span class="o">/</span> <span class="n">save_filename</span>
-                    <span class="n">coord_before</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">)</span>
-                    <span class="n">az_before</span> <span class="o">=</span> <span class="n">coord_before</span><span class="o">.</span><span class="n">lon</span>
-                    <span class="n">el_before</span> <span class="o">=</span> <span class="n">coord_before</span><span class="o">.</span><span class="n">lat</span>
-                    <span class="n">time_before</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">ccd</span><span class="p">(</span><span class="s2">&quot;capture&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">save_path</span><span class="p">)</span>
-                    <span class="n">coord_after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">)</span>
-                    <span class="n">az_after</span> <span class="o">=</span> <span class="n">coord_after</span><span class="o">.</span><span class="n">lon</span>
-                    <span class="n">el_after</span> <span class="o">=</span> <span class="n">coord_after</span><span class="o">.</span><span class="n">lat</span>
-                    <span class="n">time_after</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-                    <span class="n">cap_az</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">az_before</span> <span class="o">+</span> <span class="n">az_after</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-                    <span class="n">cap_el</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">el_before</span> <span class="o">+</span> <span class="n">el_after</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-                    <span class="n">cap_pic_filename</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">save_filename</span><span class="p">)</span>
-                    <span class="n">cap_ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">opt_target</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-                    <span class="n">cap_dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">opt_target</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-                    <span class="n">cap_time</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">time_before</span> <span class="o">+</span> <span class="n">time_after</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">8.0</span><span class="p">)</span>
+
+                <span class="n">coord_after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">)</span>
+                <span class="n">az_after</span><span class="p">,</span> <span class="n">el_after</span><span class="p">,</span> <span class="n">time_after</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">coord_after</span><span class="o">.</span><span class="n">lon</span><span class="p">,</span>
+                    <span class="n">coord_after</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span>
+                    <span class="n">coord_after</span><span class="o">.</span><span class="n">time</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">cap_az</span> <span class="o">=</span> <span class="p">(</span><span class="n">az_before</span> <span class="o">+</span> <span class="n">az_after</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">cap_el</span> <span class="o">=</span> <span class="p">(</span><span class="n">el_before</span> <span class="o">+</span> <span class="n">el_after</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">ra</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">dec</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">cap_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_before</span> <span class="o">+</span> <span class="n">time_after</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
                 <span class="n">captured_num</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Target </span><span class="si">{</span><span class="n">captured_num</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> is completed.&quot;</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">8.0</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> is completed.&quot;</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">cap_az</span><span class="p">,</span> <span class="n">cap_el</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span>
+                    <span class="s2">&quot;set&quot;</span><span class="p">,</span>
+                    <span class="n">optical_data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                    <span class="n">position</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;No</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="nb">id</span><span class="o">=</span><span class="n">date</span><span class="p">,</span>
+                    <span class="n">time</span><span class="o">=</span><span class="n">cap_time</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Operation was Interrupted. Stopping antenna...&quot;</span><span class="p">)</span>
@@ -264,18 +248,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Optical Pointing is completed: </span><span class="si">{</span><span class="n">captured_num</span><span class="si">}</span><span class="s2"> stars were captured.&quot;</span>
-            <span class="p">)</span>
-        <span class="k">finally</span><span class="p">:</span>
-            <span class="n">save_filename</span> <span class="o">=</span> <span class="n">obsdatetime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.dat&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write_capture_list</span><span class="p">(</span>
-                <span class="n">directory</span><span class="o">=</span><span class="n">save_directory</span><span class="p">,</span>
-                <span class="n">filename</span><span class="o">=</span><span class="n">save_filename</span><span class="p">,</span>
-                <span class="n">az</span><span class="o">=</span><span class="n">cap_az</span><span class="p">,</span>
-                <span class="n">el</span><span class="o">=</span><span class="n">cap_el</span><span class="p">,</span>
-                <span class="n">pic_filename</span><span class="o">=</span><span class="n">cap_pic_filename</span><span class="p">,</span>
-                <span class="n">ra</span><span class="o">=</span><span class="n">cap_ra</span><span class="p">,</span>
-                <span class="n">dec</span><span class="o">=</span><span class="n">cap_dec</span><span class="p">,</span>
-                <span class="n">time</span><span class="o">=</span><span class="n">cap_time</span><span class="p">,</span>
             <span class="p">)</span></div></div>
 </pre></div>
 
