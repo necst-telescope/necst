@@ -18,6 +18,6 @@ class CCDController(DeviceNode):
         topic.ccd_cmd.subscription(self, self.capture)
 
     def capture(self, msg: CCDMsg) -> None:
-        if msg.shot:
+        if msg.capture:
             self.ccd.capture(msg.savepath)
             self.logger.info("Capturing the target is completed.")
