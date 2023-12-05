@@ -11,7 +11,6 @@ from necst_msgs.msg import (
     AlertMsg,
     Binning,
     Boolean,
-    # CCDMsg,
     ChopperMsg,
     DeviceReading,
     LocalSignal,
@@ -410,8 +409,6 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "CAPTURE":
-            # msg = CCDMsg(capture=True, savepath=name)
-            # self.publisher["ccd"].publish(msg)
             req = CCDCommand.Request(capture=True, savepath=name)
             res = self._send_request(req, self.client["ccd_cmd"])
             return res.captured
