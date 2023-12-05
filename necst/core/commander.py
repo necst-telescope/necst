@@ -11,7 +11,6 @@ from necst_msgs.msg import (
     AlertMsg,
     Binning,
     Boolean,
-    CCDMsg,
     ChopperMsg,
     DeviceReading,
     LocalSignal,
@@ -20,7 +19,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
 )
-from necst_msgs.srv import CoordinateCommand, File, RecordSrv
+from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -66,7 +65,6 @@ class Commander(PrivilegedNode):
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
             "chopper": topic.chopper_cmd,
-            "ccd": topic.ccd_cmd,
             "spectra_meta": topic.spectra_meta,
             "qlook_meta": topic.qlook_meta,
             "sis_bias": topic.sis_bias_cmd,
@@ -95,6 +93,7 @@ class Commander(PrivilegedNode):
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
             "raw_coord": service.raw_coord.client(self),
+            "ccd_cmd": service.ccd_cmd.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
@@ -393,14 +392,26 @@ class Commander(PrivilegedNode):
         *,
         name: str = "",
     ) -> None:
-        # TODO: Add description about this source code.
+        """Control the ccd.
+
+        Parameters
+        ----------
+        cmd : {"capture", "?"}
+            Command to be sent to the ccd.
+
+        Examples
+        --------
+        Capture the photo
+
+        >>> com.ccd("capture", name="/home/pi/data/photo.JPG")
+
+        """
         CMD = cmd.upper()
         if CMD == "CAPTURE":
-            msg = CCDMsg(capture=True, savepath=name)
-            self.publisher["ccd"].publish(msg)
+            req = CCDCommand.Request(capture=True, savepath=name)
+            res = self._send_request(req, self.client["ccd_cmd"])
+            return res.captured
         elif CMD == "?":
-            # TODO: Implement.
-            # May return metadata, by subscribing to the resized spectral data.
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
