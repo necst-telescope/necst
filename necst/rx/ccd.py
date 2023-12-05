@@ -1,7 +1,9 @@
 from neclib.devices import CcdController as CCD_Device
-from necst_msgs.msg import CCDMsg
 
-from .. import namespace, topic
+# from necst_msgs.msg import CCDMsg
+from necst_msgs.srv import CCDCommand
+
+from .. import namespace, service
 from ..core import DeviceNode
 
 
@@ -15,9 +17,21 @@ class CCDController(DeviceNode):
 
         self.ccd = CCD_Device()
 
-        topic.ccd_cmd.subscription(self, self.capture)
+        # topic.ccd_cmd.subscription(self, self.capture)
+        service.ccd_cmd.service(self, self.capture)
 
+    """"
     def capture(self, msg: CCDMsg) -> None:
         if msg.capture:
             self.ccd.capture(msg.savepath)
             self.logger.info("Capturing the target is completed.")
+    """
+
+    def capture(
+        self, request: CCDCommand.Request, responce: CCDCommand.Responce
+    ) -> CCDCommand.Responce:
+        if request.capture:
+            self.ccd.capture(request.savepath)
+            self.logger.info("Capturing the target is completed.")
+            responce.captured = True
+            return responce

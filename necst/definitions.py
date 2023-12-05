@@ -201,6 +201,7 @@ class service:
         File,
         ObservationMode,
         RecordSrv,
+        CCDCommand,
     )
     from std_srvs.srv import Empty
 
@@ -212,3 +213,4 @@ class service:
     record_file = Service(File, "record_file", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
+    ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
