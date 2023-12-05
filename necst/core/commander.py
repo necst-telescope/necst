@@ -394,7 +394,20 @@ class Commander(PrivilegedNode):
         *,
         name: str = "",
     ) -> None:
-        # TODO: Add description about this source code.
+        """Control the ccd.
+
+        Parameters
+        ----------
+        cmd : {"capture", "?"}
+            Command to be sent to the ccd.
+
+        Examples
+        --------
+        Capture the photo
+
+        >>> com.ccd("capture", name="/home/pi/data/photo.JPG")
+
+        """
         CMD = cmd.upper()
         if CMD == "CAPTURE":
             # msg = CCDMsg(capture=True, savepath=name)
@@ -403,8 +416,6 @@ class Commander(PrivilegedNode):
             res = self._send_request(req, self.client["ccd_cmd"])
             return res.captured
         elif CMD == "?":
-            # TODO: Implement.
-            # May return metadata, by subscribing to the resized spectral data.
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
