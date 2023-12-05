@@ -28,10 +28,10 @@ class CCDController(DeviceNode):
     """
 
     def capture(
-        self, request: CCDCommand.Request, responce: CCDCommand.Responce
-    ) -> CCDCommand.Responce:
+        self, request: CCDCommand.Request, response: CCDCommand.Response
+    ) -> CCDCommand.Response:
         if request.capture:
             self.ccd.capture(request.savepath)
             self.logger.info("Capturing the target is completed.")
-            responce.captured = True
-            return responce
+            response.captured = True
+            return response
