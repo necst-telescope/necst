@@ -7,7 +7,7 @@ Specify the minimum voltage, maximum voltage, and step voltage in units of mV.
 
 Examples
 --------
-$ sis_iv -id "USB" -min -8.0 -max 8.0 -s 0.1
+$ necst sis_iv -id "USB" -min -8.0 -max 8.0 -s 0.1
 
 """
 import argparse
