@@ -13,7 +13,6 @@ from ...core import AlertHandlerNode
 
 
 class AntennaPIDController(AlertHandlerNode):
-
     NodeName = "controller"
     Namespace = namespace.antenna
 
@@ -111,8 +110,8 @@ class AntennaPIDController(AlertHandlerNode):
                 break
 
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
-        now = pytime.time()
         self.discard_outdated_commands()
+        now = pytime.time()
 
         # Check if any command is available.
         if len(self.command_list) == 0:

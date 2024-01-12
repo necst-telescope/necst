@@ -2,13 +2,16 @@
 """Hot Monitor.
 
 Inserting the blackbody in the specified integrate time.
-The sampling rate of the recorder is fixed in 1/10 of default rate.
+The sampling rate cannot be set under 0.1s/1data.
+Recording rate cannot be specified smaller than two decimal places.
+The rate of 0.1s/1data is default rate.
+The number of channel can be set 2^n.
 
 Examples
 --------
-Hot Monitoring in 5hours
+Hot Monitoring in 5hours. Recording rate is 1 data in 10s.
 
-$ hotmonitor -i 5
+$ necst hot_monitor -i 5 -r 10 -c 64
 
 """
 
@@ -26,10 +29,23 @@ if __name__ == "__main__":
         help="Integration time for the Hot Monitor in unit of hours.",
         required=True,
     )
-    #TODO: Add monitoring mode argument. -> Total power or Average(Reduce data).
-    # This source code is reducing data in 1/10.
+    p.add_argument(
+        "-r",
+        "--rate",
+        type=float,
+        help="Recording time for 1 data in unit of seconds.",
+        required=True,
+    )
+    p.add_argument(
+        "-c",
+        "--channel",
+        type=int,
+        help="Number of spectral channels.",
+    )
+
+    # TODO: Add monitoring mode argument. -> Total power or Average(Reduce data).
 
     args = p.parse_args()
 
-    obs = HotMonitor(integ_time=args.integ)
+    obs = HotMonitor(integ_time=args.integ, rate=args.rate, ch=args.channel)
     obs.execute()

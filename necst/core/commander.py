@@ -9,6 +9,7 @@ from neclib.core import read
 from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import (
     AlertMsg,
+    Binning,
     Boolean,
     ChopperMsg,
     DeviceReading,
@@ -18,7 +19,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
 )
-from necst_msgs.srv import CoordinateCommand, File, RecordSrv
+from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -70,6 +71,7 @@ class Commander(PrivilegedNode):
             "lo_signal": topic.lo_signal_cmd,
             "attenuator": topic.attenuator_cmd,
             "spectra_smpl": topic.spectra_rec,
+            "channel_binning": topic.channel_binning,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -91,6 +93,7 @@ class Commander(PrivilegedNode):
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
             "raw_coord": service.raw_coord.client(self),
+            "ccd_cmd": service.ccd_cmd.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
@@ -173,6 +176,7 @@ class Commander(PrivilegedNode):
         name: Optional[str] = None,
         wait: bool = True,
         speed: Optional[Union[int, float]] = None,
+        direct_mode: bool = False,
     ) -> None:
         """Control antenna direction and motion.
 
@@ -312,6 +316,7 @@ class Commander(PrivilegedNode):
                     lat=[float(target[1])],
                     frame=target[2],
                     unit=unit,
+                    direct_mode=direct_mode,
                 )
             elif reference is not None:
                 kwargs.update(
@@ -376,6 +381,38 @@ class Commander(PrivilegedNode):
 
         elif CMD in ["?"]:
             return self.get_message("encoder", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    @require_privilege(escape_cmd=["?"])
+    def ccd(
+        self,
+        cmd: Literal["capture", "?"],
+        /,
+        *,
+        name: str = "",
+    ) -> None:
+        """Control the ccd.
+
+        Parameters
+        ----------
+        cmd : {"capture", "?"}
+            Command to be sent to the ccd.
+
+        Examples
+        --------
+        Capture the photo
+
+        >>> com.ccd("capture", name="/home/pi/data/photo.JPG")
+
+        """
+        CMD = cmd.upper()
+        if CMD == "CAPTURE":
+            req = CCDCommand.Request(capture=True, savepath=name)
+            res = self._send_request(req, self.client["ccd_cmd"])
+            return res.captured
+        elif CMD == "?":
+            raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
@@ -544,6 +581,7 @@ class Commander(PrivilegedNode):
         id: Optional[str] = None,
         time: Optional[float] = None,
         intercept: bool = True,
+        optical_data: Optional[list] = [],
         # require_track: bool = True,
         # section_id: Optional[str] = None,
     ) -> None:
@@ -564,7 +602,6 @@ class Commander(PrivilegedNode):
         intercept
             If True, the change will be done immediately. Otherwise, the change will be
             done after the current control section is finished.
-
         Examples
         --------
         Set the metadata to (position="ON", id="scan01") immediately after current
@@ -590,7 +627,7 @@ class Commander(PrivilegedNode):
                 while self.get_message("antenna_control").tight:
                     pytime.sleep(0.05)
             time = pytime.time() if time is None else time
-            msg = Spectral(position=position, id=str(id), time=time)
+            msg = Spectral(data=optical_data, position=position, id=str(id), time=time)
             return self.publisher["spectra_meta"].publish(msg)
         elif CMD == "?":
             # May return metadata, by subscribing to the resized spectral data.
@@ -636,12 +673,13 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "reduce", "?"],
+        cmd: Literal["start", "stop", "file", "reduce", "binning", "?"],
         /,
         *,
         name: str = "",
         content: Optional[str] = None,
         nth: Optional[int] = None,
+        ch: Optional[int] = None,
     ) -> None:
         """Control the recording.
 
@@ -656,6 +694,8 @@ class Commander(PrivilegedNode):
             Content of the file to record.
         nth
             Every $n$th spectral data will be recorded.
+        ch
+            Number of spectral channels
 
         Examples
         --------
@@ -684,6 +724,10 @@ class Commander(PrivilegedNode):
 
         >>> com.record("reduce", nth=10)
 
+        Change the number of spectral channels
+
+        >>> com.record("binning", ch=8192)
+
         """
         CMD = cmd.upper()
         if CMD == "START":
@@ -709,6 +753,15 @@ class Commander(PrivilegedNode):
         elif CMD == "REDUCE":
             msg = Sampling(nth=nth)
             return self.publisher["spectra_smpl"].publish(msg)
+        elif CMD == "BINNING":
+            msg = Binning(ch=ch)
+            if ch > 100:
+                self.quick_look(
+                    "ch", range=(0, 100), integ=1
+                )  # reset to default values
+            else:
+                self.quick_look("ch", range=(0, ch), integ=1)
+            return self.publisher["channel_binning"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:

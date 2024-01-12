@@ -113,6 +113,7 @@ class topic:
         AlertMsg,
         HEMTBias,
         Boolean,
+        Binning,
         ChopperMsg,
         Clock,
         ControlStatus,
@@ -188,6 +189,7 @@ class topic:
     )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
+    channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
 
 
 class service:
@@ -197,6 +199,7 @@ class service:
         File,
         ObservationMode,
         RecordSrv,
+        CCDCommand,
     )
     from std_srvs.srv import Empty
 
@@ -208,3 +211,4 @@ class service:
     record_file = Service(File, "record_file", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
+    ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
