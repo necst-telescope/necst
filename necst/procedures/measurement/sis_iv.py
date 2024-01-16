@@ -1,9 +1,9 @@
 import time
 
-from ..observation_base import Observation
+from .measurement_base import Measurement
 
 
-class SIS_IV(Observation):
+class SIS_IV(Measurement):
 
     observation_type = "SIS_IV"
 

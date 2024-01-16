@@ -14,7 +14,7 @@ from neclib.coordinates import PointingError
 from .. import config
 from ..core import Commander
 
-class Observation(ABC):
+class Measurement(ABC):
     """Observation runner.
 
     Parameters
@@ -111,3 +111,7 @@ class Observation(ABC):
                 self.com.record("file", name=path)
             except FileNotFoundError:
                 self.logger.error(f"Failed to save parameter file {filename!r}")
+
+    @abstractmethod
+    def run(self, *args, **kwargs) -> None:
+        ...
