@@ -11,11 +11,11 @@ from neclib import NECSTAuthorityError, get_logger
 from neclib.coordinates import PointingError
 
 
-from .. import config
-from ..core import Commander
+from ... import config
+from ...core import Commander
 
 class Measurement(ABC):
-    """Observation runner.
+    """Measurement runner.
 
     Parameters
     ----------
