@@ -55,7 +55,7 @@ class Measurement(ABC):
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
-                self.binning(self._kwargs.pop("ch"))
+                #self.binning(self._kwargs.pop("ch"))
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
@@ -63,7 +63,7 @@ class Measurement(ABC):
                 self.run(**self._kwargs)
             finally:
                 self.com.record("stop")
-                self.binning(config.spectrometer.max_ch)  # set max channel number
+                #self.binning(config.spectrometer.max_ch)  # set max channel number
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60
