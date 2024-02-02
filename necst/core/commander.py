@@ -176,6 +176,7 @@ class Commander(PrivilegedNode):
         name: Optional[str] = None,
         wait: bool = True,
         speed: Optional[Union[int, float]] = None,
+        margin: Optional[float] = None,
         direct_mode: bool = False,
     ) -> None:
         """Control antenna direction and motion.
@@ -343,12 +344,17 @@ class Commander(PrivilegedNode):
 
         elif CMD == "SCAN":
             scan_kwargs = dict(speed=float(speed), unit=unit)
+
+            if margin is None:
+                margin = config.antenna_scan_margin
+
             if name is not None:
                 scan_kwargs.update(
                     name=name,
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
                     offset_frame=scan_frame,
+                    margin=margin,
                 )
             elif (reference is not None) or (target is not None):
                 given_as = reference if target is None else target
@@ -359,12 +365,14 @@ class Commander(PrivilegedNode):
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
                     offset_frame=scan_frame,
+                    maegin=margin,
                 )
             else:
                 scan_kwargs.update(
                     lon=[float(start[0]), float(stop[0])],
                     lat=[float(start[1]), float(stop[1])],
                     frame=scan_frame,
+                    margin=margin,
                 )
 
             req = CoordinateCommand.Request(**scan_kwargs)

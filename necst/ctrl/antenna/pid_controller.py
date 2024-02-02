@@ -16,14 +16,15 @@ class AntennaPIDController(AlertHandlerNode):
     NodeName = "controller"
     Namespace = namespace.antenna
 
-    CommandOffsetDuration: float = 0.075
-
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
         pid_param = config.antenna_pid_param
         max_speed = config.antenna_max_speed
         max_accel = config.antenna_max_acceleration
+
+        self.command_offset_duration = config.antenna.command_duration_sec
+
         self.controller = {
             "az": PIDController(
                 pid_param=pid_param.az,
@@ -131,7 +132,7 @@ class AntennaPIDController(AlertHandlerNode):
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-        enc = self.interpolated_encoder_reading(cmd.time - self.CommandOffsetDuration)
+        enc = self.interpolated_encoder_reading(cmd.time - self.command_duration_sec)
 
         # Check if recent encoder reading is available or not.
         if enc is None:
