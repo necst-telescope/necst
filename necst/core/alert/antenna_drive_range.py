@@ -5,7 +5,6 @@ from ... import config, namespace, topic
 
 
 class AntennaDriveRangeAlert(Node):
-
     NodeName = "antenna_drive_range"
     Namespace = namespace.alert
 

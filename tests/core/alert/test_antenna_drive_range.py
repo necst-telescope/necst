@@ -10,7 +10,6 @@ from ...conftest import TesterAlertHandlingNode, destroy
 
 
 class TestAntennaSpeed(TesterAlertHandlingNode):
-
     NodeName = "antenna_drive_range"
 
     def test_nominal(self):

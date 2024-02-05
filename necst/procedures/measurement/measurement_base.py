@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Generator, Optional,  final
+from typing import Generator, Optional, final
 
 import rclpy
 from neclib import NECSTAuthorityError, get_logger

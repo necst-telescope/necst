@@ -12,7 +12,6 @@ from ..conftest import TesterNode, destroy, send_request
 
 
 class TestHorizontalCoord(TesterNode):
-
     NodeName = "test_horizontal_coord"
 
     def test_node_info(self):

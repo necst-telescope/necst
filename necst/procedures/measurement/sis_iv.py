@@ -4,7 +4,6 @@ from .measurement_base import Measurement
 
 
 class SIS_IV(Measurement):
-
     observation_type = "SIS_IV"
 
     def run(

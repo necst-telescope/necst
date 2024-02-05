@@ -5,7 +5,6 @@ from ... import config, namespace, topic
 
 
 class AntennaSpeedAlert(Node):
-
     NodeName = "antenna_speed"
     Namespace = namespace.alert
 

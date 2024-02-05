@@ -10,7 +10,6 @@ from ..core import DeviceNode
 
 
 class SignalGeneratorController(DeviceNode):
-
     NodeName = "signal_generator"
     Namespace = namespace.rx
 

@@ -8,7 +8,6 @@ from ..conftest import TesterNode, destroy
 
 
 class TestAntennaDeviceSimulator(TesterNode):
-
     NodeName = "test_antenna_device_simulator"
 
     def test_node_info(self):

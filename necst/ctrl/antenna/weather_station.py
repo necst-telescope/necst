@@ -9,7 +9,6 @@ from ...core import DeviceNode
 
 
 class WeatherStationReader(DeviceNode):
-
     NodeName = "thermometer_reader"
     Namespace = namespace.root
 

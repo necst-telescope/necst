@@ -22,7 +22,6 @@ def mock_record_root(tmp_path_factory):
 
 @pytest.mark.usefixtures("mock_record_root")
 class TestRecorder(TesterNode):
-
     NodeName = "test_recorder"
 
     def test_single_topic_single_message(self):

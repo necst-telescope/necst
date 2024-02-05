@@ -9,7 +9,6 @@ from necst import config, namespace, topic
 
 
 class AntennaDeviceSimulator(Node):
-
     NodeName = "antenna_simulator"
     Namespace = namespace.antenna
 

@@ -8,7 +8,6 @@ from ... import config, namespace, topic
 
 
 class AntennaTrackingStatus(Node):
-
     NodeName = "tracking_status"
     Namespace = namespace.antenna
 

@@ -11,7 +11,6 @@ from ..conftest import TesterNode, destroy
 
 
 class TestAntennaController(TesterNode):
-
     NodeName = "test_antenna"
 
     def test_node_info(self):

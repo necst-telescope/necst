@@ -8,7 +8,6 @@ from ...core import DeviceNode
 
 
 class AntennaMotor(DeviceNode):
-
     NodeName = "motor_driver"
     Namespace = namespace.antenna
 

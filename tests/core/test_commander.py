@@ -17,7 +17,6 @@ from ..conftest import TesterNode, destroy
 
 
 class TestCommander(TesterNode):
-
     NodeName = "test_commander"
 
     def test_node_info(self):

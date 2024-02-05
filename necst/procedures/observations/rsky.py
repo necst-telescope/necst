@@ -4,7 +4,6 @@ from ..observation_base import Observation
 
 
 class RSky(Observation):
-
     observation_type = "RSky"
 
     def run(self, n: int, integ_time: Union[int, float]) -> None:
