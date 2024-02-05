@@ -9,7 +9,7 @@ from typing import Generator, Optional, final
 import rclpy
 from neclib import NECSTAuthorityError, get_logger
 
-from ...core import Commander
+from ..core import Commander
 
 
 class Measurement(ABC):
