@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SIS I-V Measurement.
+r"""SIS I-V Measurement.
 
 Measure and save the I-V of SIS.
 "id" argument specifies the sideband （USB or LSB)
