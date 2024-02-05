@@ -4,14 +4,11 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generator, Optional, Union, final
+from typing import Generator, Optional,  final
 
 import rclpy
 from neclib import NECSTAuthorityError, get_logger
-from neclib.coordinates import PointingError
 
-
-from ... import config
 from ...core import Commander
 
 class Measurement(ABC):
