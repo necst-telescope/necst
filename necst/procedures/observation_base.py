@@ -16,7 +16,7 @@ from ..core import Commander
 
 
 class Observation(ABC):
-    """Observation runner.
+    r"""Observation runner.
 
     Parameters
     ----------
