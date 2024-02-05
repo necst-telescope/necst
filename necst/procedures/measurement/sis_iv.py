@@ -20,6 +20,7 @@ class SIS_IV(Measurement):
             int(round(1000 * step_voltage_mV)),
         ):
             self.com.sis_bias("set", mV=(bias_voltage / 1000), id=id)
-            time.sleep(0.1)
+            time.sleep(1))
             self.com.sis_bias("?", id=id + "_I")
             self.com.sis_bias("?", id=id + "_V")
+        self.com.sis_bias("set", mV=(0), id=id)
