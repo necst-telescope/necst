@@ -8,7 +8,6 @@ from ...core import DeviceNode
 
 
 class ChopperController(DeviceNode):
-
     NodeName = "chopper"
     Namespace = namespace.calib
 

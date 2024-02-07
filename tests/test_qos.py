@@ -8,7 +8,6 @@ from .conftest import TesterNode, destroy
 
 
 class TestQoSDetector(TesterNode):
-
     NodeName = "test_qos_detector"
 
     @pytest.mark.parametrize("qos_policy", [qos.reliable, qos.realtime, qos.lowest])

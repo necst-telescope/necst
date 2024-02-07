@@ -31,7 +31,7 @@ jobs:
             "myst-parser==0.18.0" \
             "pydata-sphinx-theme==0.7.2" \
             "pytest-cov==3.0.0" \
-            "sphinx==4.5.0"
+            "sphinx==5.0.0"
       - name: Lint with Flake8
         run: python3 -m flake8 docs tests ${PACKAGE_NAME}
       - name: Format with Black

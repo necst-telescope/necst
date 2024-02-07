@@ -10,7 +10,6 @@ from ...conftest import TesterNode
 
 
 class TestAlertHandlerNode(TesterNode):
-
     NodeName = "alert_handler"
 
     def test_subscription_count(self):

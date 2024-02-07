@@ -8,7 +8,6 @@ from ...core import DeviceNode
 
 
 class AntennaEncoderController(DeviceNode):
-
     NodeName = "encoder_readout"
     Namespace = namespace.antenna
 

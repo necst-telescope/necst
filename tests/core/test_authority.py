@@ -8,7 +8,6 @@ from ..conftest import TesterNode, destroy, temp_config
 
 
 class TestAuthority(TesterNode):
-
     NodeName = "test_authority"
 
     def test_communicable(self):
