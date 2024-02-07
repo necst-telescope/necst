@@ -111,4 +111,5 @@ class Measurement(ABC):
                 self.logger.error(f"Failed to save parameter file {filename!r}")
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> None: ...
+    def run(self, *args, **kwargs) -> None:
+        ...
