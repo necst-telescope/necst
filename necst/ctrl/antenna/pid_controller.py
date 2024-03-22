@@ -3,7 +3,7 @@ from copy import deepcopy
 from typing import List, Optional, Tuple
 
 from neclib.controllers import PIDController
-from neclib.data import LinearInterp, LinearExtrp
+from neclib.data import LinearInterp, LinearExtrapolate
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
@@ -60,7 +60,7 @@ class AntennaPIDController(AlertHandlerNode):
         # self.coord_interp = LinearInterp(
         #     "time", CoordMsg.get_fields_and_field_types().keys()
         # )
-        self.coord_interp = LinearExtrp(
+        self.coord_ext = LinearExtrapolate(
             "time", CoordMsg.get_fields_and_field_types().keys()
         )
 
@@ -86,7 +86,7 @@ class AntennaPIDController(AlertHandlerNode):
             )
             return
 
-        return self.coord_interp(CoordMsg(time=time), self.enc)
+        return self.coord_ext(CoordMsg(time=time), self.enc)
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
