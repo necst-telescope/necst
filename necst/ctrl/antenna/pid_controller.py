@@ -3,7 +3,7 @@ from copy import deepcopy
 from typing import List, Optional, Tuple
 
 from neclib.controllers import PIDController
-from neclib.data import LinearInterp
+from neclib.data import LinearInterp, LinearExtrp
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
@@ -57,7 +57,10 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
         self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
 
-        self.coord_interp = LinearInterp(
+        # self.coord_interp = LinearInterp(
+        #     "time", CoordMsg.get_fields_and_field_types().keys()
+        # )
+        self.coord_interp = LinearExtrp(
             "time", CoordMsg.get_fields_and_field_types().keys()
         )
 
