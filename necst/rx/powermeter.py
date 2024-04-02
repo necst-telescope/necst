@@ -25,19 +25,15 @@ class PowermeterController(DeviceNode):
         self.create_timer(1, self.check_publisher)
 
     def check_poblisher(self) -> None:
-        # 以下Termometer.pyの写し。Powermeterがどうなるのか分かりません
-        # configにもPowermeterのことはまだ書いてないみたいです
-        for name in config.thermometer.channel.keys():
+        for name in self.io.keys():
             if name not in self.publisher:
-                self.publisher[name] = topic.thermometer[name].publisher(self)
+                self.publisher[name] = topic.powermeter[name].publisher(self)
 
     def stream(self) -> None:
         for (
             name,
             publisher,
         ) in self.publisher.items():
-            # ここ、name, publisherでfor回していいのか分かりません
-            # get_powerにnameはいらない？ でもmsgにはidが必要だし？
-            power = self.io.get_power().item()
+            power = self.io.get_power(name).item()
             msg = DeviceReading(time=time.time(), value=power, id=name)
             publisher.publish(msg)
