@@ -24,7 +24,7 @@ class PowermeterController(DeviceNode):
         self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
 
-    def check_poblisher(self) -> None:
+    def check_publisher(self) -> None:
         for name in self.io.keys():
             if name not in self.publisher:
                 self.publisher[name] = topic.powermeter[name].publisher(self)
@@ -34,6 +34,6 @@ class PowermeterController(DeviceNode):
             name,
             publisher,
         ) in self.publisher.items():
-            power = self.io.get_power(name).item()
+            power = self.io[name].get_power().item()
             msg = DeviceReading(time=time.time(), value=power, id=name)
             publisher.publish(msg)
