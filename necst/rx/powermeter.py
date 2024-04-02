@@ -5,7 +5,7 @@ from neclib.devices import PowerMeter
 from necst_msgs.msg import DeviceReading
 from rclpy.publisher import Publisher
 
-from .. import config, namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
