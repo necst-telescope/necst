@@ -57,10 +57,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
         self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
 
-        # self.coord_interp = LinearInterp(
-        #     "time", CoordMsg.get_fields_and_field_types().keys()
-        # )
-        self.coord_ext = LinearExtrapolate(
+        self.coord_interp = LinearInterp(
             "time", CoordMsg.get_fields_and_field_types().keys()
         )
 
@@ -86,7 +83,7 @@ class AntennaPIDController(AlertHandlerNode):
             )
             return
 
-        return self.coord_ext(CoordMsg(time=time), self.enc)
+        return self.coord_interp(CoordMsg(time=time), self.enc)
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
