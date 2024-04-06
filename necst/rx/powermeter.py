@@ -27,10 +27,11 @@ class PowermeterController(DeviceNode):
     def check_publisher(self) -> None:
         for name in self.io.keys():
             if name not in self.publisher:
-                self.publisher[name] = topic.powermeter[name].publisher(self)
+                self.publisher[name] = topic.powermeter.publisher(self)
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            power = self.io.get_power().item()
-            msg = DeviceReading(time=time.time(), value=power, id=None)
+            power = self.io.get_power().to_value("dBm").items
+
+            msg = DeviceReading(time=time.time(), value=power, id="")
             publisher.publish(msg)
