@@ -9,3 +9,8 @@ try:
     from .ccd import CCDController  # noqa: F401
 except ImportError:
     pass
+
+try:
+    from .powermeter import PowermeterController  # noqa: F401
+except ImportError:
+    pass
