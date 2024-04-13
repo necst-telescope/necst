@@ -909,9 +909,9 @@ class Commander(PrivilegedNode):
 
         >>> com.local_attenuator("set", ch=1, outputrange="DA0_100mA", current=10)
 
-        Read the outputrange on ch1
+        Read the outputrange
 
-        >>> com.attenuator("?", ch=1)
+        >>> com.attenuator("?")
 
         """
         CMD = cmd.upper()
