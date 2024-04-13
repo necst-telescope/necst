@@ -89,7 +89,7 @@ class Commander(PrivilegedNode):
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
-            "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1)
+            "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
@@ -916,8 +916,9 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "SET":
-            msg = LocalAttenuator(ch=ch, outputrange=outputrange, current=current,
-                                  time=pytime.time())
+            msg = LocalAttenuator(
+                ch=ch, outputrange=outputrange, current=current, time=pytime.time()
+            )
             self.publisher["local_attenuator"].publish(msg)
         elif CMD == "?":
             return self.get_message("local_attenuator", timeout_sec=10)

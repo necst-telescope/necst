@@ -24,15 +24,16 @@ class LocalAttenuatorController(DeviceNode):
 
     def output_current(self, msg: LocalAttenuator) -> None:
         self.io.set_outputrange(ch=msg.ch, outputrange=msg.outputrange)
-        self.logger.info(f"LocalAttenuator outputrange set to {msg.outputrange}"
-                         "for ch{msg.ch}")
+        self.logger.info(
+            f"LocalAttenuator outputrange set to {msg.outputrange}" "for ch{msg.ch}"
+        )
 
         self.io.output_current(ch=msg.ch, current=msg.current)
         self.logger.info(f"Output current {msg.current} mA for ch{msg.ch}")
 
     def check_publisher(self) -> None:
         for key in self.io.keys():
-            if isinstance(self.io[key], Attenuator.NetworkAttenuator):
+            if isinstance(self.io[key], Attenuator.CurrentAttenuator):
                 if key not in self.publisher:
                     self.publisher[key] = topic.local_attenuator.publisher(self)
             else:
