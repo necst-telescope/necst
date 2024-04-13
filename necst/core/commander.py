@@ -916,7 +916,8 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "SET":
-            msg = LocalAttenuator(ch=ch, outputrange=outputrange, current=current, time=pytime.time())
+            msg = LocalAttenuator(ch=ch, outputrange=outputrange, current=current,
+                                  time=pytime.time())
             self.publisher["local_attenuator"].publish(msg)
         elif CMD == "?":
             return self.get_message("local_attenuator", timeout_sec=10)
