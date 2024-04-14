@@ -1,5 +1,4 @@
 import time
-from typing import Dict
 
 from neclib.devices import LocalAttenuator
 from necst_msgs.msg import LocalAttenuatorMsg
@@ -17,7 +16,7 @@ class LocalAttenuatorController(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
         self.io = LocalAttenuator()
-        self.publisher: Dict[str, Publisher] = {}
+        self.publisher = Publisher
         topic.local_attenuator_cmd.subscription(self, self.output_current)
         self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
