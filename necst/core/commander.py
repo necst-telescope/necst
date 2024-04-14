@@ -14,7 +14,7 @@ from necst_msgs.msg import (
     ChopperMsg,
     DeviceReading,
     LocalSignal,
-    LocalAttenuator,
+    LocalAttenuatorMsg,
     PIDMsg,
     Sampling,
     SISBias,
