@@ -39,4 +39,4 @@ class LocalAttenuatorController(DeviceNode):
             msg = LocalAttenuatorMsg(
                 ch=ch, outputrange=outputrange[f"ch{ch}"], time=time.time()
             )
-            self.publisher.publish(msg=msg)
+            self.publisher.publish(self, msg)
