@@ -32,7 +32,9 @@ class LocalAttenuatorController(DeviceNode):
         self.logger.info(f"Output current {msg.current} mA for ch{msg.ch}")
 
     def check_publisher(self) -> None:
-        self.publisher = topic.local_attenuator.publisher(self)
+        for name in self.io.keys():
+            if name not in self.publisher:
+                self.publisher[name] = topic.local_attenuator.publisher(self)
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
