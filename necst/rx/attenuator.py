@@ -25,7 +25,9 @@ class AttenuatorController(DeviceNode):
     def set_loss(self, msg: DeviceReading) -> None:
         if isinstance(self.io[msg.id], Attenuator.NetworkAttenuator):
             self.io.set_loss(dB=int(msg.value), id=msg.id)
-            self.logger.info(f"Attenuator loss set to {msg.value} dB for device {msg.id}")
+            self.logger.info(
+                f"Attenuator loss set to {msg.value} dB for device {msg.id}"
+            )
 
     def check_publisher(self) -> None:
         for key in self.io.keys():

@@ -38,5 +38,7 @@ class LocalAttenuatorController(DeviceNode):
         for key, publisher in self.publisher.items():
             for ch in range(1, 9):
                 outputrange = self.io[key].get_outputrange(ch=ch)
-                msg = LocalAttenuator(ch=ch, outputrange=outputrange[f"ch{ch}"], time=time.time())
+                msg = LocalAttenuator(
+                    ch=ch, outputrange=outputrange[f"ch{ch}"], time=time.time()
+                )
                 publisher.publish(msg)
