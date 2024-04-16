@@ -888,7 +888,7 @@ class Commander(PrivilegedNode):
         *,
         ch: Optional[int] = None,
         outputrange: Optional[str] = None,
-        current: Union[int, float] = 0.0,
+        current: float = 0.0,
     ) -> None:
         """Control the local_attenuator.
 
