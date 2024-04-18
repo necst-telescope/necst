@@ -200,9 +200,9 @@ class AntennaPIDController(AlertHandlerNode):
             self.immediate_stop_no_resume()
             return
 
-        # # Check if command for immediate future exists or not.
-        # if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
-        #     return
+        # Check if command for immediate future exists or not.
+        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
+            return
 
         # if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
         #     cmd = deepcopy(self.command_list[0])
