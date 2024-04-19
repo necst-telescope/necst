@@ -23,12 +23,10 @@ class LocalAttenuatorController(DeviceNode):
         self.create_timer(1, self.check_publisher)
 
     def output_current(self, msg: LocalAttenuatorMsg) -> None:
-        self.io.set_outputrange(ch=msg.ch, outputrange=msg.outputrange)
-        self.logger.info(
-            f"LocalAttenuator outputrange set to {msg.outputrange} for ch{msg.ch}"
-        )
-
-        self.io.output_current(ch=msg.ch, current=msg.current)
+        if msg.finalize:
+            self.io.finalize()
+            return
+        self.io.output_current(id=msg.id, current=msg.current)
         self.logger.info(f"Output current {msg.current} mA for ch{msg.ch}")
 
     def check_publisher(self) -> None:
@@ -38,9 +36,9 @@ class LocalAttenuatorController(DeviceNode):
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            for ch in range(1, config.local_attenuator.ch_num + 1):
-                outputrange = self.io.get_outputrange(ch=ch)
+            for id in config.channel.keys():
+                outputrange = self.io.get_outputrange(id)
                 msg = LocalAttenuatorMsg(
-                    ch=ch, outputrange=outputrange[f"ch{ch}"], time=time.time()
+                    id=id, outputrange=outputrange, time=time.time()
                 )
                 publisher.publish(msg)

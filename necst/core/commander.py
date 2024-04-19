@@ -883,11 +883,10 @@ class Commander(PrivilegedNode):
     @require_privilege(escape_cmd=["?"])
     def local_attenuator(
         self,
-        cmd: Literal["set", "?"],
+        cmd: Literal["pass", "finalize", "?"],
         /,
         *,
-        ch: Optional[int] = None,
-        outputrange: Optional[str] = None,
+        id: Optional[str] = None,
         current: float = 0.0,
     ) -> None:
         """Control the local_attenuator.
@@ -896,30 +895,40 @@ class Commander(PrivilegedNode):
         ----------
         cmd
             Command to execute.
-        ch
-            Channel number.
-        outputrange
-            Output current range. 1mA or 100mA.
+        id
+            Channel id.
         current
             Current to output in mA.
 
         Examples
         --------
-        Set the current to 10mA on ch1
+        output the current to 10mA on 100GHz
 
-        >>> com.local_attenuator("set", ch=1, outputrange="DA0_100mA", current=10)
+        >>> com.local_attenuator("pass", id="100GHz", current=10.0)
 
-        Read the outputrange
+        If you want to finalize
+
+        >>> com,local_attenuator("finalize")
+
+        Read the LOattenuator reading
 
         >>> com.attenuator("?")
 
         """
         CMD = cmd.upper()
-        if CMD == "SET":
+        if CMD == "PASS":
             msg = LocalAttenuatorMsg(
-                ch=ch, outputrange=outputrange, current=current, time=pytime.time()
+                id=id,
+                current=current,
+                time=pytime.time(),
+                finalize=False,
             )
             self.publisher["local_attenuator"].publish(msg)
+
+        elif CMD == "FINALIZE":
+            msg = LocalAttenuatorMsg(finalize=True)
+            self.publisher["local_attenuator"].publish(msg)
+
         elif CMD == "?":
             return self.get_message("local_attenuator", timeout_sec=10)
         else:
