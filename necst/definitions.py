@@ -20,6 +20,7 @@ class namespace:
     ctrl: str = f"{root}/ctrl"
     antenna: str = f"{ctrl}/antenna"
     calib: str = f"{ctrl}/calib"
+    dome: str = f"{ctrl}/dome"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
@@ -191,6 +192,23 @@ class topic:
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
+    dome_encoder = Topic(
+        CoordMsg,
+        "dome_encoder",
+        qos.realtime,
+        namespace.dome,
+    )
+    dome_speed_cmd = Topic(TimedAzElFloat64, "dome_speed", qos.realtime, namespace.dome)
+    dome_altaz_cmd = Topic(CoordMsg, "dome_altaz", qos.realtime, namespace.dome)
+    dome_motor_speed = Topic(
+        TimedAzElFloat64, "dome_actual_speed", qos.realtime, namespace.dome
+    )
+    dome_motor_step = Topic(
+        TimedAzElInt64, "dome_actual_step", qos.realtime, namespace.dome
+    )
+    dome_control_status = Topic(
+        ControlStatus, "dome_controlled", qos.reliable, namespace.dome
+    )
 
 
 class service:
@@ -201,6 +219,7 @@ class service:
         ObservationMode,
         RecordSrv,
         CCDCommand,
+        DomeSync,
     )
     from std_srvs.srv import Empty
 
@@ -213,3 +232,4 @@ class service:
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
+    dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
