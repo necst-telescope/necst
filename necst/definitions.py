@@ -188,6 +188,7 @@ class topic:
     antenna_cmd_transition = Topic(
         Boolean, "cmd_trans", qos.reliable, namespace.antenna
     )
+    dome_tracking = Topic(TrackingStatus, "dome_tracking", qos.realtime, namespace.dome)
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)

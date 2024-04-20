@@ -32,7 +32,6 @@ class DomeMotor(DeviceNode):
         timelimit = config.antenna_command_offset_sec
         if time.time() - self.last_cmd_time > timelimit:
             self.motor.set_speed(0, "az")
-            self.motor.set_speed(0, "el")
             self.logger.warning(
                 f"No command supplied for {timelimit} s, stopping the antenna",
                 throttle_duration_sec=10,
@@ -45,22 +44,17 @@ class DomeMotor(DeviceNode):
         while msg.time > time.time():
             time.sleep(1e-5)
         self.motor.set_speed(msg.az, "az")
-        self.motor.set_speed(msg.el, "el")
 
         self.last_cmd_time = time.time()
 
     def stream_speed(self) -> None:
         readout_az = self.motor.get_speed("az").to_value("deg/s").item()
-        readout_el = self.motor.get_speed("el").to_value("deg/s").item()
-        speed_msg = TimedAzElFloat64(
-            az=float(readout_az), el=float(readout_el), time=time.time()
-        )
+        speed_msg = TimedAzElFloat64(az=float(readout_az), time=time.time())
         self.publisher["speed"].publish(speed_msg)
 
     def stream_step(self) -> None:
         readout_az = self.motor.get_step("az")
-        readout_el = self.motor.get_step("el")
-        step_msg = TimedAzElInt64(az=readout_az, el=readout_el, time=time.time())
+        step_msg = TimedAzElInt64(az=readout_az, time=time.time())
         self.publisher["step"].publish(step_msg)
 
 

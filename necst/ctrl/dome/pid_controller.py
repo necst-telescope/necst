@@ -6,7 +6,7 @@ from neclib.controllers import PIDController
 from neclib.data import LinearInterp
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
-from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
+from necst_msgs.msg import CoordMsg, TimedAzElFloat64
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -22,28 +22,16 @@ class DomePIDController(AlertHandlerNode):
         pid_param = config.dome_pid_param
         max_speed = config.dome_max_speed
         max_accel = config.dome_max_acceleration
-        self.controller = {
-            "az": PIDController(
-                pid_param=pid_param.az,
-                max_speed=max_speed.az,
-                max_acceleration=max_accel.az,
-            ),
-            "el": PIDController(
-                pid_param=pid_param.el,
-                max_speed=max_speed.el,
-                max_acceleration=max_accel.el,
-            ),
-        }
-        self.decelerate_calc = {
-            "az": Decelerate(
-                config.antenna_drive_critical_limit_az.map(lambda x: x.to_value("deg")),
-                max_accel.az.to_value("deg/s^2"),
-            ),
-            "el": Decelerate(
-                config.antenna_drive_critical_limit_el.map(lambda x: x.to_value("deg")),
-                max_accel.el.to_value("deg/s^2"),
-            ),
-        }
+        self.controller = PIDController(
+            pid_param=pid_param.az,
+            max_speed=max_speed.az,
+            max_acceleration=max_accel.az,
+        )
+        self.decelerate_calc = Decelerate(
+            config.antenna_drive_critical_limit_el.map(lambda x: x.to_value("deg")),
+            max_accel.el.to_value("deg/s^2"),
+        )
+
         topic.dome_altaz_cmd.subscription(self, self.update_command)
         topic.dome_encoder.subscription(self, self.update_encoder_reading)
 
@@ -101,15 +89,13 @@ class DomePIDController(AlertHandlerNode):
         self.logger.warning("Immediate stop ordered.", throttle_duration_sec=5)
         enc = self.enc[-1]
         if any(not isinstance(p, float) for p in (enc.lon, enc.lat)):
-            az_speed = el_speed = 0.0
+            az_speed = 0.0
         else:
             p = dict(k_i=0, k_d=0, k_c=0, accel_limit_off=-1)
-            with self.controller["az"].params(**p), self.controller["el"].params(**p):
+            with self.controller.params(**p):
                 _az_speed = self.controller["az"].get_speed(enc.lon, enc.lon)
-                _el_speed = self.controller["el"].get_speed(enc.lat, enc.lat)
-            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
-            el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
-        msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=pytime.time())
+            az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
+        msg = TimedAzElFloat64(az=az_speed, time=pytime.time())
         self.command_publisher.publish(msg)
 
     def discard_outdated_commands(self) -> None:
@@ -161,25 +147,17 @@ class DomePIDController(AlertHandlerNode):
             return
         cmd, enc = next_command
         try:
-            _az_speed = self.controller["az"].get_speed(cmd.lon, enc.lon, time=cmd.time)
-            _el_speed = self.controller["el"].get_speed(cmd.lat, enc.lat, time=cmd.time)
+            _az_speed = self.controller.get_speed(cmd.lon, enc.lon, time=cmd.time)
 
             self.logger.debug(
-                f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
-                f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
-                f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
-                throttle_duration_sec=0.5,
-            )
-            self.logger.debug(
-                f"El. Error={self.controller['el'].error[-1]:9.6f}deg "
-                f"V_target={self.controller['el'].target_speed[-1]:9.6f}deg/s "
-                f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
+                f"Az. Error={self.controller.error[-1]:9.6f}deg "
+                f"V_target={self.controller.target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller.cmd_speed[-1]:9.6f}deg/s",
                 throttle_duration_sec=0.5,
             )
 
-            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
-            el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
-            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd.time)
+            az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
+            msg = TimedAzElFloat64(az=az_speed, time=cmd.time)
             self.command_publisher.publish(msg)
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")

@@ -19,7 +19,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
 )
-from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand
+from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand, DomeSync
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -87,6 +87,8 @@ class Commander(PrivilegedNode):
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
+            "dome_track": _SubscriptionCfg(topic.dome_tracking, 1),
+            "dome_encoder": _SubscriptionCfg(topic.dome_encoder, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
@@ -94,6 +96,7 @@ class Commander(PrivilegedNode):
             "record_file": service.record_file.client(self),
             "raw_coord": service.raw_coord.client(self),
             "ccd_cmd": service.ccd_cmd.client(self),
+            "dome_sync": service.dome_sync.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
@@ -383,6 +386,28 @@ class Commander(PrivilegedNode):
             return self.get_message("encoder", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+    @require_privilege(escape_cmd=["?", "stop", "error"])
+    def dome(
+        self, cmd: Literal["point", "sync", "stop", "?"], /, *, wait: bool = True
+    ) -> None:
+
+        CMD = cmd.upper()
+        if CMD == "POINT":
+            raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
+        elif CMD == "SYNC":
+            req = DomeSync.Request(dome_sync=True)
+            res = self._send_request(req, self.client["dome_sync"])
+            if wait:
+                self.wait("dome")
+            return res
+        elif CMD == "STOP":
+            pass
+        elif CMD == "ERROR":
+            now = pytime.time()
+            return self.get_message("dome_track", time=now, timeout_sec=0.01)
+        elif CMD in ["?"]:
+            return self.get_message("dome_encoder", timeout_Sec=10)
 
     @require_privilege(escape_cmd=["?"])
     def ccd(

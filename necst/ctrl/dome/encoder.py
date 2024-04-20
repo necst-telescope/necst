@@ -20,8 +20,7 @@ class DomeEncoderController(DeviceNode):
     def stream(self) -> None:
         readings = self.encoder.get_reading()
         msg = CoordMsg(
-            lon=readings["az"].to_value("deg").item(),
-            lat=readings["el"].to_value("deg").item(),
+            lon=readings.to_value("deg").item(),
             unit="deg",
             frame="altaz",
             time=time.time(),
