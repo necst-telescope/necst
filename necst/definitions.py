@@ -231,6 +231,7 @@ class service:
     record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
+    dome_coord = Service(CoordinateCommand, "dome_coord", namespace.dome)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
     dome_sync = Service(DomeSync, "dome_sync", namespace.dome)

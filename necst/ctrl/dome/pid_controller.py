@@ -32,6 +32,8 @@ class DomePIDController(AlertHandlerNode):
             max_accel.el.to_value("deg/s^2"),
         )
 
+        self.dome_sync = False
+
         topic.dome_altaz_cmd.subscription(self, self.update_command)
         topic.dome_encoder.subscription(self, self.update_encoder_reading)
 
@@ -53,12 +55,19 @@ class DomePIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
-        self.command_list.append(msg)
-        self.command_list.sort(key=lambda x: x.time)
+        if not self.dome_sync:
+            self.command_list.append(msg)
+            self.command_list.sort(key=lambda x: x.time)
+        else:
+            pass
 
     def update_command_sync(self, msg: CoordMsg) -> None:
-        self.command_list.append(msg)
-        self.command_list.sort(key=lambda x: x.time)
+        if self.dome_sync:
+            self.command_list.append(msg)
+
+            self.command_list.sort(key=lambda x: x.time)
+        else:
+            pass
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)

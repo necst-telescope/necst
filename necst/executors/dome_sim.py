@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
-from ..ctrl.dome import DomeDeviceSimulator, DomePIDController
+from ..ctrl.dome import DomeDeviceSimulator, DomePIDController, DomeController
 
 
 def configure_executor() -> MultiThreadedExecutor:
@@ -9,6 +9,7 @@ def configure_executor() -> MultiThreadedExecutor:
     nodes = [
         DomePIDController(),
         DomeDeviceSimulator(),
+        DomeController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor

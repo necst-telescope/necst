@@ -95,6 +95,7 @@ class Commander(PrivilegedNode):
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
             "raw_coord": service.raw_coord.client(self),
+            "dome_coord": service.dome_corrd.client(self),
             "ccd_cmd": service.ccd_cmd.client(self),
             "dome_sync": service.dome_sync.client(self),
         }
@@ -389,18 +390,36 @@ class Commander(PrivilegedNode):
 
     @require_privilege(escape_cmd=["?", "stop", "error"])
     def dome(
-        self, cmd: Literal["point", "sync", "stop", "?"], /, *, wait: bool = True
+        self,
+        cmd: Literal["point", "sync", "stop", "?"],
+        /,
+        *,
+        target: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        unit: Optional[str] = None,
+        dome_sync: bool = False,
+        direct_mode: bool = False,
+        wait: bool = True,
     ) -> None:
 
         CMD = cmd.upper()
         if CMD == "POINT":
-            raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
+            kwargs = {}
+            kwargs.update(
+                lon=[float(target[0])],
+                frame=target[2],
+                unit=unit,
+                direct_mode=direct_mode,
+            )
+            req = CoordinateCommand.Request(**kwargs)
+            res = self._send_request(req, self.client["dome_coord"])
+            # if wait:
+            #    self.wait("dome")
+            return res.id
+
         elif CMD == "SYNC":
-            req = DomeSync.Request(dome_sync=True)
+            req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_sync"])
-            if wait:
-                self.wait("dome")
-            return res
+            return res.check
         elif CMD == "STOP":
             pass
         elif CMD == "ERROR":

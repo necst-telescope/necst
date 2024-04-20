@@ -1,17 +1,14 @@
 import rclpy
-from rclpy.executors import SingleThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor
 
-from ..core import ObserverInfo
-from ..ctrl.antenna import AntennaTrackingStatus
-from ..ctrl.dome import DomeTrackingStatus
+from ..ctrl.dome import DomePIDController, DomeController
 
 
-def configure_executor() -> SingleThreadedExecutor:
-    executor = SingleThreadedExecutor()
+def configure_executor() -> MultiThreadedExecutor:
+    executor = MultiThreadedExecutor()
     nodes = [
-        ObserverInfo(),
-        AntennaTrackingStatus(),
-        DomeTrackingStatus,
+        DomePIDController(),
+        DomeController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
