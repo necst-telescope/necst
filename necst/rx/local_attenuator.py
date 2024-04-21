@@ -5,7 +5,7 @@ from neclib.devices import LocalAttenuator
 from necst_msgs.msg import LocalAttenuatorMsg
 from rclpy.publisher import Publisher
 
-from .. import namespace, topic, config
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
@@ -36,7 +36,7 @@ class LocalAttenuatorController(DeviceNode):
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            for id in self.io.config.local_attenuator.channel.keys():
+            for id in self.io.Config.local_attenuator.channel.keys():
                 outputrange = self.io.get_outputrange(id)
                 msg = LocalAttenuatorMsg(
                     id=id, outputrange=outputrange, time=time.time()
