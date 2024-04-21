@@ -36,7 +36,7 @@ class LocalAttenuatorController(DeviceNode):
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            for id in config.channel.keys():
+            for id in self.io.config.local_attenuator.channel.keys():
                 outputrange = self.io.get_outputrange(id)
                 msg = LocalAttenuatorMsg(
                     id=id, outputrange=outputrange, time=time.time()
