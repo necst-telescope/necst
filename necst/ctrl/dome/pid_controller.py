@@ -59,7 +59,7 @@ class DomePIDController(AlertHandlerNode):
 
     def _update_sync_mode(
         self, request: DomeSync.Request, response: DomeSync.Responce
-    ) -> DomeSync.Responce:
+    ) -> DomeSync.Response:
         self.dome_sync = request.dome_sync
         response.check = True
         return response
