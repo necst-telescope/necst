@@ -407,6 +407,7 @@ class Commander(PrivilegedNode):
             kwargs = {}
             kwargs.update(
                 lon=[float(target[0])],
+                lat=[0.0],
                 frame=target[2],
                 unit=unit,
                 direct_mode=direct_mode,
