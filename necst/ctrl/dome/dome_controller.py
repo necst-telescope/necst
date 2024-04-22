@@ -139,7 +139,7 @@ class DomeController(AlertHandlerNode):
         self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
         new_generator = self.finder.track(
             msg.lon[0],
-            0.0,
+            msg.lat[0],
             msg.frame,
             unit=msg.unit,
             direct_mode=msg.direct_mode,
