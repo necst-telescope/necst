@@ -165,6 +165,7 @@ class DomePIDController(AlertHandlerNode):
         if next_command is None:
             return
         cmd, enc = next_command
+        print(cmd)
         try:
             _az_speed = self.controller.get_speed(cmd.lon, enc.lon, time=cmd.time)
 
