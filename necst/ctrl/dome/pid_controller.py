@@ -112,7 +112,7 @@ class DomePIDController(AlertHandlerNode):
         else:
             p = dict(k_i=0, k_d=0, k_c=0, accel_limit_off=-1)
             with self.controller.params(**p):
-                _az_speed = self.controller["az"].get_speed(enc.lon, enc.lon)
+                _az_speed = self.controller.get_speed(enc.lon, enc.lon)
             az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
         msg = TimedAzElFloat64(az=az_speed, time=pytime.time())
         self.command_publisher.publish(msg)
