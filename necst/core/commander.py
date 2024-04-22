@@ -443,7 +443,7 @@ class Commander(PrivilegedNode):
             now = pytime.time()
             return self.get_message("dome_track", time=now, timeout_sec=0.01)
         elif CMD in ["?"]:
-            return self.get_message("dome_encoder", timeout_Sec=10)
+            return self.get_message("dome_encoder", timeout_sec=10)
 
     @require_privilege(escape_cmd=["?"])
     def ccd(
