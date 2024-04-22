@@ -95,7 +95,7 @@ class Commander(PrivilegedNode):
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
             "raw_coord": service.raw_coord.client(self),
-            "dome_coord": service.dome_corrd.client(self),
+            "dome_coord": service.dome_coord.client(self),
             "ccd_cmd": service.ccd_cmd.client(self),
             "dome_sync": service.dome_sync.client(self),
             "dome_pid_sync": service.dome_pid_sync.clienr(self),
