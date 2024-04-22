@@ -98,7 +98,7 @@ class Commander(PrivilegedNode):
             "dome_coord": service.dome_coord.client(self),
             "ccd_cmd": service.ccd_cmd.client(self),
             "dome_sync": service.dome_sync.client(self),
-            "dome_pid_sync": service.dome_pid_sync.clienr(self),
+            "dome_pid_sync": service.dome_pid_sync.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
