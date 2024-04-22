@@ -144,7 +144,7 @@ class DomeController(AlertHandlerNode):
         self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
         new_generator = self.finder.track(
             msg.lon,
-            msg.lat,
+            0.0,
             msg.frame,
             unit=msg.unit,
         )
@@ -173,8 +173,10 @@ class DomeController(AlertHandlerNode):
         try:
             coord = next(self.executing_generator)
             self.telemetry(coord.context)
+            print(f"convert cmd{coord}")
         except (StopIteration, TypeError):
             self.cmd = None
+            print("convert exept")
             self.executing_generator.clear()
             return self.telemetry(None)
 
