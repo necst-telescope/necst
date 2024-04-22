@@ -89,6 +89,7 @@ class Commander(PrivilegedNode):
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
             "dome_track": _SubscriptionCfg(topic.dome_tracking, 1),
             "dome_encoder": _SubscriptionCfg(topic.dome_encoder, 1),
+            "dome_speed": _SubscriptionCfg(topic.dome_speed_cmd, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
@@ -430,14 +431,16 @@ class Commander(PrivilegedNode):
             msg = AlertMsg(critical=True, warning=True, target=[namespace.dome])
             checker = ConditionChecker(5, reset_on_failure=True)
             now = pytime.time()
-            current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
+            current_speed = self.get_message("dome_speed", time=now, timeout_sec=0.1)
             # TODO: Add timeout handler
             while not checker.check(abs(current_speed.az) < 1e-5):
                 self.publisher["alert_stop"].publish(msg)
-                current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
-                pytime.sleep(1 / config.antenna_command_frequency)
+                current_speed = self.get_message(
+                    "dome_speed", time=now, timeout_sec=0.1
+                )
+                pytime.sleep(1 / config.dome_command_frequency)
 
-            msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
+            msg = AlertMsg(critical=False, warning=False, target=[namespace.dome])
             self.publisher["alert_stop"].publish(msg)
             # Ensure the next command is executed after the lift of alert
             return pytime.sleep(0.5)

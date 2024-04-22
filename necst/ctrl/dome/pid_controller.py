@@ -66,7 +66,6 @@ class DomePIDController(AlertHandlerNode):
 
     def update_command(self, msg: CoordMsg) -> None:
         if not self.dome_sync:
-            print(msg)
             self.command_list.append(msg)
             self.command_list.sort(key=lambda x: x.time)
         else:
