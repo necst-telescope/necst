@@ -210,6 +210,7 @@ class topic:
     dome_control_status = Topic(
         ControlStatus, "dome_controlled", qos.reliable, namespace.dome
     )
+    dome_cmd_transition = Topic(Boolean, "dome_cmd_trans", qos.reliable, namespace.dome)
 
 
 class service:
