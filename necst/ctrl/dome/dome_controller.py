@@ -126,7 +126,7 @@ class DomeController(AlertHandlerNode):
                 cmd = self.result_queue.pop(0)
                 if cmd[2] > now:
                     break
-
+        print(f"command realtime {cmd}")
         if cmd:
             msg = CoordMsg(
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
