@@ -1,7 +1,7 @@
 import time
 
 import rclpy
-from neclib.simulators.antenna import DomeEncoderEmulator
+from neclib.simulators.dome import DomeEncoderEmulator
 from necst_msgs.msg import CoordMsg
 from rclpy.node import Node
 
