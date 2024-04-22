@@ -29,8 +29,8 @@ class DomePIDController(AlertHandlerNode):
             max_acceleration=max_accel.az,
         )
         self.decelerate_calc = Decelerate(
-            config.antenna_drive_critical_limit_el.map(lambda x: x.to_value("deg")),
-            max_accel.el.to_value("deg/s^2"),
+            config.antenna_drive_critical_limit_az.map(lambda x: x.to_value("deg")),
+            max_accel.az.to_value("deg/s^2"),
         )
 
         self.dome_sync = False
