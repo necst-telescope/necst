@@ -40,7 +40,7 @@ class DomeTrackingStatus(Node):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
-            error = np.abs(self.antenna_enc.lon - self.dome_enc.lon)
+            error = np.abs(self.antenna_enc[0] - self.dome_enc[0])
             ok = self.tracking_checker.check(error < self.threshold)
             msg = TrackingStatus(ok=ok, error=error, time=now)
         self.pub.publish(msg)
