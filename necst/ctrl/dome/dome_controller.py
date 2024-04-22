@@ -82,8 +82,8 @@ class DomeController(AlertHandlerNode):
             return response
 
     def _update_sync_mode(
-        self, request: DomeSync.Request, response: DomeSync.Responce
-    ) -> DomeSync.Responce:
+        self, request: DomeSync.Request, response: DomeSync.Response
+    ) -> DomeSync.Response:
         self.dome_sync = request.dome_sync
         if self.dome_sync:
             kwargs = {}
