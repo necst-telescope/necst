@@ -92,6 +92,7 @@ class DomeController(AlertHandlerNode):
             kwargs = {}
             kwargs.update(
                 lon=[float(self.enc_az)],
+                lat=[0.0],
                 frame="altaz",
                 unit="deg",
                 direct_mode=True,
