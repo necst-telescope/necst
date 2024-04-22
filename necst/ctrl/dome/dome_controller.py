@@ -77,7 +77,7 @@ class DomeController(AlertHandlerNode):
         if self.dome_sync:
             return
         else:
-            self.cmd = request
+            # self.cmd = request
             self._parse_cmd(request)
             self.result_queue.clear()
 
@@ -141,7 +141,7 @@ class DomeController(AlertHandlerNode):
             msg.lon[0],
             msg.frame,
             unit=msg.unit,
-            direct_mode=msg.direct_mode,
+            direct_mode=True,
         )
         self.executing_generator.attach(new_generator)
 
