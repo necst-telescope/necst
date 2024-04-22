@@ -527,6 +527,7 @@ class Commander(PrivilegedNode):
         mode: Literal["control", "error"] = "error",
         id: Optional[str] = None,
         timeout_sec: Optional[Union[int, float]] = None,
+        dome_sync: bool = False,
     ) -> None:
         """Wait until the motion has been converged."""
         TARGET, MODE = target.upper(), mode.upper()
@@ -536,9 +537,8 @@ class Commander(PrivilegedNode):
             CTRL_TOPIC = "antenna_control"
             WAIT_DURATION = config.antenna_command_offset_sec
         elif TARGET == "DOME":
-            raise NotImplementedError(
-                f"This function for target {target!r} isn't implemented yet."
-            )
+            ERROR_GETTER = self.dome
+            WAIT_DURATION = config.dome_command_offset_sec
         else:
             raise ValueError(f"Unknown target: {target!r}")
 
