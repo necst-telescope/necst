@@ -164,7 +164,7 @@ class DomeController(AlertHandlerNode):
             return self.telemetry(None)
 
         if (len(self.result_queue) > 1) and (
-            self.result_queue[-1][2] > time.time() + config.antenna_command_offset_sec
+            self.result_queue[-1][2] > time.time() + config.dome_command_offset_sec
         ):
             # This function will be called twice per 1s, to ensure no run-out of command
             # but it can cause overloading the data, so judge command update necessity.
@@ -179,6 +179,7 @@ class DomeController(AlertHandlerNode):
             return self.telemetry(None)
 
         az = self._validate_drive_range(coord.az)
+        print(f"convert: coord {coord}")
         for _az, _t in zip(az, coord.time):
             if any(x is None for x in [_az, _t]):
                 continue
