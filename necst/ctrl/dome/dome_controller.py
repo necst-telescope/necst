@@ -89,21 +89,6 @@ class DomeController(AlertHandlerNode):
         self, request: DomeSync.Request, response: DomeSync.Response
     ) -> DomeSync.Response:
         self.dome_sync = request.dome_sync
-        if self.dome_sync:
-            kwargs = {}
-            kwargs.update(
-                lon=[float(self.enc_az)],
-                frame="altaz",
-                unit="deg",
-                direct_mode=True,
-            )
-            req = CoordinateCommand.Request(**kwargs)
-            self.cmd = req
-            self._parse_cmd(req)
-            self.result_queue.clear()
-            response.check = True
-        else:
-            response.check = True
         return response
 
     def _update_enc(self, msg: CoordMsg) -> None:
@@ -142,6 +127,7 @@ class DomeController(AlertHandlerNode):
         self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
         new_generator = self.finder.track(
             msg.lon[0],
+            msg.lat[0],
             msg.frame,
             unit=msg.unit,
             direct_mode=True,
@@ -191,7 +177,7 @@ class DomeController(AlertHandlerNode):
 
         if _az is not None:
             return _az
-        return [], []
+        return []
 
     def telemetry(self, status: Optional[ControlContext]) -> None:
         if status is None:

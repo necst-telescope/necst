@@ -408,6 +408,7 @@ class Commander(PrivilegedNode):
             kwargs = {}
             kwargs.update(
                 lon=[float(target[0])],
+                lat=[45.0],
                 frame=target[2],
                 unit=unit,
                 direct_mode=direct_mode,
@@ -419,6 +420,20 @@ class Commander(PrivilegedNode):
             return res.id
 
         elif CMD == "SYNC":
+            if dome_sync:
+                az_now = self.get_message("dome_encoder", timeout_sec=10)
+                kwargs = {}
+                kwargs.update(
+                    lon=[float(az_now)],
+                    lat=[45.0],
+                    frame=target[2],
+                    unit=unit,
+                    direct_mode=direct_mode,
+                )
+                req = CoordinateCommand.Request(**kwargs)
+                res = self._send_request(req, self.client["dome_coord"])
+                self.wait("dome")
+                pytime.sleep(0.5)
             req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_sync"])
             print(f"{res.check} DomeController Synced")

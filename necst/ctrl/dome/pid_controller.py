@@ -68,7 +68,6 @@ class DomePIDController(AlertHandlerNode):
         if not self.dome_sync:
             self.command_list.append(msg)
             self.command_list.sort(key=lambda x: x.time)
-            print("update command")
         else:
             pass
 
@@ -76,7 +75,6 @@ class DomePIDController(AlertHandlerNode):
         if self.dome_sync:
             self.command_list.append(msg)
             self.command_list.sort(key=lambda x: x.time)
-            print("update_command_sync")
         else:
             pass
 
@@ -161,7 +159,6 @@ class DomePIDController(AlertHandlerNode):
             self.logger.warning("Guard condition activated", throttle_duration_sec=1)
             self.gc.trigger()
             return
-        print(self.command_list)
         next_command = self.get_coordinate_command()
         if next_command is None:
             return
