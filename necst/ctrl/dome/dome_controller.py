@@ -49,6 +49,8 @@ class DomeController(AlertHandlerNode):
         self.executing_generator = CoordinateGeneratorManager()
         self.last_status = None
 
+        self.direct_mode = True
+
         self.gc = self.create_guard_condition(self._clear_cmd)
 
     def _clear_cmd(self) -> None:
@@ -72,6 +74,7 @@ class DomeController(AlertHandlerNode):
         command only contains start/stop position and scan speed.
 
         """
+        print("start update command")
         if self.dome_sync:
             return
         else:
@@ -96,9 +99,9 @@ class DomeController(AlertHandlerNode):
             )
             self._parse_cmd(CoordinateCommand.Request(**kwargs))
             self.result_queue.clear()
-            response.id = str(id(self.executing_generator.get()))
+            response.check = True
         else:
-            response.id = ""
+            response.check = True
         return response
 
     def _update_enc(self, msg: CoordMsg) -> None:
