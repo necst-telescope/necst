@@ -41,7 +41,7 @@ class DomeController(AlertHandlerNode):
 
         self.status_publisher = topic.dome_control_status.publisher(self)
 
-        self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
+        self.create_timer(1 / config.dome_command_frequency, self.command_realtime)
         self.create_timer(0.5, self.convert)
 
         self.result_queue = []
@@ -127,6 +127,7 @@ class DomeController(AlertHandlerNode):
             msg = CoordMsg(
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
             )
+            print(f"command realtime {msg}")
             self.publisher.publish(msg)
 
     def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
