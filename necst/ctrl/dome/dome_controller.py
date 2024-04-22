@@ -143,12 +143,13 @@ class DomeController(AlertHandlerNode):
         print("start parse cmd")
         self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
         new_generator = self.finder.track(
-            msg.lon,
-            msg.lat,
+            msg.lon[0],
+            msg.lat[0],
             msg.frame,
             unit=msg.unit,
         )
 
+        print(f"lon:{msg.lon}, lat:{msg.lat}")
         self.executing_generator.attach(new_generator)
         print("after atacch")
 
