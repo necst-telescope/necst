@@ -58,7 +58,7 @@ class DomePIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def _update_sync_mode(
-        self, request: DomeSync.Request, response: DomeSync.Responce
+        self, request: DomeSync.Request, response: DomeSync.Response
     ) -> DomeSync.Response:
         self.dome_sync = request.dome_sync
         response.check = True
