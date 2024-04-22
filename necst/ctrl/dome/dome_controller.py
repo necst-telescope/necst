@@ -75,9 +75,10 @@ class DomeController(AlertHandlerNode):
 
         """
         if self.dome_sync:
-            return
+            response.check = False
+            return response
         else:
-            # self.cmd = request
+            self.cmd = request
             self._parse_cmd(request)
             self.result_queue.clear()
 
@@ -96,7 +97,9 @@ class DomeController(AlertHandlerNode):
                 unit="deg",
                 direct_mode=True,
             )
-            self._parse_cmd(CoordinateCommand.Request(**kwargs))
+            req = CoordinateCommand.Request(**kwargs)
+            self.cmd = req
+            self._parse_cmd(req)
             self.result_queue.clear()
             response.check = True
         else:
