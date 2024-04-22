@@ -98,6 +98,7 @@ class Commander(PrivilegedNode):
             "dome_coord": service.dome_corrd.client(self),
             "ccd_cmd": service.ccd_cmd.client(self),
             "dome_sync": service.dome_sync.client(self),
+            "dome_pid_sync": service.dome_pid_sync.clienr(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
@@ -419,6 +420,9 @@ class Commander(PrivilegedNode):
         elif CMD == "SYNC":
             req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_sync"])
+            if res.check:
+                req = DomeSync.Request(dome_sync=dome_sync)
+                res = self._send_request(req, self.client["dome_pid_sync"])
             return res.check
         elif CMD == "STOP":
             msg = AlertMsg(critical=True, warning=True, target=[namespace.dome])

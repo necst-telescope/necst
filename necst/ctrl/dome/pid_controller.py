@@ -7,8 +7,9 @@ from neclib.data import LinearInterp
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
 from necst_msgs.msg import CoordMsg, TimedAzElFloat64
+from necst_msgs.srv import DomeSync
 
-from ... import config, namespace, topic
+from ... import config, namespace, topic, service
 from ...core import AlertHandlerNode
 
 
@@ -40,6 +41,8 @@ class DomePIDController(AlertHandlerNode):
         topic.altaz_cmd.subscription(self, self.update_command_sync)
         topic.antenna_encoder.subscription(self, self.update_antenna_encoder_reading)
 
+        service.dome_pid_sync.service(self, self._update_sync_mode)
+
         self.enc = ParameterList.new(5, CoordMsg)
         self.command_list: List[CoordMsg] = []
 
@@ -53,6 +56,13 @@ class DomePIDController(AlertHandlerNode):
         )
 
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
+
+    def _update_sync_mode(
+        self, request: DomeSync.Request, response: DomeSync.Responce
+    ) -> DomeSync.Responce:
+        self.dome_sync = request.dome_sync
+        response.check = True
+        return response
 
     def update_command(self, msg: CoordMsg) -> None:
         if not self.dome_sync:
