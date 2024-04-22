@@ -74,12 +74,10 @@ class DomeController(AlertHandlerNode):
         command only contains start/stop position and scan speed.
 
         """
-        print("start update command")
         if self.dome_sync:
             return
         else:
             self.cmd = request
-            print("request recieve")
             self._parse_cmd(request)
             self.result_queue.clear()
 
@@ -127,12 +125,10 @@ class DomeController(AlertHandlerNode):
                 cmd = self.result_queue.pop(0)
                 if cmd[2] > now:
                     break
-        # print(f"command realtime {cmd}")
         if cmd:
             msg = CoordMsg(
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
             )
-            print(f"command realtime {msg}")
             self.publisher.publish(msg)
 
     def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
@@ -141,7 +137,6 @@ class DomeController(AlertHandlerNode):
         else:
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
-        print(f"start parse cmd {msg}")
         self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
         new_generator = self.finder.track(
             msg.lon[0],
@@ -149,10 +144,7 @@ class DomeController(AlertHandlerNode):
             msg.frame,
             unit=msg.unit,
         )
-
-        print(f"lon:{msg.lon}, lat:{msg.lat}")
         self.executing_generator.attach(new_generator)
-        print("after atacch")
 
     def convert(self) -> None:
         if (self.cmd is not None) and (self.enc_time < time.time() - 5):
@@ -173,19 +165,14 @@ class DomeController(AlertHandlerNode):
             return
 
         try:
-            print("start try")
             coord = next(self.executing_generator)
-            print(f"before telemetory cmd {coord}")
             self.telemetry(coord.context)
-            print(f"convert cmd{coord}")
         except (StopIteration, TypeError):
             self.cmd = None
-            print("convert exept")
             self.executing_generator.clear()
             return self.telemetry(None)
 
         az = self._validate_drive_range(coord.az)
-        print(f"convert: coord {coord}")
         for _az, _t in zip(az, coord.time):
             if any(x is None for x in [_az, _t]):
                 continue
