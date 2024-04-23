@@ -120,6 +120,7 @@ class topic:
         CoordMsg,
         DeviceReading,
         LocalSignal,
+        LocalAttenuatorMsg,
         ObservingMode,
         PIDMsg,
         Sampling,
@@ -181,6 +182,12 @@ class topic:
     thermometer = Topic(DeviceReading, "thermometer", qos.realtime, namespace.rx, True)
     attenuator = Topic(DeviceReading, "attenuator", qos.realtime, namespace.rx, True)
     attenuator_cmd = Topic(DeviceReading, "attenuator_cmd", qos.reliable, namespace.rx)
+    local_attenuator = Topic(
+        LocalAttenuatorMsg, "local_attenuator", qos.realtime, namespace.rx, True
+    )
+    local_attenuator_cmd = Topic(
+        LocalAttenuatorMsg, "local_attenuator_cmd", qos.reliable, namespace.rx
+    )
     antenna_tracking = Topic(
         TrackingStatus, "tracking_status", qos.realtime, namespace.antenna
     )

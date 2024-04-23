@@ -14,6 +14,7 @@ from necst_msgs.msg import (
     ChopperMsg,
     DeviceReading,
     LocalSignal,
+    LocalAttenuatorMsg,
     PIDMsg,
     Sampling,
     SISBias,
@@ -70,6 +71,7 @@ class Commander(PrivilegedNode):
             "sis_bias": topic.sis_bias_cmd,
             "lo_signal": topic.lo_signal_cmd,
             "attenuator": topic.attenuator_cmd,
+            "local_attenuator": topic.local_attenuator_cmd,
             "spectra_smpl": topic.spectra_rec,
             "channel_binning": topic.channel_binning,
         }
@@ -87,6 +89,7 @@ class Commander(PrivilegedNode):
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
+            "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
@@ -874,6 +877,60 @@ class Commander(PrivilegedNode):
             self.publisher["attenuator"].publish(msg)
         elif CMD == "?":
             return self.get_message("attenuator", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    @require_privilege(escape_cmd=["?"])
+    def local_attenuator(
+        self,
+        cmd: Literal["pass", "finalize", "?"],
+        /,
+        *,
+        id: Optional[str] = None,
+        current: float = 0.0,
+    ) -> None:
+        """Control the local_attenuator.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+        id
+            Channel id.
+        current
+            Current to output in mA.
+
+        Examples
+        --------
+        output the current to 10mA on 100GHz
+
+        >>> com.local_attenuator("pass", id="100GHz", current=10.0)
+
+        If you want to finalize
+
+        >>> com,local_attenuator("finalize")
+
+        Read the LOattenuator reading
+
+        >>> com.attenuator("?")
+
+        """
+        CMD = cmd.upper()
+        if CMD == "PASS":
+            msg = LocalAttenuatorMsg(
+                id=id,
+                current=current,
+                time=pytime.time(),
+                finalize=False,
+            )
+            self.publisher["local_attenuator"].publish(msg)
+
+        elif CMD == "FINALIZE":
+            msg = LocalAttenuatorMsg(finalize=True)
+            self.publisher["local_attenuator"].publish(msg)
+
+        elif CMD == "?":
+            return self.get_message("local_attenuator", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
