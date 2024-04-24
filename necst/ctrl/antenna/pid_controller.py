@@ -112,7 +112,6 @@ class AntennaPIDController(AlertHandlerNode):
             else:
                 break
 
-    """"
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
         self.discard_outdated_commands()
         now = pytime.time()
@@ -142,7 +141,6 @@ class AntennaPIDController(AlertHandlerNode):
             self.immediate_stop_no_resume()
             return
         return cmd, enc
-    """
 
     def speed_command(self) -> None:
         if self.status.critical():
@@ -191,6 +189,8 @@ class AntennaPIDController(AlertHandlerNode):
         self.controller[axis].k_i = msg.k_i
         self.controller[axis].k_d = msg.k_d
 
+
+"""""
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
         self.discard_outdated_commands()
         now = pytime.time()
@@ -232,3 +232,4 @@ class AntennaPIDController(AlertHandlerNode):
         interpolated_command = self.coord_interp(CoordMsg(time=time), self.command_list)
         self.command_list.pop(0)
         return interpolated_command
+"""
