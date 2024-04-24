@@ -72,9 +72,8 @@ class AntennaPIDController(AlertHandlerNode):
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
 
-    """
     def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
- 
+
         *_, newer = self.enc
         if any(not isinstance(p.time, float) for p in self.enc) or (
             newer.time < time - 1
@@ -85,7 +84,6 @@ class AntennaPIDController(AlertHandlerNode):
             return
 
         return self.coord_interp(CoordMsg(time=time), self.enc)
-    """
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
