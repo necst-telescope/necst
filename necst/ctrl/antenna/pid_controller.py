@@ -60,7 +60,9 @@ class AntennaPIDController(AlertHandlerNode):
         self.coord_interp = LinearInterp(
             "time", CoordMsg.get_fields_and_field_types().keys()
         )
-
+        self.coord_extrap = LinearExtrapolate(
+            "time", CoordMsg.get_fields_and_field_types().keys()
+        )
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
@@ -211,9 +213,9 @@ class AntennaPIDController(AlertHandlerNode):
         #     cmd.time = now
         # else:
         #     cmd = self.command_list.pop(0)
-        # enc = self.interpolated_encoder_reading(cmd.time - self.command_offset_duration)
+        # enc = self.interpolated_encoder_reading(cmd.time)
         enc = self.enc[0]
-        cmd = self.interpolated_command_reading(enc.time - self.command_offset_duration)
+        cmd = self.interpolated_command_reading(enc.time)
         # Check if recent encoder reading is available or not.
         if enc is None:
             self.immediate_stop_no_resume()
@@ -227,6 +229,6 @@ class AntennaPIDController(AlertHandlerNode):
         ):
             self.logger.warning("Command value not available.", throttle_duration_sec=5)
             return
-        interpolated_command = self.coord_interp(CoordMsg(time=time), self.command_list)
+        interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
         self.command_list.pop(0)
         return interpolated_command
