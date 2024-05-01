@@ -233,4 +233,4 @@ class AntennaPIDController(AlertHandlerNode):
             return
         interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
         cmd = self.command_list.pop(0)
-        return interpolated_command, cmd.tiime
+        return interpolated_command, cmd.time
