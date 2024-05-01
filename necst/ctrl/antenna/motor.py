@@ -29,8 +29,6 @@ class AntennaMotor(DeviceNode):
 
         self.motor = AntennaMotorDevice()
 
-        self.pub = topic.spectra_meta.publisher(self)
-
     def check_command(self) -> None:
         timelimit = config.antenna_command_offset_sec
         if time.time() - self.last_cmd_time > timelimit:
@@ -40,9 +38,6 @@ class AntennaMotor(DeviceNode):
                 f"No command supplied for {timelimit} s, stopping the antenna",
                 throttle_duration_sec=10,
             )
-
-            msg = Spectral(id="sute", time=time.time())
-            self.pub.publish(msg)
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
         now = time.time()
