@@ -194,10 +194,26 @@ class AntennaPIDController(AlertHandlerNode):
 
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
         self.discard_outdated_commands()
+        now = pytime.time()
 
         # Check if any command is available.
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
+            return
+
+        # Check if command for immediate future exists or not.
+        # if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
+        #     return
+
+        # if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
+        #     cmd = deepcopy(self.command_list[0])
+        #     if now - cmd.time > 1 / config.antenna_command_frequency:
+        #         cmd.time = now  # Not a real-time command.
+        # elif len(self.command_list) == 1:
+        #     cmd = self.command_list.pop(0)
+        #     cmd.time = now
+
+        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
             return
 
         enc = self.enc[0]
@@ -210,26 +226,11 @@ class AntennaPIDController(AlertHandlerNode):
 
     def interpolated_command_reading(self, time: float) -> Optional[CoordMsg]:
         *_, newer = self.command_list
-        now = pytime.time()
         if any(not isinstance(p.time, float) for p in self.enc) or (
             newer.time < time - 1
         ):
             self.logger.warning("Command value not available.", throttle_duration_sec=5)
             return
-        # Check if command for immediate future exists or not.
-        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
-            return
-
-        if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
-            cmd = deepcopy(self.command_list[0])
-            if now - cmd.time > 1 / config.antenna_command_frequency:
-                cmd.time = now  # Not a real-time command.
-        elif len(self.command_list) == 1:
-            cmd = self.command_list.pop(0)
-            cmd.time = now
-        else:
-            interpolated_command = self.coord_extrap(
-                CoordMsg(time=time), self.command_list
-            )
-            cmd = self.command_list.pop(0)
+        interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
+        cmd = self.command_list.pop(0)
         return interpolated_command, cmd.time
