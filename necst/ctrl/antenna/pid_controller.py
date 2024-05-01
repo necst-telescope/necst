@@ -153,10 +153,10 @@ class AntennaPIDController(AlertHandlerNode):
         next_command = self.get_coordinate_command()
         if next_command is None:
             return
-        cmd, enc = next_command
+        cmd, enc, cmd_time = next_command
         try:
-            _az_speed = self.controller["az"].get_speed(cmd.lon, enc.lon, time=cmd.time)
-            _el_speed = self.controller["el"].get_speed(cmd.lat, enc.lat, time=cmd.time)
+            _az_speed = self.controller["az"].get_speed(cmd.lon, enc.lon, time=cmd_time)
+            _el_speed = self.controller["el"].get_speed(cmd.lat, enc.lat, time=cmd_time)
 
             self.logger.debug(
                 f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
@@ -217,12 +217,12 @@ class AntennaPIDController(AlertHandlerNode):
         #     cmd = self.command_list.pop(0)
         # enc = self.interpolated_encoder_reading(cmd.time)
         enc = self.enc[0]
-        cmd = self.interpolated_command_reading(enc.time)
+        cmd, cmd_time = self.interpolated_command_reading(enc.time)
         # Check if recent encoder reading is available or not.
         if enc is None:
             self.immediate_stop_no_resume()
             return
-        return cmd, enc
+        return cmd, enc, cmd_time
 
     def interpolated_command_reading(self, time: float) -> Optional[CoordMsg]:
         *_, newer = self.command_list
@@ -232,5 +232,5 @@ class AntennaPIDController(AlertHandlerNode):
             self.logger.warning("Command value not available.", throttle_duration_sec=5)
             return
         interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
-        self.command_list.pop(0)
-        return interpolated_command
+        cmd = self.command_list.pop(0)
+        return interpolated_command, cmd.tiime
