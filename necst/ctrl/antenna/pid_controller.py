@@ -173,9 +173,8 @@ class AntennaPIDController(AlertHandlerNode):
 
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
-            msg = TimedAzElFloat64(
-                az=az_speed, el=el_speed, time=max([cmd.time, enc.time])
-            )
+            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
+
             self.command_publisher.publish(msg)
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
