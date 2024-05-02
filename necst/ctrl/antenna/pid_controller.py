@@ -6,7 +6,7 @@ from neclib.controllers import PIDController
 from neclib.data import LinearInterp, LinearExtrapolate
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
-from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
+from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64, CalcLog
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -54,6 +54,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.enc = ParameterList.new(5, CoordMsg)
         self.command_list: List[CoordMsg] = []
 
+        self.log_publisher = topic.pid_log.publisher(self)
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
         self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
 
@@ -135,7 +136,7 @@ class AntennaPIDController(AlertHandlerNode):
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-        enc = self.interpolated_encoder_reading(cmd.time - self.command_offset_duration)
+        enc = self.interpolated_encoder_reading(cmd.time)
 
         # Check if recent encoder reading is available or not.
         if enc is None:
@@ -175,7 +176,16 @@ class AntennaPIDController(AlertHandlerNode):
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
 
+            log = CalcLog(
+                cmd_lon=cmd.lon,
+                cmd_lat=cmd.lat,
+                enc_lon=enc.lon,
+                enc_lat=enc.lat,
+                time=cmd_time,
+            )
+
             self.command_publisher.publish(msg)
+            self.log_publisher.publish(log)
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
@@ -194,7 +204,7 @@ class AntennaPIDController(AlertHandlerNode):
 
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
         self.discard_outdated_commands()
-        now = pytime.time()
+        # now = pytime.time()
 
         # Check if any command is available.
         if len(self.command_list) == 0:
@@ -210,11 +220,10 @@ class AntennaPIDController(AlertHandlerNode):
         #     if now - cmd.time > 1 / config.antenna_command_frequency:
         #         cmd.time = now  # Not a real-time command.
         # elif len(self.command_list) == 1:
-        #     cmd = self.command_list.pop(0)
+        #     cmd = self.command_list[0]
         #     cmd.time = now
-
-        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
-            return
+        # else:
+        #     cmd = self.command_list[0]
 
         enc = self.enc[0]
         cmd, cmd_time = self.interpolated_command_reading(enc.time)
@@ -225,12 +234,12 @@ class AntennaPIDController(AlertHandlerNode):
         return cmd, enc, cmd_time
 
     def interpolated_command_reading(self, time: float) -> Optional[CoordMsg]:
-        *_, newer = self.command_list
-        if any(not isinstance(p.time, float) for p in self.enc) or (
-            newer.time < time - 1
-        ):
-            self.logger.warning("Command value not available.", throttle_duration_sec=5)
-            return
+        # *_, newer = self.command_list
+        # if any(not isinstance(p.time, float) for p in self.command_list) or (
+        #     newer.time < time - 1
+        # ):
+        #     self.logger.warning("Command value not available.", throttle_duration_sec=5)
+        #     return
         interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
         cmd = self.command_list.pop(0)
         return interpolated_command, cmd.time
