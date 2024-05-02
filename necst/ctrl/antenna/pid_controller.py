@@ -204,7 +204,7 @@ class AntennaPIDController(AlertHandlerNode):
 
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
         self.discard_outdated_commands()
-        # now = pytime.time()
+        now = pytime.time()
 
         # Check if any command is available.
         if len(self.command_list) == 0:
@@ -212,8 +212,8 @@ class AntennaPIDController(AlertHandlerNode):
             return
 
         # Check if command for immediate future exists or not.
-        # if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
-        #     return
+        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
+            return
 
         # if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
         #     cmd = deepcopy(self.command_list[0])
