@@ -230,7 +230,10 @@ class AntennaPIDController(AlertHandlerNode):
         #     cmd = self.command_list[0]
 
         enc = self.enc[0]
-        cmd, cmd_time = self.interpolated_command_reading(enc.time)
+        next_cmd = self.interpolated_command_reading(enc.time)
+        if next_cmd is None:
+            return
+        cmd, cmd_time = next_cmd
         # Check if recent encoder reading is available or not.
         if enc is None:
             self.immediate_stop_no_resume()
