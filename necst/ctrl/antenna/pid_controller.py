@@ -53,7 +53,7 @@ class AntennaPIDController(AlertHandlerNode):
 
         self.enc = ParameterList.new(5, CoordMsg)
 
-        self.init_msg = CoordMsg(time=0)
+        self.init_msg = CoordMsg(time=0.0)
         self.command_list = ParameterList.new(5, self.init_msg)
 
         self.log_publisher = topic.pid_log.publisher(self)
