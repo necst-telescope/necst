@@ -70,7 +70,7 @@ class AntennaPIDController(AlertHandlerNode):
 
     def update_command(self, msg: CoordMsg) -> None:
         self.command_list.push(msg)
-        if all(isinstance(p.time, float) for p in self.enc):
+        if all(isinstance(p.time, float) for p in self.command_list):
             self.command_list.sort(key=lambda x: x.time)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
