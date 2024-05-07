@@ -109,13 +109,14 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_publisher.publish(msg)
 
     def discard_outdated_commands(self) -> None:
-        now = pytime.time()
-        msg = CoordMsg(time=now)
-        while len(self.command_list) > 1:
-            if self.command_list[0].time < now:
-                self.command_list.push(msg)
-            else:
-                break
+        # now = pytime.time()
+        # msg = CoordMsg(time=now)
+        # while len(self.command_list) > 1:
+        #     if self.command_list[0].time < now:
+        #         self.command_list.push(msg)
+        #     else:
+        #         break
+        pass
 
     """""
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
