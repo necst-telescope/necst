@@ -54,7 +54,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.enc = ParameterList.new(5, CoordMsg)
 
         self.init_msg = CoordMsg(time=0.0)
-        self.command_list = ParameterList.new(5, self.init_msg)
+        self.command_list = ParameterList.new(5, CoordMsg)
 
         self.log_publisher = topic.pid_log.publisher(self)
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
@@ -92,7 +92,7 @@ class AntennaPIDController(AlertHandlerNode):
     #     return self.coord_interp(CoordMsg(time=time), self.enc)
 
     def immediate_stop_no_resume(self) -> None:
-        self.command_list = ParameterList.new(5, self.init_msg)
+        self.command_list = ParameterList.new(5, CoordMsg)
 
         self.logger.warning("Immediate stop ordered.", throttle_duration_sec=5)
         enc = self.enc[-1]
@@ -109,12 +109,13 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_publisher.publish(msg)
 
     def discard_outdated_commands(self) -> None:
-        now = pytime.time()
-        while len(self.command_list) > 1:
-            if self.command_list[0].time < now:
-                self.command_list.push(0)
-            else:
-                break
+        # now = pytime.time()
+        # while len(self.command_list) > 1:
+        #     if self.command_list[0].time < now:
+        #         self.command_list.push(0)
+        #     else:
+        #         break
+        pass
 
     """""
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
