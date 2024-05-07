@@ -52,7 +52,9 @@ class AntennaPIDController(AlertHandlerNode):
         topic.pid_param.subscription(self, self.change_pid_param)
 
         self.enc = ParameterList.new(5, CoordMsg)
-        self.command_list = ParameterList.new(5, CoordMsg)
+
+        init_msg = CoordMsg(time=0)
+        self.command_list = ParameterList.new(5, init_msg)
 
         self.log_publisher = topic.pid_log.publisher(self)
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
@@ -90,7 +92,7 @@ class AntennaPIDController(AlertHandlerNode):
     #     return self.coord_interp(CoordMsg(time=time), self.enc)
 
     def immediate_stop_no_resume(self) -> None:
-        self.command_list = ParameterList.new(5, CoordMsg)
+        self.command_list = ParameterList.new(5, init_msg)
 
         self.logger.warning("Immediate stop ordered.", throttle_duration_sec=5)
         enc = self.enc[-1]
