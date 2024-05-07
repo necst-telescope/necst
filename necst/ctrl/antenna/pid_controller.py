@@ -238,9 +238,16 @@ class AntennaPIDController(AlertHandlerNode):
         return cmd, enc, cmd_time
 
     def interpolated_command_reading(self, time: float) -> Optional[CoordMsg]:
-        *_, newer = self.command_list
+        *_, newer_cmd = self.command_list
+        *_, newer_enc = self.enc
+        # check encoder value
+        if any(not isinstance(p.time, float) for p in self.enc) or (
+            newer_enc.time < time - 1
+        ):
+            return
+        # check command value
         if any(not isinstance(p.time, float) for p in self.command_list) or (
-            newer.time < time - 1
+            newer_cmd.time < time - 1
         ):
             self.logger.warning("Command value not available.", throttle_duration_sec=5)
             return
