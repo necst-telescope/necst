@@ -218,7 +218,7 @@ class AntennaPIDController(AlertHandlerNode):
 
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
-            print("command zikann")
+            print(f"command zikann: {self.comand_list}")
             return
 
         # if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
