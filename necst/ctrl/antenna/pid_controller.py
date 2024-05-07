@@ -52,7 +52,7 @@ class AntennaPIDController(AlertHandlerNode):
         topic.pid_param.subscription(self, self.change_pid_param)
 
         self.enc = ParameterList.new(5, CoordMsg)
-        self.command_list: List[CoordMsg] = []
+        self.command_list = ParameterList.new(5, CoordMsg)
 
         self.log_publisher = topic.pid_log.publisher(self)
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
@@ -67,26 +67,27 @@ class AntennaPIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
-        self.command_list.append(msg)
-        self.command_list.sort(key=lambda x: x.time)
+        self.command_list.push(msg)
+        if all(isinstance(p.time, float) for p in self.enc):
+            self.command_list.sort(key=lambda x: x.time)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
 
-    def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
+    # def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
 
-        *_, newer = self.enc
-        if any(not isinstance(p.time, float) for p in self.enc) or (
-            newer.time < time - 1
-        ):
-            self.logger.warning(
-                "Encoder reading not available.", throttle_duration_sec=5
-            )
-            return
+    #     *_, newer = self.enc
+    #     if any(not isinstance(p.time, float) for p in self.enc) or (
+    #         newer.time < time - 1
+    #     ):
+    #         self.logger.warning(
+    #             "Encoder reading not available.", throttle_duration_sec=5
+    #         )
+    #         return
 
-        return self.coord_interp(CoordMsg(time=time), self.enc)
+    #     return self.coord_interp(CoordMsg(time=time), self.enc)
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
@@ -109,7 +110,7 @@ class AntennaPIDController(AlertHandlerNode):
         now = pytime.time()
         while len(self.command_list) > 1:
             if self.command_list[0].time < now:
-                self.command_list.pop(0)
+                self.command_list.push(0)
             else:
                 break
 
@@ -207,9 +208,9 @@ class AntennaPIDController(AlertHandlerNode):
         now = pytime.time()
 
         # Check if any command is available.
-        if len(self.command_list) == 0:
-            self.immediate_stop_no_resume()
-            return
+        # if len(self.command_list) == 0:
+        #     self.immediate_stop_no_resume()
+        #     return
 
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
@@ -241,5 +242,5 @@ class AntennaPIDController(AlertHandlerNode):
             self.logger.warning("Command value not available.", throttle_duration_sec=5)
             return
         interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
-        cmd = self.command_list.pop(0)
+        cmd = self.command_list[0]
         return interpolated_command, cmd.time
