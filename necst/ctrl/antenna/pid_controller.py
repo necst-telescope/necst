@@ -52,13 +52,11 @@ class AntennaPIDController(AlertHandlerNode):
         topic.pid_param.subscription(self, self.change_pid_param)
 
         self.enc = ParameterList.new(5, CoordMsg)
-
-        self.init_msg = CoordMsg(time=0.0)
-        self.command_list = ParameterList.new(5, self.init_msg)
+        self.command_list: List[CoordMsg] = []
 
         self.log_publisher = topic.pid_log.publisher(self)
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
-        self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
+        # self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
 
         self.coord_interp = LinearInterp(
             "time", CoordMsg.get_fields_and_field_types().keys()
@@ -69,17 +67,16 @@ class AntennaPIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
-        self.command_list.push(msg)
-        if all(isinstance(p.time, float) for p in self.command_list):
-            self.command_list.sort(key=lambda x: x.time)
+        self.command_list.append(msg)
+        self.command_list.sort(key=lambda x: x.time)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
+        self.speed_command()
 
     # def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
-
     #     *_, newer = self.enc
     #     if any(not isinstance(p.time, float) for p in self.enc) or (
     #         newer.time < time - 1
@@ -92,7 +89,7 @@ class AntennaPIDController(AlertHandlerNode):
     #     return self.coord_interp(CoordMsg(time=time), self.enc)
 
     def immediate_stop_no_resume(self) -> None:
-        self.command_list = ParameterList.new(5, CoordMsg)
+        self.command_list.clear()
 
         self.logger.warning("Immediate stop ordered.", throttle_duration_sec=5)
         enc = self.enc[-1]
@@ -109,14 +106,12 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_publisher.publish(msg)
 
     def discard_outdated_commands(self) -> None:
-        # now = pytime.time()
-        # msg = CoordMsg(time=now)
-        # while len(self.command_list) > 1:
-        #     if self.command_list[0].time < now:
-        #         self.command_list.push(msg)
-        #     else:
-        #         break
-        pass
+        now = pytime.time()
+        while len(self.command_list) > 1:
+            if self.command_list[0].time < now:
+                self.command_list.push(0)
+            else:
+                break
 
     """""
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
@@ -148,7 +143,6 @@ class AntennaPIDController(AlertHandlerNode):
             self.immediate_stop_no_resume()
             return
         return cmd, enc
-    """
 
     def speed_command(self) -> None:
         if self.status.critical():
@@ -186,8 +180,6 @@ class AntennaPIDController(AlertHandlerNode):
                 cmd_lat=cmd.lat,
                 enc_lon=enc.lon,
                 enc_lat=enc.lat,
-                az_speed=az_speed,
-                el_speed=el_speed,
                 time=cmd_time,
             )
 
@@ -197,6 +189,7 @@ class AntennaPIDController(AlertHandlerNode):
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
             pass
+        """
 
     def change_pid_param(self, msg: PIDMsg) -> None:
         axis = msg.axis.lower()
@@ -209,40 +202,95 @@ class AntennaPIDController(AlertHandlerNode):
         self.controller[axis].k_i = msg.k_i
         self.controller[axis].k_d = msg.k_d
 
+    """"
     def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
         self.discard_outdated_commands()
         now = pytime.time()
 
+        # Check if any command is available.
+        if len(self.command_list) == 0:
+            self.immediate_stop_no_resume()
+            return
+
         # Check if command for immediate future exists or not.
-        # if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
-        #     print(f"command zikann: {self.command_list}")
-        #     return
+        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
+            return
+
+        if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
+            cmd = deepcopy(self.command_list[0])
+            if now - cmd.time > 1 / config.antenna_command_frequency:
+                cmd.time = now  # Not a real-time command.
+        elif len(self.command_list) == 1:
+            cmd = self.command_list[0]
+            cmd.time = now
+        else:
+        #     cmd = self.command_list[0]
 
         enc = self.enc[0]
-        next_cmd = self.interpolated_command_reading(enc.time)
-        if next_cmd is None:
-            return
-        cmd, cmd_time = next_cmd
+        cmd, cmd_time = self.interpolated_command_reading(enc.time)
         # Check if recent encoder reading is available or not.
         if enc is None:
             self.immediate_stop_no_resume()
             return
         return cmd, enc, cmd_time
+    """
 
-    def interpolated_command_reading(self, time: float) -> Optional[CoordMsg]:
-        *_, newer_cmd = self.command_list
-        *_, newer_enc = self.enc
-        # check encoder value
-        if any(not isinstance(p.time, float) for p in self.enc) or (
-            newer_enc.time < time - 1
-        ):
+    # def interpolated_command_reading(self, time: float) -> Optional[CoordMsg]:
+    #     *_, newer = self.command_list
+    #     if any(not isinstance(p.time, float) for p in self.command_list) or (
+    #         newer.time < time - 1
+    #     ):
+    #         self.logger.warning("Command value not available.", throttle_duration_sec=5)
+    #         return
+    #     interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
+    #     cmd = self.command_list[0]
+    #     return interpolated_command, cmd.time
+
+    def speed_command(self) -> None:
+        if self.status.critical():
+            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
+            self.gc.trigger()
             return
-        # check command value
-        if any(not isinstance(p.time, float) for p in self.command_list) or (
-            newer_cmd.time < time - 1
-        ):
-            self.logger.warning("Command value not available.", throttle_duration_sec=5)
-            return
-        interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
-        cmd = self.command_list[0]
-        return interpolated_command, cmd.time
+
+        cmd = self.command_list.pop(0)
+        enc = self.command_list[0]
+
+        try:
+            _az_speed = self.controller["az"].get_speed(
+                cmd.lon, enc.lon, time=cmd.time, enc_time=enc.time
+            )
+            _el_speed = self.controller["el"].get_speed(
+                cmd.lat, enc.lat, time=cmd.time, enc_time=enc.time
+            )
+
+            self.logger.debug(
+                f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
+                f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
+                throttle_duration_sec=0.5,
+            )
+            self.logger.debug(
+                f"El. Error={self.controller['el'].error[-1]:9.6f}deg "
+                f"V_target={self.controller['el'].target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
+                throttle_duration_sec=0.5,
+            )
+
+            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
+            el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
+            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
+
+            log = CalcLog(
+                cmd_lon=cmd.lon,
+                cmd_lat=cmd.lat,
+                enc_lon=enc.lon,
+                enc_lat=enc.lat,
+                time=cmd_time,
+            )
+
+            self.command_publisher.publish(msg)
+            self.log_publisher.publish(log)
+        except ZeroDivisionError:
+            self.logger.debug("Duplicate command is supplied.")
+        except ValueError:
+            pass
