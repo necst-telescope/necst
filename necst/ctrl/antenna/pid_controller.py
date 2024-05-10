@@ -109,7 +109,7 @@ class AntennaPIDController(AlertHandlerNode):
         now = pytime.time()
         while len(self.command_list) > 1:
             if self.command_list[0].time < now:
-                self.command_list.push(0)
+                self.command_list.pop(0)
             else:
                 break
 
@@ -247,6 +247,11 @@ class AntennaPIDController(AlertHandlerNode):
     #     return interpolated_command, cmd.time
 
     def speed_command(self) -> None:
+        if self.status.critical():
+            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
+            self.gc.trigger()
+            return
+
         self.discard_outdated_commands()
         now = pytime.time()
 
@@ -268,11 +273,6 @@ class AntennaPIDController(AlertHandlerNode):
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-
-        if self.status.critical():
-            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
-            self.gc.trigger()
-            return
 
         enc = self.enc[0]
 
