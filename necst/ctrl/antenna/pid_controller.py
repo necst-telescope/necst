@@ -98,12 +98,8 @@ class AntennaPIDController(AlertHandlerNode):
         else:
             p = dict(k_i=0, k_d=0, k_c=0, accel_limit_off=-1)
             with self.controller["az"].params(**p), self.controller["el"].params(**p):
-                _az_speed = self.controller["az"].get_speed(
-                    enc.lon, enc.lon, time=enc.time, enc_time=enc.time
-                )
-                _el_speed = self.controller["el"].get_speed(
-                    enc.lat, enc.lat, time=enc.time, enc_time=enc.time
-                )
+                _az_speed = self.controller["az"].get_speed(enc.lon, enc.lon, stop=True)
+                _el_speed = self.controller["el"].get_speed(enc.lat, enc.lat, stop=True)
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=pytime.time())
