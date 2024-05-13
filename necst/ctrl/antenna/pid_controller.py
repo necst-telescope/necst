@@ -278,10 +278,10 @@ class AntennaPIDController(AlertHandlerNode):
 
         try:
             _az_speed = self.controller["az"].get_speed(
-                cmd.lon, enc.lon, time=cmd.time, enc_time=enc.time
+                cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
             )
             _el_speed = self.controller["el"].get_speed(
-                cmd.lat, enc.lat, time=cmd.time, enc_time=enc.time
+                cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
 
             self.logger.debug(
@@ -306,7 +306,7 @@ class AntennaPIDController(AlertHandlerNode):
                 cmd_lat=cmd.lat,
                 enc_lon=enc.lon,
                 enc_lat=enc.lat,
-                time=cmd.time,
+                time=enc.time,
             )
 
             self.command_publisher.publish(msg)
