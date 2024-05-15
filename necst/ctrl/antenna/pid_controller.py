@@ -98,8 +98,12 @@ class AntennaPIDController(AlertHandlerNode):
         else:
             p = dict(k_i=0, k_d=0, k_c=0, accel_limit_off=-1)
             with self.controller["az"].params(**p), self.controller["el"].params(**p):
-                _az_speed = self.controller["az"].get_speed(enc.lon, enc.lon, stop=True)
-                _el_speed = self.controller["el"].get_speed(enc.lat, enc.lat, stop=True)
+                _az_speed, _ = self.controller["az"].get_speed(
+                    enc.lon, enc.lon, stop=True
+                )
+                _el_speed, _ = self.controller["el"].get_speed(
+                    enc.lat, enc.lat, stop=True
+                )
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=pytime.time())
@@ -277,10 +281,10 @@ class AntennaPIDController(AlertHandlerNode):
         enc = self.enc[0]
 
         try:
-            _az_speed = self.controller["az"].get_speed(
+            _az_speed, exted_lon = self.controller["az"].get_speed(
                 cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
             )
-            _el_speed = self.controller["el"].get_speed(
+            _el_speed, exted_lat = self.controller["el"].get_speed(
                 cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
 
@@ -302,8 +306,8 @@ class AntennaPIDController(AlertHandlerNode):
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=enc.time)
 
             log = CalcLog(
-                cmd_lon=cmd.lon,
-                cmd_lat=cmd.lat,
+                cmd_lon=exted_lon,
+                cmd_lat=exted_lat,
                 enc_lon=enc.lon,
                 enc_lat=enc.lat,
                 time=enc.time,
