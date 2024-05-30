@@ -117,84 +117,6 @@ class AntennaPIDController(AlertHandlerNode):
             else:
                 break
 
-    """""
-    def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
-        self.discard_outdated_commands()
-        now = pytime.time()
-
-        # Check if any command is available.
-        if len(self.command_list) == 0:
-            self.immediate_stop_no_resume()
-            return
-
-        # Check if command for immediate future exists or not.
-        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
-            return
-
-        if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
-            cmd = deepcopy(self.command_list[0])
-            if now - cmd.time > 1 / config.antenna_command_frequency:
-                cmd.time = now  # Not a real-time command.
-        elif len(self.command_list) == 1:
-            cmd = self.command_list.pop(0)
-            cmd.time = now
-        else:
-            cmd = self.command_list.pop(0)
-        enc = self.interpolated_encoder_reading(cmd.time)
-
-        # Check if recent encoder reading is available or not.
-        if enc is None:
-            self.immediate_stop_no_resume()
-            return
-        return cmd, enc
-
-    def speed_command(self) -> None:
-        if self.status.critical():
-            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
-            self.gc.trigger()
-            return
-
-        next_command = self.get_coordinate_command()
-        if next_command is None:
-            return
-        cmd, enc, cmd_time = next_command
-        try:
-            _az_speed = self.controller["az"].get_speed(cmd.lon, enc.lon, time=cmd_time)
-            _el_speed = self.controller["el"].get_speed(cmd.lat, enc.lat, time=cmd_time)
-
-            self.logger.debug(
-                f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
-                f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
-                f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
-                throttle_duration_sec=0.5,
-            )
-            self.logger.debug(
-                f"El. Error={self.controller['el'].error[-1]:9.6f}deg "
-                f"V_target={self.controller['el'].target_speed[-1]:9.6f}deg/s "
-                f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
-                throttle_duration_sec=0.5,
-            )
-
-            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
-            el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
-            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
-
-            log = CalcLog(
-                cmd_lon=cmd.lon,
-                cmd_lat=cmd.lat,
-                enc_lon=enc.lon,
-                enc_lat=enc.lat,
-                time=cmd_time,
-            )
-
-            self.command_publisher.publish(msg)
-            self.log_publisher.publish(log)
-        except ZeroDivisionError:
-            self.logger.debug("Duplicate command is supplied.")
-        except ValueError:
-            pass
-        """
-
     def change_pid_param(self, msg: PIDMsg) -> None:
         axis = msg.axis.lower()
         Kp, Ki, Kd = (getattr(self.controller[axis], k) for k in ("k_p", "k_i", "k_d"))
@@ -205,50 +127,6 @@ class AntennaPIDController(AlertHandlerNode):
         self.controller[axis].k_p = msg.k_p
         self.controller[axis].k_i = msg.k_i
         self.controller[axis].k_d = msg.k_d
-
-    """"
-    def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
-        self.discard_outdated_commands()
-        now = pytime.time()
-
-        # Check if any command is available.
-        if len(self.command_list) == 0:
-            self.immediate_stop_no_resume()
-            return
-
-        # Check if command for immediate future exists or not.
-        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
-            return
-
-        if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
-            cmd = deepcopy(self.command_list[0])
-            if now - cmd.time > 1 / config.antenna_command_frequency:
-                cmd.time = now  # Not a real-time command.
-        elif len(self.command_list) == 1:
-            cmd = self.command_list[0]
-            cmd.time = now
-        else:
-        #     cmd = self.command_list[0]
-
-        enc = self.enc[0]
-        cmd, cmd_time = self.interpolated_command_reading(enc.time)
-        # Check if recent encoder reading is available or not.
-        if enc is None:
-            self.immediate_stop_no_resume()
-            return
-        return cmd, enc, cmd_time
-    """
-
-    # def interpolated_command_reading(self, time: float) -> Optional[CoordMsg]:
-    #     *_, newer = self.command_list
-    #     if any(not isinstance(p.time, float) for p in self.command_list) or (
-    #         newer.time < time - 1
-    #     ):
-    #         self.logger.warning("Command value not available.", throttle_duration_sec=5)
-    #         return
-    #     interpolated_command = self.coord_extrap(CoordMsg(time=time), self.command_list)
-    #     cmd = self.command_list[0]
-    #     return interpolated_command, cmd.time
 
     def speed_command(self) -> None:
         if self.status.critical():
