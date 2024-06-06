@@ -31,7 +31,7 @@ class VacuumGaugeController(DeviceNode):
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            pressure = self.io.get_pressure().to_value("Torr").items
+            pressure = self.io.get_pressure().to_value("Torr")
 
             msg = DeviceReading(time=time.time(), value=pressure, id="")
             publisher.publish(msg)

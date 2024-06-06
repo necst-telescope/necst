@@ -8,7 +8,7 @@ from rclpy.qos import (
     HistoryPolicy,
     LivelinessPolicy,
     QoSProfile,
-    ReliabilityPolicy,
+    ReliabilityPolicy)
 
 
 logger = get_logger(__name__)
