@@ -9,7 +9,7 @@ from rclpy.qos import (
     LivelinessPolicy,
     QoSProfile,
     ReliabilityPolicy,
-)
+
 
 logger = get_logger(__name__)
 
@@ -198,7 +198,7 @@ class topic:
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
-
+    vacuum_gauge = Topic(DeviceReading, "vacuum_gauge", qos.realtime, namespace.rx, True)
 
 class service:
     from necst_msgs.srv import (
