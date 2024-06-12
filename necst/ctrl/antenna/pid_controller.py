@@ -136,7 +136,6 @@ class AntennaPIDController(AlertHandlerNode):
 
         self.discard_outdated_commands()
         now = pytime.time()
-        print(self.command_list)
         # Check if any command is available.
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
