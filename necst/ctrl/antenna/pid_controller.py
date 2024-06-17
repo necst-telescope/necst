@@ -187,6 +187,7 @@ class AntennaPIDController(AlertHandlerNode):
                 cmd_lat=exted_lat,
                 enc_lon=enc.lon,
                 enc_lat=enc.lat,
+                cmd_time=cmd.time
                 time=enc.time,
             )
 
