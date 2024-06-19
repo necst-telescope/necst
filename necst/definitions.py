@@ -198,6 +198,9 @@ class topic:
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
+    vacuum_gauge = Topic(
+        DeviceReading, "vacuum_gauge", qos.realtime, namespace.rx, True
+    )
 
 
 class service:
@@ -220,3 +223,4 @@ class service:
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
+
