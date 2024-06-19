@@ -11,7 +11,6 @@ from rclpy.qos import (
     ReliabilityPolicy,
 )
 
-
 logger = get_logger(__name__)
 
 
@@ -202,7 +201,8 @@ class topic:
     vacuum_gauge = Topic(
         DeviceReading, "vacuum_gauge", qos.realtime, namespace.rx, True
     )
-    
+
+
 class service:
     from necst_msgs.srv import (
         AuthoritySrv,
@@ -223,3 +223,4 @@ class service:
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
+
