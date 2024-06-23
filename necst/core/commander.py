@@ -12,6 +12,7 @@ from necst_msgs.msg import (
     Binning,
     Boolean,
     ChopperMsg,
+    MirrorMsg,
     DeviceReading,
     LocalSignal,
     LocalAttenuatorMsg,
@@ -66,6 +67,7 @@ class Commander(PrivilegedNode):
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
             "chopper": topic.chopper_cmd,
+            "mirror": topic.mirror_cmd,
             "spectra_meta": topic.spectra_meta,
             "qlook_meta": topic.qlook_meta,
             "sis_bias": topic.sis_bias_cmd,
@@ -83,6 +85,7 @@ class Commander(PrivilegedNode):
             "altaz": _SubscriptionCfg(topic.altaz_cmd, 1),
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
+            "mirror": _SubscriptionCfg(topic.mirror_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
             "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
@@ -457,6 +460,46 @@ class Commander(PrivilegedNode):
         if wait:
             target_status = CMD == "INSERT"
             while self.get_message("chopper").insert is not target_status:
+                pytime.sleep(0.1)
+
+    @require_privilege(escape_cmd=["?"])
+    def mirror(self, cmd: Literal["in", "out", "?"], /, *, wait: bool = True):
+        """Control the position of mirror.
+
+        Parameters
+        ----------
+        cmd : {"in", "out", "?"}
+            Command to be sent to the chopper.
+        wait : bool, optional
+            If True, wait until the mirror has been moved to the target position.
+            The default is True.
+
+        Examples
+        --------
+        Insert the mirror
+
+        >>> com.mirror("in")
+
+        Remove the mirror but don't wait until it has been removed
+
+        >>> com.mirror("remove", wait=False)
+
+        """
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("mirror", timeout_sec=10)
+        elif CMD == "IN":
+            msg = MirrorMsg(in=True, time=pytime.time())
+            self.publisher["mirror"].publish(msg)
+        elif CMD == "OUT":
+            msg = ChopperMsg(in=False, time=pytime.time())
+            self.publisher["mirror"].publish(msg)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+        if wait:
+            target_status = CMD == "IN"
+            while self.get_message("mirror").in is not target_status:
                 pytime.sleep(0.1)
 
     def wait(

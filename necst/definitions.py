@@ -20,6 +20,7 @@ class namespace:
     ctrl: str = f"{root}/ctrl"
     antenna: str = f"{ctrl}/antenna"
     calib: str = f"{ctrl}/calib"
+    mirror: str = f"{ctrl}/mirror"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
