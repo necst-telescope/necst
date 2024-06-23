@@ -23,11 +23,11 @@ class ChopperController(DeviceNode):
 
     def move(self, msg: MirrorMsg) -> None:
         self.telemetry()
-        position = "IN" if msg.in else "OUT"
+        position = msg.position
 
         if position == "IN":
             step = 1
-        else:
+        elif position == "OUT":
             step = -1
 
         # set_stepがいるのか分からなくなった
