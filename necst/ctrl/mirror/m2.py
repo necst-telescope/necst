@@ -22,12 +22,13 @@ class M4Controller(DeviceNode):
         self.create_timer(1, self.telemetry)
 
     def move(self, msg: MirrorMsg) -> None:
-        self.telemetry()
-        self.motor.set_step(msg.distance, "m2")
+        status = self.telemetry()
+        self.motor.set_step(msg.distance, status, "m2")
         self.telemetry()
 
-    def telemetry(self) -> None:
+    def telemetry(self):
         status = self.motor.get_step("m2")
         msg = MirrorMsg(status=status, time=time.time())
 
         self.pub.publish(msg)
+        return status
