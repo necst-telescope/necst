@@ -1,10 +1,11 @@
-mport time
+import time
 
 from neclib.devices import M2Motor
 from necst_msgs.msg import MirrorMsg
 
-from ... import config, namespace, topic
+from ... import namespace, topic
 from ...core import DeviceNode
+
 
 class M4Controller(DeviceNode):
     NodeName = "mirror"
@@ -26,14 +27,7 @@ class M4Controller(DeviceNode):
         self.telemetry()
 
     def telemetry(self) -> None:
-        position = self.motor.get_step("m2")
-        if position == "ERROR":
-            self.logger.warning(
-                f"Mirror is off the expected position (={position})",
-                throttle_duration_sec=5,
-            )
-            return
-        else:
-            msg = MirrorMsg(position=position, time=time.time())
+        status = self.motor.get_step("m2")
+        msg = MirrorMsg(status=status, time=time.time())
 
         self.pub.publish(msg)
