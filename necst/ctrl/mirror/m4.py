@@ -17,14 +17,13 @@ class M4Controller(DeviceNode):
 
         self.motor = M4Motor()
 
-        topic.mirror_cmd.subscription(self, self.move)
-        self.pub = topic.mirror_status.publisher(self)
+        topic.mirror_m4_cmd.subscription(self, self.move)
+        self.pub = topic.mirror_m4_status.publisher(self)
         self.create_timer(1, self.telemetry)
 
     def move(self, msg: MirrorMsg) -> None:
         self.telemetry()
         position = msg.position
-
         self.motor.set_step(position)
         self.telemetry()
 
