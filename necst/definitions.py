@@ -122,6 +122,7 @@ class topic:
         DeviceReading,
         LocalSignal,
         LocalAttenuatorMsg,
+        MirrorMsg,
         ObservingMode,
         PIDMsg,
         Sampling,
@@ -171,6 +172,8 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
+    mirror_cmd = Topic(MirrorMsg, "mirror_cmd", qos.reliable, namespace.mirror)
+    mirror_status = Topic(MirrorMsg, "mirror_status", qos.reliable, namespace.mirror)
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)

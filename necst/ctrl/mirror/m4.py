@@ -3,11 +3,11 @@ import time
 from neclib.devices import M4Motor
 from necst_msgs.msg import MirrorMsg
 
-from ... import config, namespace, topic
+from ... import namespace, topic
 from ...core import DeviceNode
 
 
-class ChopperController(DeviceNode):
+class M4Controller(DeviceNode):
     NodeName = "mirror"
     Namespace = namespace.mirror
 
@@ -25,18 +25,11 @@ class ChopperController(DeviceNode):
         self.telemetry()
         position = msg.position
 
-        if position == "IN":
-            step = 1
-        elif position == "OUT":
-            step = -1
-
-        # set_stepがいるのか分からなくなった
-        self.motor.set_step(step)
-        self.motor.move(position)
+        self.motor.set_step(position)
         self.telemetry()
 
     def telemetry(self) -> None:
-        position = self.motor.get_pos()
+        position = self.motor.get_step()
         if position == "ERROR":
             self.logger.warning(
                 f"Mirror is off the expected position (={position})",
