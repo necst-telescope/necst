@@ -20,6 +20,7 @@ class namespace:
     ctrl: str = f"{root}/ctrl"
     antenna: str = f"{ctrl}/antenna"
     calib: str = f"{ctrl}/calib"
+    mirror: str = f"{ctrl}/mirror"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
@@ -121,6 +122,7 @@ class topic:
         DeviceReading,
         LocalSignal,
         LocalAttenuatorMsg,
+        MirrorMsg,
         ObservingMode,
         PIDMsg,
         Sampling,
@@ -170,6 +172,14 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
+    mirror_m2_cmd = Topic(MirrorMsg, "mirror_m2_cmd", qos.reliable, namespace.mirror)
+    mirror_m2_status = Topic(
+        MirrorMsg, "mirror_m2_status", qos.reliable, namespace.mirror
+    )
+    mirror_m4_cmd = Topic(MirrorMsg, "mirror_m4_cmd", qos.reliable, namespace.mirror)
+    mirror_m4_status = Topic(
+        MirrorMsg, "mirror_m4_status", qos.reliable, namespace.mirror
+    )
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
