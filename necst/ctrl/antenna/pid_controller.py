@@ -76,18 +76,6 @@ class AntennaPIDController(AlertHandlerNode):
             self.enc.sort(key=lambda x: x.time)
         self.speed_command()
 
-    # def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
-    #     *_, newer = self.enc
-    #     if any(not isinstance(p.time, float) for p in self.enc) or (
-    #         newer.time < time - 1
-    #     ):
-    #         self.logger.warning(
-    #             "Encoder reading not available.", throttle_duration_sec=5
-    #         )
-    #         return
-
-    #     return self.coord_interp(CoordMsg(time=time), self.enc)
-
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
 
@@ -116,17 +104,6 @@ class AntennaPIDController(AlertHandlerNode):
                 self.command_list.pop(0)
             else:
                 break
-
-    def change_pid_param(self, msg: PIDMsg) -> None:
-        axis = msg.axis.lower()
-        Kp, Ki, Kd = (getattr(self.controller[axis], k) for k in ("k_p", "k_i", "k_d"))
-        self.logger.info(
-            f"PID parameter for {axis=} has been changed from {(Kp, Ki, Kd) = } "
-            f"to ({msg.k_p}, {msg.k_i}, {msg.k_d})"
-        )
-        self.controller[axis].k_p = msg.k_p
-        self.controller[axis].k_i = msg.k_i
-        self.controller[axis].k_d = msg.k_d
 
     def speed_command(self) -> None:
         if self.status.critical():
@@ -197,3 +174,14 @@ class AntennaPIDController(AlertHandlerNode):
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
             pass
+
+    def change_pid_param(self, msg: PIDMsg) -> None:
+        axis = msg.axis.lower()
+        Kp, Ki, Kd = (getattr(self.controller[axis], k) for k in ("k_p", "k_i", "k_d"))
+        self.logger.info(
+            f"PID parameter for {axis=} has been changed from {(Kp, Ki, Kd) = } "
+            f"to ({msg.k_p}, {msg.k_i}, {msg.k_d})"
+        )
+        self.controller[axis].k_p = msg.k_p
+        self.controller[axis].k_i = msg.k_i
+        self.controller[axis].k_d = msg.k_d

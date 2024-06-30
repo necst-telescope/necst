@@ -40,11 +40,11 @@ class AntennaMotor(DeviceNode):
             )
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
-        # now = time.time()
-        # if msg.time < now - 0.05:
-        #     return
-        # while msg.time > time.time():
-        #     time.sleep(1e-5)
+        now = time.time()
+        if msg.time < now - 0.1:
+            return
+        while msg.time > time.time():
+            time.sleep(1e-5)
         self.motor.set_speed(msg.az, "az")
         self.motor.set_speed(msg.el, "el")
 
