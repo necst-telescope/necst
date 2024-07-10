@@ -162,8 +162,7 @@ class DomePIDController(AlertHandlerNode):
 
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
 
-            if self.error > self.DOMESYNC_THRESHOLD:
-                
+            # if self.error > self.DOMESYNC_THRESHOLD:
 
             msg = TimedAzElFloat64(az=az_speed, time=pytime.time())
 
