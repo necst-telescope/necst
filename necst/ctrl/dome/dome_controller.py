@@ -90,7 +90,7 @@ class DomeController(AlertHandlerNode):
         self, request: DomeSync.Request, response: DomeSync.Response
     ) -> DomeSync.Response:
         self.dome_sync = request.dome_sync
-        return response
+        return True
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
@@ -113,8 +113,9 @@ class DomeController(AlertHandlerNode):
                 cmd = self.result_queue.pop(0)
                 if cmd[2] > now:
                     break
-        print(f"cmd]{cmd} in command realtime")
+
         if cmd:
+            print(f"cmd:{cmd} in command realtime")
             msg = CoordMsg(
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
             )
