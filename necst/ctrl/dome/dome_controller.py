@@ -113,6 +113,7 @@ class DomeController(AlertHandlerNode):
                 cmd = self.result_queue.pop(0)
                 if cmd[2] > now:
                     break
+        print(f"cmd]{cmd} in command realtime")
         if cmd:
             msg = CoordMsg(
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
@@ -171,6 +172,7 @@ class DomeController(AlertHandlerNode):
             self.result_queue = list(filter(lambda x: x[2] < _t, self.result_queue))
 
             cmd = float(_az.to_value("deg"))
+            print(f"cmd]{cmd} in convert")
             self.result_queue.append(cmd)
 
     def _validate_drive_range(self, az) -> Tuple:  # All values are Quantity.
