@@ -78,6 +78,7 @@ class DomeController(AlertHandlerNode):
             response.check = False
             return response
         else:
+            print("recieve command")
             self.cmd = request
             self._parse_cmd(request)
             self.result_queue.clear()
@@ -125,6 +126,8 @@ class DomeController(AlertHandlerNode):
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
         self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
+        print("pars cmd dome")
+        print(f"az:{msg.lon[0]}")
         new_generator = self.finder.track(
             msg.lon[0],
             msg.lat[0],
