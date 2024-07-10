@@ -427,7 +427,7 @@ class Commander(PrivilegedNode):
                     lon=[float(az_now)],
                     lat=[45.0],
                     frame="altaz",
-                    unit=unit,
+                    unit="deg",
                     direct_mode=direct_mode,
                 )
                 req = CoordinateCommand.Request(**kwargs)
