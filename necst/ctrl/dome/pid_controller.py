@@ -49,13 +49,17 @@ class DomePIDController(AlertHandlerNode):
         self.antenna_enc = ParameterList.new(5, CoordMsg)
 
         self.command_publisher = topic.dome_speed_cmd.publisher(self)
-        self.create_timer(1 / config.dome_command_frequency, self.speed_command)
 
         self.coord_interp = LinearInterp(
             "time", CoordMsg.get_fields_and_field_types().keys()
         )
 
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
+        self.DOMESYNC_THRESHOLD = config.dome_sync_accuracy
+
+    @property
+    def error(self):
+        return self.antenna_enc[0] - self.enc[0]
 
     def _update_sync_mode(
         self, request: DomeSync.Request, response: DomeSync.Response
@@ -82,24 +86,15 @@ class DomePIDController(AlertHandlerNode):
         self.enc.push(msg)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
+        if not self.dome_sync:
+            self.speed_command()
 
     def update_antenna_encoder_reading(self, msg: CoordMsg) -> None:
         self.antenna_enc.push(msg)
         if all(isinstance(p.time, float) for p in self.antenna_enc):
             self.antenna_enc.sort(key=lambda x: x.time)
-
-    def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
-        """Perform linear interpolation on encoder reading."""
-        *_, newer = self.enc
-        if any(not isinstance(p.time, float) for p in self.enc) or (
-            newer.time < time - 1
-        ):
-            self.logger.warning(
-                "Encoder reading not available.", throttle_duration_sec=5
-            )
-            return
-
-        return self.coord_interp(CoordMsg(time=time), self.enc)
+        if self.dome_sync:
+            self.speed_command()
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
@@ -124,10 +119,14 @@ class DomePIDController(AlertHandlerNode):
             else:
                 break
 
-    def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
+    def speed_command(self) -> None:
+        if self.status.critical():
+            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
+            self.gc.trigger()
+            return
+
         self.discard_outdated_commands()
         now = pytime.time()
-
         # Check if any command is available.
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
@@ -146,36 +145,37 @@ class DomePIDController(AlertHandlerNode):
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-        enc = self.interpolated_encoder_reading(cmd.time)
 
-        # Check if recent encoder reading is available or not.
-        if enc is None:
-            self.immediate_stop_no_resume()
-            return
-        return cmd, enc
+        enc = self.enc[0]
 
-    def speed_command(self) -> None:
-        if self.status.critical():
-            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
-            self.gc.trigger()
-            return
-        next_command = self.get_coordinate_command()
-        if next_command is None:
-            return
-        cmd, enc = next_command
         try:
-            _az_speed = self.controller.get_speed(cmd.lon, enc.lon, time=cmd.time)
+            _az_speed, exted_lon = self.controller["az"].get_speed(
+                cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
+            )
 
             self.logger.debug(
-                f"Az. Error={self.controller.error[-1]:9.6f}deg "
-                f"V_target={self.controller.target_speed[-1]:9.6f}deg/s "
-                f"Result={self.controller.cmd_speed[-1]:9.6f}deg/s",
+                f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
+                f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
                 throttle_duration_sec=0.5,
             )
 
-            az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
-            msg = TimedAzElFloat64(az=az_speed, time=cmd.time)
+            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
+
+            if self.error > self.DOMESYNC_THRESHOLD:
+                
+
+            msg = TimedAzElFloat64(az=az_speed, time=pytime.time())
+
+            # log = CalcLog(
+            #     cmd_lon=exted_lon,
+            #     enc_lon=enc.lon,
+            #     cmd_time=cmd.time,
+            #     time=enc.time,
+            # )
+
             self.command_publisher.publish(msg)
+            # self.log_publisher.publish(log)
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
