@@ -136,7 +136,6 @@ class DomeController(AlertHandlerNode):
             msg.lat[0],
             msg.frame,
             unit=msg.unit,
-            direct_mode=True,
         )
         self.executing_generator.attach(new_generator)
         print("end parse cmd")
