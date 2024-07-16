@@ -129,8 +129,6 @@ class DomeController(AlertHandlerNode):
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
         self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
-        print("pars cmd dome")
-        print(f"az:{msg.lon[0]}")
         new_generator = self.finder.track(
             msg.lon[0],
             msg.lat[0],
@@ -138,7 +136,6 @@ class DomeController(AlertHandlerNode):
             unit=msg.unit,
         )
         self.executing_generator.attach(new_generator)
-        print("end parse cmd")
 
     def convert(self) -> None:
         if (self.cmd is not None) and (self.enc_time < time.time() - 5):
@@ -159,12 +156,9 @@ class DomeController(AlertHandlerNode):
             return
 
         try:
-            print(f"{type(self.executing_generator)} in convert")
             coord = next(self.executing_generator)
-            print(f"coord{coord.context} in convert try")
             self.telemetry(coord.context)
         except (StopIteration, TypeError):
-            print("except in convert")
             self.cmd = None
             self.executing_generator.clear()
             return self.telemetry(None)
@@ -174,11 +168,9 @@ class DomeController(AlertHandlerNode):
             if any(x is None for x in [_az, _t]):
                 continue
             # Remove chronologically duplicated/overlapping commands
-            print(self.result_queue)
             self.result_queue = list(filter(lambda x: x[2] < _t, self.result_queue))
 
             cmd = (float(_az.to_value("deg")), 45.0, _t)
-            print(f"cmd{cmd} in convert")
             self.result_queue.append(cmd)
 
     def _validate_drive_range(self, az) -> Tuple:  # All values are Quantity.

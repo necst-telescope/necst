@@ -421,7 +421,8 @@ class Commander(PrivilegedNode):
 
         elif CMD == "SYNC":
             if dome_sync:
-                az_now = self.get_message("dome_encoder", timeout_sec=10).lon
+                enc = self.get_message("dome_encoder", timeout_sec=10)
+                az_now = enc.lon
                 kwargs = {}
                 kwargs.update(
                     lon=[float(az_now)],
