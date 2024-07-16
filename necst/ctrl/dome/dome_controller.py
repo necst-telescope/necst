@@ -160,7 +160,7 @@ class DomeController(AlertHandlerNode):
             return
 
         try:
-            print(f"{self.executing_generator} in convert")
+            print(f"{type(self.executing_generator)} in convert")
             coord = next(self.executing_generator)
             print(f"coord{coord.context} in convert try")
             self.telemetry(coord.context)
