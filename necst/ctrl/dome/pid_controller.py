@@ -150,7 +150,7 @@ class DomePIDController(AlertHandlerNode):
         enc = self.enc[0]
 
         try:
-            _az_speed, exted_lon = self.controller["az"].get_speed(
+            _az_speed, exted_lon = self.controller.get_speed(
                 cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
             )
 
@@ -161,7 +161,7 @@ class DomePIDController(AlertHandlerNode):
                 throttle_duration_sec=0.5,
             )
 
-            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
+            az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
 
             # if self.error > self.DOMESYNC_THRESHOLD:
 
