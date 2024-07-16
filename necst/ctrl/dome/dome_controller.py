@@ -160,11 +160,12 @@ class DomeController(AlertHandlerNode):
             return
 
         try:
+            print(f"{self.executing_generator} in convert")
             coord = next(self.executing_generator)
             print(f"coord{coord.context} in convert try")
             self.telemetry(coord.context)
         except (StopIteration, TypeError):
-            print("excepy in convert")
+            print("except in convert")
             self.cmd = None
             self.executing_generator.clear()
             return self.telemetry(None)
