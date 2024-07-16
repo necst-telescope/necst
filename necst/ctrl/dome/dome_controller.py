@@ -174,6 +174,7 @@ class DomeController(AlertHandlerNode):
             if any(x is None for x in [_az, _t]):
                 continue
             # Remove chronologically duplicated/overlapping commands
+            print(self.result_queue)
             self.result_queue = list(filter(lambda x: x[2] < _t, self.result_queue))
 
             cmd = float(_az.to_value("deg"))
