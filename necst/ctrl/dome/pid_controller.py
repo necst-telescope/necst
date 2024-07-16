@@ -150,9 +150,10 @@ class DomePIDController(AlertHandlerNode):
         enc = self.enc[0]
 
         try:
-            _az_speed, exted_lon = self.controller.get_speed(
-                cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
-            )
+            # _az_speed, exted_lon = self.controller.get_speed(
+            #     cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
+            # )
+            _az_speed = self.controller.get_speed(cmd.lon, enc.lon, time=cmd.time)
 
             self.logger.debug(
                 f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
