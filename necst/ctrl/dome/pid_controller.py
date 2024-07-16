@@ -155,12 +155,12 @@ class DomePIDController(AlertHandlerNode):
             # )
             _az_speed = self.controller.get_speed(cmd.lon, enc.lon, time=cmd.time)
 
-            self.logger.debug(
-                f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
-                f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
-                f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
-                throttle_duration_sec=0.5,
-            )
+            # self.logger.debug(
+            #     f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
+            #     f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
+            #     f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
+            #     throttle_duration_sec=0.5,
+            # )
 
             az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
 
