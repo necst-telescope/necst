@@ -177,8 +177,8 @@ class DomeController(AlertHandlerNode):
             print(self.result_queue)
             self.result_queue = list(filter(lambda x: x[2] < _t, self.result_queue))
 
-            cmd = float(_az.to_value("deg"))
-            print(f"cmd]{cmd} in convert")
+            cmd = (float(_az.to_value("deg")), 45.0, _t)
+            print(f"cmd{cmd} in convert")
             self.result_queue.append(cmd)
 
     def _validate_drive_range(self, az) -> Tuple:  # All values are Quantity.
