@@ -138,6 +138,7 @@ class DomeController(AlertHandlerNode):
             direct_mode=True,
         )
         self.executing_generator.attach(new_generator)
+        print("end parse cmd")
 
     def convert(self) -> None:
         if (self.cmd is not None) and (self.enc_time < time.time() - 5):
@@ -159,6 +160,7 @@ class DomeController(AlertHandlerNode):
 
         try:
             coord = next(self.executing_generator)
+            print(f"coord{coord.context} in convert try")
             self.telemetry(coord.context)
         except (StopIteration, TypeError):
             print("excepy in convert")
