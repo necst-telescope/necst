@@ -423,6 +423,7 @@ class Commander(PrivilegedNode):
             if dome_sync:
                 enc = self.get_message("dome_encoder", timeout_sec=10)
                 az_now = enc.lon
+                print(f"az: {az_now}")
                 kwargs = {}
                 kwargs.update(
                     lon=[float(az_now)],

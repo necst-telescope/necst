@@ -155,12 +155,12 @@ class DomePIDController(AlertHandlerNode):
             # )
             _az_speed = self.controller.get_speed(cmd.lon, enc.lon, time=cmd.time)
 
-            # self.logger.debug(
-            #     f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
-            #     f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
-            #     f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
-            #     throttle_duration_sec=0.5,
-            # )
+            self.logger.debug(
+                f"Az. Error={self.controller.error[-1]:9.6f}deg "
+                f"V_target={self.controller.target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller.cmd_speed[-1]:9.6f}deg/s",
+                throttle_duration_sec=0.5,
+            )
 
             az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
 
@@ -168,15 +168,7 @@ class DomePIDController(AlertHandlerNode):
 
             msg = TimedAzElFloat64(az=az_speed, time=pytime.time())
 
-            # log = CalcLog(
-            #     cmd_lon=exted_lon,
-            #     enc_lon=enc.lon,
-            #     cmd_time=cmd.time,
-            #     time=enc.time,
-            # )
-
             self.command_publisher.publish(msg)
-            # self.log_publisher.publish(log)
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
