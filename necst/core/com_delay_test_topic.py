@@ -25,8 +25,6 @@ class ComDelayTestTopic(Node):
         self.publisher = topic.com_delay_topic.publisher(self)
 
     def stream(self, msg: TimeOnly) -> None:
-        for publisher in self.publisher.items():
-            msg = TimeOnly(
-                input_topic_time=msg.input_topic_time, output_topic_time=time.time()
-            )
-            publisher["com_delay_get_time"].publish(msg)
+        self.publisher["com_delay_get_time"].publish(
+            TimeOnly(input_topic_time=time.time(), output_topic_time=time.time())
+        )
