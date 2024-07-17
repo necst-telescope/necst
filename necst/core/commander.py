@@ -19,8 +19,9 @@ from necst_msgs.msg import (
     Sampling,
     SISBias,
     Spectral,
+    TimeOnly,
 )
-from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand
+from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand, ComDelaySrv
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -74,6 +75,7 @@ class Commander(PrivilegedNode):
             "local_attenuator": topic.local_attenuator_cmd,
             "spectra_smpl": topic.spectra_rec,
             "channel_binning": topic.channel_binning,
+            "timeonly": topic.timeonly,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -90,11 +92,13 @@ class Commander(PrivilegedNode):
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
             "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1),
+            # "com_delay_get_time": _SubscriptionCfg(topic.com_delay_get_time, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
+            "com_delay": service.com_delay.client(self),
             "raw_coord": service.raw_coord.client(self),
             "ccd_cmd": service.ccd_cmd.client(self),
         }
@@ -769,6 +773,19 @@ class Commander(PrivilegedNode):
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+    def com_delay_test(self):
+        req = ComDelaySrv.Request(time=pytime.time())
+        res = self._send_request(req, self.client["com_delay"])
+        now_time = pytime.time()
+        self.logger.info(
+            f"input:{res.input_time}, output:{res.output_time}, now:{now_time}"
+        )
+
+    def com_delay_test_topic(self):
+        self.publisher["timeonly"].publish(
+            TimeOnly(input_topic_time=pytime.time(), output_topic_time=pytime.time())
+        )
 
     @require_privilege(escape_cmd=["?"])
     def sis_bias(

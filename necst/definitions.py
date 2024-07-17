@@ -130,6 +130,7 @@ class topic:
         TimedAzElInt64,
         TrackingStatus,
         WeatherMsg,
+        TimeOnly,
     )
 
     from .utils import Topic
@@ -198,6 +199,10 @@ class topic:
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
+    timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
+    com_delay_get_time = Topic(
+        TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
+    )
 
 
 class service:
@@ -207,6 +212,7 @@ class service:
         File,
         ObservationMode,
         RecordSrv,
+        ComDelaySrv,
         CCDCommand,
     )
     from std_srvs.srv import Empty
@@ -217,6 +223,7 @@ class service:
     privilege_ping = Service(Empty, "ping", namespace.auth)
     record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
+    com_delay = Service(ComDelaySrv, "com_delay", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
