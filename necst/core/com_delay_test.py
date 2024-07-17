@@ -3,10 +3,10 @@ import time
 from necst_msgs.srv import ComDelaySrv
 
 from .. import namespace, service
-from .server_node import ServerNode
+from rclpy.node import Node
 
 
-class ComDelayTest(ServerNode):
+class ComDelayTest(Node):
     NodeName = "comdelaytest"
     Namespace = namespace.core
 
