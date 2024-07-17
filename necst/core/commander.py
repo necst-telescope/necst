@@ -19,6 +19,7 @@ from necst_msgs.msg import (
     Sampling,
     SISBias,
     Spectral,
+    TimeOnly,
 )
 from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand, ComDelaySrv
 from rclpy.publisher import Publisher
@@ -74,6 +75,7 @@ class Commander(PrivilegedNode):
             "local_attenuator": topic.local_attenuator_cmd,
             "spectra_smpl": topic.spectra_rec,
             "channel_binning": topic.channel_binning,
+            "timeonly": topic.timeonly,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -90,6 +92,7 @@ class Commander(PrivilegedNode):
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
             "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1),
+            "com_delay_get_time": _SubscriptionCfg(topic.com_delay_get_time, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
@@ -777,6 +780,11 @@ class Commander(PrivilegedNode):
         now_time = pytime.time()
         self.logger.info(
             f"input time is {res.input_time}, output time is {res.output_time}, now is {now_time}"
+        )
+
+    def com_delay_test_topic(self):
+        self.publisher["com_delay_get_time"].publish(
+            TimeOnly(input_topic_time=pytime.time(), output_topic_time=0)
         )
 
     @require_privilege(escape_cmd=["?"])
