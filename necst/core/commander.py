@@ -784,7 +784,7 @@ class Commander(PrivilegedNode):
 
     def com_delay_test_topic(self):
         self.publisher["timeonly"].publish(
-            TimeOnly(input_topic_time=pytime.time(), output_topic_time=None)
+            TimeOnly(input_topic_time=pytime.time(), output_topic_time=pytime.time())
         )
 
     @require_privilege(escape_cmd=["?"])
