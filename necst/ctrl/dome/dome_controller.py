@@ -91,7 +91,8 @@ class DomeController(AlertHandlerNode):
     ) -> DomeSync.Response:
         print("sync dc")
         self.dome_sync = request.dome_sync
-        return True
+        response.check = True
+        return response
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
