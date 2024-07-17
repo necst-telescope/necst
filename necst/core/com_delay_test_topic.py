@@ -29,4 +29,4 @@ class ComDelayTestTopic(Node):
             msg = TimeOnly(
                 input_topic_time=msg.input_topic_time, output_topic_time=time.time()
             )
-            publisher["com_delay_time_test"].publish(msg)
+            publisher["com_delay_get_time"].publish(msg)
