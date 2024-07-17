@@ -776,7 +776,7 @@ class Commander(PrivilegedNode):
         res = self._send_request(req, self.client["com_delay"])
         now_time = pytime.time()
         self.logger.info(
-            f"input time is {res.input_rime}, output time is {res.output_time}, now is {now_time}"
+            f"input time is {res.input_time}, output time is {res.output_time}, now is {now_time}"
         )
 
     @require_privilege(escape_cmd=["?"])
