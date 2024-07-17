@@ -1,8 +1,6 @@
 import time
-from typing import Dict
 
 from necst_msgs.msg import TimeOnly
-from rclpy.publisher import Publisher
 
 from .. import namespace, topic
 from rclpy.node import Node
@@ -20,11 +18,6 @@ class ComDelayTestTopic(Node):
         self.publisher = topic.com_delay_get_time.publisher(self)
         topic.timeonly.subscription(self, self.stream)
         topic.com_delay_get_time.publisher(self)
-
-    #     self.create_timer(1, self.check_publisher)
-
-    # def check_publisher(self) -> None:
-    #     self.publisher = topic.com_delay_topic.publisher(self)
 
     def stream(self, msg: TimeOnly) -> None:
         self.publisher.publish(
