@@ -89,7 +89,6 @@ class DomeController(AlertHandlerNode):
     def _update_sync_mode(
         self, request: DomeSync.Request, response: DomeSync.Response
     ) -> DomeSync.Response:
-        print("sync dc")
         self.dome_sync = request.dome_sync
         response.check = True
         return response

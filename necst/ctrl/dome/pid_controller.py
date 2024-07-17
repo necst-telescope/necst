@@ -64,7 +64,6 @@ class DomePIDController(AlertHandlerNode):
     def _update_sync_mode(
         self, request: DomeSync.Request, response: DomeSync.Response
     ) -> DomeSync.Response:
-        print("sync pid")
         self.dome_sync = request.dome_sync
         response.check = True
         return response
@@ -163,8 +162,9 @@ class DomePIDController(AlertHandlerNode):
             )
 
             az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
-
-            # if self.error > self.DOMESYNC_THRESHOLD:
+            if self.error < self.DOMESYNC_THRESHOLD:
+                self.immediate_stop_no_resume()
+                return
 
             msg = TimedAzElFloat64(az=az_speed, time=pytime.time())
 
