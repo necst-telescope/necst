@@ -92,7 +92,7 @@ class Commander(PrivilegedNode):
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
             "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1),
-            "com_delay_get_time": _SubscriptionCfg(topic.com_delay_get_time, 1),
+            # "com_delay_get_time": _SubscriptionCfg(topic.com_delay_get_time, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {

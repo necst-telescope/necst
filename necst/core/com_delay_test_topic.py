@@ -17,16 +17,17 @@ class ComDelayTestTopic(Node):
 
         self.logger = self.get_logger()
 
-        self.publisher: Dict[str, Publisher] = {}
+        self.publisher = topic.com_delay_get_time.publisher(self)
         topic.timeonly.subscription(self, self.stream)
         topic.com_delay_get_time.publisher(self)
-        # self.create_timer(1, self.check_publisher)
+
+    #     self.create_timer(1, self.check_publisher)
 
     # def check_publisher(self) -> None:
     #     self.publisher = topic.com_delay_topic.publisher(self)
 
     def stream(self, msg: TimeOnly) -> None:
-        self.publisher["com_delay_get_time"].publish(
+        self.publisher.publish(
             TimeOnly(
                 input_topic_time=msg.input_topic_time, output_topic_time=time.time()
             )
