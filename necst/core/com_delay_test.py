@@ -2,12 +2,12 @@ import time
 
 from necst_msgs.srv import ComDelaySrv
 
-from .. import config, namespace, qos, service, utils
+from .. import namespace, service
 from .server_node import ServerNode
 
 
 class ComDelayTest(ServerNode):
-    NodeName = "recorder"
+    NodeName = "comdelaytest"
     Namespace = namespace.core
 
     def __init__(self) -> None:

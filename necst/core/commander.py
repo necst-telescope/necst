@@ -20,7 +20,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
 )
-from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand, ComDelaySrv,
+from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand, ComDelaySrv
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -770,12 +770,14 @@ class Commander(PrivilegedNode):
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
-        
+
     def com_delay_test(self):
         req = ComDelaySrv.Request(time=pytime.time())
         res = self._send_request(req, self.client["com_delay"])
         now_time = pytime.time()
-        self.logger.info(f"input time is {res.input_rime}, output time is {res.output_time}, now is {now_time}")
+        self.logger.info(
+            f"input time is {res.input_rime}, output time is {res.output_time}, now is {now_time}"
+        )
 
     @require_privilege(escape_cmd=["?"])
     def sis_bias(
