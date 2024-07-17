@@ -15,7 +15,6 @@ class ComDelayTest(Node):
 
         service.com_delay.service(self, self.get_time)
         self.logger = self.get_logger()
-        self.start_server()
 
     def get_time(
         self, request: ComDelaySrv.Request, response: ComDelaySrv.Response
