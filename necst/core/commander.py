@@ -783,7 +783,7 @@ class Commander(PrivilegedNode):
         )
 
     def com_delay_test_topic(self):
-        self.publisher["com_delay_get_time"].publish(
+        self.publisher["timeonly"].publish(
             TimeOnly(input_topic_time=pytime.time(), output_topic_time=0)
         )
 
