@@ -130,7 +130,7 @@ class topic:
         TimedAzElInt64,
         TrackingStatus,
         WeatherMsg,
-        Timeonly,
+        TimeOnly,
     )
 
     from .utils import Topic
@@ -199,9 +199,9 @@ class topic:
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
-    timeonly = Topic(Timeonly, "timeonly", qos.realtime, namespace.core)
+    timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
     com_delay_get_time = Topic(
-        Timeonly, "com_delay_get_time", qos.realtime, namespace.core
+        TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
 
 
