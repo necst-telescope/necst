@@ -19,6 +19,7 @@ class ComDelayTestTopic(Node):
 
         self.publisher: Dict[str, Publisher] = {}
         topic.timeonly.subscription(self, self.stream)
+        topic.com_delay_get_time.publisher(self)
         # self.create_timer(1, self.check_publisher)
 
     # def check_publisher(self) -> None:
