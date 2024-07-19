@@ -470,8 +470,8 @@ class Commander(PrivilegedNode):
         cmd: Literal["m2", "m4", "?"],
         /,
         *,
-        position: Literal["IN", "OUT"],
-        distance: float,
+        position: Literal["IN", "OUT"] = None,
+        distance: float = None,
     ):
         """Control the position of mirror.
 
