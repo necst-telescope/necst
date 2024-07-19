@@ -7,7 +7,7 @@ from ... import namespace, topic
 from ...core import DeviceNode
 
 
-class M4Controller(DeviceNode):
+class M2Controller(DeviceNode):
     NodeName = "mirror"
     Namespace = namespace.mirror
 
