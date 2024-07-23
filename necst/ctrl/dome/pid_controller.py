@@ -154,7 +154,7 @@ class DomePIDController(AlertHandlerNode):
             else:
                 speed = "mid"
 
-            if self.error < self.domesync_threshold:
+            if error < self.domesync_threshold:
                 self.immediate_stop_no_resume()
                 return
 
