@@ -451,7 +451,7 @@ class Commander(PrivilegedNode):
             now = pytime.time()
             current_speed = self.get_message("dome_speed", time=now, timeout_sec=0.1)
             # TODO: Add timeout handler
-            while not checker.check(abs(current_speed.az) < 1e-5):
+            while not checker.check(not (current_speed.speed == "stop")):
                 self.publisher["dome_alert_stop"].publish(msg)
                 current_speed = self.get_message(
                     "dome_speed", time=now, timeout_sec=0.1
