@@ -142,8 +142,11 @@ class DomePIDController(AlertHandlerNode):
         try:
             if error > 0:
                 turn = "right"
-            else:
+            elif error < 0:
                 turn = "left"
+            else:
+                self.immediate_stop_no_resume()
+                return
 
             error = abs(error)
 

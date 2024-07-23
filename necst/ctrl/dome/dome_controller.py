@@ -78,7 +78,6 @@ class DomeController(AlertHandlerNode):
             response.check = False
             return response
         else:
-            print("recieve command")
             self.cmd = request
             self._parse_cmd(request)
             self.result_queue.clear()

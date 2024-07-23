@@ -28,11 +28,8 @@ class DomeDeviceSimulator(Node):
             speed = 60 / 3600
         else:
             speed = 0
-        if msg.turn == "right":
-            turn = 1.0
-        else:
-            turn = -1.0
-        speed = speed * turn
+        if msg.turn == "left":
+            speed = -speed
         self.enc.command(speed, "az")
 
     def stream(self):
