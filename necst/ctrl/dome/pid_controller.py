@@ -62,6 +62,7 @@ class DomePIDController(AlertHandlerNode):
     ) -> DomeSync.Response:
         self.dome_sync = request.dome_sync
         response.check = self.dome_sync
+        self.command_list.clear()
         return response
 
     def update_command(self, msg: CoordMsg) -> None:
