@@ -29,9 +29,9 @@ class DomeDeviceSimulator(Node):
         else:
             speed = 0
         if msg.turn == "right":
-            turn = -1.0
-        else:
             turn = 1.0
+        else:
+            turn = -1.0
         speed = speed * turn
         self.enc.command(speed, "az")
 
