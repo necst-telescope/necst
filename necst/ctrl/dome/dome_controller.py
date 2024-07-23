@@ -88,10 +88,9 @@ class DomeController(AlertHandlerNode):
     def _update_sync_mode(
         self, request: DomeSync.Request, response: DomeSync.Response
     ) -> DomeSync.Response:
-        self.result_queue.clear()
         self.dome_sync = request.dome_sync
         response.check = self.dome_sync
-        self.result_queue.clear()
+        self.clear_cmd()
         return response
 
     def _update_enc(self, msg: CoordMsg) -> None:
