@@ -298,7 +298,7 @@ class Commander(PrivilegedNode):
             msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
             checker = ConditionChecker(5, reset_on_failure=True)
             now = pytime.time()
-            current_speed = self.get_message("dome_speed", time=now, timeout_sec=0.1)
+            current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
             # TODO: Add timeout handler
             while not checker.check(
                 (abs(current_speed.az) < 1e-5) and (abs(current_speed.el) < 1e-5)
