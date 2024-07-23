@@ -38,11 +38,7 @@ class DomeMotor(DeviceNode):
             )
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
-        # if msg.time < now - 0.05:
-        #     return
-        # while msg.time > time.time():
-        #     time.sleep(1e-5)
-        if msg.speed:
+        if msg.speed == "stop":
             self.motor.dome_stop()
         else:
             self.motor.dome_move(msg.speed, msg.turn)
