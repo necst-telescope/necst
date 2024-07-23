@@ -130,6 +130,7 @@ class topic:
         TimedAzElInt64,
         TrackingStatus,
         WeatherMsg,
+        DomeCommand,
     )
 
     from .utils import Topic
@@ -189,6 +190,9 @@ class topic:
         Boolean, "cmd_trans", qos.reliable, namespace.antenna
     )
     dome_tracking = Topic(TrackingStatus, "dome_tracking", qos.realtime, namespace.dome)
+    dome_sync_error = Topic(
+        TrackingStatus, "dome_sync_error", qos.realtime, namespace.dome
+    )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
@@ -199,7 +203,7 @@ class topic:
         qos.realtime,
         namespace.dome,
     )
-    dome_speed_cmd = Topic(TimedAzElFloat64, "dome_speed", qos.realtime, namespace.dome)
+    dome_speed_cmd = Topic(DomeCommand, "dome_speed", qos.realtime, namespace.dome)
     dome_altaz_cmd = Topic(CoordMsg, "dome_altaz", qos.realtime, namespace.dome)
     dome_motor_speed = Topic(
         TimedAzElFloat64, "dome_actual_speed", qos.realtime, namespace.dome
@@ -211,6 +215,9 @@ class topic:
         ControlStatus, "dome_controlled", qos.reliable, namespace.dome
     )
     dome_cmd_transition = Topic(Boolean, "dome_cmd_trans", qos.reliable, namespace.dome)
+    manual_stop_dome_alert = Topic(
+        AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
+    )
 
 
 class service:

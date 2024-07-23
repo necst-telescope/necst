@@ -24,10 +24,13 @@ class DomeTrackingStatus(Node):
         self.cmd = ParameterList.new(int(n_cmd_to_keep))
         self.antenna_enc = ParameterList.new(1)
         self.dome_enc = ParameterList.new(1)
+        self.dome_cmd = ParameterList.new(1)
         self.threshold = config.dome_sync_accuracy.to_value("deg")
         self.pub = topic.dome_tracking.publisher(self)
+        self.error_pub = topic.dome_sync_error.publisher(self)
         topic.antenna_encoder.subscription(self, lambda msg: self.antenna_enc.push(msg))
         topic.dome_encoder.subscription(self, lambda msg: self.dome_enc.push(msg))
+        topic.dome_altaz_cmd.subscription(self, lambda msg: self.dome_cmd.push(msg))
         self.create_timer(1 / config.dome_command_frequency, self.dome_sync_status)
 
     def dome_sync_status(self) -> None:
@@ -36,6 +39,9 @@ class DomeTrackingStatus(Node):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         elif all(not isinstance(x, CoordMsg) for x in self.dome_enc):
+            self.tracking_checker.check(False)
+            msg = TrackingStatus(ok=False, error=9999.0, time=now)
+        elif all(not isinstance(x, CoordMsg) for x in self.dome_cmd):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:

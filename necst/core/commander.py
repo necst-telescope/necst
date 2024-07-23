@@ -72,6 +72,7 @@ class Commander(PrivilegedNode):
             "attenuator": topic.attenuator_cmd,
             "spectra_smpl": topic.spectra_rec,
             "channel_binning": topic.channel_binning,
+            "dome_alert_stop": topic.manual_stop_dome_alert,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -297,12 +298,12 @@ class Commander(PrivilegedNode):
             msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
             checker = ConditionChecker(5, reset_on_failure=True)
             now = pytime.time()
-            current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
+            current_speed = self.get_message("dome_speed", time=now, timeout_sec=0.1)
             # TODO: Add timeout handler
             while not checker.check(
                 (abs(current_speed.az) < 1e-5) and (abs(current_speed.el) < 1e-5)
             ):
-                self.publisher["alert_stop"].publish(msg)
+                self.publisher["dome_alert"].publish(msg)
                 current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
                 pytime.sleep(1 / config.antenna_command_frequency)
 
@@ -451,14 +452,14 @@ class Commander(PrivilegedNode):
             current_speed = self.get_message("dome_speed", time=now, timeout_sec=0.1)
             # TODO: Add timeout handler
             while not checker.check(abs(current_speed.az) < 1e-5):
-                self.publisher["alert_stop"].publish(msg)
+                self.publisher["dome_alert_stop"].publish(msg)
                 current_speed = self.get_message(
                     "dome_speed", time=now, timeout_sec=0.1
                 )
                 pytime.sleep(1 / config.dome_command_frequency)
 
             msg = AlertMsg(critical=False, warning=False, target=[namespace.dome])
-            self.publisher["alert_stop"].publish(msg)
+            self.publisher["dome_alert_stop"].publish(msg)
             # Ensure the next command is executed after the lift of alert
             return pytime.sleep(0.5)
         elif CMD == "ERROR":

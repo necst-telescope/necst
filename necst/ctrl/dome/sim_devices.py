@@ -20,7 +20,18 @@ class DomeDeviceSimulator(Node):
         self.create_timer(1 / config.dome_command_frequency, self.stream)
 
     def dome_simulator(self, msg):
-        self.enc.command(msg.az, "az")
+        if msg.speed == "high":
+            speed = 600 / 3600
+        elif msg.speed == "mid":
+            speed = 300 / 3600
+        elif msg.speed == "low":
+            speed = 60 / 3600
+        if msg.turn == "right":
+            turn = -1.0
+        else:
+            turn = 1.0
+        speed = speed * turn
+        self.enc.command(speed, "az")
 
     def stream(self):
         encoder = self.enc.read()
