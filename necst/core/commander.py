@@ -431,7 +431,7 @@ class Commander(PrivilegedNode):
                     lat=[45.0],
                     frame="altaz",
                     unit="deg",
-                    direct_mode=direct_mode,
+                    direct_mode=True,
                 )
                 req = CoordinateCommand.Request(**kwargs)
                 res = self._send_request(req, self.client["dome_coord"])
