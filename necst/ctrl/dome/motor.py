@@ -31,7 +31,7 @@ class DomeMotor(DeviceNode):
     def check_command(self) -> None:
         timelimit = config.antenna_command_offset_sec
         if time.time() - self.last_cmd_time > timelimit:
-            self.motor.stop()
+            self.motor.dome_stop()
             self.logger.warning(
                 f"No command supplied for {timelimit} s, stopping the antenna",
                 throttle_duration_sec=10,
@@ -43,9 +43,9 @@ class DomeMotor(DeviceNode):
         # while msg.time > time.time():
         #     time.sleep(1e-5)
         if msg.speed:
-            self.motor.stop()
+            self.motor.dome_stop()
         else:
-            self.motor.set_speed(msg.turn, msg.speed)
+            self.motor.dome_move(msg.speed, msg.turn)
 
         self.last_cmd_time = time.time()
 
