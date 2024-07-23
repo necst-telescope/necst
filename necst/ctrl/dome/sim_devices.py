@@ -26,6 +26,8 @@ class DomeDeviceSimulator(Node):
             speed = 300 / 3600
         elif msg.speed == "low":
             speed = 60 / 3600
+        else:
+            speed = 0
         if msg.turn == "right":
             turn = -1.0
         else:
