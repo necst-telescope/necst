@@ -11,7 +11,7 @@ def configure_executor() -> SingleThreadedExecutor:
     nodes = [
         ObserverInfo(),
         AntennaTrackingStatus(),
-        # DomeTrackingStatus(),
+        DomeTrackingStatus(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
