@@ -12,19 +12,18 @@ class DomeDeviceSimulator(Node):
     NodeName = "dome_simulator"
     Namespace = namespace.dome
 
-    self.speed_dir = {
-        "low": 200 / 3600,
-        "mid": 400 / 3600,
-        "high": 600 / 3600,
-        "stop": 0,
-    }
-
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = topic.dome_encoder.publisher(self)
         topic.dome_speed_cmd.subscription(self, self.dome_simulator)
         self.enc = DomeEncoderEmulator()
         self.create_timer(1 / config.dome_command_frequency, self.stream)
+        self.speed_dir = {
+            "low": 200 / 3600,
+            "mid": 400 / 3600,
+            "high": 600 / 3600,
+            "stop": 0,
+        }
 
     def dome_simulator(self, msg):
         speed = self.speed_dir[msg.speed]
