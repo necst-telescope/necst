@@ -55,7 +55,7 @@ class DomePIDController(AlertHandlerNode):
         )
 
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
-        self.domesync_threshold = config.dome_sync_accuracy.to_value(u.deg)
+        self.domesync_threshold = config.dome_sync_accuracy.to_value("deg")
 
     def _update_sync_mode(
         self, request: DomeSync.Request, response: DomeSync.Response
