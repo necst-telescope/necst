@@ -118,7 +118,6 @@ class DomeController(AlertHandlerNode):
                     break
 
         if cmd:
-            print(f"cmd:{cmd} in command realtime")
             msg = CoordMsg(
                 lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
             )
