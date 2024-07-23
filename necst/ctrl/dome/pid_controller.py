@@ -97,15 +97,7 @@ class DomePIDController(AlertHandlerNode):
         self.command_list.clear()
 
         self.logger.warning("Immediate stop ordered.", throttle_duration_sec=5)
-        enc = self.enc[-1]
-        if any(not isinstance(p, float) for p in (enc.lon, enc.lat)):
-            az_speed = 0.0
-        else:
-            p = dict(k_i=0, k_d=0, k_c=0, accel_limit_off=-1)
-            with self.controller.params(**p):
-                _az_speed = self.controller.get_speed(enc.lon, enc.lon)
-            az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
-        msg = TimedAzElFloat64(az=az_speed, time=pytime.time())
+        msg = DomeCommand(turn="", speed="stop", time=pytime.time())
         self.command_publisher.publish(msg)
 
     def discard_outdated_commands(self) -> None:
@@ -166,7 +158,7 @@ class DomePIDController(AlertHandlerNode):
                 self.immediate_stop_no_resume()
                 return
 
-            msg = DomeCommand(turn=turn, speed=speed)
+            msg = DomeCommand(turn=turn, speed=speed, time=pytime.time())
 
             self.command_publisher.publish(msg)
         except ZeroDivisionError:

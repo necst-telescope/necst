@@ -38,12 +38,14 @@ class DomeMotor(DeviceNode):
             )
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
-        now = time.time()
         # if msg.time < now - 0.05:
         #     return
         # while msg.time > time.time():
         #     time.sleep(1e-5)
-        self.motor.set_speed(msg.turn, msg.speed)
+        if msg.speed:
+            self.motor.stop()
+        else:
+            self.motor.set_speed(msg.turn, msg.speed)
 
         self.last_cmd_time = time.time()
 
