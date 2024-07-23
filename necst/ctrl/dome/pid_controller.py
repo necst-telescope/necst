@@ -137,7 +137,7 @@ class DomePIDController(AlertHandlerNode):
 
         enc = self.enc[0]
 
-        error = (cmd.lon - enc.lon) % 360
+        error = cmd.lon - enc.lon
 
         try:
             if error > 0:
