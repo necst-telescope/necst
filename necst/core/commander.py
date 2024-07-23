@@ -440,10 +440,9 @@ class Commander(PrivilegedNode):
             req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_sync"])
             print(f"{res.check} DomeController Synced")
-            if res.check:
-                req = DomeSync.Request(dome_sync=dome_sync)
-                res = self._send_request(req, self.client["dome_pid_sync"])
-                print(f"{res.check} DomePIDController Synced")
+            req = DomeSync.Request(dome_sync=dome_sync)
+            res = self._send_request(req, self.client["dome_pid_sync"])
+            print(f"{res.check} DomePIDController Synced")
             return res.check
         elif CMD == "STOP":
             msg = AlertMsg(critical=True, warning=True, target=[namespace.dome])
