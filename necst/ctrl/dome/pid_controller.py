@@ -57,14 +57,6 @@ class DomePIDController(AlertHandlerNode):
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
         self.domesync_threshold = config.dome_sync_accuracy
 
-    @property
-    def error(self):
-        if self.dome_sync:
-            error = self.antenna_enc[0].lon - self.enc[0].lon
-        else:
-            error = self.command_list[0].lon - self.enc[0].lon
-        return error
-
     def _update_sync_mode(
         self, request: DomeSync.Request, response: DomeSync.Response
     ) -> DomeSync.Response:
@@ -152,18 +144,15 @@ class DomePIDController(AlertHandlerNode):
 
         enc = self.enc[0]
 
-        try:
-            # _az_speed, exted_lon = self.controller.get_speed(
-            #     cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
-            # )
-            # _az_speed = self.controller.get_speed(cmd.lon, enc.lon, time=cmd.time)
+        error = (cmd - enc) % 360
 
-            if self.error > 0:
+        try:
+            if error > 0:
                 turn = "right"
             else:
                 turn = "left"
 
-            error = abs(self.error)
+            error = abs(error)
 
             if error < 5.0 or error > 350.0:
                 speed = "low"
@@ -171,14 +160,6 @@ class DomePIDController(AlertHandlerNode):
                 speed = "high"
             else:
                 speed = "mid"
-
-            # self.logger.debug(
-            #     f"Az. Error={self.controller.error[-1]:9.6f}deg "
-            #     f"V_target={self.controller.target_speed[-1]:9.6f}deg/s "
-            #     f"Result={self.controller.cmd_speed[-1]:9.6f}deg/s",
-            #     throttle_duration_sec=0.5,)
-
-            # az_speed = float(self.decelerate_calc(enc.lon, _az_speed))
 
             if self.error < self.domesync_threshold:
                 self.immediate_stop_no_resume()
