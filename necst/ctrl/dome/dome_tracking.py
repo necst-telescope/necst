@@ -25,7 +25,7 @@ class DomeTrackingStatus(Node):
         self.antenna_enc = ParameterList.new(1)
         self.dome_enc = ParameterList.new(1)
         self.dome_cmd = ParameterList.new(1)
-        self.threshold = config.dome_sync_accuracy.to_value("deg")
+        self.threshold = config.dome_pointing_accuracy.to_value("deg")
         self.pub = topic.dome_tracking.publisher(self)
         self.error_pub = topic.dome_sync_error.publisher(self)
         topic.antenna_encoder.subscription(self, lambda msg: self.antenna_enc.push(msg))
@@ -45,7 +45,7 @@ class DomeTrackingStatus(Node):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
-            error = np.abs(self.antenna_enc[0].lon - self.dome_enc[0].lon)
+            error = np.abs(self.dome_cmd[0].lon - self.dome_enc[0].lon)
             ok = self.tracking_checker.check(error < self.threshold)
             msg = TrackingStatus(ok=ok, error=error, time=now)
         self.pub.publish(msg)

@@ -416,8 +416,8 @@ class Commander(PrivilegedNode):
             )
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["dome_coord"])
-            # if wait:
-            #   self.wait("dome")
+            if wait:
+                self.wait("dome")
             return res.id
 
         elif CMD == "SYNC":
@@ -435,7 +435,7 @@ class Commander(PrivilegedNode):
                 )
                 req = CoordinateCommand.Request(**kwargs)
                 res = self._send_request(req, self.client["dome_coord"])
-                # self.wait("dome")
+                self.wait("dome")
                 pytime.sleep(0.5)
             req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_sync"])
