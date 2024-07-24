@@ -1,9 +1,9 @@
 import time
 
 from neclib.devices import MembraneMotor
-from necst_msgs.msg import ChopperMsg
+from necst_msgs.msg import MembraneMsg
 
-from ... import config, namespace, topic
+from ... import namespace, topic
 from ...core import DeviceNode
 
 
@@ -21,21 +21,21 @@ class MembraneController(DeviceNode):
         self.pub = topic.membrane_status.publisher(self)
         self.create_timer(1, self.telemetry)
 
-    def move(self, msg: ChopperMsg) -> None:
+    def move(self, msg: MembraneMsg) -> None:
         self.telemetry()
-        position = "insert" if msg.insert else "remove"
-        self.motor.set_step(position, "chopper")
+        position = "open" if msg.open else "close"
+        self.motor.memb_mobe(position)
         self.telemetry()
 
     def telemetry(self) -> None:
-        position = self.motor.get_step("chopper")
-        if position == config.chopper_motor_position["insert"]:
-            msg = ChopperMsg(insert=True, time=time.time())
-        elif position == config.chopper_motor_position["remove"]:
-            msg = ChopperMsg(insert=False, time=time.time())
+        status = self.motor.memb_status()
+        if status[1] == "open":
+            msg = MembraneMsg(open=True, time=time.time())
+        elif status[1] == "close":
+            msg = MembraneMsg(open=False, time=time.time())
         else:
             self.logger.warning(
-                f"Chopper wheel is off the expected position (={position})",
+                f"Membrane is off the expected position (={status[1]})",
                 throttle_duration_sec=5,
             )
             return
