@@ -18,7 +18,7 @@ class DomeEncoderController(DeviceNode):
         self.create_timer(1 / 15, self.stream)
 
     def stream(self) -> None:
-        readings = self.encoder.get_reading()
+        readings = self.encoder.get_dome_reading()
         msg = CoordMsg(
             lon=readings.to_value("deg").item(),
             unit="deg",

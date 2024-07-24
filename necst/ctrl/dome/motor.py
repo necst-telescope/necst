@@ -1,9 +1,10 @@
 import time
 
 from neclib.devices import DomeMotor as DomeMotorDevice
-from necst_msgs.msg import TimedAzElFloat64, TimedAzElInt64
+from necst_msgs.msg import DomeCommand, DomeStatus
+from necst_msgs.srv import DomeOC
 
-from ... import config, namespace, topic
+from ... import config, namespace, topic, service
 from ...core import DeviceNode
 
 
@@ -19,25 +20,32 @@ class DomeMotor(DeviceNode):
             "speed": topic.dome_motor_speed.publisher(self),
             "step": topic.dome_motor_step.publisher(self),
         }
+
+        self.status_publisher = topic.dome_status.publisher(self)
+
         topic.dome_speed_cmd.subscription(self, self.speed_command)
+        service.dome_oc.service(self, self.move)
+
         self.create_timer(1 / 10, self.stream_speed)
         self.create_timer(1 / 10, self.stream_step)
         self.create_timer(5, self.check_command)
+
+        self.create_timer(1, self.telemetry)
 
         self.last_cmd_time = time.time()
 
         self.motor = DomeMotorDevice()
 
     def check_command(self) -> None:
-        timelimit = config.antenna_command_offset_sec
+        timelimit = config.dome_command_offset_sec
         if time.time() - self.last_cmd_time > timelimit:
             self.motor.dome_stop()
             self.logger.warning(
-                f"No command supplied for {timelimit} s, stopping the antenna",
+                f"No command supplied for {timelimit} s, stopping the dome",
                 throttle_duration_sec=10,
             )
 
-    def speed_command(self, msg: TimedAzElFloat64) -> None:
+    def speed_command(self, msg: DomeCommand) -> None:
         if msg.speed == "stop":
             self.motor.dome_stop()
         else:
@@ -45,15 +53,23 @@ class DomeMotor(DeviceNode):
 
         self.last_cmd_time = time.time()
 
-    # def stream_speed(self) -> None:
-    #     readout_az = self.motor.get_speed("az").to_value("deg/s").item()
-    #     speed_msg = TimedAzElFloat64(az=float(readout_az), time=time.time())
-    #     self.publisher["speed"].publish(speed_msg)
+    def move(self, request: DomeOC.Request, response: DomeOC.Response):
+        self.motor.dome_oc(request.position)
+        response.check = True
+        return response
 
-    # def stream_step(self) -> None:
-    #     readout_az = self.motor.get_step("az")
-    #     step_msg = TimedAzElInt64(az=readout_az, time=time.time())
-    #     self.publisher["step"].publish(step_msg)
+    def telemetry(self):
+        status = self.motor.dome_status()
+
+        msg = DomeStatus(
+            right_act=status[0],
+            right_pos=status[1],
+            left_act=status[2],
+            left_pos=status[3],
+        )
+
+        self.status_publisher.publish(msg)
+        return
 
 
 def main(args=None):

@@ -19,7 +19,14 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
 )
-from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand, DomeSync
+from necst_msgs.srv import (
+    CoordinateCommand,
+    File,
+    RecordSrv,
+    CCDCommand,
+    DomeSync,
+    DomeOC,
+)
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -101,6 +108,7 @@ class Commander(PrivilegedNode):
             "ccd_cmd": service.ccd_cmd.client(self),
             "dome_sync": service.dome_sync.client(self),
             "dome_pid_sync": service.dome_pid_sync.client(self),
+            "dome_oc": service.dome_oc.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
@@ -391,13 +399,13 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
-    @require_privilege(escape_cmd=["?", "stop", "error"])
+    @require_privilege(escape_cmd=["?", "stop", "error", "close"])
     def dome(
         self,
-        cmd: Literal["point", "sync", "stop", "?"],
+        cmd: Literal["point", "sync", "stop", "open", "close", "?"],
         /,
         *,
-        target: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        target: float = None,
         unit: Optional[str] = None,
         dome_sync: bool = False,
         direct_mode: bool = False,
@@ -408,9 +416,9 @@ class Commander(PrivilegedNode):
         if CMD == "POINT":
             kwargs = {}
             kwargs.update(
-                lon=[float(target[0])],
+                lon=[target],
                 lat=[45.0],
-                frame=target[2],
+                frame="altaz",
                 unit=unit,
                 direct_mode=direct_mode,
             )
@@ -461,6 +469,14 @@ class Commander(PrivilegedNode):
             self.publisher["dome_alert_stop"].publish(msg)
             # Ensure the next command is executed after the lift of alert
             return pytime.sleep(0.5)
+        elif CMD == "OPEN":
+            req = DomeOC.Request(position="open")
+            res = self._send_request(req, self.client["dome_oc"])
+            return res.check
+        elif CMD == "CLOSE":
+            req = DomeOC.Request(position="close")
+            res = self._send_request(req, self.client["dome_oc"])
+            return res.check
         elif CMD == "ERROR":
             now = pytime.time()
             return self.get_message("dome_track", time=now, timeout_sec=0.01)

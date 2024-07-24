@@ -131,6 +131,7 @@ class topic:
         TrackingStatus,
         WeatherMsg,
         DomeCommand,
+        DomeStatus,
     )
 
     from .utils import Topic
@@ -211,13 +212,12 @@ class topic:
     dome_motor_step = Topic(
         TimedAzElInt64, "dome_actual_step", qos.realtime, namespace.dome
     )
-    dome_control_status = Topic(
-        ControlStatus, "dome_controlled", qos.reliable, namespace.dome
-    )
+    dome_status = Topic(DomeStatus, "dome_status", qos.reliable, namespace.dome)
     dome_cmd_transition = Topic(Boolean, "dome_cmd_trans", qos.reliable, namespace.dome)
     manual_stop_dome_alert = Topic(
         AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
     )
+    dome_oc = Topic(DomeCommand, "dome_oc", qos.reliable, namespace.dome)
 
 
 class service:
@@ -229,6 +229,7 @@ class service:
         RecordSrv,
         CCDCommand,
         DomeSync,
+        DomeOC,
     )
     from std_srvs.srv import Empty
 
@@ -244,3 +245,4 @@ class service:
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
     dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
     dome_pid_sync = Service(DomeSync, "dome_pid_sync", namespace.dome)
+    dome_oc = Service(DomeOC, "dome_oc", namespace.dome)

@@ -35,10 +35,7 @@ class DomeTrackingStatus(Node):
 
     def dome_sync_status(self) -> None:
         now = time.time()
-        if all(not isinstance(x, CoordMsg) for x in self.antenna_enc):
-            self.tracking_checker.check(False)
-            msg = TrackingStatus(ok=False, error=9999.0, time=now)
-        elif all(not isinstance(x, CoordMsg) for x in self.dome_enc):
+        if all(not isinstance(x, CoordMsg) for x in self.dome_enc):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         elif all(not isinstance(x, CoordMsg) for x in self.dome_cmd):
