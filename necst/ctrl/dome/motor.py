@@ -54,8 +54,10 @@ class DomeMotor(DeviceNode):
         self.last_cmd_time = time.time()
 
     def move(self, request: DomeOC.Request, response: DomeOC.Response):
+        self.telemetry()
         self.motor.dome_oc(request.position)
         response.check = True
+        self.telemetry()
         return response
 
     def telemetry(self):
