@@ -402,7 +402,7 @@ class Commander(PrivilegedNode):
             msg = MembraneMsg(open=True, time=pytime.time())
             self.publisher["membrane"].publish(msg)
         elif CMD == "CLOSE":
-            msg = MembraneMsg(open=false, time=pytime.time())
+            msg = MembraneMsg(open=False, time=pytime.time())
             self.publisher["membrane"].publish(msg)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
