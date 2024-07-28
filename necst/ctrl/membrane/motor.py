@@ -1,6 +1,6 @@
 import time
 
-from neclib.devices import Membrane as MembraneMotor
+from neclib.devices import MembraneMotor
 from necst_msgs.msg import MembraneMsg
 
 from ... import namespace, topic
