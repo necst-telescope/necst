@@ -20,6 +20,7 @@ class namespace:
     ctrl: str = f"{root}/ctrl"
     antenna: str = f"{ctrl}/antenna"
     calib: str = f"{ctrl}/calib"
+    membrane: str = f"{ctrl}/membrane"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
@@ -115,6 +116,7 @@ class topic:
         Boolean,
         Binning,
         ChopperMsg,
+        MembraneMsg,
         Clock,
         ControlStatus,
         CoordMsg,
@@ -171,6 +173,10 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
+    membrane_cmd = Topic(MembraneMsg, "membrane_cmd", qos.reliable, namespace.membrane)
+    membrane_status = Topic(
+        MembraneMsg, "membrane_status", qos.reliable, namespace.membrane
+    )
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)

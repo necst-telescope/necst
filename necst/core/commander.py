@@ -15,6 +15,7 @@ from necst_msgs.msg import (
     DeviceReading,
     LocalSignal,
     LocalAttenuatorMsg,
+    MembraneMsg,
     PIDMsg,
     Sampling,
     SISBias,
@@ -67,6 +68,7 @@ class Commander(PrivilegedNode):
             "alert_stop": topic.manual_stop_alert,
             "pid_param": topic.pid_param,
             "chopper": topic.chopper_cmd,
+            "membrane": topic.membrane_cmd,
             "spectra_meta": topic.spectra_meta,
             "qlook_meta": topic.qlook_meta,
             "sis_bias": topic.sis_bias_cmd,
@@ -85,6 +87,7 @@ class Commander(PrivilegedNode):
             "altaz": _SubscriptionCfg(topic.altaz_cmd, 1),
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
+            "membrane": _SubscriptionCfg(topic.membrane_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
             "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
@@ -388,6 +391,19 @@ class Commander(PrivilegedNode):
 
         elif CMD in ["?"]:
             return self.get_message("encoder", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    def memb(self, cmd, ans):
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("chopper", timeout_sec=10)
+        elif CMD == "OPEN":
+            msg = MembraneMsg(open=True, time=pytime.time())
+            self.publisher["membrane"].publish(msg)
+        elif CMD == "CLOSE":
+            msg = MembraneMsg(open=False, time=pytime.time())
+            self.publisher["membrane"].publish(msg)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
