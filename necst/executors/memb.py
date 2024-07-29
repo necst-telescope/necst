@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 
-from ..ctrx.membrane import MembraneController
+from ..ctrl.membrane import MembraneController
 
 
 def configure_executor() -> SingleThreadedExecutor:
