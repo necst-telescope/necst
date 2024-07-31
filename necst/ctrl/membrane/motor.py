@@ -1,6 +1,6 @@
 import time
 
-from neclib.devices import MembraneMotor
+from neclib.devices import MembraneMotor as MembraneMotorDevice
 from necst_msgs.msg import MembraneMsg
 
 from ... import namespace, topic
@@ -15,7 +15,7 @@ class MembraneMotor(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        self.motor = MembraneMotor()
+        self.motor = MembraneMotorDevice()
 
         topic.membrane_cmd.subscription(self, self.move)
         self.pub = topic.membrane_status.publisher(self)
