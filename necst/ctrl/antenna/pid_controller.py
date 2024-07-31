@@ -157,15 +157,16 @@ class AntennaPIDController(AlertHandlerNode):
 
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
-            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=pytime.time())
+
+            cmd_time = pytime.time()
+            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
 
             log = CalcLog(
                 cmd_lon=exted_lon,
                 cmd_lat=exted_lat,
                 enc_lon=enc.lon,
                 enc_lat=enc.lat,
-                cmd_time=cmd.time,
-                time=enc.time,
+                time=cmd_time,
             )
 
             self.command_publisher.publish(msg)
