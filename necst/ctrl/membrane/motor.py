@@ -7,7 +7,7 @@ from ... import namespace, topic
 from ...core import DeviceNode
 
 
-class MembraneController(DeviceNode):
+class MembraneMotor(DeviceNode):
     NodeName = "membrane"
     Namespace = namespace.membrane
 
@@ -40,3 +40,22 @@ class MembraneController(DeviceNode):
             )
             return
         self.pub.publish(msg)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = MembraneMotor()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.motor.membrane_stop()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()
