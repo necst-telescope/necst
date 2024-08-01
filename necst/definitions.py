@@ -20,6 +20,7 @@ class namespace:
     ctrl: str = f"{root}/ctrl"
     antenna: str = f"{ctrl}/antenna"
     calib: str = f"{ctrl}/calib"
+    dome: str = f"{ctrl}/dome"
     membrane: str = f"{ctrl}/membrane"
 
     core: str = f"{root}/core"
@@ -132,6 +133,8 @@ class topic:
         TimedAzElInt64,
         TrackingStatus,
         WeatherMsg,
+        DomeStatus,
+        DomeCommand,
         TimeOnly,
     )
 
@@ -201,10 +204,35 @@ class topic:
     antenna_cmd_transition = Topic(
         Boolean, "cmd_trans", qos.reliable, namespace.antenna
     )
+    dome_tracking = Topic(TrackingStatus, "dome_tracking", qos.realtime, namespace.dome)
+    dome_sync_error = Topic(
+        TrackingStatus, "dome_sync_error", qos.realtime, namespace.dome
+    )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
+    dome_encoder = Topic(
+        CoordMsg,
+        "dome_encoder",
+        qos.realtime,
+        namespace.dome,
+    )
+    dome_speed_cmd = Topic(DomeCommand, "dome_speed", qos.realtime, namespace.dome)
+    dome_altaz_cmd = Topic(CoordMsg, "dome_altaz", qos.realtime, namespace.dome)
+    dome_motor_speed = Topic(
+        TimedAzElFloat64, "dome_actual_speed", qos.realtime, namespace.dome
+    )
+    dome_motor_step = Topic(
+        TimedAzElInt64, "dome_actual_step", qos.realtime, namespace.dome
+    )
+    dome_status = Topic(DomeStatus, "dome_status", qos.reliable, namespace.dome)
+    manual_stop_dome_alert = Topic(
+        AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
+    )
+    dome_control_status = Topic(
+        ControlStatus, "dome_controlled", qos.reliable, namespace.dome
+    )
     timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
@@ -220,6 +248,8 @@ class service:
         RecordSrv,
         ComDelaySrv,
         CCDCommand,
+        DomeSync,
+        DomeOC,
     )
     from std_srvs.srv import Empty
 
@@ -231,5 +261,9 @@ class service:
     record_file = Service(File, "record_file", namespace.core)
     com_delay = Service(ComDelaySrv, "com_delay", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
+    dome_coord = Service(CoordinateCommand, "dome_coord", namespace.dome)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
+    dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
+    dome_pid_sync = Service(DomeSync, "dome_pid_sync", namespace.dome)
+    dome_oc = Service(DomeOC, "dome_oc", namespace.dome)
