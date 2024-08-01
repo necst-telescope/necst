@@ -134,6 +134,7 @@ class topic:
         TrackingStatus,
         WeatherMsg,
         DomeStatus,
+        DomeCommand,
         TimeOnly,
     )
 
