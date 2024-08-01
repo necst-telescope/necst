@@ -131,6 +131,7 @@ class topic:
         TrackingStatus,
         WeatherMsg,
         DomeCommand,
+        DomeStatus,
     )
 
     from .utils import Topic
@@ -211,6 +212,7 @@ class topic:
     dome_motor_step = Topic(
         TimedAzElInt64, "dome_actual_step", qos.realtime, namespace.dome
     )
+    dome_status = Topic(DomeStatus, "dome_status", qos.reliable, namespace.dome)
     dome_cmd_transition = Topic(Boolean, "dome_cmd_trans", qos.reliable, namespace.dome)
     manual_stop_dome_alert = Topic(
         AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
