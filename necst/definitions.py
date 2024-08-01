@@ -232,7 +232,7 @@ class topic:
     )
     dome_oc = Topic(DomeCommand, "dome_oc", qos.reliable, namespace.dome)
     dome_control_status = Topic(
-        ControlStatus, "controlled", qos.reliable, namespace.dome
+        ControlStatus, "dome_controlled", qos.reliable, namespace.dome
     )
     timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
     com_delay_get_time = Topic(
