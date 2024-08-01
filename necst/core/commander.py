@@ -430,12 +430,11 @@ class Commander(PrivilegedNode):
 
         elif CMD == "SYNC":
             if dome_sync:
-                enc = self.get_message("dome_encoder", timeout_sec=10)
-                az_now = enc.lon
-                print(f"az: {az_now}")
+                enc = self.get_message("encoder", timeout_sec=10)
+                antenna_az = enc.lon
                 kwargs = {}
                 kwargs.update(
-                    lon=[float(az_now)],
+                    lon=[float(antenna_az)],
                     lat=[45.0],
                     frame="altaz",
                     unit="deg",
