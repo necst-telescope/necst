@@ -31,8 +31,10 @@ class DomeTrackingStatus(Node):
         self.dome_cmd = ParameterList.new(1)
         self.threshold = config.dome_sync_accuracy.to_value("deg")
         self.limit = config.dome_sync_limit.to_value("deg")
+
         self.pub = topic.dome_tracking.publisher(self)
         self.error_pub = topic.dome_sync_error.publisher(self)
+
         topic.altaz_cmd.subscription(self, lambda msg: self.antenna_cmd.push(msg))
         topic.antenna_encoder.subscription(self, lambda msg: self.antenna_enc.push(msg))
         topic.dome_encoder.subscription(self, lambda msg: self.dome_enc.push(msg))

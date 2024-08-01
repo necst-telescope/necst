@@ -89,7 +89,7 @@ class DomeController(AlertHandlerNode):
     ) -> DomeSync.Response:
         self.dome_sync = request.dome_sync
         response.check = self.dome_sync
-        self.clear_cmd()
+        self._clear_cmd()
         return response
 
     def _update_enc(self, msg: CoordMsg) -> None:
