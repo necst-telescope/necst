@@ -1,13 +1,13 @@
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 
-from ..ctrx.membrane import MembraneController
+from ..ctrl.membrane import MembraneMotor
 
 
 def configure_executor() -> SingleThreadedExecutor:
     executor = SingleThreadedExecutor()
     nodes = [
-        MembraneController(),
+        MembraneMotor(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
