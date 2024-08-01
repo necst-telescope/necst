@@ -29,7 +29,7 @@ from necst_msgs.srv import (
     CCDCommand,
     DomeSync,
     DomeOC,
-    ComDelaySrv
+    ComDelaySrv,
 )
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
@@ -491,7 +491,7 @@ class Commander(PrivilegedNode):
             return self.get_message("dome_track", time=now, timeout_sec=0.01)
         elif CMD in ["?"]:
             return self.get_message("dome_encoder", timeout_sec=10)
-          
+
     def memb(self, cmd, ans):
         CMD = cmd.upper()
         if CMD == "?":
