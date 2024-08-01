@@ -233,6 +233,7 @@ class topic:
     dome_oc = Topic(DomeCommand, "dome_oc", qos.reliable, namespace.dome)
     dome_control_status = Topic(
         ControlStatus, "controlled", qos.reliable, namespace.dome
+    )
     timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
