@@ -21,6 +21,7 @@ class namespace:
     antenna: str = f"{ctrl}/antenna"
     calib: str = f"{ctrl}/calib"
     dome: str = f"{ctrl}/dome"
+    membrane: str = f"{ctrl}/membrane"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
@@ -116,11 +117,13 @@ class topic:
         Boolean,
         Binning,
         ChopperMsg,
+        MembraneMsg,
         Clock,
         ControlStatus,
         CoordMsg,
         DeviceReading,
         LocalSignal,
+        LocalAttenuatorMsg,
         ObservingMode,
         PIDMsg,
         Sampling,
@@ -132,6 +135,7 @@ class topic:
         WeatherMsg,
         DomeCommand,
         DomeStatus,
+        TimeOnly,
     )
 
     from .utils import Topic
@@ -172,6 +176,10 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
+    membrane_cmd = Topic(MembraneMsg, "membrane_cmd", qos.reliable, namespace.membrane)
+    membrane_status = Topic(
+        MembraneMsg, "membrane_status", qos.reliable, namespace.membrane
+    )
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
@@ -184,6 +192,12 @@ class topic:
     thermometer = Topic(DeviceReading, "thermometer", qos.realtime, namespace.rx, True)
     attenuator = Topic(DeviceReading, "attenuator", qos.realtime, namespace.rx, True)
     attenuator_cmd = Topic(DeviceReading, "attenuator_cmd", qos.reliable, namespace.rx)
+    local_attenuator = Topic(
+        LocalAttenuatorMsg, "local_attenuator", qos.realtime, namespace.rx, True
+    )
+    local_attenuator_cmd = Topic(
+        LocalAttenuatorMsg, "local_attenuator_cmd", qos.reliable, namespace.rx
+    )
     antenna_tracking = Topic(
         TrackingStatus, "tracking_status", qos.realtime, namespace.antenna
     )
@@ -219,6 +233,9 @@ class topic:
     dome_oc = Topic(DomeCommand, "dome_oc", qos.reliable, namespace.dome)
     dome_control_status = Topic(
         ControlStatus, "controlled", qos.reliable, namespace.dome
+    timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
+    com_delay_get_time = Topic(
+        TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
 
 
@@ -229,6 +246,7 @@ class service:
         File,
         ObservationMode,
         RecordSrv,
+        ComDelaySrv,
         CCDCommand,
         DomeSync,
         DomeOC,
@@ -241,6 +259,7 @@ class service:
     privilege_ping = Service(Empty, "ping", namespace.auth)
     record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
+    com_delay = Service(ComDelaySrv, "com_delay", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
     dome_coord = Service(CoordinateCommand, "dome_coord", namespace.dome)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
