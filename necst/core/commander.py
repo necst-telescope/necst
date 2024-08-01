@@ -563,7 +563,6 @@ class Commander(PrivilegedNode):
         mode: Literal["control", "error"] = "error",
         id: Optional[str] = None,
         timeout_sec: Optional[Union[int, float]] = None,
-        dome_sync: bool = False,
     ) -> None:
         """Wait until the motion has been converged."""
         TARGET, MODE = target.upper(), mode.upper()
