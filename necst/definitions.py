@@ -133,7 +133,6 @@ class topic:
         TimedAzElInt64,
         TrackingStatus,
         WeatherMsg,
-        DomeCommand,
         DomeStatus,
         TimeOnly,
     )
@@ -230,7 +229,6 @@ class topic:
     manual_stop_dome_alert = Topic(
         AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
     )
-    dome_oc = Topic(DomeCommand, "dome_oc", qos.reliable, namespace.dome)
     dome_control_status = Topic(
         ControlStatus, "dome_controlled", qos.reliable, namespace.dome
     )
