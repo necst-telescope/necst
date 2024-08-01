@@ -1,12 +1,12 @@
 import time as pytime
 from copy import deepcopy
-from typing import List, Optional, Tuple
+from typing import List
 
 from neclib.controllers import PIDController
 from neclib.data import LinearInterp
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
-from necst_msgs.msg import CoordMsg, TimedAzElFloat64, DomeCommand
+from necst_msgs.msg import CoordMsg, DomeCommand
 from necst_msgs.srv import DomeSync
 
 from ... import config, namespace, topic, service

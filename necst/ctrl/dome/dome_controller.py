@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 
 from neclib.coordinates import CoordinateGeneratorManager, DriveLimitChecker, PathFinder
 from neclib.coordinates.paths import ControlContext
-from necst_msgs.msg import Boolean, ControlStatus, CoordMsg
+from necst_msgs.msg import ControlStatus, CoordMsg
 from necst_msgs.srv import CoordinateCommand, DomeSync
 
 from ... import config, namespace, service, topic
