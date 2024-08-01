@@ -321,7 +321,7 @@ class Commander(PrivilegedNode):
             while not checker.check(
                 (abs(current_speed.az) < 1e-5) and (abs(current_speed.el) < 1e-5)
             ):
-                self.publisher["dome_alert"].publish(msg)
+                self.publisher["alert_stop"].publish(msg)
                 current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
                 pytime.sleep(1 / config.antenna_command_frequency)
 
