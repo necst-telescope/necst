@@ -35,7 +35,6 @@ class DomeController(AlertHandlerNode):
 
         self.publisher = topic.dome_altaz_cmd.publisher(self)
         topic.dome_encoder.subscription(self, self._update_enc)
-        topic.dome_cmd_transition.subscription(self, self.next)
         service.dome_coord.service(self, self._update_cmd)
         service.dome_sync.service(self, self._update_sync_mode)
 
