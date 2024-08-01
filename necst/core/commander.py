@@ -408,7 +408,7 @@ class Commander(PrivilegedNode):
         target: float = None,
         unit: Optional[str] = None,
         dome_sync: bool = False,
-        direct_mode: bool = False,
+        direct_mode: bool = True,
         wait: bool = True,
     ) -> None:
 
