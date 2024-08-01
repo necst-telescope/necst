@@ -18,6 +18,9 @@ class DomeTrackingStatus(Node):
         self.tracking_checker = ConditionChecker(
             int(0.5 * config.dome_command_frequency), reset_on_failure=True
         )
+        self.sync_checker = ConditionChecker(
+            int(0.5 * config.dome_command_frequency), reset_on_failure=True
+        )
 
         cfg = config.dome_command
         n_cmd_to_keep = cfg.frequency * (cfg.offset_sec + 0.5)
@@ -54,13 +57,13 @@ class DomeTrackingStatus(Node):
     def dome_sync_status(self) -> None:
         now = time.time()
         if all(not isinstance(x, CoordMsg) for x in self.dome_enc):
-            self.tracking_checker.check(False)
+            self.sync_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         elif all(not isinstance(x, CoordMsg) for x in self.antenna_cmd):
-            self.tracking_checker.check(False)
+            self.sync_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
             error = np.abs(self.antenna_cmd[0].lon - self.dome_enc[0].lon)
-            ok = self.tracking_checker.check(error < self.limit)
+            ok = self.sync_checker.check(error < self.limit)
             msg = TrackingStatus(ok=ok, error=error, time=now)
         self.error_pub.publish(msg)
