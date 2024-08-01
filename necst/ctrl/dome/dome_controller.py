@@ -201,6 +201,3 @@ class DomeController(AlertHandlerNode):
             )
         self.last_status = msg
         self.status_publisher.publish(msg)
-
-    def next(self, msg: Boolean) -> None:
-        self.executing_generator.will_send(True)
