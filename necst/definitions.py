@@ -213,11 +213,13 @@ class topic:
         TimedAzElInt64, "dome_actual_step", qos.realtime, namespace.dome
     )
     dome_status = Topic(DomeStatus, "dome_status", qos.reliable, namespace.dome)
-    dome_cmd_transition = Topic(Boolean, "dome_cmd_trans", qos.reliable, namespace.dome)
     manual_stop_dome_alert = Topic(
         AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
     )
     dome_oc = Topic(DomeCommand, "dome_oc", qos.reliable, namespace.dome)
+    dome_control_status = Topic(
+        ControlStatus, "controlled", qos.reliable, namespace.dome
+    )
 
 
 class service:
