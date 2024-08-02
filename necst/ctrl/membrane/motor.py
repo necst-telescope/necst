@@ -24,14 +24,14 @@ class MembraneMotor(DeviceNode):
     def move(self, msg: MembraneMsg) -> None:
         self.telemetry()
         position = "open" if msg.open else "close"
-        self.motor.memb_mobe(position)
+        self.motor.memb_oc(position)
         self.telemetry()
 
     def telemetry(self) -> None:
         status = self.motor.memb_status()
-        if status[1] == "open":
+        if status[1] == "OPEN":
             msg = MembraneMsg(open=True, time=time.time())
-        elif status[1] == "close":
+        elif status[1] == "CLOSE":
             msg = MembraneMsg(open=False, time=time.time())
         else:
             self.logger.warning(
