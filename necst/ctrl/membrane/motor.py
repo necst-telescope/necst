@@ -52,7 +52,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.motor.membrane_stop()
+        node.motor.membrane_pose()
         node.destroy_node()
         rclpy.try_shutdown()
 

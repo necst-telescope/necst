@@ -492,7 +492,7 @@ class Commander(PrivilegedNode):
         elif CMD in ["?"]:
             return self.get_message("dome_encoder", timeout_sec=10)
 
-    def memb(self, cmd, ans):
+    def memb(self, cmd: Literal["open", "close", "?"], /, *, wait: bool = True):
         CMD = cmd.upper()
         if CMD == "?":
             return self.get_message("chopper", timeout_sec=10)
@@ -504,6 +504,10 @@ class Commander(PrivilegedNode):
             self.publisher["membrane"].publish(msg)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+        if wait:
+            target_status = CMD == "open"
+            while self.get_message("membrane").open is not target_status:
+                pytime.sleep(0.1)
 
     @require_privilege(escape_cmd=["?"])
     def ccd(
