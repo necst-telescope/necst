@@ -21,9 +21,9 @@ class DomeMotor(DeviceNode):
         topic.dome_speed_cmd.subscription(self, self.speed_command)
         service.dome_oc.service(self, self.move)
 
-        if config.observatory = "NANTEN2":
+        if config.observatory == "NANTEN2":
             service.dome_limit.service(self, self.limit_check)
-    
+
         self.create_timer(5, self.check_command)
 
         self.create_timer(1, self.telemetry)
