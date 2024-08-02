@@ -171,7 +171,7 @@ class AntennaPIDController(AlertHandlerNode):
             # )
 
             self.command_publisher.publish(msg)
-            self.log_publisher.publish(log)
+            # self.log_publisher.publish(log)
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
