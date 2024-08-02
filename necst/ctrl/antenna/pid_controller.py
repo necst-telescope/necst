@@ -166,7 +166,8 @@ class AntennaPIDController(AlertHandlerNode):
                 cmd_lat=exted_lat,
                 enc_lon=enc.lon,
                 enc_lat=enc.lat,
-                time=cmd_time,
+                enc_time=enc.time,
+                time=cmd.time,
             )
 
             self.command_publisher.publish(msg)
