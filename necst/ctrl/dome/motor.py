@@ -26,8 +26,6 @@ class DomeMotor(DeviceNode):
         topic.dome_speed_cmd.subscription(self, self.speed_command)
         service.dome_oc.service(self, self.move)
 
-        self.create_timer(1 / 10, self.stream_speed)
-        self.create_timer(1 / 10, self.stream_step)
         self.create_timer(5, self.check_command)
 
         self.create_timer(1, self.telemetry)
