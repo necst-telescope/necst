@@ -2,8 +2,9 @@ import time
 
 from neclib.devices import DomeEncoder
 from necst_msgs.msg import CoordMsg
+from necst_msgs.srv import DomeLimit
 
-from ... import namespace, topic
+from ... import namespace, topic, service
 from ...core import DeviceNode
 
 
@@ -15,9 +16,13 @@ class DomeEncoderController(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = topic.dome_encoder.publisher(self)
         self.encoder = DomeEncoder()
+
+        self.client = service.dome_limit.client(self)
+
         self.create_timer(1 / 15, self.stream)
 
     def stream(self) -> None:
+        self.dome_limit()
         readings = self.encoder.get_dome_reading()
         msg = CoordMsg(
             lon=readings.to_value("deg"),
@@ -26,6 +31,17 @@ class DomeEncoderController(DeviceNode):
             time=time.time(),
         )
         self.publisher.publish(msg)
+
+    def dome_limit(self):
+        req = DomeLimit.Request(check=True)
+        res = self.client.call_async(req)
+
+        limit = res.limit
+
+        if limit != 0:
+            self.encoder.dome_set_counter(limit)
+        # self.get_count()
+        return limit
 
 
 def main(args=None):

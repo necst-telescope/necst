@@ -2,7 +2,7 @@ import time
 
 from neclib.devices import DomeMotor as DomeMotorDevice
 from necst_msgs.msg import DomeCommand, DomeStatus
-from necst_msgs.srv import DomeOC
+from necst_msgs.srv import DomeOC, DomeLimit
 
 from ... import config, namespace, topic, service
 from ...core import DeviceNode
@@ -20,6 +20,9 @@ class DomeMotor(DeviceNode):
 
         topic.dome_speed_cmd.subscription(self, self.speed_command)
         service.dome_oc.service(self, self.move)
+
+        if config.observatory == "NANTEN2":
+            service.dome_limit.service(self, self.limit_check)
 
         self.create_timer(5, self.check_command)
 
@@ -65,6 +68,19 @@ class DomeMotor(DeviceNode):
 
         self.status_publisher.publish(msg)
         return
+
+    def limit_check(self, request: DomeLimit.Request, response: DomeLimit.Response):
+        if not request.check:
+            response.limit = 0
+            return response
+        while True:
+            limit1 = self.motor.dome_limit_check()
+            time.sleep(0.002)
+            limit2 = self.motor.dome_limit_check()
+            if limit1 == limit2:
+                response.limit = limit1
+                return response
+            continue
 
 
 def main(args=None):

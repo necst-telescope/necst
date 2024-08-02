@@ -250,6 +250,7 @@ class service:
         CCDCommand,
         DomeSync,
         DomeOC,
+        DomeLimit,
     )
     from std_srvs.srv import Empty
 
@@ -267,3 +268,4 @@ class service:
     dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
     dome_pid_sync = Service(DomeSync, "dome_pid_sync", namespace.dome)
     dome_oc = Service(DomeOC, "dome_oc", namespace.dome)
+    dome_limit = Service(DomeLimit, "dome_limit", namespace.dome)
