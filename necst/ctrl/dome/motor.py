@@ -16,11 +16,6 @@ class DomeMotor(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        self.publisher = {
-            "speed": topic.dome_motor_speed.publisher(self),
-            "step": topic.dome_motor_step.publisher(self),
-        }
-
         self.status_publisher = topic.dome_status.publisher(self)
 
         topic.dome_speed_cmd.subscription(self, self.speed_command)
@@ -28,9 +23,7 @@ class DomeMotor(DeviceNode):
 
         if config.observatory = "NANTEN2":
             service.dome_limit.service(self, self.limit_check)
-
-        self.create_timer(1 / 10, self.stream_speed)
-        self.create_timer(1 / 10, self.stream_step)
+    
         self.create_timer(5, self.check_command)
 
         self.create_timer(1, self.telemetry)
