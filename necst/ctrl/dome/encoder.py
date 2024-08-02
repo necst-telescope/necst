@@ -38,9 +38,7 @@ class DomeEncoderController(DeviceNode):
         limit = res.limit
 
         if limit != 0:
-            self.encoder.dome_set_counter(
-                self.touchsensor_pos[limit - 1] + self.dome_encoffset
-            )
+            self.encoder.dome_set_counter(limit)
         # self.get_count()
         return limit
 
