@@ -161,14 +161,14 @@ class AntennaPIDController(AlertHandlerNode):
             cmd_time = enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
 
-            log = CalcLog(
-                cmd_lon=exted_lon,
-                cmd_lat=exted_lat,
-                enc_lon=enc.lon,
-                enc_lat=enc.lat,
-                cmd_time=cmd.time,
-                time=enc.time,
-            )
+            # log = CalcLog(
+            #     cmd_lon=exted_lon,
+            #     cmd_lat=exted_lat,
+            #     enc_lon=enc.lon,
+            #     enc_lat=enc.lat,
+            #     cmd_time=cmd.time,
+            #     time=enc.time,
+            # )
 
             self.command_publisher.publish(msg)
             self.log_publisher.publish(log)
