@@ -240,6 +240,7 @@ class topic:
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
 
+
 class service:
     from necst_msgs.srv import (
         AuthoritySrv,
