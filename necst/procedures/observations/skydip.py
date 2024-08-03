@@ -3,7 +3,7 @@ from typing import Union
 from neclib.coordinates import PointingError
 
 from ... import config
-from .observation_base import Observation
+from ..observation_base import Observation
 
 
 class Skydip(Observation):

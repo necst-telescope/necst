@@ -10,7 +10,6 @@ from .server_node import ServerNode
 
 
 class RecorderController(ServerNode):
-
     NodeName = "recorder"
     Namespace = namespace.core
 

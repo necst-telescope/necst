@@ -8,7 +8,6 @@ from ...core import DeviceNode
 
 
 class AntennaMotor(DeviceNode):
-
     NodeName = "motor_driver"
     Namespace = namespace.antenna
 
@@ -75,7 +74,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.motor.io.output_do([0, 0, 0, 0])
+        node.motor.antenna_stop()
         node.destroy_node()
         rclpy.try_shutdown()
 

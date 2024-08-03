@@ -20,6 +20,8 @@ class namespace:
     ctrl: str = f"{root}/ctrl"
     antenna: str = f"{ctrl}/antenna"
     calib: str = f"{ctrl}/calib"
+    dome: str = f"{ctrl}/dome"
+    membrane: str = f"{ctrl}/membrane"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
@@ -115,11 +117,13 @@ class topic:
         Boolean,
         Binning,
         ChopperMsg,
+        MembraneMsg,
         Clock,
         ControlStatus,
         CoordMsg,
         DeviceReading,
         LocalSignal,
+        LocalAttenuatorMsg,
         ObservingMode,
         PIDMsg,
         Sampling,
@@ -130,6 +134,9 @@ class topic:
         TrackingStatus,
         WeatherMsg,
         CalcLog,
+        DomeStatus,
+        DomeCommand,
+        TimeOnly,
     )
 
     from .utils import Topic
@@ -170,6 +177,10 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
+    membrane_cmd = Topic(MembraneMsg, "membrane_cmd", qos.reliable, namespace.membrane)
+    membrane_status = Topic(
+        MembraneMsg, "membrane_status", qos.reliable, namespace.membrane
+    )
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
@@ -182,17 +193,52 @@ class topic:
     thermometer = Topic(DeviceReading, "thermometer", qos.realtime, namespace.rx, True)
     attenuator = Topic(DeviceReading, "attenuator", qos.realtime, namespace.rx, True)
     attenuator_cmd = Topic(DeviceReading, "attenuator_cmd", qos.reliable, namespace.rx)
+    local_attenuator = Topic(
+        LocalAttenuatorMsg, "local_attenuator", qos.realtime, namespace.rx, True
+    )
+    local_attenuator_cmd = Topic(
+        LocalAttenuatorMsg, "local_attenuator_cmd", qos.reliable, namespace.rx
+    )
     antenna_tracking = Topic(
         TrackingStatus, "tracking_status", qos.realtime, namespace.antenna
     )
     antenna_cmd_transition = Topic(
         Boolean, "cmd_trans", qos.reliable, namespace.antenna
     )
+    dome_tracking = Topic(TrackingStatus, "dome_tracking", qos.realtime, namespace.dome)
+    dome_sync_error = Topic(
+        TrackingStatus, "dome_sync_error", qos.realtime, namespace.dome
+    )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     pid_log = Topic(CalcLog, "pid_log", qos.realtime, namespace.antenna)
-
+    powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
+    dome_encoder = Topic(
+        CoordMsg,
+        "dome_encoder",
+        qos.realtime,
+        namespace.dome,
+    )
+    dome_speed_cmd = Topic(DomeCommand, "dome_speed", qos.realtime, namespace.dome)
+    dome_altaz_cmd = Topic(CoordMsg, "dome_altaz", qos.realtime, namespace.dome)
+    dome_motor_speed = Topic(
+        TimedAzElFloat64, "dome_actual_speed", qos.realtime, namespace.dome
+    )
+    dome_motor_step = Topic(
+        TimedAzElInt64, "dome_actual_step", qos.realtime, namespace.dome
+    )
+    dome_status = Topic(DomeStatus, "dome_status", qos.reliable, namespace.dome)
+    manual_stop_dome_alert = Topic(
+        AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
+    )
+    dome_control_status = Topic(
+        ControlStatus, "dome_controlled", qos.reliable, namespace.dome
+    )
+    timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
+    com_delay_get_time = Topic(
+        TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
+    )
 
 class service:
     from necst_msgs.srv import (
@@ -201,7 +247,11 @@ class service:
         File,
         ObservationMode,
         RecordSrv,
+        ComDelaySrv,
         CCDCommand,
+        DomeSync,
+        DomeOC,
+        DomeLimit,
     )
     from std_srvs.srv import Empty
 
@@ -211,6 +261,12 @@ class service:
     privilege_ping = Service(Empty, "ping", namespace.auth)
     record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
+    com_delay = Service(ComDelaySrv, "com_delay", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
+    dome_coord = Service(CoordinateCommand, "dome_coord", namespace.dome)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
+    dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
+    dome_pid_sync = Service(DomeSync, "dome_pid_sync", namespace.dome)
+    dome_oc = Service(DomeOC, "dome_oc", namespace.dome)
+    dome_limit = Service(DomeLimit, "dome_limit", namespace.dome)

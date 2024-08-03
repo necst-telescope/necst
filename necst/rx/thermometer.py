@@ -10,7 +10,6 @@ from ..core import DeviceNode
 
 
 class ThermometerController(DeviceNode):
-
     NodeName = "thermometer"
     Namespace = namespace.rx
 

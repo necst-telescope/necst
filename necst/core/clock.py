@@ -8,7 +8,6 @@ from .. import config, namespace, topic
 
 
 class ObserverInfo(Node):
-
     NodeName = "info"
     Namespace = namespace.root
 
