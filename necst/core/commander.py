@@ -495,7 +495,7 @@ class Commander(PrivilegedNode):
     def memb(self, cmd: Literal["open", "close", "?"], /, *, wait: bool = True):
         CMD = cmd.upper()
         if CMD == "?":
-            return self.get_message("chopper", timeout_sec=10)
+            return self.get_message("membrane", timeout_sec=10)
         elif CMD == "OPEN":
             msg = MembraneMsg(open=True, time=pytime.time())
             self.publisher["membrane"].publish(msg)
@@ -505,7 +505,7 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
         if wait:
-            target_status = CMD == "open"
+            target_status = CMD == "OPEN"
             while self.get_message("membrane").open is not target_status:
                 pytime.sleep(0.1)
 
