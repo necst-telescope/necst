@@ -10,7 +10,7 @@ def configure_executor() -> MultiThreadedExecutor:
     nodes = [
         AntennaEncoderController(),
         AntennaMotor(),
-        # WeatherStationReader(),
+        WeatherStationReader(),
         ChopperController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
