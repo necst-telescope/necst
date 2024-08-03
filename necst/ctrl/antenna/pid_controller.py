@@ -54,9 +54,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.enc = ParameterList.new(5, CoordMsg)
         self.command_list: List[CoordMsg] = []
 
-        self.log_publisher = topic.pid_log.publisher(self)
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
-        # self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
 
         self.coord_interp = LinearInterp(
             "time", CoordMsg.get_fields_and_field_types().keys()
@@ -161,17 +159,8 @@ class AntennaPIDController(AlertHandlerNode):
             cmd_time = enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
 
-            # log = CalcLog(
-            #     cmd_lon=exted_lon,
-            #     cmd_lat=exted_lat,
-            #     enc_lon=enc.lon,
-            #     enc_lat=enc.lat,
-            #     cmd_time=cmd.time,
-            #     time=enc.time,
-            # )
-
             self.command_publisher.publish(msg)
-            # self.log_publisher.publish(log)
+
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
