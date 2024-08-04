@@ -137,6 +137,7 @@ class topic:
         WeatherMsg,
         DomeStatus,
         DomeCommand,
+        DomeOC,
         TimeOnly,
     )
 
@@ -230,13 +231,14 @@ class topic:
     dome_motor_step = Topic(
         TimedAzElInt64, "dome_actual_step", qos.realtime, namespace.dome
     )
-    dome_status = Topic(DomeStatus, "dome_status", qos.reliable, namespace.dome)
+    dome_status = Topic(DomeOC, "dome_status", qos.reliable, namespace.dome)
     manual_stop_dome_alert = Topic(
         AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
     )
     dome_control_status = Topic(
         ControlStatus, "dome_controlled", qos.reliable, namespace.dome
     )
+    dome_oc = Topic(DomeOC, "dome_oc", qos.reliable, namespace.dome)
     timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
