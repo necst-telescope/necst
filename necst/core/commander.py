@@ -502,6 +502,7 @@ class Commander(PrivilegedNode):
             msg = MembraneMsg(open=False, time=pytime.time())
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+            return
         self.publisher["membrane"].publish(msg)
         if wait:
             while self.get_message("membrane").move:
