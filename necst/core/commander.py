@@ -13,6 +13,7 @@ from necst_msgs.msg import (
     Boolean,
     ChopperMsg,
     DeviceReading,
+    DriveMsg,
     LocalSignal,
     LocalAttenuatorMsg,
     MembraneMsg,
@@ -77,6 +78,7 @@ class Commander(PrivilegedNode):
             "pid_param": topic.pid_param,
             "chopper": topic.chopper_cmd,
             "membrane": topic.membrane_cmd,
+            "drive": topic.drive_cmd,
             "spectra_meta": topic.spectra_meta,
             "qlook_meta": topic.qlook_meta,
             "sis_bias": topic.sis_bias_cmd,
@@ -97,6 +99,7 @@ class Commander(PrivilegedNode):
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
             "membrane": _SubscriptionCfg(topic.membrane_status, 1),
+            "drive": _SubscriptionCfg(topic.drive_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
             "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
@@ -531,8 +534,10 @@ class Commander(PrivilegedNode):
                 )
             else:
                 raise ValueError(f"Unknown command: {on!r}")
+                return
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
         self.publisher["drive"].publish(msg)
 
     @require_privilege(escape_cmd=["?"])
