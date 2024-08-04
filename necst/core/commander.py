@@ -537,7 +537,7 @@ class Commander(PrivilegedNode):
                 return
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
-
+            return
         self.publisher["drive"].publish(msg)
 
     @require_privilege(escape_cmd=["?"])
