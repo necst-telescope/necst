@@ -505,8 +505,7 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
         if wait:
-            target_status = CMD == "OPEN"
-            while self.get_message("membrane").open is not target_status:
+            while self.get_message("membrane").move:
                 pytime.sleep(0.1)
 
     @require_privilege(escape_cmd=["?"])
