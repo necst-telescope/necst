@@ -249,7 +249,6 @@ class service:
         ComDelaySrv,
         CCDCommand,
         DomeSync,
-        DomeOC,
         DomeLimit,
     )
     from std_srvs.srv import Empty
