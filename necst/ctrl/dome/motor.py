@@ -80,6 +80,9 @@ class DomeMotor(DeviceNode):
             if limit1 == limit2:
                 response.limit = limit1
                 return response
+            else:
+                response.limit = 0
+                return response
             continue
 
 
