@@ -509,6 +509,32 @@ class Commander(PrivilegedNode):
             while self.get_message("membrane").open is not target_status:
                 pytime.sleep(0.1)
 
+    def drive(self, cmd: Literal["drive", "contactor", "?"], on: Literal["on", "off"]):
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("drive", timeout_sec=10)
+        elif CMD == "DRIVE":
+            if on.upper() == "ON":
+                msg = DriveMsg(separation="drive", drive=True, time=pytime.time())
+            elif on.upper() == "OFF":
+                msg = DriveMsg(separation="drive", drive=False, time=pytime.time())
+            else:
+                raise ValueError(f"Unknown command: {on!r}")
+        elif CMD == "CONTACTOR":
+            if on.upper() == "ON":
+                msg = DriveMsg(
+                    separation="contactor", contactor=True, time=pytime.time()
+                )
+            elif on.upper() == "OFF":
+                msg = DriveMsg(
+                    separation="contactor", contactor=False, time=pytime.time()
+                )
+            else:
+                raise ValueError(f"Unknown command: {on!r}")
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+        self.publisher["drive"].publish(msg)
+
     @require_privilege(escape_cmd=["?"])
     def ccd(
         self,
