@@ -29,15 +29,13 @@ class MembraneMotor(DeviceNode):
 
     def telemetry(self) -> None:
         status = self.motor.memb_status()
-        if status[1] == "OPEN":
-            msg = MembraneMsg(open=True, time=time.time())
-        elif status[1] == "CLOSE":
-            msg = MembraneMsg(open=False, time=time.time())
+        if status[0] == "OFF":
+            if status[1] == "OPEN":
+                msg = MembraneMsg(open=True, move=False, time=time.time())
+            elif status[1] == "CLOSE":
+                msg = MembraneMsg(open=False, move=False, time=time.time())
         else:
-            self.logger.warning(
-                f"Membrane is off the expected position (={status[1]})",
-                throttle_duration_sec=5,
-            )
+            msg = MembraneMsg(open=True, move=True, time=time.time())
             return
         self.pub.publish(msg)
 
