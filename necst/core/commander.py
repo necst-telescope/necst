@@ -691,7 +691,7 @@ class Commander(PrivilegedNode):
             while self.get_message(target).insert is not target_status:
                 pytime.sleep(0.1)
         else:
-            time.sleep(0.1)
+            pytime.sleep(0.1)
             while self.get_message(target).move:
                 pytime.sleep(0.1)
 
