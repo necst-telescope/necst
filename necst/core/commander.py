@@ -21,6 +21,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
     TimeOnly,
+    DomeOC,
 )
 from necst_msgs.srv import (
     CoordinateCommand,
@@ -28,7 +29,6 @@ from necst_msgs.srv import (
     RecordSrv,
     CCDCommand,
     DomeSync,
-    DomeOC,
     ComDelaySrv,
 )
 from rclpy.publisher import Publisher
