@@ -656,15 +656,16 @@ class Commander(PrivilegedNode):
     def wait_oc(
         self,
         target: Literal["dome", "membrane", "chopper"],
-        position: Literal["open", "close", "insert", "remove"],
+        /,
+        *,
+        position: Literal["insert", "remove"],
     ):
         if target == "chopper":
             target_status = position == "insert"
             while self.get_message(target).insert is not target_status:
                 pytime.sleep(0.1)
         else:
-            target_status = position == "open"
-            while self.get_message(target).open is not target_status:
+            while self.get_message(target).move:
                 pytime.sleep(0.1)
 
     @require_privilege(escape_cmd=["?"])
