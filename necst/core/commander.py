@@ -485,7 +485,7 @@ class Commander(PrivilegedNode):
             if wait:
                 self.wait_oc(target="dome", position=CMD.lower())
         elif CMD == "CLOSE":
-            msg = DomeOC(open=True, time=pytime.time())
+            msg = DomeOC(open=False, time=pytime.time())
             self.publisher["dome_oc"].publish(msg)
             if wait:
                 self.wait_oc(target="dome", position=CMD.lower())
