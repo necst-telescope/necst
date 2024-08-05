@@ -29,7 +29,6 @@ from necst_msgs.srv import (
     RecordSrv,
     CCDCommand,
     DomeSync,
-    DomeOC,
     ComDelaySrv,
 )
 from rclpy.publisher import Publisher
