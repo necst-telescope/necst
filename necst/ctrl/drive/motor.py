@@ -1,7 +1,7 @@
 import time
 
-from neclib.devices import MembraneMotor as DriveMotorDevice
-from neclib.devices import Drive
+from neclib.devices import M2Motor as DriveMotorDevice
+from neclib.devices import M4Motor as Drive
 from necst_msgs.msg import DriveMsg
 
 from ... import namespace, topic
