@@ -13,6 +13,7 @@ from necst_msgs.msg import (
     Boolean,
     ChopperMsg,
     DeviceReading,
+    DomeOC,
     DriveMsg,
     LocalSignal,
     LocalAttenuatorMsg,
