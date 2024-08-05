@@ -655,7 +655,7 @@ class Commander(PrivilegedNode):
     def wait_oc(
         self,
         target: Literal["dome", "membrane", "chopper"],
-        position: Literal["insert", "remove"],
+        position: Literal["insert", "remove"] = None,
     ):
         if target == "chopper":
             target_status = position == "insert"
