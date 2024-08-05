@@ -14,14 +14,24 @@ from necst_msgs.msg import (
     ChopperMsg,
     MirrorMsg,
     DeviceReading,
+    DomeOC,
     LocalSignal,
     LocalAttenuatorMsg,
+    MembraneMsg,
     PIDMsg,
     Sampling,
     SISBias,
     Spectral,
+    TimeOnly,
 )
-from necst_msgs.srv import CoordinateCommand, File, RecordSrv, CCDCommand
+from necst_msgs.srv import (
+    CoordinateCommand,
+    File,
+    RecordSrv,
+    CCDCommand,
+    DomeSync,
+    ComDelaySrv,
+)
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -69,6 +79,7 @@ class Commander(PrivilegedNode):
             "chopper": topic.chopper_cmd,
             "mirror_m2": topic.mirror_m2_cmd,
             "mirror_m4": topic.mirror_m4_cmd,
+            "membrane": topic.membrane_cmd,
             "spectra_meta": topic.spectra_meta,
             "qlook_meta": topic.qlook_meta,
             "sis_bias": topic.sis_bias_cmd,
@@ -77,6 +88,9 @@ class Commander(PrivilegedNode):
             "local_attenuator": topic.local_attenuator_cmd,
             "spectra_smpl": topic.spectra_rec,
             "channel_binning": topic.channel_binning,
+            "dome_alert_stop": topic.manual_stop_dome_alert,
+            "dome_oc": topic.dome_oc,
+            "timeonly": topic.timeonly,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -88,20 +102,29 @@ class Commander(PrivilegedNode):
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
             "mirror_m2": _SubscriptionCfg(topic.mirror_m2_status, 1),
             "mirror_m4": _SubscriptionCfg(topic.mirror_m4_status, 1),
+            "membrane": _SubscriptionCfg(topic.membrane_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
             "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
+            "dome_track": _SubscriptionCfg(topic.dome_tracking, 1),
+            "dome_encoder": _SubscriptionCfg(topic.dome_encoder, 1),
+            "dome_speed": _SubscriptionCfg(topic.dome_speed_cmd, 1),
+            "dome": _SubscriptionCfg(topic.dome_status, 1),
             "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
             "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
+            "com_delay": service.com_delay.client(self),
             "raw_coord": service.raw_coord.client(self),
+            "dome_coord": service.dome_coord.client(self),
             "ccd_cmd": service.ccd_cmd.client(self),
+            "dome_sync": service.dome_sync.client(self),
+            "dome_pid_sync": service.dome_pid_sync.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
@@ -392,6 +415,108 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
+    @require_privilege(escape_cmd=["?", "stop", "error", "close"])
+    def dome(
+        self,
+        cmd: Literal["point", "sync", "stop", "open", "close", "?"],
+        /,
+        *,
+        target: float = None,
+        unit: Optional[str] = None,
+        dome_sync: bool = False,
+        direct_mode: bool = True,
+        wait: bool = True,
+    ) -> None:
+
+        CMD = cmd.upper()
+        if CMD == "POINT":
+            kwargs = {}
+            kwargs.update(
+                lon=[target],
+                lat=[45.0],
+                frame="altaz",
+                unit=unit,
+                direct_mode=direct_mode,
+            )
+            req = CoordinateCommand.Request(**kwargs)
+            res = self._send_request(req, self.client["dome_coord"])
+            if wait:
+                self.wait("dome")
+            return res.id
+
+        elif CMD == "SYNC":
+            if dome_sync:
+                enc = self.get_message("encoder", timeout_sec=10)
+                antenna_az = enc.lon
+                kwargs = {}
+                kwargs.update(
+                    lon=[float(antenna_az)],
+                    lat=[45.0],
+                    frame="altaz",
+                    unit="deg",
+                    direct_mode=True,
+                )
+                req = CoordinateCommand.Request(**kwargs)
+                res = self._send_request(req, self.client["dome_coord"])
+                self.wait("dome")
+                pytime.sleep(0.5)
+            req = DomeSync.Request(dome_sync=dome_sync)
+            res = self._send_request(req, self.client["dome_sync"])
+            print(f"{res.check} DomeController Synced")
+            req = DomeSync.Request(dome_sync=dome_sync)
+            res = self._send_request(req, self.client["dome_pid_sync"])
+            print(f"{res.check} DomePIDController Synced")
+            return res.check
+        elif CMD == "STOP":
+            msg = AlertMsg(critical=True, warning=True, target=[namespace.dome])
+            checker = ConditionChecker(5, reset_on_failure=True)
+            now = pytime.time()
+            current_speed = self.get_message("dome_speed", time=now, timeout_sec=0.1)
+            # TODO: Add timeout handler
+            while not checker.check(current_speed.speed == "stop"):
+                self.publisher["dome_alert_stop"].publish(msg)
+                current_speed = self.get_message(
+                    "dome_speed", time=now, timeout_sec=0.1
+                )
+                pytime.sleep(1 / config.dome_command_frequency)
+
+            msg = AlertMsg(critical=False, warning=False, target=[namespace.dome])
+            self.publisher["dome_alert_stop"].publish(msg)
+            # Ensure the next command is executed after the lift of alert
+            return pytime.sleep(0.5)
+        elif CMD == "OPEN":
+            msg = DomeOC(open=True, time=pytime.time())
+            self.publisher["dome_oc"].publish(msg)
+            if wait:
+                self.wait_oc(target="dome")
+        elif CMD == "CLOSE":
+            msg = DomeOC(open=False, time=pytime.time())
+            self.publisher["dome_oc"].publish(msg)
+            if wait:
+                self.wait_oc(target="dome")
+        elif CMD == "ERROR":
+            now = pytime.time()
+            return self.get_message("dome_track", time=now, timeout_sec=0.01)
+        elif CMD in ["?"]:
+            return self.get_message("dome_encoder", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    def memb(self, cmd: Literal["open", "close", "?"], /, *, wait: bool = True):
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("membrane", timeout_sec=10)
+        elif CMD == "OPEN":
+            msg = MembraneMsg(open=True, time=pytime.time())
+        elif CMD == "CLOSE":
+            msg = MembraneMsg(open=False, time=pytime.time())
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+            return
+        self.publisher["membrane"].publish(msg)
+        if wait:
+            self.wait_oc(target="membrane")
+
     @require_privilege(escape_cmd=["?"])
     def ccd(
         self,
@@ -460,9 +585,7 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
         if wait:
-            target_status = CMD == "INSERT"
-            while self.get_message("chopper").insert is not target_status:
-                pytime.sleep(0.1)
+            self.wait_oc(target="chopper", position=CMD.lower())
 
     @require_privilege(escape_cmd=["?"])
     def mirror(
@@ -526,9 +649,8 @@ class Commander(PrivilegedNode):
             CTRL_TOPIC = "antenna_control"
             WAIT_DURATION = config.antenna_command_offset_sec
         elif TARGET == "DOME":
-            raise NotImplementedError(
-                f"This function for target {target!r} isn't implemented yet."
-            )
+            ERROR_GETTER = self.dome
+            WAIT_DURATION = config.dome_command_offset_sec
         else:
             raise ValueError(f"Unknown target: {target!r}")
 
@@ -579,6 +701,19 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown mode: {mode!r}")
 
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
+
+    def wait_oc(
+        self,
+        target: Literal["dome", "membrane", "chopper"],
+        position: Literal["insert", "remove"] = None,
+    ):
+        if target == "chopper":
+            target_status = position == "insert"
+            while self.get_message(target).insert is not target_status:
+                pytime.sleep(0.1)
+        else:
+            while self.get_message(target).move:
+                pytime.sleep(0.1)
 
     @require_privilege(escape_cmd=["?"])
     def pid_parameter(
@@ -819,6 +954,19 @@ class Commander(PrivilegedNode):
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+    def com_delay_test(self):
+        req = ComDelaySrv.Request(time=pytime.time())
+        res = self._send_request(req, self.client["com_delay"])
+        now_time = pytime.time()
+        self.logger.info(
+            f"input:{res.input_time}, output:{res.output_time}, now:{now_time}"
+        )
+
+    def com_delay_test_topic(self):
+        self.publisher["timeonly"].publish(
+            TimeOnly(input_topic_time=pytime.time(), output_topic_time=pytime.time())
+        )
 
     @require_privilege(escape_cmd=["?"])
     def sis_bias(
