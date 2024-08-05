@@ -14,6 +14,7 @@ from necst_msgs.msg import (
     ChopperMsg,
     DeviceReading,
     DomeOC,
+    DriveMsg,
     LocalSignal,
     LocalAttenuatorMsg,
     MembraneMsg,
@@ -77,6 +78,7 @@ class Commander(PrivilegedNode):
             "pid_param": topic.pid_param,
             "chopper": topic.chopper_cmd,
             "membrane": topic.membrane_cmd,
+            "drive": topic.drive_cmd,
             "spectra_meta": topic.spectra_meta,
             "qlook_meta": topic.qlook_meta,
             "sis_bias": topic.sis_bias_cmd,
@@ -98,6 +100,7 @@ class Commander(PrivilegedNode):
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
             "membrane": _SubscriptionCfg(topic.membrane_status, 1),
+            "drive": _SubscriptionCfg(topic.drive_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
             "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
@@ -511,6 +514,32 @@ class Commander(PrivilegedNode):
         self.publisher["membrane"].publish(msg)
         if wait:
             self.wait_oc(target="membrane")
+
+    def drive(self, cmd: Literal["drive", "contactor", "?"], on: Literal["on", "off"]):
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("drive", timeout_sec=10)
+        elif CMD == "DRIVE":
+            if on.upper() == "ON":
+                msg = DriveMsg(separation="drive", drive=True, time=pytime.time())
+            elif on.upper() == "OFF":
+                msg = DriveMsg(separation="drive", drive=False, time=pytime.time())
+            else:
+                raise ValueError(f"Unknown command: {on!r}")
+        elif CMD == "CONTACTOR":
+            if on.upper() == "ON":
+                msg = DriveMsg(
+                    separation="contactor", contactor=True, time=pytime.time()
+                )
+            elif on.upper() == "OFF":
+                msg = DriveMsg(
+                    separation="contactor", contactor=False, time=pytime.time()
+                )
+            else:
+                raise ValueError(f"Unknown command: {on!r}")
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+        self.publisher["drive"].publish(msg)
 
     @require_privilege(escape_cmd=["?"])
     def ccd(
