@@ -74,7 +74,8 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.motor.antenna_stop()
+        node.motor.set_speed(0.0, "az")
+        node.motor.set_speed(0.0, "el")
         node.destroy_node()
         rclpy.try_shutdown()
 
