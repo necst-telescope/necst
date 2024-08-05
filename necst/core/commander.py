@@ -483,12 +483,12 @@ class Commander(PrivilegedNode):
             msg = DomeOC(open=True, time=pytime.time())
             self.publisher["dome_oc"].publish(msg)
             if wait:
-                self.wait_oc(target="dome", position=CMD.lower())
+                self.wait_oc(target="dome")
         elif CMD == "CLOSE":
             msg = DomeOC(open=False, time=pytime.time())
             self.publisher["dome_oc"].publish(msg)
             if wait:
-                self.wait_oc(target="dome", position=CMD.lower())
+                self.wait_oc(target="dome")
         elif CMD == "ERROR":
             now = pytime.time()
             return self.get_message("dome_track", time=now, timeout_sec=0.01)
@@ -510,8 +510,7 @@ class Commander(PrivilegedNode):
             return
         self.publisher["membrane"].publish(msg)
         if wait:
-            while self.get_message("membrane").move:
-                pytime.sleep(0.1)
+            self.wait_oc(target="membrane")
 
     @require_privilege(escape_cmd=["?"])
     def ccd(
