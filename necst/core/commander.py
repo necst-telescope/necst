@@ -585,6 +585,8 @@ class Commander(PrivilegedNode):
     def wait(
         self,
         target: Literal["antenna", "dome"],
+        /,
+        *,
         mode: Literal["control", "error"] = "error",
         id: Optional[str] = None,
         timeout_sec: Optional[Union[int, float]] = None,
@@ -653,8 +655,6 @@ class Commander(PrivilegedNode):
     def wait_oc(
         self,
         target: Literal["dome", "membrane", "chopper"],
-        /,
-        *,
         position: Literal["insert", "remove"],
     ):
         if target == "chopper":
