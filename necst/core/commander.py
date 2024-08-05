@@ -13,6 +13,7 @@ from necst_msgs.msg import (
     Boolean,
     ChopperMsg,
     DeviceReading,
+    DomeOC,
     LocalSignal,
     LocalAttenuatorMsg,
     MembraneMsg,
@@ -21,7 +22,6 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
     TimeOnly,
-    DomeOC,
 )
 from necst_msgs.srv import (
     CoordinateCommand,

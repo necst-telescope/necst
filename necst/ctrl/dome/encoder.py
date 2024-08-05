@@ -34,9 +34,13 @@ class DomeEncoderController(DeviceNode):
 
     def dome_limit(self):
         req = DomeLimit.Request(check=True)
-        res = self.client.call_async(req)
+        res = self.client.call(req)
+        time.sleep(0.02)
 
-        limit = res.limit
+        _limit = res.result()
+        time.sleep(0.02)
+
+        limit = _limit.limit
 
         if limit != 0:
             self.encoder.dome_set_counter(limit)
