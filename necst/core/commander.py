@@ -581,7 +581,7 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
         if wait:
-            self.wait_oc(target="chopper", positoon=CMD.lower())
+            self.wait_oc(target="chopper", position=CMD.lower())
 
     def wait(
         self,
