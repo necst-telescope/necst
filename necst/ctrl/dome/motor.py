@@ -1,8 +1,8 @@
 import time
 
 from neclib.devices import DomeMotor as DomeMotorDevice
-from necst_msgs.msg import DomeCommand
-from necst_msgs.srv import DomeOC, DomeLimit
+from necst_msgs.msg import DomeCommand, DomeOC
+from necst_msgs.srv import DomeLimit
 
 from ... import config, namespace, topic, service
 from ...core import DeviceNode
