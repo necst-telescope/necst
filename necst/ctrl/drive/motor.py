@@ -1,6 +1,7 @@
 import time
 
 from neclib.devices import DriveMotor as DriveMotorDevice
+from neclib.devices import Drive as DriveStatus
 from necst_msgs.msg import DriveMsg
 
 from ... import namespace, topic
@@ -16,6 +17,7 @@ class DriveMotor(DeviceNode):
         self.logger = self.get_logger()
 
         self.motor = DriveMotorDevice()
+        self.motor_status = DriveStatus()
 
         topic.drive_cmd.subscription(self, self.move)
         self.pub = topic.drive_status.publisher(self)
@@ -32,7 +34,7 @@ class DriveMotor(DeviceNode):
         self.telemetry()
 
     def telemetry(self) -> None:
-        status = self.motor.drive_contactor_status()
+        status = self.motor_status.drive_contactor_status()
         if status[0] == "ON":
             if status[1] == "ON":
                 msg = DriveMsg(
