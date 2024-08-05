@@ -503,14 +503,15 @@ class Commander(PrivilegedNode):
             return self.get_message("membrane", timeout_sec=10)
         elif CMD == "OPEN":
             msg = MembraneMsg(open=True, time=pytime.time())
-            self.publisher["membrane"].publish(msg)
         elif CMD == "CLOSE":
             msg = MembraneMsg(open=False, time=pytime.time())
-            self.publisher["membrane"].publish(msg)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+            return
+        self.publisher["membrane"].publish(msg)
         if wait:
-            self.wait_oc(target="membrane", position=CMD.lower())
+            while self.get_message("membrane").move:
+                pytime.sleep(0.1)
 
     @require_privilege(escape_cmd=["?"])
     def ccd(
