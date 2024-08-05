@@ -1,6 +1,6 @@
 import time
 
-from neclib.devices import DriveMotor as DriveMotorDevic
+from neclib.devices import DriveMotor as DriveMotorDevice
 from necst_msgs.msg import DriveMsg
 
 from ... import namespace, topic
