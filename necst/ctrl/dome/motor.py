@@ -58,16 +58,13 @@ class DomeMotor(DeviceNode):
 
     def telemetry(self) -> None:
         status = self.motor.dome_status()
-        if status[1] == status[3] == "OPEN":
-            msg = DomeOC(open=True, time=time.time())
-        elif status[1] == status[3] == "CLOSE":
-            msg = DomeOC(open=False, time=time.time())
+        if status[0] == status[2] == "OFF":
+            if status[1] == status[3] == "OPEN":
+                msg = DomeOC(open=True, move=False, time=time.time())
+            elif status[1] == status[3] == "CLOSE":
+                msg = DomeOC(open=False, move=False, time=time.time())
         else:
-            self.logger.warning(
-                f"Dome door is off the expected position (={status[1]})",
-                throttle_duration_sec=5,
-            )
-            return
+            msg = DomeOC(open=True, move=True, time=time.time())
         self.status_publisher.publish(msg)
 
     def limit_check(self, request: DomeLimit.Request, response: DomeLimit.Response):
