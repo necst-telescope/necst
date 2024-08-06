@@ -97,7 +97,7 @@ class AntennaPIDController(AlertHandlerNode):
             return
 
         self.discard_outdated_commands()
-        print(self.command_list)
+
         now = pytime.time()
         # Check if any command is available.
         if len(self.command_list) == 0:
@@ -106,6 +106,7 @@ class AntennaPIDController(AlertHandlerNode):
 
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
+            print(self.command_list)
             return
 
         if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
