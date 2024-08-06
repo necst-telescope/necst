@@ -105,7 +105,7 @@ class AntennaPIDController(AlertHandlerNode):
             return
 
         # Check if command for immediate future exists or not.
-        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
+        if self.command_list[0].time > now + 1 / config.antenna_command_frequency:
             print(self.command_list)
             return
 
