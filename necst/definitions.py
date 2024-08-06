@@ -22,6 +22,7 @@ class namespace:
     calib: str = f"{ctrl}/calib"
     dome: str = f"{ctrl}/dome"
     membrane: str = f"{ctrl}/membrane"
+    drive: str = f"{ctrl}/drive"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
@@ -122,6 +123,7 @@ class topic:
         ControlStatus,
         CoordMsg,
         DeviceReading,
+        DriveMsg,
         LocalSignal,
         LocalAttenuatorMsg,
         ObservingMode,
@@ -181,6 +183,8 @@ class topic:
     membrane_status = Topic(
         MembraneMsg, "membrane_status", qos.reliable, namespace.membrane
     )
+    drive_cmd = Topic(DriveMsg, "drive_cmd", qos.reliable, namespace.drive)
+    drive_status = Topic(DriveMsg, "drive_status", qos.reliable, namespace.drive)
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
