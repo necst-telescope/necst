@@ -101,8 +101,6 @@ class TestCommander(TesterNode):
         dev = AntennaDeviceSimulator()
         tracking = AntennaTrackingStatus()
 
-        print(horizontal.finder.pointing_err)
-
         dev.enc.position.az = 29.0
         dev.enc.position.el = 44.0
 
