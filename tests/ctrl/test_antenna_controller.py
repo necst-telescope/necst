@@ -50,12 +50,11 @@ class TestAntennaController(TesterNode):
         )
 
         with spinning([controller, self.node]):
-            timelimit = time.time() + 5
+            timelimit = time.time() + 1
             while True:
                 assert time.time() < timelimit, "Speed command not published in 1s"
                 az_condition = (speed_az is not None) and (speed_az > 0)
                 el_condition = (speed_el is not None) and (speed_el > 0)
-                print(f"{speed_az}: {speed_el}")
                 if az_condition and el_condition:
                     break
                 time.sleep(0.02)
