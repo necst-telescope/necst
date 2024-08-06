@@ -45,7 +45,7 @@ class AntennaPIDController(AlertHandlerNode):
             ),
         }
         topic.altaz_cmd.subscription(self, self.update_command)
-        topic.antennaself._encoder.subscription(self, self.updateself._encoder_reading)
+        topic.antennaself._encoder.subscription(self, self.update_encoder_reading)
         topic.pid_param.subscription(self, self.change_pid_param)
 
         self.enc = ParameterList.new(5, CoordMsg)
@@ -59,7 +59,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_list.append(msg)
         self.command_list.sort(key=lambda x: x.time)
 
-    def updateself._encoder_reading(self, msg: CoordMsg) -> None:
+    def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
