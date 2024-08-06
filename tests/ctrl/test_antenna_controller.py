@@ -30,7 +30,8 @@ class TestAntennaController(TesterNode):
             speed_az = msg.az
             speed_el = msg.el
 
-        print(controller.enc[0])
+        print(controller.enc[0].lon)
+
         ns = controller.get_namespace()
         cmd = topic.altaz_cmd.publisher(self.node)
         enc = topic.antenna_encoder.publisher(self.node)
