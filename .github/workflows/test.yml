@@ -42,7 +42,6 @@ jobs:
           cd ros2_ws
           . install/setup.bash
           cd src/necst
-          export TELESCOPE=NANTEN2
           python3 -m pytest --cov --cov-report xml -v tests
       - name: Upload code coverage report
         uses: codecov/codecov-action@v3
