@@ -95,7 +95,6 @@ class TestCommander(TesterNode):
         destroy([com, auth_server])
         destroy(sub, self.node)
 
-    @pytest.mark.skip
     def test_antenna_point_with_wait(self):
         com = Commander()
         auth_server = Authorizer()
