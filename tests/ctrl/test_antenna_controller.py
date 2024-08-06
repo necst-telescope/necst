@@ -22,7 +22,7 @@ class TestAntennaController(TesterNode):
 
     def test_speed_is_published(self):
         controller = AntennaPIDController()
-        print(controller.controller["az"].pid_param)
+        print(controller.controller["az"].k_p)
 
         speed_az = speed_el = None
 
