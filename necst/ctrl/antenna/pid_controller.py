@@ -63,6 +63,8 @@ class AntennaPIDController(AlertHandlerNode):
         self.enc.push(msg)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
+        else:
+            self.enc = self.enc[-1]
         self.speed_command()
 
     def immediate_stop_no_resume(self) -> None:
@@ -119,7 +121,7 @@ class AntennaPIDController(AlertHandlerNode):
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-        print(self.enc)
+
         enc = self.enc[0]
 
         try:
