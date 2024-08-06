@@ -123,7 +123,7 @@ class AntennaPIDController(AlertHandlerNode):
         enc = self.enc[0]
         print(self.enc)
         print(enc)
-        print(enc.lon)
+        print(enc.lon.__dir__())
 
         try:
             _az_speed = self.controller["az"].get_speed(
