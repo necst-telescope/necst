@@ -3,7 +3,6 @@ from copy import deepcopy
 from typing import List
 
 from neclib.controllers import PIDController
-from neclib.data import LinearInterp, LinearExtrapolate
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
