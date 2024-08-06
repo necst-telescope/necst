@@ -108,7 +108,7 @@ class TestCommander(TesterNode):
 
         with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
             com.get_privilege()
-            com.antenna("point", **cmd, wait=True)
+            com.antenna("point", **cmd, wait=True, direct_mode=True)
             com.quit_privilege()
 
         destroy([com, auth_server, horizontal, pid, dev, tracking])
