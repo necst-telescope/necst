@@ -490,11 +490,11 @@ class Commander(PrivilegedNode):
             # Ensure the next command is executed after the lift of alert
             return pytime.sleep(0.5)
         elif CMD == "OPEN":
-            req = DomeOC.Request(position="open")
+
             res = self._send_request(req, self.client["dome_oc"])
             return res.check
         elif CMD == "CLOSE":
-            req = DomeOC.Request(position="close")
+
             res = self._send_request(req, self.client["dome_oc"])
             return res.check
         elif CMD == "ERROR":
