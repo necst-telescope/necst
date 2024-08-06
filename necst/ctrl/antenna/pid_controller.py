@@ -92,6 +92,7 @@ class AntennaPIDController(AlertHandlerNode):
 
     def speed_command(self) -> None:
         if self.status.critical():
+            print("gc")
             self.logger.warning("Guard condition activated", throttle_duration_sec=1)
             self.gc.trigger()
             return
