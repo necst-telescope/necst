@@ -26,6 +26,7 @@ class TestAntennaController(TesterNode):
         speed_az = speed_el = None
 
         def update(msg):
+            print("update")
             nonlocal speed_az, speed_el
             speed_az = msg.az
             speed_el = msg.el

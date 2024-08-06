@@ -151,7 +151,6 @@ class AntennaPIDController(AlertHandlerNode):
 
             cmd_time = enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
-            print(msg)
             self.command_publisher.publish(msg)
 
         except ZeroDivisionError:
