@@ -43,7 +43,7 @@ class TestAntennaController(TesterNode):
             ),
         )
         timer_enc = self.node.create_timer(
-            0.025,
+            0.05,
             lambda: enc.publish(
                 CoordMsg(lon=30.0, lat=35.0, time=time.time(), unit="deg")
             ),
