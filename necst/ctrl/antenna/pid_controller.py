@@ -61,8 +61,10 @@ class AntennaPIDController(AlertHandlerNode):
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)
+        print(self.enc[0].lon)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
+            print(self.enc)
         self.speed_command()
 
     def immediate_stop_no_resume(self) -> None:
