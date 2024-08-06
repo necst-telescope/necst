@@ -42,7 +42,7 @@ class TestAntennaController(TesterNode):
         )
         timer_enc = self.node.create_timer(
             0.05,
-            lambda: enc.publish(CoordMsg(lon=25.0, lat=45.0, time=time.time())),
+            lambda: enc.publish(CoordMsg(lon=20.0, lat=35.0, time=time.time())),
         )
 
         with spinning([controller, self.node]):
