@@ -101,6 +101,8 @@ class TestCommander(TesterNode):
         dev = AntennaDeviceSimulator()
         tracking = AntennaTrackingStatus()
 
+        print(horizontal.finder.pointing_err)
+
         dev.enc.position.az = 29.0
         dev.enc.position.el = 44.0
 
@@ -108,7 +110,7 @@ class TestCommander(TesterNode):
 
         with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
             com.get_privilege()
-            com.antenna("point", **cmd, wait=True, direct_mode=True)
+            com.antenna("point", **cmd, wait=True)
             com.quit_privilege()
 
         destroy([com, auth_server, horizontal, pid, dev, tracking])
