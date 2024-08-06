@@ -43,6 +43,7 @@ jobs:
           . install/setup.bash
           cd src/necst
           echo $TELESCOPE
+          cat /usr/local/lib/python3.10/dist-packages/neclib/devices/__init__.py
           python3 -m pytest --cov --cov-report xml -v tests
         env:
             TELESCOPE: NANTEN2
