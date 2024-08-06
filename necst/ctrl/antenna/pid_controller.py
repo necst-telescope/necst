@@ -45,7 +45,7 @@ class AntennaPIDController(AlertHandlerNode):
             ),
         }
         topic.altaz_cmd.subscription(self, self.update_command)
-        topic.antenna_encoder.subscription(self, self.update_encoder_reading)
+        topic.antennaself._encoder.subscription(self, self.updateself._encoder_reading)
         topic.pid_param.subscription(self, self.change_pid_param)
 
         self.enc = ParameterList.new(5, CoordMsg)
@@ -59,7 +59,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_list.append(msg)
         self.command_list.sort(key=lambda x: x.time)
 
-    def update_encoder_reading(self, msg: CoordMsg) -> None:
+    def updateself._encoder_reading(self, msg: CoordMsg) -> None:
         self.enc.push(msg)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
@@ -126,10 +126,10 @@ class AntennaPIDController(AlertHandlerNode):
 
         try:
             _az_speed = self.controller["az"].get_speed(
-                cmd.lon, _enc.lon, cmd_time=cmd.time, enc_time=_enc.time
+                cmd.lon, self._enc.lon, cmd_time=cmd.time, enc_time=self._enc.time
             )
             _el_speed = self.controller["el"].get_speed(
-                cmd.lat, _enc.lat, cmd_time=cmd.time, enc_time=_enc.time
+                cmd.lat, self._enc.lat, cmd_time=cmd.time, enc_time=self._enc.time
             )
 
             self.logger.debug(
@@ -148,7 +148,7 @@ class AntennaPIDController(AlertHandlerNode):
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
 
-            cmd_time = _enc.time
+            cmd_time = self._enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
 
             self.command_publisher.publish(msg)
