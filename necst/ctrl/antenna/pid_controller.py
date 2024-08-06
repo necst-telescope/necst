@@ -45,7 +45,7 @@ class AntennaPIDController(AlertHandlerNode):
             ),
         }
         topic.altaz_cmd.subscription(self, self.update_command)
-        topic.antennaself._encoder.subscription(self, self.update_encoder_reading)
+        topic.antenna_encoder.subscription(self, self.update_encoder_reading)
         topic.pid_param.subscription(self, self.change_pid_param)
 
         self.enc = ParameterList.new(5, CoordMsg)
@@ -145,8 +145,8 @@ class AntennaPIDController(AlertHandlerNode):
                 throttle_duration_sec=0.5,
             )
 
-            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
-            el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
+            az_speed = float(self.decelerate_calc["az"](self._enc.lon, _az_speed))
+            el_speed = float(self.decelerate_calc["el"](self._enc.lat, _el_speed))
 
             cmd_time = self._enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
