@@ -24,4 +24,4 @@ runs:
         . /opt/ros/$ROS_DISTRO/setup.bash
         apt-get update
         apt-get -y install python3-pip
-        pip3 install neclib
+        pip3 install neclib==0.25.9
