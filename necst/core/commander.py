@@ -205,6 +205,7 @@ class Commander(PrivilegedNode):
         name: Optional[str] = None,
         wait: bool = True,
         speed: Optional[Union[int, float]] = None,
+        margin: Optional[float] = None,
         direct_mode: bool = False,
     ) -> None:
         """Control antenna direction and motion.
@@ -353,6 +354,7 @@ class Commander(PrivilegedNode):
                     lat=[float(reference[1])],
                     frame=reference[2],
                     unit=unit,
+                    direct_mode=direct_mode,
                 )
             else:
                 raise ValueError("No valid target specified")
@@ -363,6 +365,7 @@ class Commander(PrivilegedNode):
                     offset_lat=[float(offset[1])],
                     offset_frame=offset[2],
                     unit=unit,
+                    direct_mode=direct_mode,
                 )
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
@@ -372,12 +375,18 @@ class Commander(PrivilegedNode):
 
         elif CMD == "SCAN":
             scan_kwargs = dict(speed=float(speed), unit=unit)
+
+            if margin is None:
+                margin = config.antenna_scan_margin.value
+
             if name is not None:
                 scan_kwargs.update(
                     name=name,
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
                     offset_frame=scan_frame,
+                    margin=margin,
+                    direct_mode=direct_mode,
                 )
             elif (reference is not None) or (target is not None):
                 given_as = reference if target is None else target
@@ -388,12 +397,16 @@ class Commander(PrivilegedNode):
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
                     offset_frame=scan_frame,
+                    margin=margin,
+                    direct_mode=direct_mode,
                 )
             else:
                 scan_kwargs.update(
                     lon=[float(start[0]), float(stop[0])],
                     lat=[float(start[1]), float(stop[1])],
                     frame=scan_frame,
+                    margin=margin,
+                    direct_mode=direct_mode,
                 )
 
             req = CoordinateCommand.Request(**scan_kwargs)

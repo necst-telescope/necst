@@ -1,9 +1,8 @@
 import time as pytime
 from copy import deepcopy
-from typing import List, Optional, Tuple
+from typing import List
 
 from neclib.controllers import PIDController
-from neclib.data import LinearInterp
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
 from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
@@ -16,14 +15,13 @@ class AntennaPIDController(AlertHandlerNode):
     NodeName = "controller"
     Namespace = namespace.antenna
 
-    CommandOffsetDuration: float = 0.075
-
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
         pid_param = config.antenna_pid_param
         max_speed = config.antenna_max_speed
         max_accel = config.antenna_max_acceleration
+
         self.controller = {
             "az": PIDController(
                 pid_param=pid_param.az,
@@ -54,11 +52,6 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_list: List[CoordMsg] = []
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
-        self.create_timer(1 / config.antenna_command_frequency, self.speed_command)
-
-        self.coord_interp = LinearInterp(
-            "time", CoordMsg.get_fields_and_field_types().keys()
-        )
 
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
@@ -70,19 +63,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.enc.push(msg)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
-
-    def interpolated_encoder_reading(self, time: float) -> Optional[CoordMsg]:
-        """Perform linear interpolation on encoder reading."""
-        *_, newer = self.enc
-        if any(not isinstance(p.time, float) for p in self.enc) or (
-            newer.time < time - 1
-        ):
-            self.logger.warning(
-                "Encoder reading not available.", throttle_duration_sec=5
-            )
-            return
-
-        return self.coord_interp(CoordMsg(time=time), self.enc)
+        self.speed_command()
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
@@ -94,8 +75,8 @@ class AntennaPIDController(AlertHandlerNode):
         else:
             p = dict(k_i=0, k_d=0, k_c=0, accel_limit_off=-1)
             with self.controller["az"].params(**p), self.controller["el"].params(**p):
-                _az_speed = self.controller["az"].get_speed(enc.lon, enc.lon)
-                _el_speed = self.controller["el"].get_speed(enc.lat, enc.lat)
+                _az_speed = self.controller["az"].get_speed(enc.lon, enc.lon, stop=True)
+                _el_speed = self.controller["el"].get_speed(enc.lat, enc.lat, stop=True)
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=pytime.time())
@@ -109,17 +90,24 @@ class AntennaPIDController(AlertHandlerNode):
             else:
                 break
 
-    def get_coordinate_command(self) -> Optional[Tuple[CoordMsg, CoordMsg]]:
-        self.discard_outdated_commands()
-        now = pytime.time()
+    def speed_command(self) -> None:
+        if self.status.critical():
+            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
+            self.gc.trigger()
+            return
 
+        self.discard_outdated_commands()
+
+        now = pytime.time()
         # Check if any command is available.
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
             return
 
         # Check if command for immediate future exists or not.
-        if self.command_list[0].time > now + 2 / config.antenna_command_frequency:
+        if self.command_list[0].time > now + 1 / config.antenna_command_frequency:
+            print(self.command_list[0].time)
+            print(now)
             return
 
         if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
@@ -131,27 +119,19 @@ class AntennaPIDController(AlertHandlerNode):
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-        enc = self.interpolated_encoder_reading(cmd.time - self.CommandOffsetDuration)
 
-        # Check if recent encoder reading is available or not.
-        if enc is None:
-            self.immediate_stop_no_resume()
-            return
-        return cmd, enc
+        enc = self.enc[0]
 
-    def speed_command(self) -> None:
-        if self.status.critical():
-            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
-            self.gc.trigger()
+        if not isinstance(enc.time, float):
             return
 
-        next_command = self.get_coordinate_command()
-        if next_command is None:
-            return
-        cmd, enc = next_command
         try:
-            _az_speed = self.controller["az"].get_speed(cmd.lon, enc.lon, time=cmd.time)
-            _el_speed = self.controller["el"].get_speed(cmd.lat, enc.lat, time=cmd.time)
+            _az_speed = self.controller["az"].get_speed(
+                cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
+            )
+            _el_speed = self.controller["el"].get_speed(
+                cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
+            )
 
             self.logger.debug(
                 f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
@@ -168,8 +148,11 @@ class AntennaPIDController(AlertHandlerNode):
 
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
-            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd.time)
+
+            cmd_time = enc.time
+            msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
             self.command_publisher.publish(msg)
+
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:

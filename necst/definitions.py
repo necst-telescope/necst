@@ -135,6 +135,7 @@ class topic:
         TimedAzElInt64,
         TrackingStatus,
         WeatherMsg,
+        CalcLog,
         DomeStatus,
         DomeCommand,
         DomeOC,
@@ -216,6 +217,7 @@ class topic:
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
+    pid_log = Topic(CalcLog, "pid_log", qos.realtime, namespace.antenna)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
     dome_encoder = Topic(
         CoordMsg,
