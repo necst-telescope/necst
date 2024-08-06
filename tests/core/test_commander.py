@@ -15,6 +15,8 @@ from necst.utils import spinning
 
 from ..conftest import TesterNode, destroy
 
+import pytest
+
 
 class TestCommander(TesterNode):
     NodeName = "test_commander"
