@@ -119,7 +119,7 @@ class AntennaPIDController(AlertHandlerNode):
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-
+        print(self.enc)
         enc = self.enc[0]
 
         try:
