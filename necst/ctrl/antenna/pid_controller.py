@@ -23,8 +23,6 @@ class AntennaPIDController(AlertHandlerNode):
         max_speed = config.antenna_max_speed
         max_accel = config.antenna_max_acceleration
 
-        self.command_offset_duration = config.antenna.command_duration_sec
-
         self.controller = {
             "az": PIDController(
                 pid_param=pid_param.az,
@@ -56,12 +54,6 @@ class AntennaPIDController(AlertHandlerNode):
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
 
-        self.coord_interp = LinearInterp(
-            "time", CoordMsg.get_fields_and_field_types().keys()
-        )
-        self.coord_extrap = LinearExtrapolate(
-            "time", CoordMsg.get_fields_and_field_types().keys()
-        )
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
     def update_command(self, msg: CoordMsg) -> None:
