@@ -122,6 +122,8 @@ class AntennaPIDController(AlertHandlerNode):
 
         enc = self.enc[0]
 
+        print(cmd.lon)
+
         print(enc)
 
         print(enc.time)
