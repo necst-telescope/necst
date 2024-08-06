@@ -60,9 +60,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_list.sort(key=lambda x: x.time)
 
     def update_encoder_reading(self, msg: CoordMsg) -> None:
-        print(msg.lon)
         self.enc.push(msg)
-        print(self.enc[0].lon)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
         self.speed_command()
