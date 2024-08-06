@@ -120,16 +120,14 @@ class AntennaPIDController(AlertHandlerNode):
         else:
             cmd = self.command_list.pop(0)
 
-        self._enc = self.enc[0]
-
-        print(self._enc.lon)
+        enc = self.enc[0]
 
         try:
             _az_speed = self.controller["az"].get_speed(
-                cmd.lon, self._enc.lon, cmd_time=cmd.time, enc_time=self._enc.time
+                cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
             )
             _el_speed = self.controller["el"].get_speed(
-                cmd.lat, self._enc.lat, cmd_time=cmd.time, enc_time=self._enc.time
+                cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
 
             self.logger.debug(
@@ -145,10 +143,10 @@ class AntennaPIDController(AlertHandlerNode):
                 throttle_duration_sec=0.5,
             )
 
-            az_speed = float(self.decelerate_calc["az"](self._enc.lon, _az_speed))
-            el_speed = float(self.decelerate_calc["el"](self._enc.lat, _el_speed))
+            az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
+            el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
 
-            cmd_time = self._enc.time
+            cmd_time = enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
 
             self.command_publisher.publish(msg)
