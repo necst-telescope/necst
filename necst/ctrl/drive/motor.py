@@ -1,7 +1,7 @@
 import time
 
 from neclib.devices import DriveMotor as DriveMotorDevice
-from neclib.devices import Drive
+from neclib.devices import DriveStatus
 from necst_msgs.msg import DriveMsg
 
 from ... import namespace, topic
@@ -17,7 +17,7 @@ class DriveMotor(DeviceNode):
         self.logger = self.get_logger()
 
         self.motor = DriveMotorDevice()
-        self.motor_status = Drive()
+        self.motor_status = DriveStatus()
 
         topic.drive_cmd.subscription(self, self.move)
         self.pub = topic.drive_status.publisher(self)
