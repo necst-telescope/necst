@@ -37,8 +37,8 @@ class TestAntennaController(TesterNode):
             TimedAzElFloat64, f"{ns}/speed", update, qos.realtime
         )
         timer_cmd = self.node.create_timer(
-            0.05,
-            lambda: cmd.publish(CoordMsg(lon=30.0, lat=45.0, time=time.time() + 1)),
+            0.025,
+            lambda: cmd.publish(CoordMsg(lon=30.0, lat=45.0, time=time.time() + 0.1)),
         )
         timer_enc = self.node.create_timer(
             0.05,
