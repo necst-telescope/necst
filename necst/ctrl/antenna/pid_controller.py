@@ -123,6 +123,7 @@ class AntennaPIDController(AlertHandlerNode):
         enc = self.enc[0]
 
         if not isinstance(enc.time, float):
+            print("a")
             return
 
         try:
