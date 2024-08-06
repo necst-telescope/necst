@@ -1,8 +1,8 @@
 import time
 
 from neclib.devices import DomeMotor as DomeMotorDevice
-from necst_msgs.msg import DomeCommand, DomeStatus
-from necst_msgs.srv import DomeOC, DomeLimit
+from necst_msgs.msg import DomeCommand, DomeOC
+from necst_msgs.srv import DomeLimit
 
 from ... import config, namespace, topic, service
 from ...core import DeviceNode
@@ -19,7 +19,7 @@ class DomeMotor(DeviceNode):
         self.status_publisher = topic.dome_status.publisher(self)
 
         topic.dome_speed_cmd.subscription(self, self.speed_command)
-        service.dome_oc.service(self, self.move)
+        topic.dome_oc.subscription(self, self.move)
 
         if config.observatory == "NANTEN2":
             service.dome_limit.service(self, self.limit_check)
@@ -49,25 +49,23 @@ class DomeMotor(DeviceNode):
 
         self.last_cmd_time = time.time()
 
-    def move(self, request: DomeOC.Request, response: DomeOC.Response):
+    def move(self, msg: DomeOC):
         self.telemetry()
-        self.motor.dome_oc(request.position)
-        response.check = True
+        position = "open" if msg.open else "close"
+        self.motor.dome_oc(position)
         self.telemetry()
-        return response
-
-    def telemetry(self):
-        status = self.motor.dome_status()
-
-        msg = DomeStatus(
-            right_act=status[0],
-            right_pos=status[1],
-            left_act=status[2],
-            left_pos=status[3],
-        )
-
-        self.status_publisher.publish(msg)
         return
+
+    def telemetry(self) -> None:
+        status = self.motor.dome_status()
+        if status[0] == status[2] == "OFF":
+            if status[1] == status[3] == "OPEN":
+                msg = DomeOC(open=True, move=False, time=time.time())
+            elif status[1] == status[3] == "CLOSE":
+                msg = DomeOC(open=False, move=False, time=time.time())
+        else:
+            msg = DomeOC(open=True, move=True, time=time.time())
+        self.status_publisher.publish(msg)
 
     def limit_check(self, request: DomeLimit.Request, response: DomeLimit.Response):
         if not request.check:
@@ -79,6 +77,9 @@ class DomeMotor(DeviceNode):
             limit2 = self.motor.dome_limit_check()
             if limit1 == limit2:
                 response.limit = limit1
+                return response
+            else:
+                response.limit = 0
                 return response
             continue
 

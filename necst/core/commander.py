@@ -13,6 +13,7 @@ from necst_msgs.msg import (
     Boolean,
     ChopperMsg,
     DeviceReading,
+    DomeOC,
     LocalSignal,
     LocalAttenuatorMsg,
     MembraneMsg,
@@ -85,6 +86,7 @@ class Commander(PrivilegedNode):
             "spectra_smpl": topic.spectra_rec,
             "channel_binning": topic.channel_binning,
             "dome_alert_stop": topic.manual_stop_dome_alert,
+            "dome_oc": topic.dome_oc,
             "timeonly": topic.timeonly,
         }
         self.publisher: Dict[str, Publisher] = {}
@@ -105,6 +107,7 @@ class Commander(PrivilegedNode):
             "dome_track": _SubscriptionCfg(topic.dome_tracking, 1),
             "dome_encoder": _SubscriptionCfg(topic.dome_encoder, 1),
             "dome_speed": _SubscriptionCfg(topic.dome_speed_cmd, 1),
+            "dome": _SubscriptionCfg(topic.dome_status, 1),
             "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
@@ -490,18 +493,22 @@ class Commander(PrivilegedNode):
             # Ensure the next command is executed after the lift of alert
             return pytime.sleep(0.5)
         elif CMD == "OPEN":
-
-            res = self._send_request(req, self.client["dome_oc"])
-            return res.check
+            msg = DomeOC(open=True, time=pytime.time())
+            self.publisher["dome_oc"].publish(msg)
+            if wait:
+                self.wait_oc(target="dome")
         elif CMD == "CLOSE":
-
-            res = self._send_request(req, self.client["dome_oc"])
-            return res.check
+            msg = DomeOC(open=False, time=pytime.time())
+            self.publisher["dome_oc"].publish(msg)
+            if wait:
+                self.wait_oc(target="dome")
         elif CMD == "ERROR":
             now = pytime.time()
             return self.get_message("dome_track", time=now, timeout_sec=0.01)
         elif CMD in ["?"]:
             return self.get_message("dome_encoder", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
 
     def memb(self, cmd: Literal["open", "close", "?"], /, *, wait: bool = True):
         CMD = cmd.upper()
@@ -509,16 +516,14 @@ class Commander(PrivilegedNode):
             return self.get_message("membrane", timeout_sec=10)
         elif CMD == "OPEN":
             msg = MembraneMsg(open=True, time=pytime.time())
-            self.publisher["membrane"].publish(msg)
         elif CMD == "CLOSE":
             msg = MembraneMsg(open=False, time=pytime.time())
-            self.publisher["membrane"].publish(msg)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+            return
+        self.publisher["membrane"].publish(msg)
         if wait:
-            target_status = CMD == "OPEN"
-            while self.get_message("membrane").open is not target_status:
-                pytime.sleep(0.1)
+            self.wait_oc(target="membrane")
 
     @require_privilege(escape_cmd=["?"])
     def ccd(
@@ -588,9 +593,7 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
         if wait:
-            target_status = CMD == "INSERT"
-            while self.get_message("chopper").insert is not target_status:
-                pytime.sleep(0.1)
+            self.wait_oc(target="chopper", position=CMD.lower())
 
     def wait(
         self,
@@ -661,6 +664,19 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown mode: {mode!r}")
 
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
+
+    def wait_oc(
+        self,
+        target: Literal["dome", "membrane", "chopper"],
+        position: Literal["insert", "remove"] = None,
+    ):
+        if target == "chopper":
+            target_status = position == "insert"
+            while self.get_message(target).insert is not target_status:
+                pytime.sleep(0.1)
+        else:
+            while self.get_message(target).move:
+                pytime.sleep(0.1)
 
     @require_privilege(escape_cmd=["?"])
     def pid_parameter(
