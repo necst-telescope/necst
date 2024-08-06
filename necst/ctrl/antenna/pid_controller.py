@@ -120,9 +120,9 @@ class AntennaPIDController(AlertHandlerNode):
         else:
             cmd = self.command_list.pop(0)
 
-        _enc = self.enc[0]
+        self._enc = self.enc[0]
 
-        print(float(_enc.lon))
+        print(self._enc.lon)
 
         try:
             _az_speed = self.controller["az"].get_speed(
