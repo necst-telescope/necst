@@ -63,7 +63,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.enc.push(msg)
         if all(isinstance(p.time, float) for p in self.enc):
             self.enc.sort(key=lambda x: x.time)
-        self.speed_command(self.enc)
+        self.speed_command()
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
@@ -90,7 +90,7 @@ class AntennaPIDController(AlertHandlerNode):
             else:
                 break
 
-    def speed_command(self, enc_list) -> None:
+    def speed_command(self) -> None:
         if self.status.critical():
             self.logger.warning("Guard condition activated", throttle_duration_sec=1)
             self.gc.trigger()
@@ -120,7 +120,7 @@ class AntennaPIDController(AlertHandlerNode):
         else:
             cmd = self.command_list.pop(0)
 
-        enc = enc_list[0]
+        enc = self.enc[0]
 
         print(enc)
 
