@@ -106,8 +106,9 @@ class AntennaPIDController(AlertHandlerNode):
 
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 1 / config.antenna_command_frequency:
+            print(a)
             return
-
+        print(b)
         if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
             cmd = deepcopy(self.command_list[0])
             if now - cmd.time > 1 / config.antenna_command_frequency:
@@ -117,7 +118,6 @@ class AntennaPIDController(AlertHandlerNode):
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-        print(self.command_list)
 
         enc = self.enc[0]
 
