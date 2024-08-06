@@ -125,6 +125,7 @@ class AntennaPIDController(AlertHandlerNode):
         if not isinstance(enc.time, float):
             print("a")
             return
+        print("b")
 
         try:
             _az_speed = self.controller["az"].get_speed(
