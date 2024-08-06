@@ -49,6 +49,8 @@ class TestAntennaController(TesterNode):
             timelimit = time.time() + 10
             while True:
                 assert time.time() < timelimit, "Speed command not published in 1s"
+                print(speed_az)
+                print(speed_el)
                 az_condition = (speed_az is not None) and (speed_az > 0)
                 el_condition = (speed_el is not None) and (speed_el > 0)
                 if az_condition and el_condition:
