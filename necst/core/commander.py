@@ -28,7 +28,6 @@ from necst_msgs.srv import (
     RecordSrv,
     CCDCommand,
     DomeSync,
-    DomeOC,
     ComDelaySrv,
 )
 from rclpy.publisher import Publisher
@@ -118,7 +117,6 @@ class Commander(PrivilegedNode):
             "ccd_cmd": service.ccd_cmd.client(self),
             "dome_sync": service.dome_sync.client(self),
             "dome_pid_sync": service.dome_pid_sync.client(self),
-            "dome_oc": service.dome_oc.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
