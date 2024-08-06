@@ -123,9 +123,7 @@ class AntennaPIDController(AlertHandlerNode):
         enc = self.enc[0]
 
         if not isinstance(enc.time, float):
-            print("a")
             return
-        print("b")
 
         try:
             _az_speed = self.controller["az"].get_speed(
@@ -153,7 +151,7 @@ class AntennaPIDController(AlertHandlerNode):
 
             cmd_time = enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
-
+            print(msg)
             self.command_publisher.publish(msg)
 
         except ZeroDivisionError:
