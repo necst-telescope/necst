@@ -67,7 +67,6 @@ class AntennaPIDController(AlertHandlerNode):
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
-
         self.logger.warning("Immediate stop ordered.", throttle_duration_sec=5)
         enc = self.enc[-1]
         if any(not isinstance(p, float) for p in (enc.lon, enc.lat)):
@@ -154,12 +153,7 @@ class AntennaPIDController(AlertHandlerNode):
 
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
-        except ValueError as error:
-            print(error)
-            # print("Value Error----------")
-            # print(cmd)
-            # print(enc)
-            # print("---------------------")
+        except ValueError:
             pass
 
     def change_pid_param(self, msg: PIDMsg) -> None:
