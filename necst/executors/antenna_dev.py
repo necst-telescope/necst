@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
-from ..ctrl.antenna import AntennaEncoderController, AntennaMotor, 
+from ..ctrl.antenna import AntennaEncoderController, AntennaMotor
 from ..ctrl.calibrator import ChopperController
 
 
