@@ -130,7 +130,6 @@ class AntennaPIDController(AlertHandlerNode):
             _el_speed = self.controller["el"].get_speed(
                 cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
-            print(f"___{_az_speed}: {_el_speed}")
 
             self.logger.debug(
                 f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
@@ -147,7 +146,6 @@ class AntennaPIDController(AlertHandlerNode):
 
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
-            print(f"{az_speed}: {el_speed}")
 
             cmd_time = enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
@@ -157,7 +155,10 @@ class AntennaPIDController(AlertHandlerNode):
             print("Zero Error")
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
-            print("Value Error")
+            print("Value Error----------")
+            print(cmd)
+            print(enc)
+            print("---------------------")
             pass
 
     def change_pid_param(self, msg: PIDMsg) -> None:
