@@ -1,10 +1,9 @@
 import time
 
 from neclib.devices import DomeEncoder
-from necst_msgs.msg import CoordMsg
-from necst_msgs.srv import DomeLimit
+from necst_msgs.msg import CoordMsg, DomeLimit
 
-from ... import namespace, topic, service
+from ... import namespace, topic
 from ...core import DeviceNode
 
 
@@ -14,10 +13,11 @@ class DomeEncoderController(DeviceNode):
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.publisher = topic.dome_encoder.publisher(self)
-        self.encoder = DomeEncoder()
+        self.encoder_publisher = topic.dome_encoder.publisher(self)
+        self.dome_publisher = topic.dome_limit_cmd.publisher(self)
+        topic.dome_limit.subscription(self, self.set_counter)
 
-        self.client = service.dome_limit.client(self)
+        self.encoder = DomeEncoder()
 
         self.create_timer(1 / 15, self.stream)
 
@@ -30,17 +30,15 @@ class DomeEncoderController(DeviceNode):
             frame="altaz",
             time=time.time(),
         )
-        self.publisher.publish(msg)
+        self.encoder_publisher.publish(msg)
 
     def dome_limit(self):
-        req = DomeLimit.Request(check=True)
-        res = self.client.call(req)
-        time.sleep(0.02)
+        msg = DomeLimit(check=True, limit=0)
+        self.dome_publisher.publish(msg)
+        return
 
-        _limit = res.result()
-        time.sleep(0.02)
-
-        limit = _limit.limit
+    def set_counter(self, msg: DomeLimit):
+        limit = msg.limit
 
         if limit != 0:
             self.encoder.dome_set_counter(limit)
