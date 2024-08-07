@@ -67,7 +67,6 @@ class AntennaPIDController(AlertHandlerNode):
 
     def immediate_stop_no_resume(self) -> None:
         self.command_list.clear()
-
         self.logger.warning("Immediate stop ordered.", throttle_duration_sec=5)
         enc = self.enc[-1]
         if any(not isinstance(p, float) for p in (enc.lon, enc.lat)):
@@ -106,8 +105,6 @@ class AntennaPIDController(AlertHandlerNode):
 
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 1 / config.antenna_command_frequency:
-            print(self.command_list[0].time)
-            print(now)
             return
 
         if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
@@ -129,6 +126,7 @@ class AntennaPIDController(AlertHandlerNode):
             _az_speed = self.controller["az"].get_speed(
                 cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
             )
+
             _el_speed = self.controller["el"].get_speed(
                 cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
