@@ -127,22 +127,23 @@ class AntennaPIDController(AlertHandlerNode):
             _az_speed = self.controller["az"].get_speed(
                 cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
             )
+
             _el_speed = self.controller["el"].get_speed(
                 cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
 
-            # self.logger.debug(
-            #     f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
-            #     f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
-            #     f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
-            #     throttle_duration_sec=0.5,
-            # )
-            # self.logger.debug(
-            #     f"El. Error={self.controller['el'].error[-1]:9.6f}deg "
-            #     f"V_target={self.controller['el'].target_speed[-1]:9.6f}deg/s "
-            #     f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
-            #     throttle_duration_sec=0.5,
-            # )
+            self.logger.debug(
+                f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
+                f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
+                throttle_duration_sec=0.5,
+            )
+            self.logger.debug(
+                f"El. Error={self.controller['el'].error[-1]:9.6f}deg "
+                f"V_target={self.controller['el'].target_speed[-1]:9.6f}deg/s "
+                f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
+                throttle_duration_sec=0.5,
+            )
 
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
@@ -152,13 +153,13 @@ class AntennaPIDController(AlertHandlerNode):
             self.command_publisher.publish(msg)
 
         except ZeroDivisionError:
-            print("Zero Error")
             self.logger.debug("Duplicate command is supplied.")
-        except ValueError:
-            print("Value Error----------")
-            print(cmd)
-            print(enc)
-            print("---------------------")
+        except ValueError as error:
+            print(error)
+            # print("Value Error----------")
+            # print(cmd)
+            # print(enc)
+            # print("---------------------")
             pass
 
     def change_pid_param(self, msg: PIDMsg) -> None:
