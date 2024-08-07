@@ -20,6 +20,7 @@ class namespace:
     ctrl: str = f"{root}/ctrl"
     antenna: str = f"{ctrl}/antenna"
     calib: str = f"{ctrl}/calib"
+    mirror: str = f"{ctrl}/mirror"
     dome: str = f"{ctrl}/dome"
     membrane: str = f"{ctrl}/membrane"
     drive: str = f"{ctrl}/drive"
@@ -126,6 +127,7 @@ class topic:
         DriveMsg,
         LocalSignal,
         LocalAttenuatorMsg,
+        MirrorMsg,
         ObservingMode,
         PIDMsg,
         Sampling,
@@ -181,6 +183,14 @@ class topic:
     chopper_status = Topic(
         ChopperMsg, "chopper_status", qos.reliable, namespace.calib
     )  # Set to reliable, because of low data acquisition frequency.
+    mirror_m2_cmd = Topic(MirrorMsg, "mirror_m2_cmd", qos.reliable, namespace.mirror)
+    mirror_m2_status = Topic(
+        MirrorMsg, "mirror_m2_status", qos.reliable, namespace.mirror
+    )
+    mirror_m4_cmd = Topic(MirrorMsg, "mirror_m4_cmd", qos.reliable, namespace.mirror)
+    mirror_m4_status = Topic(
+        MirrorMsg, "mirror_m4_status", qos.reliable, namespace.mirror
+    )
     membrane_cmd = Topic(MembraneMsg, "membrane_cmd", qos.reliable, namespace.membrane)
     membrane_status = Topic(
         MembraneMsg, "membrane_status", qos.reliable, namespace.membrane
