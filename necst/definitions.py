@@ -186,6 +186,7 @@ class topic:
     mirror_m4_cmd = Topic(MirrorMsg, "mirror_m4_cmd", qos.reliable, namespace.mirror)
     mirror_m4_status = Topic(
         MirrorMsg, "mirror_m4_status", qos.reliable, namespace.mirror
+    )
     membrane_cmd = Topic(MembraneMsg, "membrane_cmd", qos.reliable, namespace.membrane)
     membrane_status = Topic(
         MembraneMsg, "membrane_status", qos.reliable, namespace.membrane
