@@ -15,7 +15,7 @@ class DomeEncoderController(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.encoder_publisher = topic.dome_encoder.publisher(self)
         self.dome_publisher = topic.dome_limit_cmd.publisher(self)
-        topic.drive_cmd.subscription(self, self.set_counter)
+        topic.dome_limit.subscription(self, self.set_counter)
 
         self.encoder = DomeEncoder()
 
