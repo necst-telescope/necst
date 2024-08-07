@@ -139,6 +139,7 @@ class topic:
         DomeStatus,
         DomeCommand,
         DomeOC,
+        DomeLimit,
         TimeOnly,
     )
 
@@ -241,6 +242,8 @@ class topic:
         ControlStatus, "dome_controlled", qos.reliable, namespace.dome
     )
     dome_oc = Topic(DomeOC, "dome_oc", qos.reliable, namespace.dome)
+    dome_limit_cmd = Topic(DomeLimit, "dome_limit_cmd", qos.reliable, namespace.dome)
+    dome_limit = Topic(DomeLimit, "dome_limit", qos.realtime, namespace.dome)
     timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
@@ -257,7 +260,6 @@ class service:
         ComDelaySrv,
         CCDCommand,
         DomeSync,
-        DomeLimit,
     )
     from std_srvs.srv import Empty
 
@@ -274,4 +276,3 @@ class service:
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
     dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
     dome_pid_sync = Service(DomeSync, "dome_pid_sync", namespace.dome)
-    dome_limit = Service(DomeLimit, "dome_limit", namespace.dome)
