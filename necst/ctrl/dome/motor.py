@@ -3,7 +3,7 @@ import time
 from neclib.devices import DomeMotor as DomeMotorDevice
 from necst_msgs.msg import DomeCommand, DomeOC, DomeLimit
 
-from ... import config, namespace, topic, service
+from ... import config, namespace, topic
 from ...core import DeviceNode
 
 
@@ -65,15 +65,15 @@ class DomeMotor(DeviceNode):
 
     def limit_check(self, msg: DomeLimit):
         if not msg.check:
-            re_msg = DomeLimit(check=false, limit=0)
+            re_msg = DomeLimit(check=False, limit=0)
         else:
             limit1 = self.motor.dome_limit_check()
             time.sleep(0.002)
             limit2 = self.motor.dome_limit_check()
             if limit1 == limit2:
-                re_msg = DomeLimit(check=false, limit=limit1)
+                re_msg = DomeLimit(check=False, limit=limit1)
             else:
-                re_msg = DomeLimit(check=false, limit=0)
+                re_msg = DomeLimit(check=False, limit=0)
         self.dome_publisher.publish(re_msg)
 
 
