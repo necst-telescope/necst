@@ -101,13 +101,11 @@ class AntennaPIDController(AlertHandlerNode):
         now = pytime.time()
         # Check if any command is available.
         if len(self.command_list) == 0:
-            print("commad list is empty")
             self.immediate_stop_no_resume()
             return
 
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 1 / config.antenna_command_frequency:
-            print("command future not exist")
             return
 
         if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
@@ -123,7 +121,6 @@ class AntennaPIDController(AlertHandlerNode):
         enc = self.enc[0]
 
         if not isinstance(enc.time, float):
-            print("encoder is nan")
             return
 
         try:
@@ -155,8 +152,10 @@ class AntennaPIDController(AlertHandlerNode):
             self.command_publisher.publish(msg)
 
         except ZeroDivisionError:
+            print("Zero Error")
             self.logger.debug("Duplicate command is supplied.")
         except ValueError:
+            print("Value Error")
             pass
 
     def change_pid_param(self, msg: PIDMsg) -> None:
