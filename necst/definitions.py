@@ -23,6 +23,7 @@ class namespace:
     mirror: str = f"{ctrl}/mirror"
     dome: str = f"{ctrl}/dome"
     membrane: str = f"{ctrl}/membrane"
+    drive: str = f"{ctrl}/drive"
 
     core: str = f"{root}/core"
     auth: str = f"{core}/auth"
@@ -123,6 +124,7 @@ class topic:
         ControlStatus,
         CoordMsg,
         DeviceReading,
+        DriveMsg,
         LocalSignal,
         LocalAttenuatorMsg,
         MirrorMsg,
@@ -135,9 +137,11 @@ class topic:
         TimedAzElInt64,
         TrackingStatus,
         WeatherMsg,
+        CalcLog,
         DomeStatus,
         DomeCommand,
         DomeOC,
+        DomeLimit,
         TimeOnly,
     )
 
@@ -191,6 +195,8 @@ class topic:
     membrane_status = Topic(
         MembraneMsg, "membrane_status", qos.reliable, namespace.membrane
     )
+    drive_cmd = Topic(DriveMsg, "drive_cmd", qos.reliable, namespace.drive)
+    drive_status = Topic(DriveMsg, "drive_status", qos.reliable, namespace.drive)
     quick_spectra = Topic(Spectral, "quick_spectra", qos.realtime, namespace.rx, True)
     spectra_meta = Topic(Spectral, "spectra_meta", qos.reliable, namespace.rx)
     qlook_meta = Topic(Spectral, "qlook_meta", qos.reliable, namespace.rx)
@@ -222,6 +228,7 @@ class topic:
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
+    pid_log = Topic(CalcLog, "pid_log", qos.realtime, namespace.antenna)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
     dome_encoder = Topic(
         CoordMsg,
@@ -245,6 +252,8 @@ class topic:
         ControlStatus, "dome_controlled", qos.reliable, namespace.dome
     )
     dome_oc = Topic(DomeOC, "dome_oc", qos.reliable, namespace.dome)
+    dome_limit_cmd = Topic(DomeLimit, "dome_limit_cmd", qos.reliable, namespace.dome)
+    dome_limit = Topic(DomeLimit, "dome_limit", qos.realtime, namespace.dome)
     timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
@@ -261,7 +270,6 @@ class service:
         ComDelaySrv,
         CCDCommand,
         DomeSync,
-        DomeLimit,
     )
     from std_srvs.srv import Empty
 
@@ -278,4 +286,3 @@ class service:
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
     dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
     dome_pid_sync = Service(DomeSync, "dome_pid_sync", namespace.dome)
-    dome_limit = Service(DomeLimit, "dome_limit", namespace.dome)

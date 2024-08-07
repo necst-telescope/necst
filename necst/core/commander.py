@@ -15,6 +15,7 @@ from necst_msgs.msg import (
     MirrorMsg,
     DeviceReading,
     DomeOC,
+    DriveMsg,
     LocalSignal,
     LocalAttenuatorMsg,
     MembraneMsg,
@@ -80,6 +81,7 @@ class Commander(PrivilegedNode):
             "mirror_m2": topic.mirror_m2_cmd,
             "mirror_m4": topic.mirror_m4_cmd,
             "membrane": topic.membrane_cmd,
+            "drive": topic.drive_cmd,
             "spectra_meta": topic.spectra_meta,
             "qlook_meta": topic.qlook_meta,
             "sis_bias": topic.sis_bias_cmd,
@@ -103,6 +105,7 @@ class Commander(PrivilegedNode):
             "mirror_m2": _SubscriptionCfg(topic.mirror_m2_status, 1),
             "mirror_m4": _SubscriptionCfg(topic.mirror_m4_status, 1),
             "membrane": _SubscriptionCfg(topic.membrane_status, 1),
+            "drive": _SubscriptionCfg(topic.drive_status, 1),
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
             "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
@@ -207,6 +210,7 @@ class Commander(PrivilegedNode):
         name: Optional[str] = None,
         wait: bool = True,
         speed: Optional[Union[int, float]] = None,
+        margin: Optional[float] = None,
         direct_mode: bool = False,
     ) -> None:
         """Control antenna direction and motion.
@@ -355,6 +359,7 @@ class Commander(PrivilegedNode):
                     lat=[float(reference[1])],
                     frame=reference[2],
                     unit=unit,
+                    direct_mode=direct_mode,
                 )
             else:
                 raise ValueError("No valid target specified")
@@ -365,6 +370,7 @@ class Commander(PrivilegedNode):
                     offset_lat=[float(offset[1])],
                     offset_frame=offset[2],
                     unit=unit,
+                    direct_mode=direct_mode,
                 )
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
@@ -374,12 +380,18 @@ class Commander(PrivilegedNode):
 
         elif CMD == "SCAN":
             scan_kwargs = dict(speed=float(speed), unit=unit)
+
+            if margin is None:
+                margin = config.antenna_scan_margin.value
+
             if name is not None:
                 scan_kwargs.update(
                     name=name,
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
                     offset_frame=scan_frame,
+                    margin=margin,
+                    direct_mode=direct_mode,
                 )
             elif (reference is not None) or (target is not None):
                 given_as = reference if target is None else target
@@ -390,12 +402,16 @@ class Commander(PrivilegedNode):
                     offset_lon=[float(start[0]), float(stop[0])],
                     offset_lat=[float(start[1]), float(stop[1])],
                     offset_frame=scan_frame,
+                    margin=margin,
+                    direct_mode=direct_mode,
                 )
             else:
                 scan_kwargs.update(
                     lon=[float(start[0]), float(stop[0])],
                     lat=[float(start[1]), float(stop[1])],
                     frame=scan_frame,
+                    margin=margin,
+                    direct_mode=direct_mode,
                 )
 
             req = CoordinateCommand.Request(**scan_kwargs)
@@ -516,6 +532,32 @@ class Commander(PrivilegedNode):
         self.publisher["membrane"].publish(msg)
         if wait:
             self.wait_oc(target="membrane")
+
+    def drive(self, cmd: Literal["drive", "contactor", "?"], on: Literal["on", "off"]):
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("drive", timeout_sec=10)
+        elif CMD == "DRIVE":
+            if on.upper() == "ON":
+                msg = DriveMsg(separation="drive", drive=True, time=pytime.time())
+            elif on.upper() == "OFF":
+                msg = DriveMsg(separation="drive", drive=False, time=pytime.time())
+            else:
+                raise ValueError(f"Unknown command: {on!r}")
+        elif CMD == "CONTACTOR":
+            if on.upper() == "ON":
+                msg = DriveMsg(
+                    separation="contactor", contactor=True, time=pytime.time()
+                )
+            elif on.upper() == "OFF":
+                msg = DriveMsg(
+                    separation="contactor", contactor=False, time=pytime.time()
+                )
+            else:
+                raise ValueError(f"Unknown command: {on!r}")
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+        self.publisher["drive"].publish(msg)
 
     @require_privilege(escape_cmd=["?"])
     def ccd(
@@ -712,6 +754,7 @@ class Commander(PrivilegedNode):
             while self.get_message(target).insert is not target_status:
                 pytime.sleep(0.1)
         else:
+            pytime.sleep(0.1)
             while self.get_message(target).move:
                 pytime.sleep(0.1)
 

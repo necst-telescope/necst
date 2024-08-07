@@ -38,11 +38,15 @@ class TestAntennaController(TesterNode):
         )
         timer_cmd = self.node.create_timer(
             0.05,
-            lambda: cmd.publish(CoordMsg(lon=30.0, lat=45.0, time=time.time() + 0.1)),
+            lambda: cmd.publish(
+                CoordMsg(lon=50.0, lat=55.0, time=time.time() + 0.01, unit="deg")
+            ),
         )
         timer_enc = self.node.create_timer(
             0.05,
-            lambda: enc.publish(CoordMsg(lon=25.0, lat=45.0, time=time.time())),
+            lambda: enc.publish(
+                CoordMsg(lon=30.0, lat=35.0, time=time.time(), unit="deg")
+            ),
         )
 
         with spinning([controller, self.node]):
@@ -50,7 +54,7 @@ class TestAntennaController(TesterNode):
             while True:
                 assert time.time() < timelimit, "Speed command not published in 1s"
                 az_condition = (speed_az is not None) and (speed_az > 0)
-                el_condition = (speed_el is not None) and (speed_el == 0)
+                el_condition = (speed_el is not None) and (speed_el > 0)
                 if az_condition and el_condition:
                     break
                 time.sleep(0.02)

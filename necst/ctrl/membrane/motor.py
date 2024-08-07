@@ -32,11 +32,10 @@ class MembraneMotor(DeviceNode):
         if status[0] == "OFF":
             if status[1] == "OPEN":
                 msg = MembraneMsg(open=True, move=False, time=time.time())
-            elif status[1] == "CLOSE":
+            else:
                 msg = MembraneMsg(open=False, move=False, time=time.time())
         else:
             msg = MembraneMsg(open=True, move=True, time=time.time())
-            return
         self.pub.publish(msg)
 
 
