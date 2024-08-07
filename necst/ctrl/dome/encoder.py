@@ -3,7 +3,7 @@ import time
 from neclib.devices import DomeEncoder
 from necst_msgs.msg import CoordMsg, DomeLimit
 
-from ... import namespace, topic, service
+from ... import namespace, topic
 from ...core import DeviceNode
 
 
@@ -18,8 +18,6 @@ class DomeEncoderController(DeviceNode):
         topic.drive_cmd.subscription(self, self.set_counter)
 
         self.encoder = DomeEncoder()
-
-        self.client = service.dome_limit.client(self)
 
         self.create_timer(1 / 15, self.stream)
 
