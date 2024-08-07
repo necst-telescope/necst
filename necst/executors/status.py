@@ -4,15 +4,12 @@ from rclpy.executors import SingleThreadedExecutor
 from ..core import ObserverInfo
 from ..ctrl.antenna import AntennaTrackingStatus
 
-# from ..ctrl.dome import DomeTrackingStatus
-
 
 def configure_executor() -> SingleThreadedExecutor:
     executor = SingleThreadedExecutor()
     nodes = [
         ObserverInfo(),
         AntennaTrackingStatus(),
-        # DomeTrackingStatus(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
