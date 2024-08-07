@@ -1,8 +1,7 @@
 import time
 
 from neclib.devices import DomeMotor as DomeMotorDevice
-from necst_msgs.msg import DomeCommand, DomeOC
-from necst_msgs.srv import DomeLimit
+from necst_msgs.msg import DomeCommand, DomeOC, DomeLimit
 
 from ... import config, namespace, topic, service
 from ...core import DeviceNode
@@ -17,19 +16,16 @@ class DomeMotor(DeviceNode):
         self.logger = self.get_logger()
 
         self.status_publisher = topic.dome_status.publisher(self)
+        self.dome_publisher = topic.dome_limit.publisher(self)
 
         topic.dome_speed_cmd.subscription(self, self.speed_command)
         topic.dome_oc.subscription(self, self.move)
-
-        if config.observatory == "NANTEN2":
-            service.dome_limit.service(self, self.limit_check)
+        topic.dome_limit_cmd.subscription(self, self.limit_check)
 
         self.create_timer(5, self.check_command)
-
         self.create_timer(1, self.telemetry)
 
         self.last_cmd_time = time.time()
-
         self.motor = DomeMotorDevice()
 
     def check_command(self) -> None:
@@ -67,21 +63,18 @@ class DomeMotor(DeviceNode):
             msg = DomeOC(open=True, move=True, time=time.time())
         self.status_publisher.publish(msg)
 
-    def limit_check(self, request: DomeLimit.Request, response: DomeLimit.Response):
-        if not request.check:
-            response.limit = 0
-            return response
-        while True:
+    def limit_check(self, msg: DomeLimit):
+        if not msg.check:
+            re_msg = DomeLimit(check=false, limit=0)
+        else:
             limit1 = self.motor.dome_limit_check()
             time.sleep(0.002)
             limit2 = self.motor.dome_limit_check()
             if limit1 == limit2:
-                response.limit = limit1
-                return response
+                re_msg = DomeLimit(check=false, limit=limit1)
             else:
-                response.limit = 0
-                return response
-            continue
+                re_msg = DomeLimit(check=false, limit=0)
+        self.dome_publisher.publish(re_msg)
 
 
 def main(args=None):
