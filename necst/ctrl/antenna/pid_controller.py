@@ -131,18 +131,18 @@ class AntennaPIDController(AlertHandlerNode):
                 cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
 
-            self.logger.debug(
-                f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
-                f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
-                f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
-                throttle_duration_sec=0.5,
-            )
-            self.logger.debug(
-                f"El. Error={self.controller['el'].error[-1]:9.6f}deg "
-                f"V_target={self.controller['el'].target_speed[-1]:9.6f}deg/s "
-                f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
-                throttle_duration_sec=0.5,
-            )
+            # self.logger.debug(
+            #     f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
+            #     f"V_target={self.controller['az'].target_speed[-1]:9.6f}deg/s "
+            #     f"Result={self.controller['az'].cmd_speed[-1]:9.6f}deg/s",
+            #     throttle_duration_sec=0.5,
+            # )
+            # self.logger.debug(
+            #     f"El. Error={self.controller['el'].error[-1]:9.6f}deg "
+            #     f"V_target={self.controller['el'].target_speed[-1]:9.6f}deg/s "
+            #     f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
+            #     throttle_duration_sec=0.5,
+            # )
 
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
