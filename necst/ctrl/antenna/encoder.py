@@ -3,7 +3,7 @@ import time
 from neclib.devices import AntennaEncoder
 from necst_msgs.msg import CoordMsg
 
-from ... import namespace, topic
+from ... import namespace, topic, config
 from ...core import DeviceNode
 
 
@@ -15,7 +15,7 @@ class AntennaEncoderController(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = topic.antenna_encoder.publisher(self)
         self.encoder = AntennaEncoder()
-        self.create_timer(1 / 15, self.stream)
+        self.create_timer(1 / config.antenna_encoder_frequency, self.stream)
 
     def stream(self) -> None:
         record_time = time.time()

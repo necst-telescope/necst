@@ -3,7 +3,7 @@ import time
 from neclib.devices import DomeEncoder
 from necst_msgs.msg import CoordMsg, DomeLimit
 
-from ... import namespace, topic
+from ... import namespace, topic, config
 from ...core import DeviceNode
 
 
@@ -19,7 +19,7 @@ class DomeEncoderController(DeviceNode):
 
         self.encoder = DomeEncoder()
 
-        self.create_timer(1 / 15, self.stream)
+        self.create_timer(1 / config.dome_encoder_frequency, self.stream)
 
     def stream(self) -> None:
         self.dome_limit()
