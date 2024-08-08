@@ -112,7 +112,7 @@ class AntennaPIDController(AlertHandlerNode):
             return
 
         if (len(self.command_list) == 1) and (
-            self.command_list[0].time > now - 2 / config.antenna_command_frequency
+            self.command_list[0].time > now - 1 / config.antenna_command_frequency
         ):
             cmd = deepcopy(self.command_list[0])
             if now - cmd.time > 1 / config.antenna_command_frequency:
