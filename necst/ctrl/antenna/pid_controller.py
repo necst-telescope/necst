@@ -100,6 +100,7 @@ class AntennaPIDController(AlertHandlerNode):
 
         now = pytime.time()
         # Check if any command is available.
+        print(f"cmd size:{len(self.command_list)}")
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
             self.controller["az"]._initialize()
