@@ -15,7 +15,7 @@ class AntennaEncoderController(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.publisher = topic.antenna_encoder.publisher(self)
         self.encoder = AntennaEncoder()
-        self.create_timer(1 / config.antenna_encoder_frequency, self.stream)
+        self.create_timer(1 / config.antenna_enc_frequency, self.stream)
 
     def stream(self) -> None:
         record_time = time.time()

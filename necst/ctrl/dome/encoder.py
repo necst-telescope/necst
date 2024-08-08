@@ -19,7 +19,7 @@ class DomeEncoderController(DeviceNode):
 
         self.encoder = DomeEncoder()
 
-        self.create_timer(1 / config.dome_encoder_frequency, self.stream)
+        self.create_timer(1 / config.dome_enc_frequency, self.stream)
 
     def stream(self) -> None:
         self.dome_limit()
