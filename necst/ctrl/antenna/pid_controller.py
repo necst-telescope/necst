@@ -111,7 +111,9 @@ class AntennaPIDController(AlertHandlerNode):
         if self.command_list[0].time > now + 1 / config.antenna_command_frequency:
             return
 
-        if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
+        if (len(self.command_list) == 1) and (
+            self.command_list[0].time > now - 5 / config.antenna_command_frequency
+        ):
             cmd = deepcopy(self.command_list[0])
             if now - cmd.time > 1 / config.antenna_command_frequency:
                 cmd.time = now  # Not a real-time command.
