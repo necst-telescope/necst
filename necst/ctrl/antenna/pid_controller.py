@@ -86,6 +86,7 @@ class AntennaPIDController(AlertHandlerNode):
         while len(self.command_list) > 1:
             if self.command_list[0].time < now:
                 self.command_list.pop(0)
+                print("delete command")
             else:
                 break
 
@@ -101,13 +102,18 @@ class AntennaPIDController(AlertHandlerNode):
         # Check if any command is available.
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
+            # initialize command
+            self.controller["az"]._initialize()
+            self.controller["el"]._initialize()
             return
 
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 1 / config.antenna_command_frequency:
             return
 
-        if (len(self.command_list) == 1) and (self.command_list[0].time > now - 1):
+        if (len(self.command_list) == 1) and (
+            self.command_list[0].time > now - 1 / config.antenna_command_frequency
+        ):
             cmd = deepcopy(self.command_list[0])
             if now - cmd.time > 1 / config.antenna_command_frequency:
                 cmd.time = now  # Not a real-time command.
