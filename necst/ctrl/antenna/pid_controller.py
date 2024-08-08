@@ -101,6 +101,7 @@ class AntennaPIDController(AlertHandlerNode):
         # Check if any command is available.
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
+            print("command is empty")
             return
 
         # Check if command for immediate future exists or not.
