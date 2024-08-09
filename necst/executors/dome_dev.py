@@ -1,13 +1,14 @@
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
-from ..ctrl.dome import DomeEncoderController, DomeMotor
+from ..ctrl.dome import DomeEncoderController, DomeLimitController, DomeMotor
 
 
 def configure_executor() -> MultiThreadedExecutor:
     executor = MultiThreadedExecutor()
     nodes = [
         DomeEncoderController(),
+        DomeLimitController(),
         DomeMotor(),
     ]
     _ = [executor.add_node(n) for n in nodes]
