@@ -15,11 +15,15 @@ class DomeEncoderController(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.encoder_publisher = topic.dome_encoder.publisher(self)
         self.dome_publisher = topic.dome_limit_cmd.publisher(self)
-        topic.dome_limit.subscription(self, self.set_counter)
 
         self.encoder = DomeEncoder()
 
         self.create_timer(1 / config.dome_enc_frequency, self.stream)
+
+    def dome_limit(self):
+        msg = DomeLimit(check=True, limit=0)
+        self.dome_publisher.publish(msg)
+        return
 
     def stream(self) -> None:
         self.dome_limit()
@@ -32,10 +36,15 @@ class DomeEncoderController(DeviceNode):
         )
         self.encoder_publisher.publish(msg)
 
-    def dome_limit(self):
-        msg = DomeLimit(check=True, limit=0)
-        self.dome_publisher.publish(msg)
-        return
+
+class DomeLimitController(DeviceNode):
+    NodeName = "dome_limit_checker"
+    Namespace = namespace.dome
+
+    def __init__(self) -> None:
+        super().__init__(self.NodeName, namespace=self.Namespace)
+        self.encoder = DomeEncoder()
+        topic.dome_limit.subscription(self, self.set_counter)
 
     def set_counter(self, msg: DomeLimit):
         limit = msg.limit
