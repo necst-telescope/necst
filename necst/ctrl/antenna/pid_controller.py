@@ -5,7 +5,7 @@ from typing import List
 from neclib.controllers import PIDController
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
-from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
+from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64, CalcLog
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -52,6 +52,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_list: List[CoordMsg] = []
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
+        self.log_publisher = topic.pid_log.publisher(self)
 
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
@@ -74,8 +75,12 @@ class AntennaPIDController(AlertHandlerNode):
         else:
             p = dict(k_i=0, k_d=0, k_c=0, accel_limit_off=-1)
             with self.controller["az"].params(**p), self.controller["el"].params(**p):
-                _az_speed = self.controller["az"].get_speed(enc.lon, enc.lon, stop=True)
-                _el_speed = self.controller["el"].get_speed(enc.lat, enc.lat, stop=True)
+                _az_speed, _az = self.controller["az"].get_speed(
+                    enc.lon, enc.lon, stop=True
+                )
+                _el_speed, _el = self.controller["el"].get_speed(
+                    enc.lat, enc.lat, stop=True
+                )
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
         msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=pytime.time())
@@ -129,11 +134,11 @@ class AntennaPIDController(AlertHandlerNode):
             return
 
         try:
-            _az_speed = self.controller["az"].get_speed(
+            _az_speed, _az = self.controller["az"].get_speed(
                 cmd.lon, enc.lon, cmd_time=cmd.time, enc_time=enc.time
             )
 
-            _el_speed = self.controller["el"].get_speed(
+            _el_speed, _el = self.controller["el"].get_speed(
                 cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
 
@@ -156,6 +161,17 @@ class AntennaPIDController(AlertHandlerNode):
             cmd_time = enc.time
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
             self.command_publisher.publish(msg)
+
+            log = CalcLog(
+                cmd_lon=_az,
+                cmd_lat=_el,
+                enc_lon=enc.lon,
+                enc_lat=enc.lat,
+                cmd_time=cmd.time,
+                time=cmd_time,
+            )
+
+            self.log_publisher.publish(log)
 
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
