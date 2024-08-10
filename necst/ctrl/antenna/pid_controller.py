@@ -5,7 +5,7 @@ from typing import List
 from neclib.controllers import PIDController
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
-from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64, CalcLog
+from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -162,14 +162,7 @@ class AntennaPIDController(AlertHandlerNode):
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
             self.command_publisher.publish(msg)
 
-            log = CalcLog(
-                cmd_lon=_az,
-                cmd_lat=_el,
-                enc_lon=enc.lon,
-                enc_lat=enc.lat,
-                cmd_time=cmd.time,
-                time=cmd_time,
-            )
+            log = CoordMsg(lon=_az, lat=_el, unit="deg", frame="altaz", time=cmd_time)
 
             self.log_publisher.publish(log)
 
