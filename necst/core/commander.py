@@ -637,6 +637,7 @@ class Commander(PrivilegedNode):
         *,
         position: Literal["IN", "OUT"] = None,
         distance: float = None,
+        wait: bool = True,
     ):
         """Control the position of mirror.
 
@@ -647,7 +648,7 @@ class Commander(PrivilegedNode):
         position : {"IN", "OUT"}
             Position of M4.
         distance : float
-            Move distance (um) of M2.
+            Move distance (mm) of M2.
         wait : bool, optional
             If True, wait until the mirror has been moved to the target position.
             The default is True.
@@ -664,10 +665,14 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "?":
-            return self.get_message("mirror", timeout_sec=10)
+            return self.get_message("mirror_m2", timeout_sec=10)
         elif CMD == "M2":
+            now_dis = self.get_message("mirror_m2").distance
             msg = MirrorMsg(distance=distance, time=pytime.time())
             self.publisher["mirror_m2"].publish(msg)
+            if wait:
+                while self.get_message("mirror").distance != now_dis + distance:
+                    pytime.sleep(0.1)
         elif CMD == "M4":
             msg = MirrorMsg(position=position, time=pytime.time())
             self.publisher["mirror_m4"].publish(msg)
