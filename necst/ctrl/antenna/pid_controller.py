@@ -52,7 +52,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_list: List[CoordMsg] = []
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
-        self.log_publisher = topic.pid_log.publisher(self)
+        self.log_publisher = topic.pid_cmd.publisher(self)
 
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
@@ -163,7 +163,6 @@ class AntennaPIDController(AlertHandlerNode):
             self.command_publisher.publish(msg)
 
             log = CoordMsg(lon=_az, lat=_el, unit="deg", frame="altaz", time=cmd_time)
-
             self.log_publisher.publish(log)
 
         except ZeroDivisionError:
