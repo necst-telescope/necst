@@ -107,8 +107,8 @@ class AntennaPIDController(AlertHandlerNode):
         if len(self.command_list) == 0:
             self.immediate_stop_no_resume()
             # initialize command
-            # self.controller["az"]._initialize()
-            # self.controller["el"]._initialize()
+            self.controller["az"]._initialize()
+            self.controller["el"]._initialize()
             return
 
         enc = self.enc[0]
