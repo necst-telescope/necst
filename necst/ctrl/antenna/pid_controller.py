@@ -154,6 +154,8 @@ class AntennaPIDController(AlertHandlerNode):
                 throttle_duration_sec=0.5,
             )
 
+            print(self.controller["az"].error[-1])
+
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
 
@@ -162,7 +164,6 @@ class AntennaPIDController(AlertHandlerNode):
             self.command_publisher.publish(msg)
 
             msg = CoordMsg(lon=_az, lat=_el, unit="deg", frame="altaz", time=cmd_time)
-            print(msg)
             self.log_publisher.publish(msg)
 
         except ZeroDivisionError:
