@@ -111,6 +111,11 @@ class AntennaPIDController(AlertHandlerNode):
             self.controller["el"]._initialize()
             return
 
+        enc = self.enc[0]
+
+        if not isinstance(enc.time, float):
+            return
+
         # Check if command for immediate future exists or not.
         if self.command_list[0].time > now + 1 / config.antenna_command_frequency:
             return
@@ -121,18 +126,11 @@ class AntennaPIDController(AlertHandlerNode):
             cmd = deepcopy(self.command_list[0])
             if now - cmd.time > 1 / config.antenna_command_frequency:
                 cmd.time = now  # Not a real-time command.
-                print("not realtime")
         elif len(self.command_list) == 1:
-            print("last cmd")
             cmd = self.command_list.pop(0)
             cmd.time = now
         else:
             cmd = self.command_list.pop(0)
-
-        enc = self.enc[0]
-
-        if not isinstance(enc.time, float):
-            return
 
         try:
             _az_speed, _az = self.controller["az"].get_speed(
