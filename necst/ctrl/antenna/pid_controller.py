@@ -140,6 +140,7 @@ class AntennaPIDController(AlertHandlerNode):
             _el_speed, _el = self.controller["el"].get_speed(
                 cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
+            print(_az)
 
             self.logger.debug(
                 f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
