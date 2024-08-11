@@ -153,8 +153,12 @@ class AntennaPIDController(AlertHandlerNode):
                 f"Result={self.controller['el'].cmd_speed[-1]:9.6f}deg/s",
                 throttle_duration_sec=0.5,
             )
-
-            # print(self.controller["az"].target_speed[-1])
+            print("-------")
+            print(cmd.lon)
+            print(enc.lon)
+            print(_az)
+            print("-------")
+            # print(self.controller["az"].error[-1])
 
             az_speed = float(self.decelerate_calc["az"](enc.lon, _az_speed))
             el_speed = float(self.decelerate_calc["el"](enc.lat, _el_speed))
