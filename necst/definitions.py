@@ -257,7 +257,7 @@ class topic:
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
-    pid_ext = Topic(CalcLog, "calc_log", qos.reliable, namespace.antenna)
+    pid_ext = Topic(CalcLog, "calc_pid", qos.reliable, namespace.antenna)
 
 
 class service:
