@@ -121,7 +121,9 @@ class AntennaPIDController(AlertHandlerNode):
             cmd = deepcopy(self.command_list[0])
             if now - cmd.time > 1 / config.antenna_command_frequency:
                 cmd.time = now  # Not a real-time command.
+                print("not realtime")
         elif len(self.command_list) == 1:
+            print("last cmd")
             cmd = self.command_list.pop(0)
             cmd.time = now
         else:
@@ -140,7 +142,6 @@ class AntennaPIDController(AlertHandlerNode):
             _el_speed, _el = self.controller["el"].get_speed(
                 cmd.lat, enc.lat, cmd_time=cmd.time, enc_time=enc.time
             )
-            print(_az)
 
             self.logger.debug(
                 f"Az. Error={self.controller['az'].error[-1]:9.6f}deg "
