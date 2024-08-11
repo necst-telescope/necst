@@ -5,7 +5,7 @@ from typing import List
 from neclib.controllers import PIDController
 from neclib.safety import Decelerate
 from neclib.utils import ParameterList
-from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
+from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64, CalcLog
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
@@ -52,7 +52,7 @@ class AntennaPIDController(AlertHandlerNode):
         self.command_list: List[CoordMsg] = []
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
-        self.log_publisher = topic.pid_cmd.publisher(self)
+        self.publisher = topic.pid_ext.publisher(self)
 
         self.gc = self.create_guard_condition(self.immediate_stop_no_resume)
 
@@ -164,7 +164,7 @@ class AntennaPIDController(AlertHandlerNode):
             self.command_publisher.publish(msg)
 
             msg = CoordMsg(lon=_az, lat=_el, unit="deg", frame="altaz", time=cmd_time)
-            self.log_publisher.publish(msg)
+            self.publisher.publish(msg)
 
         except ZeroDivisionError:
             self.logger.debug("Duplicate command is supplied.")
