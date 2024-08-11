@@ -228,7 +228,7 @@ class topic:
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
-    pid_cmd = Topic(CoordMsg, "pid_log", qos.realtime, namespace.antenna)
+    pid_cmd = Topic(CoordMsg, "pid_calc", qos.realtime, namespace.antenna)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
     dome_encoder = Topic(
         CoordMsg,
