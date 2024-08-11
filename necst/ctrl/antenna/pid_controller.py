@@ -48,7 +48,7 @@ class AntennaPIDController(AlertHandlerNode):
         topic.antenna_encoder.subscription(self, self.update_encoder_reading)
         topic.pid_param.subscription(self, self.change_pid_param)
 
-        self.enc = ParameterList.new(5, CoordMsg)
+        self.enc = ParameterList.new(2, CoordMsg)
         self.command_list: List[CoordMsg] = []
 
         self.command_publisher = topic.antenna_speed_cmd.publisher(self)
