@@ -163,7 +163,14 @@ class AntennaPIDController(AlertHandlerNode):
             msg = TimedAzElFloat64(az=az_speed, el=el_speed, time=cmd_time)
             self.command_publisher.publish(msg)
 
-            msg = CoordMsg(lon=_az, lat=_el, unit="deg", frame="altaz", time=cmd_time)
+            msg = CalcLog(
+                cmd_lon=_az,
+                cmd_lat=_el,
+                enc_lon=enc.lon,
+                enc_lat=enc.lat,
+                cmd_time=cmd.time,
+                time=cmd_time,
+            )
             self.publisher.publish(msg)
 
         except ZeroDivisionError:
