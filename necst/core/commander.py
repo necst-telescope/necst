@@ -671,8 +671,12 @@ class Commander(PrivilegedNode):
             msg = MirrorMsg(distance=distance, time=pytime.time())
             self.publisher["mirror_m2"].publish(msg)
             if wait:
-                while self.get_message("mirror").distance != now_dis + distance:
-                    pytime.sleep(0.1)
+                while (
+                    self.get_message("mirror_m2").distance > now_dis + distance + 0.02
+                ) or (
+                    self.get_message("mirror_m2").distance < now_dis + distance - 0.02
+                ):
+                    pytime.sleep(0.2)
         elif CMD == "M4":
             msg = MirrorMsg(position=position, time=pytime.time())
             self.publisher["mirror_m4"].publish(msg)
