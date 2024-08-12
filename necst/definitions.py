@@ -228,6 +228,7 @@ class topic:
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
+    pid_log = Topic(CalcLog, "pid_log", qos.realtime, namespace.antenna)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
     dome_encoder = Topic(
         CoordMsg,
@@ -257,7 +258,6 @@ class topic:
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
-    pid_ext = Topic(CalcLog, "calc_pid", qos.reliable, namespace.antenna)
 
 
 class service:
