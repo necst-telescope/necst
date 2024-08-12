@@ -2,7 +2,7 @@
 r"""SIS I-V Measurement.
 
 Measure and save the I-V of SIS.
-"id" argument specifies the sideband （USB or LSB)
+"id" argument specifies the beam.
 Specify the minimum voltage, maximum voltage, and step voltage in units of mV.
 
 Examples
