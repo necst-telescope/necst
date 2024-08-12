@@ -5,7 +5,7 @@ from neclib.devices import Attenuator
 from necst_msgs.msg import DeviceReading
 from rclpy.publisher import Publisher
 
-from .. import namespace, topic, config
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
@@ -28,7 +28,7 @@ class AttenuatorController(DeviceNode):
 
     def check_publisher(self) -> None:
         for key in self.io.keys():
-            for name in config.attenuator[key].channel.keys():
+            for name in self.io[key].Config.channel.keys():
                 if key not in self.publisher:
                     self.publisher[f"{key}" + "." + f"{name}"] = topic.attenuator[
                         f"{key}" + "." + f"{name}"
