@@ -9,8 +9,8 @@ class SIS_Tuning(Measurement):
     def run(
         self,
         id: list,
-        min_voltage_mV: float = -8.0,
-        max_voltage_mV: float = 8.0,
+        min_voltage_mV: float = 5.0,
+        max_voltage_mV: float = 8.5,
         step_voltage_mV: float = 0.1,
         min_loatt_mA: float = 4.0,
         max_loatt_mA: float = 7.0,

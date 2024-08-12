@@ -7,7 +7,7 @@ Specify the minimum voltage, maximum voltage, and step voltage in units of mV.
 Specify the minimum local attenuator current, maximum local attenuator current,
 and step local attenuator current in units of mA.
 Specify the measurement interval in units of second.
-Note: Do NOT set the interval to under 1.5 sec (at least 1.0 sec). 
+Note: Do NOT set the interval to under 1.5 sec (at least 1.0 sec).
 The measurement interval of SIS Bias is up to 1 sec.
 
 Examples
@@ -32,13 +32,13 @@ if __name__ == "__main__":
         "-vmin",
         type=float,
         help="Minimum voltage in mV",
-        default=-8.0,
+        default=5.0,
     )
     p.add_argument(
         "-vmax",
         type=float,
         help="Max voltage in mV",
-        default=8.0,
+        default=8.5,
     )
     p.add_argument(
         "-vs",
