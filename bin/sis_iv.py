@@ -7,7 +7,7 @@ Specify the minimum voltage, maximum voltage, and step voltage in units of mV.
 
 Examples
 --------
-$ necst sis_iv -id "USB" -min -8.0 -max 8.0 -s 0.1
+$ necst sis_iv -id "USB" "LSB" -min -8.0 -max 8.0 -s 0.1
 
 """
 import argparse
@@ -19,8 +19,9 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=description)
     p.add_argument(
         "-id",
+        nargs="*",
         type=str,
-        help="Selection of sideband (USB/LSB)",
+        help="Selection of beam",
     )
     p.add_argument(
         "-min",
