@@ -50,20 +50,20 @@ if __name__ == "__main__":
     p.add_argument(
         "-lomin",
         type=float,
-        help="Minimum voltage in mV",
+        help="Minimum voltage in mA",
         default=4.0,
     )
     p.add_argument(
         "-lomax",
         type=float,
-        help="Max voltage in mV",
+        help="Max voltage in mA",
         default=7.0,
     )
     p.add_argument(
         "-los",
         "--lostep",
         type=float,
-        help="Step voltage in mV",
+        help="Step voltage in mA",
         default=0.1,
     )
     p.add_argument(
