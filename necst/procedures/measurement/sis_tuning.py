@@ -39,6 +39,7 @@ class SIS_Tuning(Measurement):
                         self.com.sis_bias(cmd="set", mV=bias_voltage, id=beam)
                         for beam in id
                     ]
+                    self.com.chopper("insert")
                     time.sleep(interval)
                     self.com.chopper("remove")
                     time.sleep(interval)
