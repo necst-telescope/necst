@@ -33,16 +33,21 @@ class SISBias(DeviceNode):
         for id in channels:
             current = self.reader_io.get_current(f"{id}_I").to_value("uA").item()
             voltage = self.reader_io.get_voltage(f"{id}_V").to_value("mV").item()
-            power = self.reader_io.get_power(f"{id}_P").to_value("mW").item()
-            msg = SISBiasMsg(
-                time=time.time(), current=current, voltage=voltage, power=power, id=id
-            )
+            msg = SISBiasMsg(time=time.time(), current=current, voltage=voltage, id=id)
             if id not in self.pub:
                 self.pub[id] = topic.sis_bias[id].publisher(self)
             self.pub[id].publish(msg)
             time.sleep(0.01)
 
     def set_voltage(self, msg: SISBiasMsg) -> None:
-        self.setter_io.set_voltage(mV=msg.voltage, id=msg.id)
-        self.setter_io.apply_voltage()
+        for key in self.setter_io.keys():
+            if key is None:
+                self.setter_io.set_voltage(mV=msg.voltage, id=msg.id)
+                self.setter_io.apply_voltage()
+                break
+            else:
+                for name in self.setter_io[key].Config.channel.keys():
+                    if msg.id in name:
+                        self.setter_io[key].set_voltage(mV=msg.voltage, id=msg.id)
+                        self.setter_io[key].apply_voltage()
         self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")

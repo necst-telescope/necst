@@ -31,16 +31,28 @@ class SignalGeneratorController(DeviceNode):
                 self.publisher[name] = topic.lo_signal[name].publisher(self)
 
     def set_param(self, msg: LocalSignal) -> None:
-        self.io.set_freq(GHz=msg.freq)
-        self.io.set_power(dBm=msg.power)
-        self.io.start_output()
-        self.logger.info(f"Set freq = {msg.freq} GHz, power = {msg.power} dBm")
+        if msg.output_status:
+            self.io[msg.id].set_freq(GHz=msg.freq)
+            self.io[msg.id].set_power(dBm=msg.power)
+            self.io[msg.id].start_output()
+            self.logger.info(
+                f"Set freq = {msg.freq} GHz, power = {msg.power} dBm "
+                f"and start output for device {msg.id}"
+            )
+        else:
+            self.io[msg.id].stop_output()
+            self.logger.info(f"Stop output in device {msg.id}")
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
             freq = self.io[name].get_freq().to_value("GHz").item()
             power = self.io[name].get_power().value.item()
+            output_status = self.io[name].get_output_status()
             msg = LocalSignal(
-                time=time.time(), freq=float(freq), power=float(power), id=name
+                time=time.time(),
+                freq=float(freq),
+                power=float(power),
+                output_status=bool(output_status),
+                id=name,
             )
             publisher.publish(msg)

@@ -39,11 +39,11 @@ class AntennaMotor(DeviceNode):
             )
 
     def speed_command(self, msg: TimedAzElFloat64) -> None:
-        now = time.time()
-        if msg.time < now - 0.05:
-            return
-        while msg.time > time.time():
-            time.sleep(1e-5)
+        # now = time.time()
+        # if msg.time < now - 0.1:
+        #     return
+        # while msg.time > time.time():
+        #     time.sleep(1e-5)
         self.motor.set_speed(msg.az, "az")
         self.motor.set_speed(msg.el, "el")
 
@@ -74,7 +74,8 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.motor.io.output_do([0, 0, 0, 0])
+        node.motor.set_speed(0.0, "az")
+        node.motor.set_speed(0.0, "el")
         node.destroy_node()
         rclpy.try_shutdown()
 

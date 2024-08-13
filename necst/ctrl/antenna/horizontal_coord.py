@@ -164,7 +164,7 @@ class HorizontalCoord(AlertHandlerNode):
                 scan_frame=msg.frame,
                 speed=abs(msg.speed),
                 unit=msg.unit,
-                margin=config.antenna_scan_margin,
+                margin=msg.margin,
             )
         elif offset_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-RELATIVE-COORD command: {msg}")
@@ -177,7 +177,7 @@ class HorizontalCoord(AlertHandlerNode):
                 scan_frame=msg.offset_frame,
                 speed=abs(msg.speed),
                 unit=msg.unit,
-                margin=config.antenna_scan_margin,
+                margin=msg.margin,
             )
         elif offset_scan and named:
             self.logger.debug(f"Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: {msg}")
@@ -188,7 +188,7 @@ class HorizontalCoord(AlertHandlerNode):
                 scan_frame=msg.offset_frame,
                 speed=abs(msg.speed),
                 unit=msg.unit,
-                margin=config.antenna_scan_margin,
+                margin=msg.margin,
             )
         else:
             raise ValueError(f"Cannot determine command type for {msg}")
