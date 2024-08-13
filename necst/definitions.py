@@ -230,6 +230,9 @@ class topic:
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     pid_log = Topic(CalcLog, "pid_log", qos.realtime, namespace.antenna)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
+    vacuum_gauge = Topic(
+        DeviceReading, "vacuum_gauge", qos.realtime, namespace.rx, True
+    )
     dome_encoder = Topic(
         CoordMsg,
         "dome_encoder",
