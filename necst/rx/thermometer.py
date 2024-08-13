@@ -5,7 +5,7 @@ from neclib.devices import Thermometer
 from necst_msgs.msg import DeviceReading
 from rclpy.publisher import Publisher
 
-from .. import config, namespace, topic
+from .. import namespace, topic
 from ..core import DeviceNode
 
 
@@ -25,7 +25,7 @@ class ThermometerController(DeviceNode):
         self.create_timer(1, self.check_publisher)
 
     def check_publisher(self) -> None:
-        for name in config.thermometer.channel.keys():
+        for name in self.io.Config.thermometer.channel.keys():
             if name not in self.publisher:
                 self.publisher[name] = topic.thermometer[name].publisher(self)
 

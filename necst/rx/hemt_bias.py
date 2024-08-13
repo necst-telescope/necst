@@ -32,14 +32,16 @@ class HEMTBias(DeviceNode):
             v_drain = self.reader_io.get_voltage(f"{id}_Vdr").to_value("V").item()
             v_gate1 = self.reader_io.get_voltage(f"{id}_Vg1").to_value("V").item()
             v_gate2 = self.reader_io.get_voltage(f"{id}_Vg2").to_value("V").item()
+            i_drain = self.reader_io.get_current(f"{id}_Id").to_valus("mA").item()
             msg = HEMTBiasMsg(
                 time=time.time(),
                 v_drain=v_drain,
                 v_gate1=v_gate1,
                 v_gate2=v_gate2,
+                i_drain=i_drain,
                 id=id,
             )
             if id not in self.pub:
-                self.pub[id] = topic.sis_bias[id].publisher(self)
+                self.pub[id] = topic.hemt_bias[id].publisher(self)
             self.pub[id].publish(msg)
             time.sleep(0.01)

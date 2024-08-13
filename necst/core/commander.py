@@ -1208,7 +1208,7 @@ class Commander(PrivilegedNode):
     @require_privilege(escape_cmd=["?"])
     def signal_generator(
         self,
-        cmd: Literal["set", "?"],
+        cmd: Literal["set", "stop", "?"],
         /,
         *,
         GHz: Optional[Union[int, float]] = None,
@@ -1225,6 +1225,7 @@ class Commander(PrivilegedNode):
             Frequency in GHz.
         dBm
             Power in dBm.
+
         id
             Device identifier, may be defined in the configuration file.
 
@@ -1234,6 +1235,10 @@ class Commander(PrivilegedNode):
 
         >>> com.signal_generator("set", GHz=100, dBm=10, id="LSB2nd")
 
+        Stop the signal output on the device ``LSB2nd``
+
+        >>> com.signal_generator("stop", id = "LSB2nd")
+
         Read the frequency and the power on the device ``1st``
 
         >>> com.signal_generator("?", id="1st")
@@ -1241,7 +1246,12 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "SET":
-            msg = LocalSignal(freq=float(GHz), power=float(dBm), id=id)
+            msg = LocalSignal(
+                freq=float(GHz), power=float(dBm), output_status=True, id=id
+            )
+            self.publisher["local_signal"].publish(msg)
+        elif CMD == "STOP":
+            msg = LocalSignal(output_status=False, id=id)
             self.publisher["local_signal"].publish(msg)
         elif CMD == "?":
             return self.get_message("lo_signal", timeout_sec=10)

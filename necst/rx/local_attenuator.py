@@ -29,7 +29,7 @@ class LocalAttenuatorController(DeviceNode):
         self.io.output_current(id=msg.id, current=msg.current)
 
     def check_publisher(self) -> None:
-        for name in self.io.keys():
+        for name in self.io.Config.channel.keys():
             if name not in self.publisher:
                 self.publisher[name] = topic.local_attenuator.publisher(self)
 
