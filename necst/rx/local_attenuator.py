@@ -26,7 +26,11 @@ class LocalAttenuatorController(DeviceNode):
         if msg.finalize:
             self.io.finalize()
             return
-        self.io.output_current(id=msg.id, current=msg.current)
+        for id in msg.id:
+            self.io.set_current(id=msg.id, current=msg.current)
+        self.io.apply_current()
+        self.logger.info(f"Set current {msg.current} mA for ch {msg.id}")
+        time.sleep(0.01)
 
     def check_publisher(self) -> None:
         for name in self.io.Config.channel.keys():
@@ -41,3 +45,4 @@ class LocalAttenuatorController(DeviceNode):
                     id=id, outputrange=str(outputrange), time=time.time()
                 )
                 publisher.publish(msg)
+                time.sleep(0.01)

@@ -1023,11 +1023,11 @@ class Commander(PrivilegedNode):
     @require_privilege(escape_cmd=["?"])
     def sis_bias(
         self,
-        cmd: Literal["set", "?"],
+        cmd: Literal["set", "finalize", "?"],
         /,
         *,
         mV: Optional[Union[int, float]] = None,
-        id: Optional[str] = None,
+        id: Optional[Union[str, list[str]]] = None,
     ) -> None:
         """Control the SIS bias voltage.
 
@@ -1050,12 +1050,20 @@ class Commander(PrivilegedNode):
 
         >>> com.sis_bias("?", id="USB")
 
+        Set the SIS bias voltage to 0 mV as Finalize.
+
+        >>> com.sis_bias("finalize")
+
         """
         CMD = cmd.upper()
         if CMD == "SET":
+            if isinstance(id, str):
+                id = [id]
             self.publisher["sis_bias"].publish(SISBias(voltage=float(mV), id=id))
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)
+        elif CMD == "FINALIZE":
+            self.publisher["sis_bias"].publish(SISBias(finalize=True))
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
@@ -1136,7 +1144,7 @@ class Commander(PrivilegedNode):
         cmd: Literal["pass", "finalize", "?"],
         /,
         *,
-        id: Optional[str] = None,
+        id: Optional[Union[str, list[str]]] = None,
         current: float = 0.0,
     ) -> None:
         """Control the local_attenuator.
@@ -1167,6 +1175,8 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "PASS":
+            if isinstance(id, str):
+                id = [id]
             msg = LocalAttenuatorMsg(
                 id=id,
                 current=current,
