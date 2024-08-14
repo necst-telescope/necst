@@ -18,6 +18,6 @@ class SIS_IV(Measurement):
             int(round(1000 * max_voltage_mV) + 1000 * step_voltage_mV),
             int(round(1000 * step_voltage_mV)),
         ):
-            [self.com.sis_bias("set", mV=(bias_voltage / 1000), id=beam) for beam in id]
+            self.com.sis_bias("set", mV=(bias_voltage / 1000), id=id)
             time.sleep(1.2)
         self.com.sis_bias("finalize")

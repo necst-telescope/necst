@@ -26,7 +26,7 @@ class SIS_Tuning(Measurement):
             ):
                 [
                     self.com.local_attenuator(
-                        cmd="pass", id=beam, current=loatt_current
+                        cmd="pass", id=beam, current=(loatt_current / 1000)
                     )
                     for beam in id
                 ]
@@ -35,10 +35,7 @@ class SIS_Tuning(Measurement):
                     int(round(1000 * max_voltage_mV) + 1000 * step_voltage_mV),
                     int(round(1000 * step_voltage_mV)),
                 ):
-                    [
-                        self.com.sis_bias(cmd="set", mV=bias_voltage, id=beam)
-                        for beam in id
-                    ]
+                    self.com.sis_bias(cmd="set", mV=(bias_voltage / 1000), id=id)
                     self.com.chopper("insert")
                     time.sleep(interval)
                     self.com.chopper("remove")

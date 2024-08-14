@@ -50,7 +50,6 @@ class SISBias(DeviceNode):
             if None in keys:
                 for id in msg.id:
                     self.setter_io.set_voltage(mV=msg.voltage, id=id)
-                self.setter_io.apply_voltage()
             else:
                 for id in msg.id:
                     for key in keys:
@@ -58,8 +57,6 @@ class SISBias(DeviceNode):
                         if id in ch:
                             self.setter_io[key].set_voltage(mV=msg.voltage, id=id)
                         break
-                for key in keys:
-                    self.setter_io[key].apply_voltage()
-                    time.sleep(0.01)
+            self.setter_io.apply_voltage()
             self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
             time.sleep(0.01)
