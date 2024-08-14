@@ -19,8 +19,8 @@ class AntennaTrackingStatus(Node):
             int(0.5 * config.antenna_command_frequency), reset_on_failure=True
         )
 
-        self.cmd = ParameterList.new(2)
-        self.enc = ParameterList.new(1)
+        self.cmd = ParameterList.new(2, CoordMsg)
+        self.enc = ParameterList.new(1, CoordMsg)
         self.threshold = config.antenna_pointing_accuracy.to_value("deg").item()
         self.coord_ext = LinearExtrapolate(
             "time", CoordMsg.get_fields_and_field_types().keys()
@@ -35,10 +35,10 @@ class AntennaTrackingStatus(Node):
 
     def antenna_tracking_status(self) -> None:
         now = time.time()
-        if all(not isinstance(x, CoordMsg) for x in self.cmd):
+        if all(not isinstance(p.time, float) for p in self.cmd):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
-        elif all(not isinstance(x, CoordMsg) for x in self.enc):
+        elif all(not isinstance(p.time, float) for p in self.enc):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
