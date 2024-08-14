@@ -44,20 +44,9 @@ class AntennaTrackingStatus(Node):
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
             enc = self.enc[0]
-            cmd = self.extrapolate_command_value(enc.time)
+            cmd = self.coord_ext(CoordMsg(time=enc.time), self.cmd)
 
             error = ((enc.lon - cmd.lon) ** 2 + (enc.lat - cmd.lat) ** 2) ** 0.5
             ok = self.tracking_checker.check(error < self.threshold)
             msg = TrackingStatus(ok=ok, error=error, time=now)
         self.pub.publish(msg)
-
-    def extrapolate_command_value(self, time: float) -> Optional[CoordMsg]:
-        """Perform linear interpolation on command values."""
-        *_, newer = self.cmd
-        if any(not isinstance(p.time, float) for p in self.cmd) or (
-            newer.time < time - 1
-        ):
-            self.logger.warning("Command value not available.", throttle_duration_sec=5)
-            return
-
-        return self.coord_ext(CoordMsg(time=time), self.cmd)
