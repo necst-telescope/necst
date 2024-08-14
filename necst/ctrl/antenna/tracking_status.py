@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 from neclib.data import LinearExtrapolate
 from neclib.utils import ConditionChecker, ParameterList
