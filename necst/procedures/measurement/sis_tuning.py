@@ -43,8 +43,7 @@ class SIS_Tuning(Measurement):
                     time.sleep(interval)
                     self.com.chopper("remove")
                     time.sleep(interval)
-            for beam in id:
-                self.com.sis_bias("set", mV=(0), id=beam)
+            self.com.sis_bias("finalize")
             self.com.local_attenuator("finalize")
         else:
             self.logger.warning("The Measurement interval must be under 1.0 sec.")
