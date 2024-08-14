@@ -52,7 +52,7 @@ class AntennaTrackingStatus(Node):
         self.pub.publish(msg)
 
     def extrapolate_command_value(self, time: float) -> Optional[CoordMsg]:
-        """Perform linear interpolation on encoder reading."""
+        """Perform linear interpolation on command values."""
         *_, newer = self.cmd
         if any(not isinstance(p.time, float) for p in self.cmd) or (
             newer.time < time - 1
