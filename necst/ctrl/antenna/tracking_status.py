@@ -1,5 +1,7 @@
 import time
+from typing import Optional
 
+from neclib.data import LinearExtrapolate
 from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import CoordMsg, TrackingStatus
 from rclpy.node import Node
@@ -18,11 +20,12 @@ class AntennaTrackingStatus(Node):
             int(0.5 * config.antenna_command_frequency), reset_on_failure=True
         )
 
-        cfg = config.antenna_command
-        n_cmd_to_keep = cfg.frequency * (cfg.offset_sec + 0.5)
-        self.cmd = ParameterList.new(int(n_cmd_to_keep))
+        self.cmd = ParameterList.new(2)
         self.enc = ParameterList.new(1)
         self.threshold = config.antenna_pointing_accuracy.to_value("deg").item()
+        self.coord_ext = LinearExtrapolate(
+            "time", CoordMsg.get_fields_and_field_types().keys()
+        )
 
         self.pub = topic.antenna_tracking.publisher(self)
         topic.antenna_encoder.subscription(self, lambda msg: self.enc.push(msg))
@@ -40,11 +43,21 @@ class AntennaTrackingStatus(Node):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
-            (enc,) = self.enc
-            cmd_msgs = [msg for msg in self.cmd if isinstance(msg, CoordMsg)]
-            cmd, *_ = sorted(cmd_msgs, key=lambda msg: abs(msg.time - now))
+            enc = self.enc[0]
+            cmd = self.extrapolate_command_value(enc.time)
 
             error = ((enc.lon - cmd.lon) ** 2 + (enc.lat - cmd.lat) ** 2) ** 0.5
             ok = self.tracking_checker.check(error < self.threshold)
             msg = TrackingStatus(ok=ok, error=error, time=now)
         self.pub.publish(msg)
+
+    def extrapolate_command_value(self, time: float) -> Optional[CoordMsg]:
+        """Perform linear interpolation on encoder reading."""
+        *_, newer = self.cmd
+        if any(not isinstance(p.time, float) for p in self.cmd) or (
+            newer.time < time - 1
+        ):
+            self.logger.warning("Command value not available.", throttle_duration_sec=5)
+            return
+
+        return self.coord_ext(CoordMsg(time=time), self.cmd)
