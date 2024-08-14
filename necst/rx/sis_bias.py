@@ -56,7 +56,9 @@ class SISBias(DeviceNode):
                         ch = self.setter_io[key].Config.channel.keys()
                         if id in ch:
                             self.setter_io[key].set_voltage(mV=msg.voltage, id=id)
-                        break
+                            break
+                        else:
+                            continue
             self.setter_io.apply_voltage()
             self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
             time.sleep(0.01)
