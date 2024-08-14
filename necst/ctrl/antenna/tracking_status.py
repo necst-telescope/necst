@@ -46,9 +46,10 @@ class AntennaTrackingStatus(Node):
             enc = self.enc[0]
 
             print(enc)
-            print(cmd)
 
             cmd = self.coord_ext(CoordMsg(time=enc.time), self.cmd)
+
+            print(cmd)
 
             error = ((enc.lon - cmd.lon) ** 2 + (enc.lat - cmd.lat) ** 2) ** 0.5
             ok = self.tracking_checker.check(error < self.threshold)
