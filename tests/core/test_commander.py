@@ -48,7 +48,7 @@ class TestCommander(TesterNode):
                 CoordMsg(lon=x, lat=y, frame="altaz", unit="deg", time=time.time())
             )
 
-        timer = self.node.create_timer(0.1, lambda: publish())
+        timer = self.node.create_timer(0.05, lambda: publish())
 
         with spinning([self.node, tracking]):
             com.wait("antenna")
