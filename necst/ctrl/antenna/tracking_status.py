@@ -21,6 +21,7 @@ class AntennaTrackingStatus(Node):
 
         self.cmd = ParameterList.new(2, CoordMsg)
         self.enc = ParameterList.new(1, CoordMsg)
+
         self.threshold = config.antenna_pointing_accuracy.to_value("deg").item()
         self.coord_ext = LinearExtrapolate(
             "time", CoordMsg.get_fields_and_field_types().keys()
@@ -43,6 +44,10 @@ class AntennaTrackingStatus(Node):
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
             enc = self.enc[0]
+
+            print(enc)
+            print(cmd)
+
             cmd = self.coord_ext(CoordMsg(time=enc.time), self.cmd)
 
             error = ((enc.lon - cmd.lon) ** 2 + (enc.lat - cmd.lat) ** 2) ** 0.5
