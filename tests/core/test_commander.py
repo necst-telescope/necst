@@ -47,6 +47,7 @@ class TestCommander(TesterNode):
             enc.publish(
                 CoordMsg(lon=x, lat=y, frame="altaz", unit="deg", time=time.time())
             )
+            print(x, y)
 
         timer = self.node.create_timer(0.02, lambda: publish())
 
