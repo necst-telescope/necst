@@ -36,10 +36,10 @@ class AntennaTrackingStatus(Node):
 
     def antenna_tracking_status(self) -> None:
         now = time.time()
-        if all(not isinstance(p.time, float) for p in self.cmd):
+        if any(not isinstance(p.time, float) for p in self.cmd):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
-        elif all(not isinstance(p.time, float) for p in self.enc):
+        elif any(not isinstance(p.time, float) for p in self.enc):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
