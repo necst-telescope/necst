@@ -19,5 +19,5 @@ class SIS_IV(Measurement):
             int(round(1000 * step_voltage_mV)),
         ):
             self.com.sis_bias("set", mV=(bias_voltage / 1000), id=id)
-            time.sleep(1.2)
+            time.sleep(2.0)
         self.com.sis_bias("finalize")
