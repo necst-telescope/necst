@@ -130,6 +130,7 @@ class topic:
         MirrorMsg,
         ObservingMode,
         PIDMsg,
+        RecordMsg,
         Sampling,
         SISBias,
         Spectral,
@@ -257,6 +258,8 @@ class topic:
     dome_oc = Topic(DomeOC, "dome_oc", qos.reliable, namespace.dome)
     dome_limit_cmd = Topic(DomeLimit, "dome_limit_cmd", qos.reliable, namespace.dome)
     dome_limit = Topic(DomeLimit, "dome_limit", qos.realtime, namespace.dome)
+    record_cmd = Topic(RecordMsg, "record_cmd, qos.reliable", namespace.core)
+    record_status = Topic(RecordMsg, "record_status", qos.realtime, namespace.core)
     timeonly = Topic(TimeOnly, "timeonly", qos.realtime, namespace.core)
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
@@ -269,7 +272,6 @@ class service:
         CoordinateCommand,
         File,
         ObservationMode,
-        RecordSrv,
         ComDelaySrv,
         CCDCommand,
         DomeSync,
@@ -280,7 +282,6 @@ class service:
 
     privilege_request = Service(AuthoritySrv, "request", namespace.auth)
     privilege_ping = Service(Empty, "ping", namespace.auth)
-    record_path = Service(RecordSrv, "record_path", namespace.core)
     record_file = Service(File, "record_file", namespace.core)
     com_delay = Service(ComDelaySrv, "com_delay", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
