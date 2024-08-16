@@ -7,12 +7,12 @@ Specify the minimum voltage, maximum voltage, and step voltage in units of mV.
 Specify the minimum local attenuator current, maximum local attenuator current,
 and step local attenuator current in units of mA.
 Specify the measurement interval in units of second.
-Note: Do NOT set the interval to under 1.5 sec (at least 1.0 sec).
+Note: Do NOT set the interval to under 2.0 sec (at least 1.0 sec).
 The measurement interval of SIS Bias is up to 1 sec.
 
 Examples
 --------
-$ necst sis_tuning -id "USB" "LSB" -vmin -8.0 -vmax 8.0 -vs 0.1 -lomin 4.0 -lomax 7.0 -los 0.1 -i 1.5
+$ necst sis_tuning -id "USB" "LSB" -vmin -8.0 -vmax 8.0 -vs 0.1 -lomin 4.0 -lomax 7.0 -los 0.1 -i 3.0
 
 """
 import argparse
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         "--interval",
         type=float,
         help="Measurement interval",
-        default=1.5,
+        default=3.0,
     )
     args = p.parse_args()
 

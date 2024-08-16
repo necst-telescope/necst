@@ -23,7 +23,7 @@ class SISBias(DeviceNode):
         self.pub: Dict[str, Publisher] = {}
 
         topic.sis_bias_cmd.subscription(self, self.set_voltage)
-        self.create_timer(1, self.stream)
+        self.create_timer(0.25, self.stream)
 
     def stream(self) -> None:
         sis_channel = [

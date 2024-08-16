@@ -15,9 +15,9 @@ class SIS_Tuning(Measurement):
         min_loatt_mA: float = 4.0,
         max_loatt_mA: float = 7.0,
         step_loatt_mA: float = 0.1,
-        interval: float = 1.5,
+        interval: float = 3.0,
     ) -> None:
-        if interval > 1.0:
+        if interval > 2.0:
             self.com.chopper("insert")
             for loatt_current in range(
                 int(round(1000 * min_loatt_mA)),
@@ -40,4 +40,4 @@ class SIS_Tuning(Measurement):
             self.com.sis_bias("finalize")
             self.com.local_attenuator("finalize")
         else:
-            self.logger.warning("The Measurement interval must be under 1.0 sec.")
+            self.logger.warning("The Measurement interval must be under 2.0 sec.")
