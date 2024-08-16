@@ -20,6 +20,7 @@ from necst_msgs.msg import (
     LocalAttenuatorMsg,
     MembraneMsg,
     PIDMsg,
+    RecordMsg,
     Sampling,
     SISBias,
     Spectral,
@@ -28,7 +29,6 @@ from necst_msgs.msg import (
 from necst_msgs.srv import (
     CoordinateCommand,
     File,
-    RecordSrv,
     CCDCommand,
     DomeSync,
     ComDelaySrv,
@@ -88,6 +88,7 @@ class Commander(PrivilegedNode):
             "lo_signal": topic.lo_signal_cmd,
             "attenuator": topic.attenuator_cmd,
             "local_attenuator": topic.local_attenuator_cmd,
+            "recorder": topic.record_cmd,
             "spectra_smpl": topic.spectra_rec,
             "channel_binning": topic.channel_binning,
             "dome_alert_stop": topic.manual_stop_dome_alert,
@@ -112,6 +113,7 @@ class Commander(PrivilegedNode):
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
+            "record": _SubscriptionCfg(topic.record_status, 1),
             "dome_track": _SubscriptionCfg(topic.dome_tracking, 1),
             "dome_encoder": _SubscriptionCfg(topic.dome_encoder, 1),
             "dome_speed": _SubscriptionCfg(topic.dome_speed_cmd, 1),
@@ -120,7 +122,6 @@ class Commander(PrivilegedNode):
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
-            "record_path": service.record_path.client(self),
             "record_file": service.record_file.client(self),
             "com_delay": service.com_delay.client(self),
             "raw_coord": service.raw_coord.client(self),
@@ -973,17 +974,17 @@ class Commander(PrivilegedNode):
         if CMD == "START":
             recording = False
             while not recording:
-                req = RecordSrv.Request(name=name.lstrip("/"), stop=False)
-                res = self._send_request(req, self.client["record_path"])
-                recording = res.recording
+                msg = RecordMsg(name=name.lstrip("/"), stop=False)
+                self.publisher["record"].publish(msg)
+                recording = self.get_message("record").recording
             self.logger.info(f"Recording at {name!r}")
             return
         elif CMD == "STOP":
             recording = True
             while recording:
-                req = RecordSrv.Request(name=name, stop=True)
-                res = self._send_request(req, self.client["record_path"])
-                recording = res.recording
+                msg = RecordMsg(name=name, stop=True)
+                self.publisher["record"].publish(msg)
+                recording = self.get_message("record").recording
             return
         elif CMD == "FILE":
             if content is None:
