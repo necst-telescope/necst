@@ -983,6 +983,7 @@ class Commander(PrivilegedNode):
             recording = True
             while recording:
                 msg = RecordMsg(name=name, stop=True)
+                self.publisher["record"].publish(msg)
                 recording = self.get_message("record").recording
             return
         elif CMD == "FILE":
