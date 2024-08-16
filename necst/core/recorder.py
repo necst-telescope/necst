@@ -3,9 +3,10 @@ from functools import partial
 from pathlib import Path
 
 from neclib.recorders import ConsoleLogWriter, FileWriter, NECSTDBWriter, Recorder
-from necst_msgs.srv import File, RecordSrv
+from necst_msgs.srv import File
+from necst_msgs.msg import RecordMsg
 
-from .. import config, namespace, qos, service, utils
+from .. import config, namespace, qos, service, utils, topic
 from .server_node import ServerNode
 
 
@@ -20,6 +21,9 @@ class RecorderController(ServerNode):
         record_root = os.environ.get("NECST_RECORD_ROOT", None)
         self.recorder = Recorder(record_root or Path.home() / "data")
 
+        topic.record_cmd.subscription(self, self.change_directory)
+        self.pub = topic.record_status.publisher(self)
+
         self.subscriber = {}
         writers = [NECSTDBWriter(), FileWriter(), ConsoleLogWriter()]
         for writer in writers:
@@ -28,34 +32,32 @@ class RecorderController(ServerNode):
 
         self.create_timer(config.ros_topic_scan_interval_sec, self.scan_topics)
 
-        service.record_path.service(self, self.change_directory)
         service.record_file.service(self, self.write_file)
         self.start_server()
 
-    def change_directory(
-        self, request: RecordSrv.Request, response: RecordSrv.Response
-    ) -> RecordSrv.Response:
-        if request.stop and self.recorder.is_recording:
+    def change_directory(self, msg: RecordMsg) -> None:
+        if msg.stop and self.recorder.is_recording:
             self.recorder.stop_recording()
             self.logger.info("Recording has been stopped.")
-            response.recording = False
-        elif request.stop:
+            re_msg = RecordMsg(recording=False)
+        elif msg.stop:
             self.logger.info("Recording has already been stopped.")
-            response.recording = False
+            re_msg = RecordMsg(recording=False)
         elif not self.recorder.is_recording:
-            self.recorder.start_recording(request.name or None)
+            self.recorder.start_recording(msg.name or None)
             self.logger.info(f"Recorder started: {self.recorder.recording_path!s}")
-            response.recording = True
-        elif self.recorder.recording_path != self.recorder.record_root / request.name:
+            re_msg = RecordMsg(recording=True)
+        elif self.recorder.recording_path != self.recorder.record_root / msg.name:
             self.logger.info(f"Stopped recording: {self.recorder.recording_path!s}")
             self.recorder.stop_recording()
-            self.recorder.start_recording(request.name)
+            self.recorder.start_recording(msg.name)
             self.logger.info(f"Recorder started: {self.recorder.recording_path!s}")
-            response.recording = True
+            re_msg = RecordMsg(recording=True)
         else:
             self.logger.info(f"Continue recording: {self.recorder.recording_path!s}")
-            response.recording = True
-        return response
+            re_msg = RecordMsg(recording=True)
+        self.pub.publish(re_msg)
+        return
 
     def write_file(
         self, request: File.Request, response: File.Response
