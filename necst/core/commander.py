@@ -1060,11 +1060,15 @@ class Commander(PrivilegedNode):
         if CMD == "SET":
             if isinstance(id, str):
                 id = [id]
-            self.publisher["sis_bias"].publish(SISBias(voltage=float(mV), id=id))
+            self.publisher["sis_bias"].publish(
+                SISBias(voltage=float(mV), id=id, time=pytime.time())
+            )
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)
         elif CMD == "FINALIZE":
-            self.publisher["sis_bias"].publish(SISBias(finalize=True))
+            self.publisher["sis_bias"].publish(
+                SISBias(finalize=True, time=pytime.time())
+            )
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
@@ -1187,7 +1191,7 @@ class Commander(PrivilegedNode):
             self.publisher["local_attenuator"].publish(msg)
 
         elif CMD == "FINALIZE":
-            msg = LocalAttenuatorMsg(finalize=True)
+            msg = LocalAttenuatorMsg(finalize=True, time=pytime.time())
             self.publisher["local_attenuator"].publish(msg)
 
         elif CMD == "?":
@@ -1258,11 +1262,15 @@ class Commander(PrivilegedNode):
         CMD = cmd.upper()
         if CMD == "SET":
             msg = LocalSignal(
-                freq=float(GHz), power=float(dBm), output_status=True, id=id
+                freq=float(GHz),
+                power=float(dBm),
+                output_status=True,
+                id=id,
+                time=pytime.time(),
             )
             self.publisher["local_signal"].publish(msg)
         elif CMD == "STOP":
-            msg = LocalSignal(output_status=False, id=id)
+            msg = LocalSignal(output_status=False, id=id, time=pytime.time())
             self.publisher["local_signal"].publish(msg)
         elif CMD == "?":
             return self.get_message("lo_signal", timeout_sec=10)
