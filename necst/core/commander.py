@@ -113,7 +113,7 @@ class Commander(PrivilegedNode):
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
-            "record": _SubscriptionCfg(topic.record_status, 1),
+            "recorder": _SubscriptionCfg(topic.record_status, 1),
             "dome_track": _SubscriptionCfg(topic.dome_tracking, 1),
             "dome_encoder": _SubscriptionCfg(topic.dome_encoder, 1),
             "dome_speed": _SubscriptionCfg(topic.dome_speed_cmd, 1),
@@ -975,16 +975,16 @@ class Commander(PrivilegedNode):
             recording = False
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
-                self.publisher["record"].publish(msg)
-                recording = self.get_message("record").recording
+                self.publisher["recorder"].publish(msg)
+                recording = self.get_message("recorder").recording
             self.logger.info(f"Recording at {name!r}")
             return
         elif CMD == "STOP":
             recording = True
             while recording:
                 msg = RecordMsg(name=name, stop=True)
-                self.publisher["record"].publish(msg)
-                recording = self.get_message("record").recording
+                self.publisher["recorder"].publish(msg)
+                recording = self.get_message("recorder").recording
             return
         elif CMD == "FILE":
             if content is None:
