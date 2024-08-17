@@ -975,7 +975,7 @@ class Commander(PrivilegedNode):
             recording = False
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
-                self.publisher["record"].publish(msg)
+                self.publisher["recorder"].publish(msg)
                 recording = self.get_message("record").recording
             self.logger.info(f"Recording at {name!r}")
             return
@@ -983,7 +983,7 @@ class Commander(PrivilegedNode):
             recording = True
             while recording:
                 msg = RecordMsg(name=name, stop=True)
-                self.publisher["record"].publish(msg)
+                self.publisher["recorder"].publish(msg)
                 recording = self.get_message("record").recording
             return
         elif CMD == "FILE":
