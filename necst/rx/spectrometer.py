@@ -97,8 +97,6 @@ class SpectralData(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
-        self.resizers = defaultdict(lambda: Resize(1))
-
         try:
             from neclib.devices import Spectrometer
         except ImportError:
@@ -111,9 +109,12 @@ class SpectralData(DeviceNode):
         self.io = Spectrometer()
 
         self.metadata = ObservingModeManager()
+
+        self.resizers = {}
         self.data_queue = {}
         for key, _ in self.io.items():
             self.data_queue[key] = queue.Queue()
+            self.resizers[key] = defaultdict(lambda: Resize(1))
 
         self.publisher: Dict[int, Publisher] = {}
         self.create_timer(1, self.stream)
@@ -181,13 +182,13 @@ class SpectralData(DeviceNode):
                 r.keep_duration = msg.integ
 
     def fetch_data(self) -> None:
-        for key,io in self.io.items():
+        for key, io in self.io.items():
             if io.data_queue.empty():
                 return
             self.data_queue[key].put(io.get_spectra())
 
     def get_data(self) -> Optional[Tuple[float, Dict[int, List[float]]]]:
-        for key,data_queue in self.data_queue.items():
+        for key, data_queue in self.data_queue.items():
             if data_queue.empty():
                 return
 
@@ -254,7 +255,10 @@ class SpectralData(DeviceNode):
                 for _chunk in chunk:
                     if _chunk["type"].startswith("string"):
                         _chunk["value"] = _chunk["value"].ljust(
-                            int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
+                            int(
+                                re.sub(r"\D", "", _chunk["type"])
+                                or len(_chunk["value"])
+                            )
                         )
 
                 try:
