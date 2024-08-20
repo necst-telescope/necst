@@ -215,7 +215,7 @@ class SpectralData(DeviceNode):
                     position=metadata.position,
                     id=metadata.id,
                     ch=tuple(map(int, self.qlook_ch_range)),
-                    integ=float(self.resizers[board_id].keep_duration),
+                    integ=float(self.resizers[key][board_id].keep_duration),
                 )
                 self.publisher[_id].publish(msg)
 
