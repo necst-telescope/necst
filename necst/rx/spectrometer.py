@@ -220,6 +220,8 @@ class SpectralData(DeviceNode):
 
     def record(self) -> None:
         _data_dict = self.get_data()
+        if _data_dict is None:
+            return
         for key, _data in _data_dict.items():
             if _data is None:
                 return
