@@ -192,7 +192,7 @@ class SpectralData(DeviceNode):
                 return
 
             self.last_data[key] = data_queue.get()
-            timestamp, data = self.last_data
+            timestamp, data = self.last_data[key]
             for board_id, _data in data.items():
                 self.resizers[key][board_id].push(_data, timestamp)
 
