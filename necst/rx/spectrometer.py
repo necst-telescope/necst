@@ -111,12 +111,14 @@ class SpectralData(DeviceNode):
         self.io = Spectrometer()
 
         self.metadata = ObservingModeManager()
-        self.data_queue = queue.Queue()
+        self.data_queue = {}
+        for key, _ in self.io.items():
+            self.data_queue[key] = queue.Queue()
 
         self.publisher: Dict[int, Publisher] = {}
         self.create_timer(1, self.stream)
 
-        self.last_data = None
+        self.last_data = {}
         record_root = os.environ.get("NECST_RECORD_ROOT", None)
         self.recorder = Recorder(record_root or Path.home() / "data")
         if not any(isinstance(w, NECSTDBWriter) for w in self.recorder.writers):
@@ -179,78 +181,83 @@ class SpectralData(DeviceNode):
                 r.keep_duration = msg.integ
 
     def fetch_data(self) -> None:
-        if self.io.data_queue.empty():
-            return
-        self.data_queue.put(self.io.get_spectra())
+        for key,io in self.io.items():
+            if io.data_queue.empty():
+                return
+            self.data_queue[key].put(io.get_spectra())
 
     def get_data(self) -> Optional[Tuple[float, Dict[int, List[float]]]]:
-        if self.data_queue.empty():
-            return
+        for key,data_queue in self.data_queue.items():
+            if data_queue.empty():
+                return
 
-        self.last_data = self.data_queue.get()
-        timestamp, data = self.last_data
-        for board_id, _data in data.items():
-            self.resizers[board_id].push(_data, timestamp)
+            self.last_data[key] = data_queue.get()
+            timestamp, data = self.last_data
+            for board_id, _data in data.items():
+                self.resizers[key][board_id].push(_data, timestamp)
+
         return self.last_data
 
     def stream(self) -> None:
-        for board_id in self.resizers:
-            _id = f"board{board_id}"
-            if _id not in self.publisher:
-                self.publisher[_id] = topic.quick_spectra[_id].publisher(self)
+        for key, resizers in self.resizers.items():
+            for board_id in resizers:
+                _id = f"{key}_board{board_id}"
+                if _id not in self.publisher:
+                    self.publisher[_id] = topic.quick_spectra[_id].publisher(self)
 
-            data = self.resizers[board_id].get(self.qlook_ch_range, n_samples=100)
-            now = pytime.time()
-            metadata = self.metadata.get(now)
-            msg = Spectral(
-                data=data,
-                time=now,
-                position=metadata.position,
-                id=metadata.id,
-                ch=tuple(map(int, self.qlook_ch_range)),
-                integ=float(self.resizers[board_id].keep_duration),
-            )
-            self.publisher[_id].publish(msg)
+                data = resizers[board_id].get(self.qlook_ch_range, n_samples=100)
+                now = pytime.time()
+                metadata = self.metadata.get(now)
+                msg = Spectral(
+                    data=data,
+                    time=now,
+                    position=metadata.position,
+                    id=metadata.id,
+                    ch=tuple(map(int, self.qlook_ch_range)),
+                    integ=float(self.resizers[board_id].keep_duration),
+                )
+                self.publisher[_id].publish(msg)
 
     def record(self) -> None:
-        _data = self.get_data()
-        if _data is None:
-            return
+        _data_dict = self.get_data()
+        for key, _data in _data_dict.items():
+            if _data is None:
+                return
 
-        if not self.record_condition.check(True):  # Skip recording
-            return
-        else:
-            self.record_condition.check(False)
+            if not self.record_condition.check(True):  # Skip recording
+                return
+            else:
+                self.record_condition.check(False)
 
-        if not self.recorder.is_recording:
-            self.logger.warning(
-                "Recorder not started, skipping recording", throttle_duration_sec=30
-            )
-            return
-
-        time, data = _data
-        for board_id, spectral_data in data.items():
-            metadata = self.metadata.get(time)
-            msg = Spectral(
-                data=spectral_data,
-                time=time,
-                id=metadata.id,
-                position=metadata.position,
-            )
-            fields = msg.get_fields_and_field_types()
-            chunk = [
-                {"key": name, "type": type_, "value": getattr(msg, name)}
-                for name, type_ in fields.items()
-            ]
-            for _chunk in chunk:
-                if _chunk["type"].startswith("string"):
-                    _chunk["value"] = _chunk["value"].ljust(
-                        int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
-                    )
-
-            try:
-                self.recorder.append(
-                    f"{namespace.data}/spectral/board{board_id}", chunk
+            if not self.recorder.is_recording:
+                self.logger.warning(
+                    "Recorder not started, skipping recording", throttle_duration_sec=30
                 )
-            except RuntimeError:
-                pass
+                return
+
+            time, data = _data
+            for board_id, spectral_data in data.items():
+                metadata = self.metadata.get(time)
+                msg = Spectral(
+                    data=spectral_data,
+                    time=time,
+                    id=metadata.id,
+                    position=metadata.position,
+                )
+                fields = msg.get_fields_and_field_types()
+                chunk = [
+                    {"key": name, "type": type_, "value": getattr(msg, name)}
+                    for name, type_ in fields.items()
+                ]
+                for _chunk in chunk:
+                    if _chunk["type"].startswith("string"):
+                        _chunk["value"] = _chunk["value"].ljust(
+                            int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
+                        )
+
+                try:
+                    self.recorder.append(
+                        f"{namespace.data}/spectral/{key}/board{board_id}", chunk
+                    )
+                except RuntimeError:
+                    pass
