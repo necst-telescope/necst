@@ -25,7 +25,7 @@ class OpticalPointing(Observation):
             obsdatetime = obstime
         obsfloattime = obsdatetime.timestamp()
         opt_pointing = OpticalPointingSpec(obsfloattime, "unix")
-        sorted_list = opt_pointing.sort(
+        sorted_list = opt_pointing.make_sorted_table(
             catalog_file=file, magnitude=(float(magnitude[0]), float(magnitude[1]))
         )
         t_tot = opt_pointing.estimate_time(sorted_list)
