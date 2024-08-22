@@ -71,7 +71,7 @@ if __name__ == "__main__":
         "--interval",
         type=float,
         help="Measurement interval",
-        default=3.0,
+        default=5.0,
     )
     args = p.parse_args()
 
