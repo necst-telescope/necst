@@ -15,7 +15,7 @@ class SIS_Tuning(Measurement):
         min_loatt_mA: float = 4.0,
         max_loatt_mA: float = 7.0,
         step_loatt_mA: float = 0.1,
-        interval: float = 3.0,
+        interval: float = 5.0,
     ) -> None:
         if interval > 2.0:
             self.com.chopper("insert")

@@ -23,8 +23,18 @@ class AttenuatorController(DeviceNode):
         self.create_timer(1, self.check_publisher)
 
     def set_loss(self, msg: DeviceReading) -> None:
-        self.io.set_loss(dB=int(msg.value), id=msg.id)
-        self.logger.info(f"Attenuator loss set to {msg.value} dB for device {msg.id}")
+        keys = self.io.keys()
+        if None in keys:
+            self.io.set_loss(dB=int(msg.value), id=msg.id)
+        else:
+            for key in keys:
+                ch = self.io[key].Config.channel.keys()
+                if msg.id in ch:
+                    self.io[key].set_voltage(dB=msg.value, id=msg.id)
+                    break
+                else:
+                    continue
+        time.sleep(0.01)
 
     def check_publisher(self) -> None:
         for key in self.io.keys():

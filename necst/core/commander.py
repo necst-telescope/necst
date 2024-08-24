@@ -119,6 +119,7 @@ class Commander(PrivilegedNode):
             "dome_speed": _SubscriptionCfg(topic.dome_speed_cmd, 1),
             "dome": _SubscriptionCfg(topic.dome_status, 1),
             "local_attenuator": _SubscriptionCfg(topic.local_attenuator, 1),
+            "vacuum_gauge": _SubscriptionCfg(topic.vacuum_gauge, 1),
         }
         self.subscription: Dict[str, Subscription] = {}
         self.client = {
@@ -1268,12 +1269,33 @@ class Commander(PrivilegedNode):
                 id=id,
                 time=pytime.time(),
             )
-            self.publisher["local_signal"].publish(msg)
+            self.publisher["lo_signal"].publish(msg)
         elif CMD == "STOP":
             msg = LocalSignal(output_status=False, id=id, time=pytime.time())
-            self.publisher["local_signal"].publish(msg)
+            self.publisher["lo_signal"].publish(msg)
         elif CMD == "?":
             return self.get_message("lo_signal", timeout_sec=10)
+        else:
+            raise ValueError(f"Unknown command: {cmd!r}")
+
+    def vacuum_gauge(self, cmd: Literal["?"] = "?", /) -> None:
+        """Get the vacuum_gauge reading.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+
+        Examples
+        --------
+        Get the vacuum gauge reading
+
+        >>> com.vacuum_gauge("?")
+
+        """
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("vacuum_gauge", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
@@ -1289,3 +1311,7 @@ class Commander(PrivilegedNode):
     """Alias of :meth:`sis_bias`."""
     hemt = hemt_bias
     """Alias of :meth:`hemt_bias`."""
+    loatt = local_attenuator
+    """Alias of :meth:`local_attenuator`."""
+    vg = vacuum_gauge
+    """Alias of :meth:`vacuum_gauge`."""
