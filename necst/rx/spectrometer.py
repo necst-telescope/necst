@@ -178,8 +178,9 @@ class SpectralData(DeviceNode):
             self.logger.warning(f"Cannot parse new Q-Look configuration: {msg}")
 
         if msg.integ > 0:
-            for r in self.resizers.values():
-                r.keep_duration = msg.integ
+            for key, resizers in self.resizers.items():
+                for r in resizers.values():
+                    r.keep_duration = msg.integ
 
     def fetch_data(self) -> None:
         for key, io in self.io.items():
