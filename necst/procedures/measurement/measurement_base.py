@@ -33,9 +33,20 @@ class Measurement(ABC):
     observation_type: str
     target: Optional[str] = None
 
-    parameter_files = ("config.toml", "pointing_param.toml")
-
     def __init__(self, record_name: Optional[str] = None, /, **kwargs) -> None:
+        try:
+            self.telescope = os.environ.get("TELESCOP")
+            self.parameter_files = (
+                f"{self.telescope}_config.toml",
+                "pointing_param.toml",
+                "device_setting.toml",
+            )
+        except KeyError:
+            self.parameter_files = (
+                "config.toml",
+                "pointing_param.toml",
+                "device_setting.toml",
+            )
         self.logger = get_logger(self.__class__.__name__)
         self._record_suffix: Optional[str] = record_name
         self._record_qualname = None
@@ -111,5 +122,4 @@ class Measurement(ABC):
                 self.logger.error(f"Failed to save parameter file {filename!r}")
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> None:
-        ...
+    def run(self, *args, **kwargs) -> None: ...
