@@ -38,7 +38,7 @@ class Observation(ABC):
 
     def __init__(self, record_name: Optional[str] = None, /, **kwargs) -> None:
         try:
-            self.telescope = os.environ.get("TELESCOP")
+            self.telescope = os.environ.get("TELESCOPE")
             self.parameter_files = (
                 f"{self.telescope}_config.toml",
                 "pointing_param.toml",
