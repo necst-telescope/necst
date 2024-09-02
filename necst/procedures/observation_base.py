@@ -126,8 +126,7 @@ class Observation(ABC):
                 self.logger.error(f"Failed to save parameter file {filename!r}")
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> None:
-        ...
+    def run(self, *args, **kwargs) -> None: ...
 
     def hot(self, integ_time: Union[int, float], id: Any) -> None:
         # TODO: Remove this workaround, by attaching control section ID to spectra

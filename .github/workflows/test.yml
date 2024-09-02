@@ -26,8 +26,8 @@ jobs:
       - name: Install test dependency
         run: |
           pip install \
-            "black==22.10.0" \
-            "flake8==3.9.2" \
+            "black==24.3.0" \
+            "flake8==7.1.0" \
             "myst-parser==0.18.0" \
             "pydata-sphinx-theme==0.7.2" \
             "pytest-cov==3.0.0" \
