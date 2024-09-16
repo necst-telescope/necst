@@ -27,7 +27,7 @@ jobs:
           pip3 install \
             "myst-parser==0.18.0" \
             "pydata-sphinx-theme==0.7.2" \
-            "sphinx==4.5.0" \
+            "sphinx==5.0.0" \
             ${{ env.PACKAGE_PATH }}
       - name: Build docs
         working-directory: ${{ env.PACKAGE_PATH }}
