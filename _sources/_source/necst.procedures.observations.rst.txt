@@ -25,8 +25,8 @@ Submodules
 
    necst.procedures.observations.file_based
    necst.procedures.observations.hot_monitor
-   necst.procedures.observations.observation_base
    necst.procedures.observations.optical_pointing
+   necst.procedures.observations.position_switching
    necst.procedures.observations.rsky
    necst.procedures.observations.skydip
 
@@ -37,7 +37,7 @@ Submodules
 
    necst.procedures.observations.file_based
    necst.procedures.observations.hot_monitor
-   necst.procedures.observations.observation_base
    necst.procedures.observations.optical_pointing
+   necst.procedures.observations.position_switching
    necst.procedures.observations.rsky
    necst.procedures.observations.skydip

@@ -1,0 +1,33 @@
+
+
+
+necst.ctrl.membrane
+===================
+
+
+
+
+.. automodule:: necst.ctrl.membrane
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+Submodules
+----------
+
+.. autosummary::
+
+   necst.ctrl.membrane.motor
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.ctrl.membrane.motor

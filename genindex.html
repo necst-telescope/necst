@@ -1,11 +1,11 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Index &#8212; necst 0.7.1 documentation</title>
+    <title>Index &#8212; necst 4.0.1 documentation</title>
     
   <link href="_static/css/theme.css" rel="stylesheet">
   <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -31,12 +31,13 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
+    <meta name="docsearch:language" content="en">
     
 
     <!-- Google Analytics -->
@@ -119,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.7.1</p><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.1</p><form class="bd-search d-flex align-items-center" action="search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -254,7 +255,7 @@
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.binning">binning() (Observation method)</a>
+      <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.binning">binning() (Observation method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -264,13 +265,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.definitions.html#necst.definitions.namespace.calib">calib (namespace attribute)</a>
 </li>
-      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CCDMsg.capture">capture (topic.CCDMsg property)</a>
-</li>
       <li><a href="_source/necst.rx.ccd.html#necst.rx.ccd.CCDController.capture">capture() (CCDController method)</a>
 </li>
       <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.ccd">ccd() (Commander method)</a>
 </li>
-      <li><a href="_source/necst.definitions.html#necst.definitions.topic.ccd_cmd">ccd_cmd (topic attribute)</a>
+      <li><a href="_source/necst.definitions.html#necst.definitions.service.ccd_cmd">ccd_cmd (service attribute)</a>
 </li>
       <li><a href="_source/necst.rx.ccd.html#necst.rx.ccd.CCDController">CCDController (class in necst.rx.ccd)</a>
 </li>
@@ -290,18 +289,28 @@
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.channel_binning">channel_binning (topic attribute)</a>
 </li>
-      <li><a href="_source/necst.ctrl.antenna.motor.html#necst.ctrl.antenna.motor.AntennaMotor.check_command">check_command() (AntennaMotor method)</a>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeLimit.check">check (topic.DomeLimit property)</a>
 </li>
+      <li><a href="_source/necst.ctrl.antenna.motor.html#necst.ctrl.antenna.motor.AntennaMotor.check_command">check_command() (AntennaMotor method)</a>
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.DomeMotor.check_command">(DomeMotor method)</a>
+</li>
+      </ul></li>
       <li><a href="_source/necst.rx.attenuator.html#necst.rx.attenuator.AttenuatorController.check_publisher">check_publisher() (AttenuatorController method)</a>
 
       <ul>
+        <li><a href="_source/necst.rx.local_attenuator.html#necst.rx.local_attenuator.LocalAttenuatorController.check_publisher">(LocalAttenuatorController method)</a>
+</li>
+        <li><a href="_source/necst.rx.powermeter.html#necst.rx.powermeter.PowermeterController.check_publisher">(PowermeterController method)</a>
+</li>
         <li><a href="_source/necst.rx.signal_generator.html#necst.rx.signal_generator.SignalGeneratorController.check_publisher">(SignalGeneratorController method)</a>
 </li>
         <li><a href="_source/necst.rx.thermometer.html#necst.rx.thermometer.ThermometerController.check_publisher">(ThermometerController method)</a>
 </li>
+        <li><a href="_source/necst.rx.vacuum_gauge.html#necst.rx.vacuum_gauge.VacuumGaugeController.check_publisher">(VacuumGaugeController method)</a>
+</li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.chopper">chopper() (Commander method)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.chopper_cmd">chopper_cmd (topic attribute)</a>
@@ -310,6 +319,8 @@
 </li>
       <li><a href="_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController">ChopperController (class in necst.ctrl.calibrator.chopper)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Service.client">client() (Service method)</a>
 
       <ul>
@@ -318,16 +329,42 @@
       </ul></li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.clock">clock (topic attribute)</a>
 </li>
-      <li><a href="_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.command_realtime">command_realtime() (HorizontalCoord method)</a>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog.cmd_lat">cmd_lat (topic.CalcLog property)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog.cmd_lon">cmd_lon (topic.CalcLog property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog.cmd_time">cmd_time (topic.CalcLog property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.service.com_delay">com_delay (service attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.com_delay_get_time">com_delay_get_time (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.com_delay_test">com_delay_test() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.com_delay_test_topic">com_delay_test_topic() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.core.com_delay_test.html#necst.core.com_delay_test.ComDelayTest">ComDelayTest (class in necst.core.com_delay_test)</a>
+</li>
+      <li><a href="_source/necst.core.com_delay_test_topic.html#necst.core.com_delay_test_topic.ComDelayTestTopic">ComDelayTestTopic (class in necst.core.com_delay_test_topic)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController.command_realtime">command_realtime() (DomeController method)</a>
+
+      <ul>
+        <li><a href="_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.command_realtime">(HorizontalCoord method)</a>
+</li>
+      </ul></li>
       <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander">Commander (class in necst.core.commander)</a>
 </li>
-      <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.CommandOffsetDuration">CommandOffsetDuration (AntennaPIDController attribute)</a>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DriveMsg.contactor">contactor (topic.DriveMsg property)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.ControlStatus.controlled">controlled (topic.ControlStatus property)</a>
 </li>
-      <li><a href="_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.convert">convert() (HorizontalCoord method)</a>
+      <li><a href="_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController.convert">convert() (DomeController method)</a>
+
+      <ul>
+        <li><a href="_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.convert">(HorizontalCoord method)</a>
 </li>
+      </ul></li>
       <li><a href="_source/necst.definitions.html#necst.definitions.namespace.core">core (namespace attribute)</a>
 </li>
       <li><a href="_source/necst.core.alert.antenna_speed.html#necst.core.alert.antenna_speed.AntennaSpeedAlert.Critical">Critical (AntennaSpeedAlert attribute)</a>
@@ -336,8 +373,12 @@
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.namespace.ctrl">ctrl (namespace attribute)</a>
 </li>
-      <li><a href="_source/necst.definitions.html#necst.definitions.topic.SISBias.current">current (topic.SISBias property)</a>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalAttenuatorMsg.current">current (topic.LocalAttenuatorMsg property)</a>
+
+      <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.SISBias.current">(topic.SISBias property)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -362,13 +403,85 @@
         <li><a href="_source/necst.core.server_node.html#necst.core.server_node.ServerNode.destroy_node">(ServerNode method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.core.device_node.html#necst.core.device_node.DeviceNode">DeviceNode (class in necst.core.device_node)</a>
 </li>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager.disable">disable() (ObservingModeManager method)</a>
 </li>
       <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.discard_outdated_commands">discard_outdated_commands() (AntennaPIDController method)</a>
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.discard_outdated_commands">(DomePIDController method)</a>
+</li>
+      </ul></li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.MirrorMsg.distance">distance (topic.MirrorMsg property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.namespace.dome">dome (namespace attribute)</a>
+</li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.dome">dome() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_altaz_cmd">dome_altaz_cmd (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_control_status">dome_control_status (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.service.dome_coord">dome_coord (service attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_encoder">dome_encoder (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_limit">dome_limit (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeEncoderController.dome_limit">dome_limit() (DomeEncoderController method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_limit_cmd">dome_limit_cmd (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_motor_speed">dome_motor_speed (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_motor_step">dome_motor_step (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_oc">dome_oc (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.service.dome_pid_sync">dome_pid_sync (service attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_source/necst.ctrl.dome.sim_devices.html#necst.ctrl.dome.sim_devices.DomeDeviceSimulator.dome_simulator">dome_simulator() (DomeDeviceSimulator method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_speed_cmd">dome_speed_cmd (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_status">dome_status (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.dome_tracking.html#necst.ctrl.dome.dome_tracking.DomeTrackingStatus.dome_status">dome_status() (DomeTrackingStatus method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.service.dome_sync">dome_sync (service attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_sync_error">dome_sync_error (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.dome_tracking.html#necst.ctrl.dome.dome_tracking.DomeTrackingStatus.dome_sync_status">dome_sync_status() (DomeTrackingStatus method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.dome_tracking">dome_tracking (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController">DomeController (class in necst.ctrl.dome.dome_controller)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.sim_devices.html#necst.ctrl.dome.sim_devices.DomeDeviceSimulator">DomeDeviceSimulator (class in necst.ctrl.dome.sim_devices)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeEncoderController">DomeEncoderController (class in necst.ctrl.dome.encoder)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeLimitController">DomeLimitController (class in necst.ctrl.dome.encoder)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.DomeMotor">DomeMotor (class in necst.ctrl.dome.motor)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController">DomePIDController (class in necst.ctrl.dome.pid_controller)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.dome_tracking.html#necst.ctrl.dome.dome_tracking.DomeTrackingStatus">DomeTrackingStatus (class in necst.ctrl.dome.dome_tracking)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.namespace.drive">drive (namespace attribute)</a>
+
+      <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DriveMsg.drive">(topic.DriveMsg property)</a>
+</li>
+      </ul></li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.drive">drive() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.drive_cmd">drive_cmd (topic attribute)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.drive_range_alert_az">drive_range_alert_az (topic attribute)</a>
 </li>
@@ -377,6 +490,10 @@
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.drive_speed_alert_az">drive_speed_alert_az (topic attribute)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.drive_speed_alert_el">drive_speed_alert_el (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.drive_status">drive_status (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.ctrl.drive.motor.html#necst.ctrl.drive.motor.DriveMotor">DriveMotor (class in necst.ctrl.drive.motor)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -394,14 +511,22 @@
 </li>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager.enable">enable() (ObservingModeManager method)</a>
 </li>
+      <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager.enabled">enabled() (ObservingModeManager method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager.enabled">enabled() (ObservingModeManager method)</a>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog.enc_lat">enc_lat (topic.CalcLog property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog.enc_lon">enc_lon (topic.CalcLog property)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.TrackingStatus.error">error (topic.TrackingStatus property)</a>
 </li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.execute">execute() (Observation method)</a>
+      <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement.execute">execute() (Measurement method)</a>
+
+      <ul>
+        <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.execute">(Observation method)</a>
 </li>
+      </ul></li>
       <li><a href="_source/necst.core.server_node.html#necst.core.server_node.ServerNode.executor">executor (ServerNode attribute)</a>
 </li>
   </ul></td>
@@ -414,6 +539,12 @@
 </li>
       <li><a href="_source/necst.procedures.observations.file_based.html#necst.procedures.observations.file_based.FileBasedObservation">FileBasedObservation (class in necst.procedures.observations.file_based)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalAttenuatorMsg.finalize">finalize (topic.LocalAttenuatorMsg property)</a>
+
+      <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.SISBias.finalize">(topic.SISBias property)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.CoordMsg.frame">frame (topic.CoordMsg property)</a>
@@ -436,8 +567,6 @@
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Topic.get_children">(topic.Topic method)</a>
 </li>
       </ul></li>
-      <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.get_coordinate_command">get_coordinate_command() (AntennaPIDController method)</a>
-</li>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData.get_data">get_data() (SpectralData method)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.AlertMsg.get_fields_and_field_types">get_fields_and_field_types() (topic.AlertMsg class method)</a>
@@ -447,7 +576,7 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Boolean.get_fields_and_field_types">(topic.Boolean class method)</a>
 </li>
-        <li><a href="_source/necst.definitions.html#necst.definitions.topic.CCDMsg.get_fields_and_field_types">(topic.CCDMsg class method)</a>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog.get_fields_and_field_types">(topic.CalcLog class method)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.ChopperMsg.get_fields_and_field_types">(topic.ChopperMsg class method)</a>
 </li>
@@ -459,13 +588,31 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.DeviceReading.get_fields_and_field_types">(topic.DeviceReading class method)</a>
 </li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeCommand.get_fields_and_field_types">(topic.DomeCommand class method)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeLimit.get_fields_and_field_types">(topic.DomeLimit class method)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeOC.get_fields_and_field_types">(topic.DomeOC class method)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeStatus.get_fields_and_field_types">(topic.DomeStatus class method)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DriveMsg.get_fields_and_field_types">(topic.DriveMsg class method)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.HEMTBias.get_fields_and_field_types">(topic.HEMTBias class method)</a>
 </li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalAttenuatorMsg.get_fields_and_field_types">(topic.LocalAttenuatorMsg class method)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalSignal.get_fields_and_field_types">(topic.LocalSignal class method)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MembraneMsg.get_fields_and_field_types">(topic.MembraneMsg class method)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MirrorMsg.get_fields_and_field_types">(topic.MirrorMsg class method)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.ObservingMode.get_fields_and_field_types">(topic.ObservingMode class method)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.PIDMsg.get_fields_and_field_types">(topic.PIDMsg class method)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.RecordMsg.get_fields_and_field_types">(topic.RecordMsg class method)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Sampling.get_fields_and_field_types">(topic.Sampling class method)</a>
 </li>
@@ -477,6 +624,8 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimedAzElInt64.get_fields_and_field_types">(topic.TimedAzElInt64 class method)</a>
 </li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimeOnly.get_fields_and_field_types">(topic.TimeOnly class method)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.TrackingStatus.get_fields_and_field_types">(topic.TrackingStatus class method)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.WeatherMsg.get_fields_and_field_types">(topic.WeatherMsg class method)</a>
@@ -487,6 +636,8 @@
       <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.get_message">get_message() (Commander method)</a>
 </li>
       <li><a href="_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode.get_privilege">get_privilege() (PrivilegedNode method)</a>
+</li>
+      <li><a href="_source/necst.core.com_delay_test.html#necst.core.com_delay_test.ComDelayTest.get_time">get_time() (ComDelayTest method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -508,7 +659,7 @@
 </li>
       <li><a href="_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord">HorizontalCoord (class in necst.ctrl.antenna.horizontal_coord)</a>
 </li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.hot">hot() (Observation method)</a>
+      <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.hot">hot() (Observation method)</a>
 </li>
       <li><a href="_source/necst.procedures.observations.hot_monitor.html#necst.procedures.observations.hot_monitor.HotMonitor">HotMonitor (class in necst.procedures.observations.hot_monitor)</a>
 </li>
@@ -520,16 +671,18 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.HEMTBias.i_drain">i_drain (topic.HEMTBias property)</a>
+</li>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager.ObservingMode.id">id (ObservingModeManager.ObservingMode attribute)</a>
 
       <ul>
-        <li><a href="_source/necst.definitions.html#necst.definitions.topic.CCDMsg.id">(topic.CCDMsg property)</a>
-</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.ControlStatus.id">(topic.ControlStatus property)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.DeviceReading.id">(topic.DeviceReading property)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.HEMTBias.id">(topic.HEMTBias property)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalAttenuatorMsg.id">(topic.LocalAttenuatorMsg property)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalSignal.id">(topic.LocalSignal property)</a>
 </li>
@@ -543,20 +696,24 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.immediate_stop_no_resume">immediate_stop_no_resume() (AntennaPIDController method)</a>
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.immediate_stop_no_resume">(DomePIDController method)</a>
 </li>
+      </ul></li>
       <li><a href="_source/necst.utils.ros_interface.html#necst.utils.ros_interface.import_msg">import_msg() (in module necst.utils.ros_interface)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.WeatherMsg.in_humidity">in_humidity (topic.WeatherMsg property)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.WeatherMsg.in_temperature">in_temperature (topic.WeatherMsg property)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimeOnly.input_topic_time">input_topic_time (topic.TimeOnly property)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.ChopperMsg.insert">insert (topic.ChopperMsg property)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.Spectral.integ">integ (topic.Spectral property)</a>
 </li>
       <li><a href="_source/necst.utils.ros_interface.html#necst.utils.ros_interface.interface_type_path">interface_type_path() (in module necst.utils.ros_interface)</a>
-</li>
-      <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.interpolated_encoder_reading">interpolated_encoder_reading() (AntennaPIDController method)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.ControlStatus.interrupt_ok">interrupt_ok (topic.ControlStatus property)</a>
 </li>
@@ -582,12 +739,30 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.CoordMsg.lat">lat (topic.CoordMsg property)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeStatus.left_act">left_act (topic.DomeStatus property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeStatus.left_pos">left_pos (topic.DomeStatus property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeLimit.limit">limit (topic.DomeLimit property)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.DomeMotor.limit_check">limit_check() (DomeMotor method)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.lo_signal">lo_signal (topic attribute)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.lo_signal_cmd">lo_signal_cmd (topic attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.loatt">loatt() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.local_attenuator">local_attenuator (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.local_attenuator">local_attenuator() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.local_attenuator_cmd">local_attenuator_cmd (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.rx.local_attenuator.html#necst.rx.local_attenuator.LocalAttenuatorController">LocalAttenuatorController (class in necst.rx.local_attenuator)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.CoordMsg.lon">lon (topic.CoordMsg property)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.qos.lowest">lowest (qos attribute)</a>
@@ -600,9 +775,15 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_source/necst.core.recorder.html#necst.core.recorder.main">main() (in module necst.core.recorder)</a>
+      <li><a href="_source/necst.ctrl.mirror.m2.html#necst.ctrl.mirror.m2.M2Controller">M2Controller (class in necst.ctrl.mirror.m2)</a>
+</li>
+      <li><a href="_source/necst.ctrl.mirror.m4.html#necst.ctrl.mirror.m4.M4Controller">M4Controller (class in necst.ctrl.mirror.m4)</a>
+</li>
+      <li><a href="_source/necst.core.com_delay_test.html#necst.core.com_delay_test.main">main() (in module necst.core.com_delay_test)</a>
 
       <ul>
+        <li><a href="_source/necst.core.recorder.html#necst.core.recorder.main">(in module necst.core.recorder)</a>
+</li>
         <li><a href="_source/necst.ctrl.antenna.encoder.html#necst.ctrl.antenna.encoder.main">(in module necst.ctrl.antenna.encoder)</a>
 </li>
         <li><a href="_source/necst.ctrl.antenna.motor.html#necst.ctrl.antenna.motor.main">(in module necst.ctrl.antenna.motor)</a>
@@ -611,10 +792,46 @@
 </li>
         <li><a href="_source/necst.ctrl.antenna.weather_station.html#necst.ctrl.antenna.weather_station.main">(in module necst.ctrl.antenna.weather_station)</a>
 </li>
+        <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.main">(in module necst.ctrl.dome.encoder)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.main">(in module necst.ctrl.dome.motor)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.sim_devices.html#necst.ctrl.dome.sim_devices.main">(in module necst.ctrl.dome.sim_devices)</a>
+</li>
+        <li><a href="_source/necst.ctrl.drive.motor.html#necst.ctrl.drive.motor.main">(in module necst.ctrl.drive.motor)</a>
+</li>
+        <li><a href="_source/necst.ctrl.membrane.motor.html#necst.ctrl.membrane.motor.main">(in module necst.ctrl.membrane.motor)</a>
+</li>
       </ul></li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.manual_stop_alert">manual_stop_alert (topic attribute)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.manual_stop_dome_alert">manual_stop_dome_alert (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement">Measurement (class in necst.procedures.measurement.measurement_base)</a>
+</li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.memb">memb() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.namespace.membrane">membrane (namespace attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.membrane_cmd">membrane_cmd (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.membrane_status">membrane_status (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.ctrl.membrane.motor.html#necst.ctrl.membrane.motor.MembraneMotor">MembraneMotor (class in necst.ctrl.membrane.motor)</a>
+</li>
       <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.metadata">metadata() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.namespace.mirror">mirror (namespace attribute)</a>
+</li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.mirror">mirror() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.mirror_m2_cmd">mirror_m2_cmd (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.mirror_m2_status">mirror_m2_status (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.mirror_m4_cmd">mirror_m4_cmd (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.mirror_m4_status">mirror_m4_status (topic attribute)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.ObservingMode.mode">mode (topic.ObservingMode property)</a>
 </li>
@@ -641,6 +858,10 @@
         <li><a href="_source/necst.core.auth.privileged_node.html#module-necst.core.auth.privileged_node">necst.core.auth.privileged_node</a>
 </li>
         <li><a href="_source/necst.core.clock.html#module-necst.core.clock">necst.core.clock</a>
+</li>
+        <li><a href="_source/necst.core.com_delay_test.html#module-necst.core.com_delay_test">necst.core.com_delay_test</a>
+</li>
+        <li><a href="_source/necst.core.com_delay_test_topic.html#module-necst.core.com_delay_test_topic">necst.core.com_delay_test_topic</a>
 </li>
         <li><a href="_source/necst.core.commander.html#module-necst.core.commander">necst.core.commander</a>
 </li>
@@ -672,9 +893,47 @@
 </li>
         <li><a href="_source/necst.ctrl.calibrator.chopper.html#module-necst.ctrl.calibrator.chopper">necst.ctrl.calibrator.chopper</a>
 </li>
+        <li><a href="_source/necst.ctrl.dome.html#module-necst.ctrl.dome">necst.ctrl.dome</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.dome_controller.html#module-necst.ctrl.dome.dome_controller">necst.ctrl.dome.dome_controller</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.dome_tracking.html#module-necst.ctrl.dome.dome_tracking">necst.ctrl.dome.dome_tracking</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.encoder.html#module-necst.ctrl.dome.encoder">necst.ctrl.dome.encoder</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.motor.html#module-necst.ctrl.dome.motor">necst.ctrl.dome.motor</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#module-necst.ctrl.dome.pid_controller">necst.ctrl.dome.pid_controller</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.sim_devices.html#module-necst.ctrl.dome.sim_devices">necst.ctrl.dome.sim_devices</a>
+</li>
+        <li><a href="_source/necst.ctrl.drive.html#module-necst.ctrl.drive">necst.ctrl.drive</a>
+</li>
+        <li><a href="_source/necst.ctrl.drive.motor.html#module-necst.ctrl.drive.motor">necst.ctrl.drive.motor</a>
+</li>
+        <li><a href="_source/necst.ctrl.membrane.html#module-necst.ctrl.membrane">necst.ctrl.membrane</a>
+</li>
+        <li><a href="_source/necst.ctrl.membrane.motor.html#module-necst.ctrl.membrane.motor">necst.ctrl.membrane.motor</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.html#module-necst.ctrl.mirror">necst.ctrl.mirror</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m2.html#module-necst.ctrl.mirror.m2">necst.ctrl.mirror.m2</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m4.html#module-necst.ctrl.mirror.m4">necst.ctrl.mirror.m4</a>
+</li>
         <li><a href="_source/necst.definitions.html#module-necst.definitions">necst.definitions</a>
 </li>
         <li><a href="_source/necst.procedures.html#module-necst.procedures">necst.procedures</a>
+</li>
+        <li><a href="_source/necst.procedures.measurement.html#module-necst.procedures.measurement">necst.procedures.measurement</a>
+</li>
+        <li><a href="_source/necst.procedures.measurement.measurement_base.html#module-necst.procedures.measurement.measurement_base">necst.procedures.measurement.measurement_base</a>
+</li>
+        <li><a href="_source/necst.procedures.measurement.sis_iv.html#module-necst.procedures.measurement.sis_iv">necst.procedures.measurement.sis_iv</a>
+</li>
+        <li><a href="_source/necst.procedures.measurement.sis_tuning.html#module-necst.procedures.measurement.sis_tuning">necst.procedures.measurement.sis_tuning</a>
+</li>
+        <li><a href="_source/necst.procedures.observation_base.html#module-necst.procedures.observation_base">necst.procedures.observation_base</a>
 </li>
         <li><a href="_source/necst.procedures.observations.html#module-necst.procedures.observations">necst.procedures.observations</a>
 </li>
@@ -682,9 +941,9 @@
 </li>
         <li><a href="_source/necst.procedures.observations.hot_monitor.html#module-necst.procedures.observations.hot_monitor">necst.procedures.observations.hot_monitor</a>
 </li>
-        <li><a href="_source/necst.procedures.observations.observation_base.html#module-necst.procedures.observations.observation_base">necst.procedures.observations.observation_base</a>
-</li>
         <li><a href="_source/necst.procedures.observations.optical_pointing.html#module-necst.procedures.observations.optical_pointing">necst.procedures.observations.optical_pointing</a>
+</li>
+        <li><a href="_source/necst.procedures.observations.position_switching.html#module-necst.procedures.observations.position_switching">necst.procedures.observations.position_switching</a>
 </li>
         <li><a href="_source/necst.procedures.observations.rsky.html#module-necst.procedures.observations.rsky">necst.procedures.observations.rsky</a>
 </li>
@@ -698,6 +957,10 @@
 </li>
         <li><a href="_source/necst.rx.hemt_bias.html#module-necst.rx.hemt_bias">necst.rx.hemt_bias</a>
 </li>
+        <li><a href="_source/necst.rx.local_attenuator.html#module-necst.rx.local_attenuator">necst.rx.local_attenuator</a>
+</li>
+        <li><a href="_source/necst.rx.powermeter.html#module-necst.rx.powermeter">necst.rx.powermeter</a>
+</li>
         <li><a href="_source/necst.rx.signal_generator.html#module-necst.rx.signal_generator">necst.rx.signal_generator</a>
 </li>
         <li><a href="_source/necst.rx.sis_bias.html#module-necst.rx.sis_bias">necst.rx.sis_bias</a>
@@ -705,6 +968,8 @@
         <li><a href="_source/necst.rx.spectrometer.html#module-necst.rx.spectrometer">necst.rx.spectrometer</a>
 </li>
         <li><a href="_source/necst.rx.thermometer.html#module-necst.rx.thermometer">necst.rx.thermometer</a>
+</li>
+        <li><a href="_source/necst.rx.vacuum_gauge.html#module-necst.rx.vacuum_gauge">necst.rx.vacuum_gauge</a>
 </li>
         <li><a href="_source/necst.utils.html#module-necst.utils">necst.utils</a>
 </li>
@@ -717,8 +982,26 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController.move">move() (ChopperController method)</a>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeOC.move">move (topic.DomeOC property)</a>
+
+      <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MembraneMsg.move">(topic.MembraneMsg property)</a>
 </li>
+      </ul></li>
+      <li><a href="_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController.move">move() (ChopperController method)</a>
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.DomeMotor.move">(DomeMotor method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.drive.motor.html#necst.ctrl.drive.motor.DriveMotor.move">(DriveMotor method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m2.html#necst.ctrl.mirror.m2.M2Controller.move">(M2Controller method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m4.html#necst.ctrl.mirror.m4.M4Controller.move">(M4Controller method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.membrane.motor.html#necst.ctrl.membrane.motor.MembraneMotor.move">(MembraneMotor method)</a>
+</li>
+      </ul></li>
       <li><a href="_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Topic.msg_type">msg_type (Topic attribute)</a>
 
       <ul>
@@ -732,7 +1015,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.CoordMsg.name">name (topic.CoordMsg property)</a>
+
+      <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.RecordMsg.name">(topic.RecordMsg property)</a>
 </li>
+      </ul></li>
       <li><a href="_source/necst.ctrl.antenna.sim_devices.html#necst.ctrl.antenna.sim_devices.AntennaDeviceSimulator.Namespace">Namespace (AntennaDeviceSimulator attribute)</a>
 
       <ul>
@@ -759,14 +1046,44 @@
       </ul></li>
       <li><a href="_source/necst.definitions.html#necst.definitions.namespace">namespace (class in necst.definitions)</a>
 </li>
-      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.Namespace">Namespace (Commander attribute)</a>
+      <li><a href="_source/necst.core.com_delay_test.html#necst.core.com_delay_test.ComDelayTest.Namespace">Namespace (ComDelayTest attribute)</a>
 
       <ul>
+        <li><a href="_source/necst.core.com_delay_test_topic.html#necst.core.com_delay_test_topic.ComDelayTestTopic.Namespace">(ComDelayTestTopic attribute)</a>
+</li>
+        <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.Namespace">(Commander attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController.Namespace">(DomeController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.sim_devices.html#necst.ctrl.dome.sim_devices.DomeDeviceSimulator.Namespace">(DomeDeviceSimulator attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeEncoderController.Namespace">(DomeEncoderController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeLimitController.Namespace">(DomeLimitController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.DomeMotor.Namespace">(DomeMotor attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.Namespace">(DomePIDController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.dome_tracking.html#necst.ctrl.dome.dome_tracking.DomeTrackingStatus.Namespace">(DomeTrackingStatus attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.drive.motor.html#necst.ctrl.drive.motor.DriveMotor.Namespace">(DriveMotor attribute)</a>
+</li>
         <li><a href="_source/necst.rx.hemt_bias.html#necst.rx.hemt_bias.HEMTBias.Namespace">(HEMTBias attribute)</a>
 </li>
         <li><a href="_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.Namespace">(HorizontalCoord attribute)</a>
 </li>
+        <li><a href="_source/necst.rx.local_attenuator.html#necst.rx.local_attenuator.LocalAttenuatorController.Namespace">(LocalAttenuatorController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m2.html#necst.ctrl.mirror.m2.M2Controller.Namespace">(M2Controller attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m4.html#necst.ctrl.mirror.m4.M4Controller.Namespace">(M4Controller attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.membrane.motor.html#necst.ctrl.membrane.motor.MembraneMotor.Namespace">(MembraneMotor attribute)</a>
+</li>
         <li><a href="_source/necst.core.clock.html#necst.core.clock.ObserverInfo.Namespace">(ObserverInfo attribute)</a>
+</li>
+        <li><a href="_source/necst.rx.powermeter.html#necst.rx.powermeter.PowermeterController.Namespace">(PowermeterController attribute)</a>
 </li>
         <li><a href="_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode.Namespace">(PrivilegedNode attribute)</a>
 </li>
@@ -797,8 +1114,12 @@
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Topic.namespace">(topic.Topic attribute)</a>
 </li>
       </ul></li>
-      <li><a href="_source/necst.ctrl.antenna.weather_station.html#necst.ctrl.antenna.weather_station.WeatherStationReader.Namespace">Namespace (WeatherStationReader attribute)</a>
+      <li><a href="_source/necst.rx.vacuum_gauge.html#necst.rx.vacuum_gauge.VacuumGaugeController.Namespace">Namespace (VacuumGaugeController attribute)</a>
+
+      <ul>
+        <li><a href="_source/necst.ctrl.antenna.weather_station.html#necst.ctrl.antenna.weather_station.WeatherStationReader.Namespace">(WeatherStationReader attribute)</a>
 </li>
+      </ul></li>
       <li>
     necst
 
@@ -867,6 +1188,20 @@
 
       <ul>
         <li><a href="_source/necst.core.clock.html#module-necst.core.clock">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.core.com_delay_test
+
+      <ul>
+        <li><a href="_source/necst.core.com_delay_test.html#module-necst.core.com_delay_test">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.core.com_delay_test_topic
+
+      <ul>
+        <li><a href="_source/necst.core.com_delay_test_topic.html#module-necst.core.com_delay_test_topic">module</a>
 </li>
       </ul></li>
       <li>
@@ -953,8 +1288,6 @@
         <li><a href="_source/necst.ctrl.antenna.tracking_status.html#module-necst.ctrl.antenna.tracking_status">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     necst.ctrl.antenna.weather_station
 
@@ -977,6 +1310,106 @@
 </li>
       </ul></li>
       <li>
+    necst.ctrl.dome
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.html#module-necst.ctrl.dome">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.dome.dome_controller
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.dome_controller.html#module-necst.ctrl.dome.dome_controller">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.dome.dome_tracking
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.dome_tracking.html#module-necst.ctrl.dome.dome_tracking">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.dome.encoder
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.encoder.html#module-necst.ctrl.dome.encoder">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.dome.motor
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.motor.html#module-necst.ctrl.dome.motor">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.dome.pid_controller
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#module-necst.ctrl.dome.pid_controller">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.dome.sim_devices
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.sim_devices.html#module-necst.ctrl.dome.sim_devices">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    necst.ctrl.drive
+
+      <ul>
+        <li><a href="_source/necst.ctrl.drive.html#module-necst.ctrl.drive">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.drive.motor
+
+      <ul>
+        <li><a href="_source/necst.ctrl.drive.motor.html#module-necst.ctrl.drive.motor">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.membrane
+
+      <ul>
+        <li><a href="_source/necst.ctrl.membrane.html#module-necst.ctrl.membrane">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.membrane.motor
+
+      <ul>
+        <li><a href="_source/necst.ctrl.membrane.motor.html#module-necst.ctrl.membrane.motor">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.mirror
+
+      <ul>
+        <li><a href="_source/necst.ctrl.mirror.html#module-necst.ctrl.mirror">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.mirror.m2
+
+      <ul>
+        <li><a href="_source/necst.ctrl.mirror.m2.html#module-necst.ctrl.mirror.m2">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.ctrl.mirror.m4
+
+      <ul>
+        <li><a href="_source/necst.ctrl.mirror.m4.html#module-necst.ctrl.mirror.m4">module</a>
+</li>
+      </ul></li>
+      <li>
     necst.definitions
 
       <ul>
@@ -988,6 +1421,41 @@
 
       <ul>
         <li><a href="_source/necst.procedures.html#module-necst.procedures">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.procedures.measurement
+
+      <ul>
+        <li><a href="_source/necst.procedures.measurement.html#module-necst.procedures.measurement">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.procedures.measurement.measurement_base
+
+      <ul>
+        <li><a href="_source/necst.procedures.measurement.measurement_base.html#module-necst.procedures.measurement.measurement_base">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.procedures.measurement.sis_iv
+
+      <ul>
+        <li><a href="_source/necst.procedures.measurement.sis_iv.html#module-necst.procedures.measurement.sis_iv">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.procedures.measurement.sis_tuning
+
+      <ul>
+        <li><a href="_source/necst.procedures.measurement.sis_tuning.html#module-necst.procedures.measurement.sis_tuning">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.procedures.observation_base
+
+      <ul>
+        <li><a href="_source/necst.procedures.observation_base.html#module-necst.procedures.observation_base">module</a>
 </li>
       </ul></li>
       <li>
@@ -1012,17 +1480,17 @@
 </li>
       </ul></li>
       <li>
-    necst.procedures.observations.observation_base
-
-      <ul>
-        <li><a href="_source/necst.procedures.observations.observation_base.html#module-necst.procedures.observations.observation_base">module</a>
-</li>
-      </ul></li>
-      <li>
     necst.procedures.observations.optical_pointing
 
       <ul>
         <li><a href="_source/necst.procedures.observations.optical_pointing.html#module-necst.procedures.observations.optical_pointing">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.procedures.observations.position_switching
+
+      <ul>
+        <li><a href="_source/necst.procedures.observations.position_switching.html#module-necst.procedures.observations.position_switching">module</a>
 </li>
       </ul></li>
       <li>
@@ -1068,6 +1536,20 @@
 </li>
       </ul></li>
       <li>
+    necst.rx.local_attenuator
+
+      <ul>
+        <li><a href="_source/necst.rx.local_attenuator.html#module-necst.rx.local_attenuator">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.rx.powermeter
+
+      <ul>
+        <li><a href="_source/necst.rx.powermeter.html#module-necst.rx.powermeter">module</a>
+</li>
+      </ul></li>
+      <li>
     necst.rx.signal_generator
 
       <ul>
@@ -1093,6 +1575,13 @@
 
       <ul>
         <li><a href="_source/necst.rx.thermometer.html#module-necst.rx.thermometer">module</a>
+</li>
+      </ul></li>
+      <li>
+    necst.rx.vacuum_gauge
+
+      <ul>
+        <li><a href="_source/necst.rx.vacuum_gauge.html#module-necst.rx.vacuum_gauge">module</a>
 </li>
       </ul></li>
       <li>
@@ -1148,13 +1637,43 @@
 </li>
         <li><a href="_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController.NodeName">(ChopperController attribute)</a>
 </li>
+        <li><a href="_source/necst.core.com_delay_test.html#necst.core.com_delay_test.ComDelayTest.NodeName">(ComDelayTest attribute)</a>
+</li>
+        <li><a href="_source/necst.core.com_delay_test_topic.html#necst.core.com_delay_test_topic.ComDelayTestTopic.NodeName">(ComDelayTestTopic attribute)</a>
+</li>
         <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.NodeName">(Commander attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController.NodeName">(DomeController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.sim_devices.html#necst.ctrl.dome.sim_devices.DomeDeviceSimulator.NodeName">(DomeDeviceSimulator attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeEncoderController.NodeName">(DomeEncoderController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeLimitController.NodeName">(DomeLimitController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.DomeMotor.NodeName">(DomeMotor attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.NodeName">(DomePIDController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.dome_tracking.html#necst.ctrl.dome.dome_tracking.DomeTrackingStatus.NodeName">(DomeTrackingStatus attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.drive.motor.html#necst.ctrl.drive.motor.DriveMotor.NodeName">(DriveMotor attribute)</a>
 </li>
         <li><a href="_source/necst.rx.hemt_bias.html#necst.rx.hemt_bias.HEMTBias.NodeName">(HEMTBias attribute)</a>
 </li>
         <li><a href="_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.NodeName">(HorizontalCoord attribute)</a>
 </li>
+        <li><a href="_source/necst.rx.local_attenuator.html#necst.rx.local_attenuator.LocalAttenuatorController.NodeName">(LocalAttenuatorController attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m2.html#necst.ctrl.mirror.m2.M2Controller.NodeName">(M2Controller attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m4.html#necst.ctrl.mirror.m4.M4Controller.NodeName">(M4Controller attribute)</a>
+</li>
+        <li><a href="_source/necst.ctrl.membrane.motor.html#necst.ctrl.membrane.motor.MembraneMotor.NodeName">(MembraneMotor attribute)</a>
+</li>
         <li><a href="_source/necst.core.clock.html#necst.core.clock.ObserverInfo.NodeName">(ObserverInfo attribute)</a>
+</li>
+        <li><a href="_source/necst.rx.powermeter.html#necst.rx.powermeter.PowermeterController.NodeName">(PowermeterController attribute)</a>
 </li>
         <li><a href="_source/necst.core.recorder.html#necst.core.recorder.RecorderController.NodeName">(RecorderController attribute)</a>
 </li>
@@ -1167,6 +1686,8 @@
         <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData.NodeName">(SpectralData attribute)</a>
 </li>
         <li><a href="_source/necst.rx.thermometer.html#necst.rx.thermometer.ThermometerController.NodeName">(ThermometerController attribute)</a>
+</li>
+        <li><a href="_source/necst.rx.vacuum_gauge.html#necst.rx.vacuum_gauge.VacuumGaugeController.NodeName">(VacuumGaugeController attribute)</a>
 </li>
         <li><a href="_source/necst.ctrl.antenna.weather_station.html#necst.ctrl.antenna.weather_station.WeatherStationReader.NodeName">(WeatherStationReader attribute)</a>
 </li>
@@ -1181,30 +1702,38 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation">Observation (class in necst.procedures.observations.observation_base)</a>
+      <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation">Observation (class in necst.procedures.observation_base)</a>
 </li>
       <li><a href="_source/necst.procedures.observations.hot_monitor.html#necst.procedures.observations.hot_monitor.HotMonitor.observation_type">observation_type (HotMonitor attribute)</a>
 
       <ul>
-        <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.observation_type">(Observation attribute)</a>
+        <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement.observation_type">(Measurement attribute)</a>
+</li>
+        <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.observation_type">(Observation attribute)</a>
 </li>
         <li><a href="_source/necst.procedures.observations.optical_pointing.html#necst.procedures.observations.optical_pointing.OpticalPointing.observation_type">(OpticalPointing attribute)</a>
 </li>
         <li><a href="_source/necst.procedures.observations.file_based.html#necst.procedures.observations.file_based.OTF.observation_type">(OTF attribute)</a>
 </li>
+        <li><a href="_source/necst.procedures.observations.position_switching.html#necst.procedures.observations.position_switching.PositionSwitching.observation_type">(PositionSwitching attribute)</a>
+</li>
         <li><a href="_source/necst.procedures.observations.file_based.html#necst.procedures.observations.file_based.RadioPointing.observation_type">(RadioPointing attribute)</a>
 </li>
         <li><a href="_source/necst.procedures.observations.rsky.html#necst.procedures.observations.rsky.RSky.observation_type">(RSky attribute)</a>
+</li>
+        <li><a href="_source/necst.procedures.measurement.sis_iv.html#necst.procedures.measurement.sis_iv.SIS_IV.observation_type">(SIS_IV attribute)</a>
+</li>
+        <li><a href="_source/necst.procedures.measurement.sis_tuning.html#necst.procedures.measurement.sis_tuning.SIS_Tuning.observation_type">(SIS_Tuning attribute)</a>
 </li>
         <li><a href="_source/necst.procedures.observations.skydip.html#necst.procedures.observations.skydip.Skydip.observation_type">(Skydip attribute)</a>
 </li>
       </ul></li>
       <li><a href="_source/necst.core.clock.html#necst.core.clock.ObserverInfo">ObserverInfo (class in necst.core.clock)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager">ObservingModeManager (class in necst.rx.spectrometer)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager.ObservingMode">ObservingModeManager.ObservingMode (class in necst.rx.spectrometer)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.obsmode">obsmode (service attribute)</a>
@@ -1213,15 +1742,29 @@
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.obsmode">(topic attribute)</a>
 </li>
       </ul></li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.off">off() (Observation method)</a>
+      <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.off">off() (Observation method)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.TrackingStatus.ok">ok (topic.TrackingStatus property)</a>
 </li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.on">on() (Observation method)</a>
+      <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.on">on() (Observation method)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeOC.open">open (topic.DomeOC property)</a>
+
+      <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MembraneMsg.open">(topic.MembraneMsg property)</a>
+</li>
+      </ul></li>
       <li><a href="_source/necst.procedures.observations.optical_pointing.html#necst.procedures.observations.optical_pointing.OpticalPointing">OpticalPointing (class in necst.procedures.observations.optical_pointing)</a>
 </li>
       <li><a href="_source/necst.procedures.observations.file_based.html#necst.procedures.observations.file_based.OTF">OTF (class in necst.procedures.observations.file_based)</a>
+</li>
+      <li><a href="_source/necst.rx.local_attenuator.html#necst.rx.local_attenuator.LocalAttenuatorController.output_current">output_current() (LocalAttenuatorController method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalSignal.output_status">output_status (topic.LocalSignal property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimeOnly.output_topic_time">output_topic_time (topic.TimeOnly property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalAttenuatorMsg.outputrange">outputrange (topic.LocalAttenuatorMsg property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1229,11 +1772,11 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.parameter_files">parameter_files (Observation attribute)</a>
-</li>
       <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.patt">patt() (Commander method)</a>
 </li>
       <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.pid">pid() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.pid_log">pid_log (topic attribute)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.pid_param">pid_param (topic attribute)</a>
 </li>
@@ -1242,17 +1785,21 @@
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager.ObservingMode.position">position (ObservingModeManager.ObservingMode attribute)</a>
 
       <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MirrorMsg.position">(topic.MirrorMsg property)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Spectral.position">(topic.Spectral property)</a>
 </li>
       </ul></li>
+      <li><a href="_source/necst.procedures.observations.position_switching.html#necst.procedures.observations.position_switching.PositionSwitching">PositionSwitching (class in necst.procedures.observations.position_switching)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalSignal.power">power (topic.LocalSignal property)</a>
-
-      <ul>
-        <li><a href="_source/necst.definitions.html#necst.definitions.topic.SISBias.power">(topic.SISBias property)</a>
 </li>
-      </ul></li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.powermeter">powermeter (topic attribute)</a>
+</li>
+      <li><a href="_source/necst.rx.powermeter.html#necst.rx.powermeter.PowermeterController">PowermeterController (class in necst.rx.powermeter)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.WeatherMsg.pressure">pressure (topic.WeatherMsg property)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.privilege_ping">privilege_ping (service attribute)</a>
@@ -1319,15 +1866,27 @@
         <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData.record">(SpectralData method)</a>
 </li>
       </ul></li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.record_cmd">record_cmd (topic attribute)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.record_file">record_file (service attribute)</a>
 </li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.record_name">record_name (Observation property)</a>
+      <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement.record_name">record_name (Measurement property)</a>
+
+      <ul>
+        <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.record_name">(Observation property)</a>
 </li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.record_parameter_files">record_parameter_files() (Observation method)</a>
+      </ul></li>
+      <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement.record_parameter_files">record_parameter_files() (Measurement method)</a>
+
+      <ul>
+        <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.record_parameter_files">(Observation method)</a>
 </li>
-      <li><a href="_source/necst.definitions.html#necst.definitions.service.record_path">record_path (service attribute)</a>
+      </ul></li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.record_status">record_status (topic attribute)</a>
 </li>
       <li><a href="_source/necst.core.recorder.html#necst.core.recorder.RecorderController">RecorderController (class in necst.core.recorder)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.RecordMsg.recording">recording (topic.RecordMsg property)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.qos.reliable">reliable (qos attribute)</a>
 </li>
@@ -1338,7 +1897,13 @@
       <li><a href="_source/necst.definitions.html#necst.definitions.service.AuthoritySrv.Request">Request (service.AuthoritySrv attribute)</a>
 
       <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.service.CCDCommand.Request">(service.CCDCommand attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.service.ComDelaySrv.Request">(service.ComDelaySrv attribute)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.service.CoordinateCommand.Request">(service.CoordinateCommand attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.service.DomeSync.Request">(service.DomeSync attribute)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.service.Empty.Request">(service.Empty attribute)</a>
 </li>
@@ -1346,23 +1911,27 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.service.ObservationMode.Request">(service.ObservationMode attribute)</a>
 </li>
-        <li><a href="_source/necst.definitions.html#necst.definitions.service.RecordSrv.Request">(service.RecordSrv attribute)</a>
-</li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.require_privilege">require_privilege() (in module necst.core.auth.privileged_node)</a>
 
       <ul>
         <li><a href="_source/necst.core.auth.privileged_node.html#necst.core.auth.privileged_node.PrivilegedNode.require_privilege">(PrivilegedNode static method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.utils.callbacks.html#necst.utils.callbacks.respond_to_ping">respond_to_ping() (in module necst.utils.callbacks)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.AuthoritySrv.Response">Response (service.AuthoritySrv attribute)</a>
 
       <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.service.CCDCommand.Response">(service.CCDCommand attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.service.ComDelaySrv.Response">(service.ComDelaySrv attribute)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.service.CoordinateCommand.Response">(service.CoordinateCommand attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.service.DomeSync.Response">(service.DomeSync attribute)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.service.Empty.Response">(service.Empty attribute)</a>
 </li>
@@ -1370,17 +1939,23 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.service.ObservationMode.Response">(service.ObservationMode attribute)</a>
 </li>
-        <li><a href="_source/necst.definitions.html#necst.definitions.service.RecordSrv.Response">(service.RecordSrv attribute)</a>
-</li>
       </ul></li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.Spectral.rfreq">rfreq (topic.Spectral property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeStatus.right_act">right_act (topic.DomeStatus property)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeStatus.right_pos">right_pos (topic.DomeStatus property)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.namespace.root">root (namespace attribute)</a>
 </li>
       <li><a href="_source/necst.utils.ros_thread.html#necst.utils.ros_thread.ros2context">ros2context() (in module necst.utils.ros_thread)</a>
 </li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.ros2env">ros2env() (Observation method)</a>
+      <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement.ros2env">ros2env() (Measurement method)</a>
+
+      <ul>
+        <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.ros2env">(Observation method)</a>
 </li>
+      </ul></li>
       <li><a href="_source/necst.procedures.observations.rsky.html#necst.procedures.observations.rsky.RSky">RSky (class in necst.procedures.observations.rsky)</a>
 </li>
       <li><a href="_source/necst.procedures.observations.file_based.html#necst.procedures.observations.file_based.FileBasedObservation.run">run() (FileBasedObservation method)</a>
@@ -1388,11 +1963,19 @@
       <ul>
         <li><a href="_source/necst.procedures.observations.hot_monitor.html#necst.procedures.observations.hot_monitor.HotMonitor.run">(HotMonitor method)</a>
 </li>
-        <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.run">(Observation method)</a>
+        <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement.run">(Measurement method)</a>
+</li>
+        <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.run">(Observation method)</a>
 </li>
         <li><a href="_source/necst.procedures.observations.optical_pointing.html#necst.procedures.observations.optical_pointing.OpticalPointing.run">(OpticalPointing method)</a>
 </li>
+        <li><a href="_source/necst.procedures.observations.position_switching.html#necst.procedures.observations.position_switching.PositionSwitching.run">(PositionSwitching method)</a>
+</li>
         <li><a href="_source/necst.procedures.observations.rsky.html#necst.procedures.observations.rsky.RSky.run">(RSky method)</a>
+</li>
+        <li><a href="_source/necst.procedures.measurement.sis_iv.html#necst.procedures.measurement.sis_iv.SIS_IV.run">(SIS_IV method)</a>
+</li>
+        <li><a href="_source/necst.procedures.measurement.sis_tuning.html#necst.procedures.measurement.sis_tuning.SIS_Tuning.run">(SIS_Tuning method)</a>
 </li>
         <li><a href="_source/necst.procedures.observations.skydip.html#necst.procedures.observations.skydip.Skydip.run">(Skydip method)</a>
 </li>
@@ -1405,9 +1988,9 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CCDMsg.savepath">savepath (topic.CCDMsg property)</a>
-</li>
       <li><a href="_source/necst.core.recorder.html#necst.core.recorder.RecorderController.scan_topics">scan_topics() (RecorderController method)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DriveMsg.separation">separation (topic.DriveMsg property)</a>
 </li>
       <li><a href="_source/necst.utils.ros_interface.html#necst.utils.ros_interface.serialize">serialize() (in module necst.utils.ros_interface)</a>
 </li>
@@ -1425,7 +2008,13 @@
       </ul></li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.AuthoritySrv">service.AuthoritySrv (class in necst.definitions)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.service.CCDCommand">service.CCDCommand (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.service.ComDelaySrv">service.ComDelaySrv (class in necst.definitions)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.CoordinateCommand">service.CoordinateCommand (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.service.DomeSync">service.DomeSync (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.Empty">service.Empty (class in necst.definitions)</a>
 </li>
@@ -1433,11 +2022,11 @@
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.ObservationMode">service.ObservationMode (class in necst.definitions)</a>
 </li>
-      <li><a href="_source/necst.definitions.html#necst.definitions.service.RecordSrv">service.RecordSrv (class in necst.definitions)</a>
-</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.service.Service">service.Service (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.ObservingModeManager.set">set() (ObservingModeManager method)</a>
+</li>
+      <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeLimitController.set_counter">set_counter() (DomeLimitController method)</a>
 </li>
       <li><a href="_source/necst.rx.attenuator.html#necst.rx.attenuator.AttenuatorController.set_loss">set_loss() (AttenuatorController method)</a>
 </li>
@@ -1459,9 +2048,13 @@
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.sis_bias_cmd">sis_bias_cmd (topic attribute)</a>
 </li>
+      <li><a href="_source/necst.procedures.measurement.sis_iv.html#necst.procedures.measurement.sis_iv.SIS_IV">SIS_IV (class in necst.procedures.measurement.sis_iv)</a>
+</li>
+      <li><a href="_source/necst.procedures.measurement.sis_tuning.html#necst.procedures.measurement.sis_tuning.SIS_Tuning">SIS_Tuning (class in necst.procedures.measurement.sis_tuning)</a>
+</li>
       <li><a href="_source/necst.rx.sis_bias.html#necst.rx.sis_bias.SISBias">SISBias (class in necst.rx.sis_bias)</a>
 </li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.sky">sky() (Observation method)</a>
+      <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.sky">sky() (Observation method)</a>
 </li>
       <li><a href="_source/necst.procedures.observations.skydip.html#necst.procedures.observations.skydip.Skydip">Skydip (class in necst.procedures.observations.skydip)</a>
 </li>
@@ -1472,7 +2065,7 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Boolean.SLOT_TYPES">(topic.Boolean attribute)</a>
 </li>
-        <li><a href="_source/necst.definitions.html#necst.definitions.topic.CCDMsg.SLOT_TYPES">(topic.CCDMsg attribute)</a>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog.SLOT_TYPES">(topic.CalcLog attribute)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.ChopperMsg.SLOT_TYPES">(topic.ChopperMsg attribute)</a>
 </li>
@@ -1484,13 +2077,31 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.DeviceReading.SLOT_TYPES">(topic.DeviceReading attribute)</a>
 </li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeCommand.SLOT_TYPES">(topic.DomeCommand attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeLimit.SLOT_TYPES">(topic.DomeLimit attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeOC.SLOT_TYPES">(topic.DomeOC attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeStatus.SLOT_TYPES">(topic.DomeStatus attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DriveMsg.SLOT_TYPES">(topic.DriveMsg attribute)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.HEMTBias.SLOT_TYPES">(topic.HEMTBias attribute)</a>
 </li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalAttenuatorMsg.SLOT_TYPES">(topic.LocalAttenuatorMsg attribute)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalSignal.SLOT_TYPES">(topic.LocalSignal attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MembraneMsg.SLOT_TYPES">(topic.MembraneMsg attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MirrorMsg.SLOT_TYPES">(topic.MirrorMsg attribute)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.ObservingMode.SLOT_TYPES">(topic.ObservingMode attribute)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.PIDMsg.SLOT_TYPES">(topic.PIDMsg attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.RecordMsg.SLOT_TYPES">(topic.RecordMsg attribute)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Sampling.SLOT_TYPES">(topic.Sampling attribute)</a>
 </li>
@@ -1501,6 +2112,8 @@
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimedAzElFloat64.SLOT_TYPES">(topic.TimedAzElFloat64 attribute)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimedAzElInt64.SLOT_TYPES">(topic.TimedAzElInt64 attribute)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimeOnly.SLOT_TYPES">(topic.TimeOnly attribute)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.TrackingStatus.SLOT_TYPES">(topic.TrackingStatus attribute)</a>
 </li>
@@ -1523,10 +2136,16 @@
 </li>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData">SpectralData (class in necst.rx.spectrometer)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeCommand.speed">speed (topic.DomeCommand property)</a>
+</li>
       <li><a href="_source/necst.ctrl.antenna.motor.html#necst.ctrl.antenna.motor.AntennaMotor.speed_command">speed_command() (AntennaMotor method)</a>
 
       <ul>
         <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.speed_command">(AntennaPIDController method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.DomeMotor.speed_command">(DomeMotor method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.speed_command">(DomePIDController method)</a>
 </li>
       </ul></li>
       <li><a href="_source/necst.utils.ros_thread.html#necst.utils.ros_thread.spinning">spinning (class in necst.utils.ros_thread)</a>
@@ -1543,11 +2162,21 @@
         <li><a href="_source/necst.definitions.html#necst.definitions.service.Service.srv_type">(service.Service attribute)</a>
 </li>
       </ul></li>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.start_datetime">start_datetime (Observation property)</a>
+      <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement.start_datetime">start_datetime (Measurement property)</a>
+
+      <ul>
+        <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.start_datetime">(Observation property)</a>
 </li>
+      </ul></li>
       <li><a href="_source/necst.core.server_node.html#necst.core.server_node.ServerNode.start_server">start_server() (ServerNode method)</a>
 </li>
       <li><a href="_source/necst.core.alert.alert_handler_node.html#necst.core.alert.alert_handler_node.AlertHandlerNode.status">status (AlertHandlerNode property)</a>
+
+      <ul>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MirrorMsg.status">(topic.MirrorMsg property)</a>
+</li>
+      </ul></li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.RecordMsg.stop">stop (topic.RecordMsg property)</a>
 </li>
       <li><a href="_source/necst.core.server_node.html#necst.core.server_node.ServerNode.stop_server">stop_server() (ServerNode method)</a>
 </li>
@@ -1562,9 +2191,19 @@
 </li>
         <li><a href="_source/necst.rx.attenuator.html#necst.rx.attenuator.AttenuatorController.stream">(AttenuatorController method)</a>
 </li>
+        <li><a href="_source/necst.core.com_delay_test_topic.html#necst.core.com_delay_test_topic.ComDelayTestTopic.stream">(ComDelayTestTopic method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.sim_devices.html#necst.ctrl.dome.sim_devices.DomeDeviceSimulator.stream">(DomeDeviceSimulator method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.encoder.html#necst.ctrl.dome.encoder.DomeEncoderController.stream">(DomeEncoderController method)</a>
+</li>
         <li><a href="_source/necst.rx.hemt_bias.html#necst.rx.hemt_bias.HEMTBias.stream">(HEMTBias method)</a>
 </li>
+        <li><a href="_source/necst.rx.local_attenuator.html#necst.rx.local_attenuator.LocalAttenuatorController.stream">(LocalAttenuatorController method)</a>
+</li>
         <li><a href="_source/necst.core.clock.html#necst.core.clock.ObserverInfo.stream">(ObserverInfo method)</a>
+</li>
+        <li><a href="_source/necst.rx.powermeter.html#necst.rx.powermeter.PowermeterController.stream">(PowermeterController method)</a>
 </li>
         <li><a href="_source/necst.rx.signal_generator.html#necst.rx.signal_generator.SignalGeneratorController.stream">(SignalGeneratorController method)</a>
 </li>
@@ -1573,6 +2212,8 @@
         <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData.stream">(SpectralData method)</a>
 </li>
         <li><a href="_source/necst.rx.thermometer.html#necst.rx.thermometer.ThermometerController.stream">(ThermometerController method)</a>
+</li>
+        <li><a href="_source/necst.rx.vacuum_gauge.html#necst.rx.vacuum_gauge.VacuumGaugeController.stream">(VacuumGaugeController method)</a>
 </li>
         <li><a href="_source/necst.ctrl.antenna.weather_station.html#necst.ctrl.antenna.weather_station.WeatherStationReader.stream">(WeatherStationReader method)</a>
 </li>
@@ -1599,16 +2240,30 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_source/necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation.target">target (Observation attribute)</a>
+      <li><a href="_source/necst.procedures.measurement.measurement_base.html#necst.procedures.measurement.measurement_base.Measurement.target">target (Measurement attribute)</a>
 
       <ul>
+        <li><a href="_source/necst.procedures.observation_base.html#necst.procedures.observation_base.Observation.target">(Observation attribute)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.AlertMsg.target">(topic.AlertMsg property)</a>
 </li>
       </ul></li>
       <li><a href="_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController.telemetry">telemetry() (ChopperController method)</a>
 
       <ul>
+        <li><a href="_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController.telemetry">(DomeController method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.dome.motor.html#necst.ctrl.dome.motor.DomeMotor.telemetry">(DomeMotor method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.drive.motor.html#necst.ctrl.drive.motor.DriveMotor.telemetry">(DriveMotor method)</a>
+</li>
         <li><a href="_source/necst.ctrl.antenna.horizontal_coord.html#necst.ctrl.antenna.horizontal_coord.HorizontalCoord.telemetry">(HorizontalCoord method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m2.html#necst.ctrl.mirror.m2.M2Controller.telemetry">(M2Controller method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.mirror.m4.html#necst.ctrl.mirror.m4.M4Controller.telemetry">(M4Controller method)</a>
+</li>
+        <li><a href="_source/necst.ctrl.membrane.motor.html#necst.ctrl.membrane.motor.MembraneMotor.telemetry">(MembraneMotor method)</a>
 </li>
       </ul></li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.WeatherMsg.temperature">temperature (topic.WeatherMsg property)</a>
@@ -1630,7 +2285,7 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Boolean.time">(topic.Boolean property)</a>
 </li>
-        <li><a href="_source/necst.definitions.html#necst.definitions.topic.CCDMsg.time">(topic.CCDMsg property)</a>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog.time">(topic.CalcLog property)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.ChopperMsg.time">(topic.ChopperMsg property)</a>
 </li>
@@ -1642,11 +2297,25 @@
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.DeviceReading.time">(topic.DeviceReading property)</a>
 </li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeCommand.time">(topic.DomeCommand property)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeOC.time">(topic.DomeOC property)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.DriveMsg.time">(topic.DriveMsg property)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.HEMTBias.time">(topic.HEMTBias property)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalAttenuatorMsg.time">(topic.LocalAttenuatorMsg property)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalSignal.time">(topic.LocalSignal property)</a>
 </li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MembraneMsg.time">(topic.MembraneMsg property)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.MirrorMsg.time">(topic.MirrorMsg property)</a>
+</li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.ObservingMode.time">(topic.ObservingMode property)</a>
+</li>
+        <li><a href="_source/necst.definitions.html#necst.definitions.topic.RecordMsg.time">(topic.RecordMsg property)</a>
 </li>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.Sampling.time">(topic.Sampling property)</a>
 </li>
@@ -1665,6 +2334,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.timeonly">timeonly (topic attribute)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic">topic (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.utils.ros_interface.html#necst.utils.ros_interface.Topic">Topic (class in necst.utils.ros_interface)</a>
@@ -1681,7 +2352,7 @@
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.Boolean">topic.Boolean (class in necst.definitions)</a>
 </li>
-      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CCDMsg">topic.CCDMsg (class in necst.definitions)</a>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.CalcLog">topic.CalcLog (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.ChopperMsg">topic.ChopperMsg (class in necst.definitions)</a>
 </li>
@@ -1693,13 +2364,31 @@
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.DeviceReading">topic.DeviceReading (class in necst.definitions)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeCommand">topic.DomeCommand (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeLimit">topic.DomeLimit (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeOC">topic.DomeOC (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeStatus">topic.DomeStatus (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DriveMsg">topic.DriveMsg (class in necst.definitions)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.HEMTBias">topic.HEMTBias (class in necst.definitions)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalAttenuatorMsg">topic.LocalAttenuatorMsg (class in necst.definitions)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.LocalSignal">topic.LocalSignal (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.MembraneMsg">topic.MembraneMsg (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.MirrorMsg">topic.MirrorMsg (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.ObservingMode">topic.ObservingMode (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.PIDMsg">topic.PIDMsg (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.RecordMsg">topic.RecordMsg (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.Sampling">topic.Sampling (class in necst.definitions)</a>
 </li>
@@ -1711,11 +2400,15 @@
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimedAzElInt64">topic.TimedAzElInt64 (class in necst.definitions)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.TimeOnly">topic.TimeOnly (class in necst.definitions)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.Topic">topic.Topic (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.TrackingStatus">topic.TrackingStatus (class in necst.definitions)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.WeatherMsg">topic.WeatherMsg (class in necst.definitions)</a>
+</li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.DomeCommand.turn">turn (topic.DomeCommand property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1731,15 +2424,25 @@
         <li><a href="_source/necst.core.alert.antenna_speed.html#necst.core.alert.antenna_speed.AntennaSpeedAlert.update">(AntennaSpeedAlert method)</a>
 </li>
       </ul></li>
-      <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.update_command">update_command() (AntennaPIDController method)</a>
+      <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.update_antenna_encoder_reading">update_antenna_encoder_reading() (DomePIDController method)</a>
 </li>
+      <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.update_command">update_command() (AntennaPIDController method)</a>
+
+      <ul>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.update_command">(DomePIDController method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.update_command_sync">update_command_sync() (DomePIDController method)</a>
+</li>
       <li><a href="_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData.update_control_status">update_control_status() (SpectralData method)</a>
 </li>
       <li><a href="_source/necst.ctrl.antenna.pid_controller.html#necst.ctrl.antenna.pid_controller.AntennaPIDController.update_encoder_reading">update_encoder_reading() (AntennaPIDController method)</a>
 
       <ul>
+        <li><a href="_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.update_encoder_reading">(DomePIDController method)</a>
+</li>
         <li><a href="_source/necst.core.clock.html#necst.core.clock.ObserverInfo.update_encoder_reading">(ObserverInfo method)</a>
 </li>
       </ul></li>
@@ -1759,11 +2462,19 @@
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.HEMTBias.v_gate2">v_gate2 (topic.HEMTBias property)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.Clock.v_obs">v_obs (topic.Clock property)</a>
 </li>
+      <li><a href="_source/necst.definitions.html#necst.definitions.topic.vacuum_gauge">vacuum_gauge (topic attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.vacuum_gauge">vacuum_gauge() (Commander method)</a>
+</li>
+      <li><a href="_source/necst.rx.vacuum_gauge.html#necst.rx.vacuum_gauge.VacuumGaugeController">VacuumGaugeController (class in necst.rx.vacuum_gauge)</a>
+</li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.DeviceReading.value">value (topic.DeviceReading property)</a>
+</li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.vg">vg() (Commander method)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.Spectral.vlsr">vlsr (topic.Spectral property)</a>
 </li>
@@ -1779,18 +2490,20 @@
 </li>
       <li><a href="_source/necst.utils.ros_interface.html#necst.utils.ros_interface.wait_for_server_to_pick_up">wait_for_server_to_pick_up() (in module necst.utils.ros_interface)</a>
 </li>
+      <li><a href="_source/necst.core.commander.html#necst.core.commander.Commander.wait_oc">wait_oc() (Commander method)</a>
+</li>
       <li><a href="_source/necst.core.server_node.html#necst.core.server_node.ServerNode.wait_until_future_complete">wait_until_future_complete() (ServerNode method)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.AlertMsg.warning">warning (topic.AlertMsg property)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.definitions.html#necst.definitions.namespace.weather">weather (namespace attribute)</a>
 
       <ul>
         <li><a href="_source/necst.definitions.html#necst.definitions.topic.weather">(topic attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_source/necst.ctrl.antenna.weather_station.html#necst.ctrl.antenna.weather_station.WeatherStationReader">WeatherStationReader (class in necst.ctrl.antenna.weather_station)</a>
 </li>
       <li><a href="_source/necst.definitions.html#necst.definitions.topic.WeatherMsg.wind_direction">wind_direction (topic.WeatherMsg property)</a>
@@ -1829,7 +2542,7 @@
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
 </p>
     </div>
     

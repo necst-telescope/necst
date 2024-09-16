@@ -26,10 +26,13 @@ Submodules
    necst.rx.attenuator
    necst.rx.ccd
    necst.rx.hemt_bias
+   necst.rx.local_attenuator
+   necst.rx.powermeter
    necst.rx.signal_generator
    necst.rx.sis_bias
    necst.rx.spectrometer
    necst.rx.thermometer
+   necst.rx.vacuum_gauge
 
 .. toctree::
    :maxdepth: 4
@@ -39,7 +42,10 @@ Submodules
    necst.rx.attenuator
    necst.rx.ccd
    necst.rx.hemt_bias
+   necst.rx.local_attenuator
+   necst.rx.powermeter
    necst.rx.signal_generator
    necst.rx.sis_bias
    necst.rx.spectrometer
    necst.rx.thermometer
+   necst.rx.vacuum_gauge

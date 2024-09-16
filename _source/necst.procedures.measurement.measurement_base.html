@@ -1,12 +1,12 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.procedures.observations.observation_base &#8212; necst 0.7.1 documentation</title>
+    <title>necst.procedures.measurement.measurement_base &#8212; necst 4.0.1 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -32,14 +32,15 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.procedures.observations.optical_pointing" href="necst.procedures.observations.optical_pointing.html" />
-    <link rel="prev" title="necst.procedures.observations.hot_monitor" href="necst.procedures.observations.hot_monitor.html" />
+    <link rel="next" title="necst.procedures.measurement.sis_iv" href="necst.procedures.measurement.sis_iv.html" />
+    <link rel="prev" title="necst.procedures.measurement" href="necst.procedures.measurement.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
+    <meta name="docsearch:language" content="en">
     
 
     <!-- Google Analytics -->
@@ -122,7 +123,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.7.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.1</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -190,6 +191,16 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.clock.html">
      necst.core.clock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.com_delay_test.html">
+     necst.core.com_delay_test
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.com_delay_test_topic.html">
+     necst.core.com_delay_test_topic
     </a>
    </li>
    <li class="toctree-l2">
@@ -288,28 +299,153 @@
      </li>
     </ul>
    </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="necst.ctrl.dome.html">
+     necst.ctrl.dome
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.dome.dome_controller.html">
+       necst.ctrl.dome.dome_controller
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.dome.dome_tracking.html">
+       necst.ctrl.dome.dome_tracking
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.dome.encoder.html">
+       necst.ctrl.dome.encoder
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.dome.motor.html">
+       necst.ctrl.dome.motor
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.dome.pid_controller.html">
+       necst.ctrl.dome.pid_controller
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.dome.sim_devices.html">
+       necst.ctrl.dome.sim_devices
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="necst.ctrl.drive.html">
+     necst.ctrl.drive
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.drive.motor.html">
+       necst.ctrl.drive.motor
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="necst.ctrl.membrane.html">
+     necst.ctrl.membrane
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.membrane.motor.html">
+       necst.ctrl.membrane.motor
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="necst.ctrl.mirror.html">
+     necst.ctrl.mirror
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+    <label for="toctree-checkbox-10">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.mirror.m2.html">
+       necst.ctrl.mirror.m2
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.mirror.m4.html">
+       necst.ctrl.mirror.m4
+      </a>
+     </li>
+    </ul>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.procedures.html">
    necst.procedures
   </a>
-  <input checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
-  <label for="toctree-checkbox-7">
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+  <label for="toctree-checkbox-11">
    <i class="fas fa-chevron-down">
    </i>
   </label>
   <ul class="current">
    <li class="toctree-l2 current active has-children">
-    <a class="reference internal" href="necst.procedures.observations.html">
-     necst.procedures.observations
+    <a class="reference internal" href="necst.procedures.measurement.html">
+     necst.procedures.measurement
     </a>
-    <input checked="" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
-    <label for="toctree-checkbox-8">
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+    <label for="toctree-checkbox-12">
      <i class="fas fa-chevron-down">
      </i>
     </label>
     <ul class="current">
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
+       necst.procedures.measurement.measurement_base
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.measurement.sis_iv.html">
+       necst.procedures.measurement.sis_iv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.measurement.sis_tuning.html">
+       necst.procedures.measurement.sis_tuning
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="necst.procedures.observations.html">
+     necst.procedures.observations
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+    <label for="toctree-checkbox-13">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
      <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.file_based.html">
        necst.procedures.observations.file_based
@@ -320,14 +456,14 @@
        necst.procedures.observations.hot_monitor
       </a>
      </li>
-     <li class="toctree-l3 current active">
-      <a class="current reference internal" href="#">
-       necst.procedures.observations.observation_base
-      </a>
-     </li>
      <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.optical_pointing.html">
        necst.procedures.observations.optical_pointing
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.position_switching.html">
+       necst.procedures.observations.position_switching
       </a>
      </li>
      <li class="toctree-l3">
@@ -342,14 +478,19 @@
      </li>
     </ul>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.procedures.observation_base.html">
+     necst.procedures.observation_base
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
-  <label for="toctree-checkbox-9">
+  <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+  <label for="toctree-checkbox-14">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -367,6 +508,16 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.hemt_bias.html">
      necst.rx.hemt_bias
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.local_attenuator.html">
+     necst.rx.local_attenuator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.powermeter.html">
+     necst.rx.powermeter
     </a>
    </li>
    <li class="toctree-l2">
@@ -389,14 +540,19 @@
      necst.rx.thermometer
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.vacuum_gauge.html">
+     necst.rx.vacuum_gauge
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
-  <label for="toctree-checkbox-10">
+  <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+  <label for="toctree-checkbox-15">
    <i class="fas fa-chevron-down">
    </i>
   </label>
@@ -461,23 +617,20 @@
               
               <div>
                 
-  <section id="module-necst.procedures.observations.observation_base">
-<span id="necst-procedures-observations-observation-base"></span><h1>necst.procedures.observations.observation_base<a class="headerlink" href="#module-necst.procedures.observations.observation_base" title="Permalink to this headline">¶</a></h1>
+  <section id="module-necst.procedures.measurement.measurement_base">
+<span id="necst-procedures-measurement-measurement-base"></span><h1>necst.procedures.measurement.measurement_base<a class="headerlink" href="#module-necst.procedures.measurement.measurement_base" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/measurement/measurement_base.html#Measurement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
-<p>Observation runner.</p>
+<p>Measurement runner.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Record name. This will prefixed by auto-generated observation identifier
 <code class="docutils literal notranslate"><span class="pre">necst_{start_datetime}_{observation_type}</span></code>.</p></li>
-<li><p><strong>**kwargs</strong> – Keyword arguments passed to <a class="reference internal" href="#necst.procedures.observations.observation_base.Observation.run" title="necst.procedures.observations.observation_base.Observation.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a>.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments passed to <a class="reference internal" href="#necst.procedures.measurement.measurement_base.Measurement.run" title="necst.procedures.measurement.measurement_base.Measurement.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a>.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -486,23 +639,18 @@
 </pre></div>
 </div>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.observation_type">
-<span class="sig-name descname"><span class="pre">observation_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.observation_type" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement.observation_type">
+<span class="sig-name descname"><span class="pre">observation_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement.observation_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.target">
-<span class="sig-name descname"><span class="pre">target</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.target" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.parameter_files">
-<span class="sig-name descname"><span class="pre">parameter_files</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('config.toml',</span> <span class="pre">'pointing_param.toml')</span></em><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.parameter_files" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement.target">
+<span class="sig-name descname"><span class="pre">target</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement.target" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.execute">
-<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.execute" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/measurement/measurement_base.html#Measurement.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement.execute" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>None</p>
@@ -511,13 +659,13 @@
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.start_datetime">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_datetime</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.start_datetime" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement.start_datetime">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_datetime</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement.start_datetime" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.ros2env">
-<span class="sig-name descname"><span class="pre">ros2env</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.ros2env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.ros2env" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement.ros2env">
+<span class="sig-name descname"><span class="pre">ros2env</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/measurement/measurement_base.html#Measurement.ros2env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement.ros2env" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><em>Generator</em>[None, None, None]</p>
@@ -526,13 +674,13 @@
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.record_name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.record_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement.record_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement.record_name" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.record_parameter_files">
-<span class="sig-name descname"><span class="pre">record_parameter_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.record_parameter_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.record_parameter_files" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement.record_parameter_files">
+<span class="sig-name descname"><span class="pre">record_parameter_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/measurement/measurement_base.html#Measurement.record_parameter_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement.record_parameter_files" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>None</p>
@@ -541,83 +689,14 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.run">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.run" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="necst.procedures.measurement.measurement_base.Measurement.run">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/measurement/measurement_base.html#Measurement.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.measurement.measurement_base.Measurement.run" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.hot">
-<span class="sig-name descname"><span class="pre">hot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">integ_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.hot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.hot" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>integ_time</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Any</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.sky">
-<span class="sig-name descname"><span class="pre">sky</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">integ_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.sky"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.sky" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>integ_time</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Any</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.off">
-<span class="sig-name descname"><span class="pre">off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">integ_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.off"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.off" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>integ_time</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Any</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.on">
-<span class="sig-name descname"><span class="pre">on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">integ_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.on"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.on" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>integ_time</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>float</em><em>]</em>) – </p></li>
-<li><p><strong>id</strong> (<em>Any</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="necst.procedures.observations.observation_base.Observation.binning">
-<span class="sig-name descname"><span class="pre">binning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/observation_base.html#Observation.binning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.observation_base.Observation.binning" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -629,17 +708,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.procedures.observations.hot_monitor.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.procedures.measurement.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.procedures.observations.hot_monitor</p>
+            <p class="prev-next-title">necst.procedures.measurement</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.procedures.observations.optical_pointing.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.procedures.measurement.sis_iv.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.procedures.observations.optical_pointing</p>
+        <p class="prev-next-title">necst.procedures.measurement.sis_iv</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
@@ -663,7 +742,7 @@
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
 </p>
     </div>
     

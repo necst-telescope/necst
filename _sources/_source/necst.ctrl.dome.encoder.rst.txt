@@ -1,0 +1,7 @@
+necst.ctrl.dome.encoder
+=======================
+
+.. automodule:: necst.ctrl.dome.encoder
+   :members:
+   :undoc-members:
+   :show-inheritance:

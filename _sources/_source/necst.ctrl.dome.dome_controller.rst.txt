@@ -1,0 +1,7 @@
+necst.ctrl.dome.dome\_controller
+================================
+
+.. automodule:: necst.ctrl.dome.dome_controller
+   :members:
+   :undoc-members:
+   :show-inheritance:

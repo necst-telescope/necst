@@ -1,0 +1,7 @@
+necst.ctrl.dome.pid\_controller
+===============================
+
+.. automodule:: necst.ctrl.dome.pid_controller
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+necst.rx.local\_attenuator
+==========================
+
+.. automodule:: necst.rx.local_attenuator
+   :members:
+   :undoc-members:
+   :show-inheritance:

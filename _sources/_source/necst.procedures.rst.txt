@@ -20,6 +20,7 @@ Subpackages
 
 .. autosummary::
 
+   necst.procedures.measurement
    necst.procedures.observations
 
 .. toctree::
@@ -27,8 +28,23 @@ Subpackages
    :titlesonly:
    :hidden:
 
+   necst.procedures.measurement
    necst.procedures.observations
 
 
 
 
+
+Submodules
+----------
+
+.. autosummary::
+
+   necst.procedures.observation_base
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.procedures.observation_base

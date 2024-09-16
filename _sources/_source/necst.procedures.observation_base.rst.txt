@@ -1,0 +1,7 @@
+necst.procedures.observation\_base
+==================================
+
+.. automodule:: necst.procedures.observation_base
+   :members:
+   :undoc-members:
+   :show-inheritance:

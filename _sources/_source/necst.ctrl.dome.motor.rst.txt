@@ -1,0 +1,7 @@
+necst.ctrl.dome.motor
+=====================
+
+.. automodule:: necst.ctrl.dome.motor
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,11 +1,11 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.core.commander &#8212; necst 0.7.1 documentation</title>
+    <title>necst.core.commander &#8212; necst 4.0.1 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -31,12 +31,13 @@
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
+    <meta name="docsearch:language" content="en">
     
 
     <!-- Google Analytics -->
@@ -119,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v0.7.1</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.1</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -159,16 +160,28 @@
     <span class="n">AlertMsg</span><span class="p">,</span>
     <span class="n">Binning</span><span class="p">,</span>
     <span class="n">Boolean</span><span class="p">,</span>
-    <span class="n">CCDMsg</span><span class="p">,</span>
     <span class="n">ChopperMsg</span><span class="p">,</span>
+    <span class="n">MirrorMsg</span><span class="p">,</span>
     <span class="n">DeviceReading</span><span class="p">,</span>
+    <span class="n">DomeOC</span><span class="p">,</span>
+    <span class="n">DriveMsg</span><span class="p">,</span>
     <span class="n">LocalSignal</span><span class="p">,</span>
+    <span class="n">LocalAttenuatorMsg</span><span class="p">,</span>
+    <span class="n">MembraneMsg</span><span class="p">,</span>
     <span class="n">PIDMsg</span><span class="p">,</span>
+    <span class="n">RecordMsg</span><span class="p">,</span>
     <span class="n">Sampling</span><span class="p">,</span>
     <span class="n">SISBias</span><span class="p">,</span>
     <span class="n">Spectral</span><span class="p">,</span>
+    <span class="n">TimeOnly</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">necst_msgs.srv</span> <span class="kn">import</span> <span class="n">CoordinateCommand</span><span class="p">,</span> <span class="n">File</span><span class="p">,</span> <span class="n">RecordSrv</span>
+<span class="kn">from</span> <span class="nn">necst_msgs.srv</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CoordinateCommand</span><span class="p">,</span>
+    <span class="n">File</span><span class="p">,</span>
+    <span class="n">CCDCommand</span><span class="p">,</span>
+    <span class="n">DomeSync</span><span class="p">,</span>
+    <span class="n">ComDelaySrv</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">rclpy.publisher</span> <span class="kn">import</span> <span class="n">Publisher</span>
 <span class="kn">from</span> <span class="nn">rclpy.subscription</span> <span class="kn">import</span> <span class="n">Subscription</span>
 
@@ -214,14 +227,22 @@
             <span class="s2">&quot;alert_stop&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">manual_stop_alert</span><span class="p">,</span>
             <span class="s2">&quot;pid_param&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">pid_param</span><span class="p">,</span>
             <span class="s2">&quot;chopper&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">chopper_cmd</span><span class="p">,</span>
-            <span class="s2">&quot;ccd&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">ccd_cmd</span><span class="p">,</span>
+            <span class="s2">&quot;mirror_m2&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">mirror_m2_cmd</span><span class="p">,</span>
+            <span class="s2">&quot;mirror_m4&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">mirror_m4_cmd</span><span class="p">,</span>
+            <span class="s2">&quot;membrane&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">membrane_cmd</span><span class="p">,</span>
+            <span class="s2">&quot;drive&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">drive_cmd</span><span class="p">,</span>
             <span class="s2">&quot;spectra_meta&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">spectra_meta</span><span class="p">,</span>
             <span class="s2">&quot;qlook_meta&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">qlook_meta</span><span class="p">,</span>
             <span class="s2">&quot;sis_bias&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">sis_bias_cmd</span><span class="p">,</span>
             <span class="s2">&quot;lo_signal&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">lo_signal_cmd</span><span class="p">,</span>
             <span class="s2">&quot;attenuator&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">attenuator_cmd</span><span class="p">,</span>
+            <span class="s2">&quot;local_attenuator&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">local_attenuator_cmd</span><span class="p">,</span>
+            <span class="s2">&quot;recorder&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">record_cmd</span><span class="p">,</span>
             <span class="s2">&quot;spectra_smpl&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">spectra_rec</span><span class="p">,</span>
             <span class="s2">&quot;channel_binning&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">channel_binning</span><span class="p">,</span>
+            <span class="s2">&quot;dome_alert_stop&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">manual_stop_dome_alert</span><span class="p">,</span>
+            <span class="s2">&quot;dome_oc&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">dome_oc</span><span class="p">,</span>
+            <span class="s2">&quot;timeonly&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">timeonly</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Publisher</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -231,18 +252,33 @@
             <span class="s2">&quot;altaz&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">altaz_cmd</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">antenna_speed_cmd</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;chopper&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">chopper_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;mirror_m2&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">mirror_m2_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;mirror_m4&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">mirror_m4_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;membrane&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">membrane_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;drive&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">drive_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;antenna_control&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">antenna_control_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;sis_bias&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">sis_bias</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;hemt_bias&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">hemt_bias</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;lo_signal&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">lo_signal</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;thermometer&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">thermometer</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;attenuator&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">attenuator</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;recorder&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">record_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;dome_track&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">dome_tracking</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;dome_encoder&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">dome_encoder</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;dome_speed&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">dome_speed_cmd</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;dome&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">dome_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;local_attenuator&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">local_attenuator</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;vacuum_gauge&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">vacuum_gauge</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subscription</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subscription</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;record_path&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">record_path</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
             <span class="s2">&quot;record_file&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">record_file</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="s2">&quot;com_delay&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">com_delay</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
             <span class="s2">&quot;raw_coord&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">raw_coord</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="s2">&quot;dome_coord&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">dome_coord</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="s2">&quot;ccd_cmd&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">ccd_cmd</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="s2">&quot;dome_sync&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">dome_sync</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="s2">&quot;dome_pid_sync&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">dome_pid_sync</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParameterList</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -325,6 +361,7 @@
         <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">speed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">margin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">direct_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Control antenna direction and motion.</span>
@@ -473,6 +510,7 @@
                     <span class="n">lat</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">reference</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span>
                     <span class="n">frame</span><span class="o">=</span><span class="n">reference</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
                     <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+                    <span class="n">direct_mode</span><span class="o">=</span><span class="n">direct_mode</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid target specified&quot;</span><span class="p">)</span>
@@ -483,6 +521,7 @@
                     <span class="n">offset_lat</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span>
                     <span class="n">offset_frame</span><span class="o">=</span><span class="n">offset</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
                     <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+                    <span class="n">direct_mode</span><span class="o">=</span><span class="n">direct_mode</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="n">req</span> <span class="o">=</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;raw_coord&quot;</span><span class="p">])</span>
@@ -492,12 +531,18 @@
 
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;SCAN&quot;</span><span class="p">:</span>
             <span class="n">scan_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">speed</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">speed</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">margin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">margin</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_scan_margin</span><span class="o">.</span><span class="n">value</span>
+
             <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">scan_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
                     <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
                     <span class="n">offset_lon</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">stop</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span>
                     <span class="n">offset_lat</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">stop</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span>
                     <span class="n">offset_frame</span><span class="o">=</span><span class="n">scan_frame</span><span class="p">,</span>
+                    <span class="n">margin</span><span class="o">=</span><span class="n">margin</span><span class="p">,</span>
+                    <span class="n">direct_mode</span><span class="o">=</span><span class="n">direct_mode</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="p">(</span><span class="n">reference</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
                 <span class="n">given_as</span> <span class="o">=</span> <span class="n">reference</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">target</span>
@@ -508,12 +553,16 @@
                     <span class="n">offset_lon</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">stop</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span>
                     <span class="n">offset_lat</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">stop</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span>
                     <span class="n">offset_frame</span><span class="o">=</span><span class="n">scan_frame</span><span class="p">,</span>
+                    <span class="n">margin</span><span class="o">=</span><span class="n">margin</span><span class="p">,</span>
+                    <span class="n">direct_mode</span><span class="o">=</span><span class="n">direct_mode</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">scan_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
                     <span class="n">lon</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">stop</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span>
                     <span class="n">lat</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">stop</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span>
                     <span class="n">frame</span><span class="o">=</span><span class="n">scan_frame</span><span class="p">,</span>
+                    <span class="n">margin</span><span class="o">=</span><span class="n">margin</span><span class="p">,</span>
+                    <span class="n">direct_mode</span><span class="o">=</span><span class="n">direct_mode</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="n">req</span> <span class="o">=</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="o">**</span><span class="n">scan_kwargs</span><span class="p">)</span>
@@ -533,6 +582,134 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Commander.dome"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.dome">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">dome</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;sync&quot;</span><span class="p">,</span> <span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="s2">&quot;open&quot;</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span>
+        <span class="o">/</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">unit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dome_sync</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">direct_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;POINT&quot;</span><span class="p">:</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="n">lon</span><span class="o">=</span><span class="p">[</span><span class="n">target</span><span class="p">],</span>
+                <span class="n">lat</span><span class="o">=</span><span class="p">[</span><span class="mf">45.0</span><span class="p">],</span>
+                <span class="n">frame</span><span class="o">=</span><span class="s2">&quot;altaz&quot;</span><span class="p">,</span>
+                <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+                <span class="n">direct_mode</span><span class="o">=</span><span class="n">direct_mode</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">req</span> <span class="o">=</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;dome_coord&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="s2">&quot;dome&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">id</span>
+
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;SYNC&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dome_sync</span><span class="p">:</span>
+                <span class="n">enc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+                <span class="n">antenna_az</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">lon</span>
+                <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="n">lon</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">antenna_az</span><span class="p">)],</span>
+                    <span class="n">lat</span><span class="o">=</span><span class="p">[</span><span class="mf">45.0</span><span class="p">],</span>
+                    <span class="n">frame</span><span class="o">=</span><span class="s2">&quot;altaz&quot;</span><span class="p">,</span>
+                    <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+                    <span class="n">direct_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">req</span> <span class="o">=</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;dome_coord&quot;</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="s2">&quot;dome&quot;</span><span class="p">)</span>
+                <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">req</span> <span class="o">=</span> <span class="n">DomeSync</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">dome_sync</span><span class="o">=</span><span class="n">dome_sync</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;dome_sync&quot;</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">check</span><span class="si">}</span><span class="s2"> DomeController Synced&quot;</span><span class="p">)</span>
+            <span class="n">req</span> <span class="o">=</span> <span class="n">DomeSync</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">dome_sync</span><span class="o">=</span><span class="n">dome_sync</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;dome_pid_sync&quot;</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">check</span><span class="si">}</span><span class="s2"> DomePIDController Synced&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">check</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;STOP&quot;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">AlertMsg</span><span class="p">(</span><span class="n">critical</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warning</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="p">[</span><span class="n">namespace</span><span class="o">.</span><span class="n">dome</span><span class="p">])</span>
+            <span class="n">checker</span> <span class="o">=</span> <span class="n">ConditionChecker</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">reset_on_failure</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">now</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;dome_speed&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+            <span class="c1"># TODO: Add timeout handler</span>
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">checker</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">current_speed</span><span class="o">.</span><span class="n">speed</span> <span class="o">==</span> <span class="s2">&quot;stop&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;dome_alert_stop&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span>
+                    <span class="s2">&quot;dome_speed&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mf">0.1</span>
+                <span class="p">)</span>
+                <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_command_frequency</span><span class="p">)</span>
+
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">AlertMsg</span><span class="p">(</span><span class="n">critical</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warning</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="p">[</span><span class="n">namespace</span><span class="o">.</span><span class="n">dome</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;dome_alert_stop&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="c1"># Ensure the next command is executed after the lift of alert</span>
+            <span class="k">return</span> <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;OPEN&quot;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">DomeOC</span><span class="p">(</span><span class="nb">open</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;dome_oc&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wait_oc</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;dome&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;CLOSE&quot;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">DomeOC</span><span class="p">(</span><span class="nb">open</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;dome_oc&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wait_oc</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;dome&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">:</span>
+            <span class="n">now</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;dome_track&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;dome_encoder&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commander.memb"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.memb">[docs]</a>    <span class="k">def</span> <span class="nf">memb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;open&quot;</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;membrane&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;OPEN&quot;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">MembraneMsg</span><span class="p">(</span><span class="nb">open</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;CLOSE&quot;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">MembraneMsg</span><span class="p">(</span><span class="nb">open</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;membrane&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait_oc</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;membrane&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commander.drive"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.drive">[docs]</a>    <span class="k">def</span> <span class="nf">drive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;drive&quot;</span><span class="p">,</span> <span class="s2">&quot;contactor&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span> <span class="n">on</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;on&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">]):</span>
+        <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;drive&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;DRIVE&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">on</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;ON&quot;</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">DriveMsg</span><span class="p">(</span><span class="n">separation</span><span class="o">=</span><span class="s2">&quot;drive&quot;</span><span class="p">,</span> <span class="n">drive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="k">elif</span> <span class="n">on</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;OFF&quot;</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">DriveMsg</span><span class="p">(</span><span class="n">separation</span><span class="o">=</span><span class="s2">&quot;drive&quot;</span><span class="p">,</span> <span class="n">drive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">on</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;CONTACTOR&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">on</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;ON&quot;</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">DriveMsg</span><span class="p">(</span>
+                    <span class="n">separation</span><span class="o">=</span><span class="s2">&quot;contactor&quot;</span><span class="p">,</span> <span class="n">contactor</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">on</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;OFF&quot;</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">DriveMsg</span><span class="p">(</span>
+                    <span class="n">separation</span><span class="o">=</span><span class="s2">&quot;contactor&quot;</span><span class="p">,</span> <span class="n">contactor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">on</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;drive&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Commander.ccd"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.ccd">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">ccd</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -541,14 +718,26 @@
         <span class="o">*</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># TODO: Add description about this source code.</span>
+        <span class="sd">&quot;&quot;&quot;Control the ccd.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cmd : {&quot;capture&quot;, &quot;?&quot;}</span>
+<span class="sd">            Command to be sent to the ccd.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Capture the photo</span>
+
+<span class="sd">        &gt;&gt;&gt; com.ccd(&quot;capture&quot;, name=&quot;/home/pi/data/photo.JPG&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;CAPTURE&quot;</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="n">CCDMsg</span><span class="p">(</span><span class="n">capture</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">savepath</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;ccd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="n">req</span> <span class="o">=</span> <span class="n">CCDCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">capture</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">savepath</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;ccd_cmd&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">captured</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
-            <span class="c1"># TODO: Implement.</span>
-            <span class="c1"># May return metadata, by subscribing to the resized spectral data.</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Command </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2"> is not implemented yet.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
@@ -589,9 +778,61 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
-            <span class="n">target_status</span> <span class="o">=</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;INSERT&quot;</span>
-            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;chopper&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">target_status</span><span class="p">:</span>
-                <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait_oc</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;chopper&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">CMD</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Commander.mirror"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.mirror">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">mirror</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;m2&quot;</span><span class="p">,</span> <span class="s2">&quot;m4&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span>
+        <span class="o">/</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">position</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;IN&quot;</span><span class="p">,</span> <span class="s2">&quot;OUT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Control the position of mirror.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cmd : {&quot;m2&quot;, &quot;m4&quot;, &quot;?&quot;}</span>
+<span class="sd">            Command to select mirror.</span>
+<span class="sd">        position : {&quot;IN&quot;, &quot;OUT&quot;}</span>
+<span class="sd">            Position of M4.</span>
+<span class="sd">        distance : float</span>
+<span class="sd">            Move distance (mm) of M2.</span>
+<span class="sd">        wait : bool, optional</span>
+<span class="sd">            If True, wait until the mirror has been moved to the target position.</span>
+<span class="sd">            The default is True.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Move M4 &quot;in&quot;</span>
+
+<span class="sd">        &gt;&gt;&gt; com.mirror(&quot;m4&quot;, position = &quot;in&quot;)</span>
+
+<span class="sd">        Move M2 2.0 um</span>
+<span class="sd">        &gt;&gt;&gt; com.mirror(&quot;m2&quot;, distance = 2.0)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;mirror_m2&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;M2&quot;</span><span class="p">:</span>
+            <span class="n">now_dis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;mirror_m2&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">distance</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">MirrorMsg</span><span class="p">(</span><span class="n">distance</span><span class="o">=</span><span class="n">distance</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;mirror_m2&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+                <span class="k">while</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;mirror_m2&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">distance</span> <span class="o">&gt;</span> <span class="n">now_dis</span> <span class="o">+</span> <span class="n">distance</span> <span class="o">+</span> <span class="mf">0.02</span>
+                <span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;mirror_m2&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">distance</span> <span class="o">&lt;</span> <span class="n">now_dis</span> <span class="o">+</span> <span class="n">distance</span> <span class="o">-</span> <span class="mf">0.02</span>
+                <span class="p">):</span>
+                    <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;M4&quot;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">MirrorMsg</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="n">position</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;mirror_m4&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Commander.wait"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -610,9 +851,8 @@
             <span class="n">CTRL_TOPIC</span> <span class="o">=</span> <span class="s2">&quot;antenna_control&quot;</span>
             <span class="n">WAIT_DURATION</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_command_offset_sec</span>
         <span class="k">elif</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s2">&quot;DOME&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;This function for target </span><span class="si">{</span><span class="n">target</span><span class="si">!r}</span><span class="s2"> isn&#39;t implemented yet.&quot;</span>
-            <span class="p">)</span>
+            <span class="n">ERROR_GETTER</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dome</span>
+            <span class="n">WAIT_DURATION</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_command_offset_sec</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown target: </span><span class="si">{</span><span class="n">target</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -663,6 +903,20 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">raise</span> <span class="n">NECSTTimeoutError</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t confirm drive convergence&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commander.wait_oc"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.wait_oc">[docs]</a>    <span class="k">def</span> <span class="nf">wait_oc</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dome&quot;</span><span class="p">,</span> <span class="s2">&quot;membrane&quot;</span><span class="p">,</span> <span class="s2">&quot;chopper&quot;</span><span class="p">],</span>
+        <span class="n">position</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;insert&quot;</span><span class="p">,</span> <span class="s2">&quot;remove&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">target</span> <span class="o">==</span> <span class="s2">&quot;chopper&quot;</span><span class="p">:</span>
+            <span class="n">target_status</span> <span class="o">=</span> <span class="n">position</span> <span class="o">==</span> <span class="s2">&quot;insert&quot;</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">insert</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">target_status</span><span class="p">:</span>
+                <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.1</span><span class="p">)</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">move</span><span class="p">:</span>
+                <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Commander.pid_parameter"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.pid_parameter">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">pid_parameter</span><span class="p">(</span>
@@ -870,17 +1124,17 @@
         <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;START&quot;</span><span class="p">:</span>
             <span class="n">recording</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">while</span> <span class="ow">not</span> <span class="n">recording</span><span class="p">:</span>
-                <span class="n">req</span> <span class="o">=</span> <span class="n">RecordSrv</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">),</span> <span class="n">stop</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;record_path&quot;</span><span class="p">])</span>
-                <span class="n">recording</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">recording</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">RecordMsg</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">),</span> <span class="n">stop</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;recorder&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="n">recording</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;recorder&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">recording</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recording at </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;STOP&quot;</span><span class="p">:</span>
             <span class="n">recording</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">while</span> <span class="n">recording</span><span class="p">:</span>
-                <span class="n">req</span> <span class="o">=</span> <span class="n">RecordSrv</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;record_path&quot;</span><span class="p">])</span>
-                <span class="n">recording</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">recording</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">RecordMsg</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;recorder&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="n">recording</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;recorder&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">recording</span>
             <span class="k">return</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;FILE&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -904,14 +1158,27 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Commander.com_delay_test"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.com_delay_test">[docs]</a>    <span class="k">def</span> <span class="nf">com_delay_test</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">req</span> <span class="o">=</span> <span class="n">ComDelaySrv</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;com_delay&quot;</span><span class="p">])</span>
+        <span class="n">now_time</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;input:</span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">input_time</span><span class="si">}</span><span class="s2">, output:</span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">output_time</span><span class="si">}</span><span class="s2">, now:</span><span class="si">{</span><span class="n">now_time</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commander.com_delay_test_topic"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.com_delay_test_topic">[docs]</a>    <span class="k">def</span> <span class="nf">com_delay_test_topic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;timeonly&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+            <span class="n">TimeOnly</span><span class="p">(</span><span class="n">input_topic_time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="n">output_topic_time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+        <span class="p">)</span></div>
+
 <div class="viewcode-block" id="Commander.sis_bias"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.sis_bias">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">sis_bias</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="s2">&quot;finalize&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span>
         <span class="o">/</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">mV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Control the SIS bias voltage.</span>
 
@@ -934,12 +1201,24 @@
 
 <span class="sd">        &gt;&gt;&gt; com.sis_bias(&quot;?&quot;, id=&quot;USB&quot;)</span>
 
+<span class="sd">        Set the SIS bias voltage to 0 mV as Finalize.</span>
+
+<span class="sd">        &gt;&gt;&gt; com.sis_bias(&quot;finalize&quot;)</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;SET&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;sis_bias&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">SISBias</span><span class="p">(</span><span class="n">voltage</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">mV</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="nb">id</span> <span class="o">=</span> <span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;sis_bias&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+                <span class="n">SISBias</span><span class="p">(</span><span class="n">voltage</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">mV</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="p">)</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;sis_bias&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;FINALIZE&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;sis_bias&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+                <span class="n">SISBias</span><span class="p">(</span><span class="n">finalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
@@ -1014,6 +1293,62 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Commander.local_attenuator"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.local_attenuator">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">local_attenuator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;pass&quot;</span><span class="p">,</span> <span class="s2">&quot;finalize&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span>
+        <span class="o">/</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">current</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Control the local_attenuator.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cmd</span>
+<span class="sd">            Command to execute.</span>
+<span class="sd">        id</span>
+<span class="sd">            Channel id.</span>
+<span class="sd">        current</span>
+<span class="sd">            Current to output in mA.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        output the current to 10mA on 100GHz</span>
+
+<span class="sd">        &gt;&gt;&gt; com.local_attenuator(&quot;pass&quot;, id=&quot;100GHz&quot;, current=10.0)</span>
+
+<span class="sd">        If you want to finalize</span>
+
+<span class="sd">        &gt;&gt;&gt; com,local_attenuator(&quot;finalize&quot;)</span>
+
+<span class="sd">        Read the LOattenuator reading</span>
+
+<span class="sd">        &gt;&gt;&gt; com.attenuator(&quot;?&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;PASS&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="nb">id</span> <span class="o">=</span> <span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">LocalAttenuatorMsg</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">,</span>
+                <span class="n">current</span><span class="o">=</span><span class="n">current</span><span class="p">,</span>
+                <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                <span class="n">finalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;local_attenuator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;FINALIZE&quot;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">LocalAttenuatorMsg</span><span class="p">(</span><span class="n">finalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;local_attenuator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;local_attenuator&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Commander.thermometer"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.thermometer">[docs]</a>    <span class="k">def</span> <span class="nf">thermometer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Get the thermometer reading.</span>
 
@@ -1038,7 +1373,7 @@
 <div class="viewcode-block" id="Commander.signal_generator"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.signal_generator">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">signal_generator</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span>
         <span class="o">/</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">GHz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1055,6 +1390,7 @@
 <span class="sd">            Frequency in GHz.</span>
 <span class="sd">        dBm</span>
 <span class="sd">            Power in dBm.</span>
+
 <span class="sd">        id</span>
 <span class="sd">            Device identifier, may be defined in the configuration file.</span>
 
@@ -1064,6 +1400,10 @@
 
 <span class="sd">        &gt;&gt;&gt; com.signal_generator(&quot;set&quot;, GHz=100, dBm=10, id=&quot;LSB2nd&quot;)</span>
 
+<span class="sd">        Stop the signal output on the device ``LSB2nd``</span>
+
+<span class="sd">        &gt;&gt;&gt; com.signal_generator(&quot;stop&quot;, id = &quot;LSB2nd&quot;)</span>
+
 <span class="sd">        Read the frequency and the power on the device ``1st``</span>
 
 <span class="sd">        &gt;&gt;&gt; com.signal_generator(&quot;?&quot;, id=&quot;1st&quot;)</span>
@@ -1071,10 +1411,40 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;SET&quot;</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="n">LocalSignal</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">GHz</span><span class="p">),</span> <span class="n">power</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">dBm</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;local_signal&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">LocalSignal</span><span class="p">(</span>
+                <span class="n">freq</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">GHz</span><span class="p">),</span>
+                <span class="n">power</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">dBm</span><span class="p">),</span>
+                <span class="n">output_status</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">,</span>
+                <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;lo_signal&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;STOP&quot;</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">LocalSignal</span><span class="p">(</span><span class="n">output_status</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;lo_signal&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;lo_signal&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commander.vacuum_gauge"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.vacuum_gauge">[docs]</a>    <span class="k">def</span> <span class="nf">vacuum_gauge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get the vacuum_gauge reading.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cmd</span>
+<span class="sd">            Command to execute.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Get the vacuum gauge reading</span>
+
+<span class="sd">        &gt;&gt;&gt; com.vacuum_gauge(&quot;?&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;vacuum_gauge&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
@@ -1089,7 +1459,11 @@
     <span class="n">sis</span> <span class="o">=</span> <span class="n">sis_bias</span>
     <span class="sd">&quot;&quot;&quot;Alias of :meth:`sis_bias`.&quot;&quot;&quot;</span>
     <span class="n">hemt</span> <span class="o">=</span> <span class="n">hemt_bias</span>
-    <span class="sd">&quot;&quot;&quot;Alias of :meth:`hemt_bias`.&quot;&quot;&quot;</span></div>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`hemt_bias`.&quot;&quot;&quot;</span>
+    <span class="n">loatt</span> <span class="o">=</span> <span class="n">local_attenuator</span>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`local_attenuator`.&quot;&quot;&quot;</span>
+    <span class="n">vg</span> <span class="o">=</span> <span class="n">vacuum_gauge</span>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`vacuum_gauge`.&quot;&quot;&quot;</span></div>
 </pre></div>
 
               </div>
@@ -1117,7 +1491,7 @@
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
 </p>
     </div>
     

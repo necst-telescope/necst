@@ -41,6 +41,8 @@ Submodules
 .. autosummary::
 
    necst.core.clock
+   necst.core.com_delay_test
+   necst.core.com_delay_test_topic
    necst.core.commander
    necst.core.device_node
    necst.core.recorder
@@ -52,6 +54,8 @@ Submodules
    :hidden:
 
    necst.core.clock
+   necst.core.com_delay_test
+   necst.core.com_delay_test_topic
    necst.core.commander
    necst.core.device_node
    necst.core.recorder

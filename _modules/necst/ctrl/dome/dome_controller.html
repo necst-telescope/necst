@@ -1,0 +1,387 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>necst.ctrl.dome.dome_controller &#8212; necst 4.0.1 documentation</title>
+    
+  <link href="../../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css" />
+    
+  <link rel="preload" as="script" href="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../../../../index.html">
+<p class="title">necst</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../index.html">
+  Home
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../_source/necst.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/necst-telescope/necst" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/necst/" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fas fa-cubes"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
+<!-- This will display the version of the docs -->
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.1</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for necst.ctrl.dome.dome_controller</h1><div class="highlight"><pre>
+<span></span><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;DomeController&quot;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">neclib.coordinates</span> <span class="kn">import</span> <span class="n">CoordinateGeneratorManager</span><span class="p">,</span> <span class="n">DriveLimitChecker</span><span class="p">,</span> <span class="n">PathFinder</span>
+<span class="kn">from</span> <span class="nn">neclib.coordinates.paths</span> <span class="kn">import</span> <span class="n">ControlContext</span>
+<span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">ControlStatus</span><span class="p">,</span> <span class="n">CoordMsg</span>
+<span class="kn">from</span> <span class="nn">necst_msgs.srv</span> <span class="kn">import</span> <span class="n">CoordinateCommand</span><span class="p">,</span> <span class="n">DomeSync</span>
+
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">topic</span>
+<span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">AlertHandlerNode</span>
+
+
+<div class="viewcode-block" id="DomeController"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController">[docs]</a><span class="k">class</span> <span class="nc">DomeController</span><span class="p">(</span><span class="n">AlertHandlerNode</span><span class="p">):</span>
+    <span class="n">NodeName</span> <span class="o">=</span> <span class="s2">&quot;dome_coord&quot;</span>
+    <span class="n">Namespace</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">dome</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeName</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enc_az</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enc_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">finder</span> <span class="o">=</span> <span class="n">PathFinder</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">location</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_pointing_parameter_path</span>
+        <span class="p">)</span>
+        <span class="n">drive_limit</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_drive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">DriveLimitChecker</span><span class="p">(</span>
+            <span class="n">drive_limit</span><span class="o">.</span><span class="n">critical_limit_az</span><span class="p">,</span> <span class="n">drive_limit</span><span class="o">.</span><span class="n">warning_limit_az</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span> <span class="o">=</span> <span class="n">topic</span><span class="o">.</span><span class="n">dome_altaz_cmd</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">topic</span><span class="o">.</span><span class="n">dome_encoder</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_enc</span><span class="p">)</span>
+        <span class="n">service</span><span class="o">.</span><span class="n">dome_coord</span><span class="o">.</span><span class="n">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_cmd</span><span class="p">)</span>
+        <span class="n">service</span><span class="o">.</span><span class="n">dome_sync</span><span class="o">.</span><span class="n">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_sync_mode</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_publisher</span> <span class="o">=</span> <span class="n">topic</span><span class="o">.</span><span class="n">dome_control_status</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_command_frequency</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_realtime</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracking_ok</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span> <span class="o">=</span> <span class="n">CoordinateGeneratorManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_status</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">direct_mode</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_guard_condition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clear_cmd</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_clear_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_update_cmd</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Response</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Update the target coordinate command.</span>
+
+<span class="sd">        When new command has been received, conversion result will stop for a moment,</span>
+<span class="sd">        since coordinate conversion for new coordinate cannot be performed immediately.</span>
+<span class="sd">        This suspension won&#39;t affect PID control, as it checks the command time.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The conversion result will be cleared immediately after receiving the new</span>
+<span class="sd">        command. This won&#39;t irregular drive, as this command doesn&#39;t contain detailed</span>
+<span class="sd">        and frequent coordinate information. This is the case for scan command, as the</span>
+<span class="sd">        command only contains start/stop position and scan speed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span><span class="p">:</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">check</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="n">response</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="n">request</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parse_cmd</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+            <span class="n">response</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="o">.</span><span class="n">get</span><span class="p">()))</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+    <span class="k">def</span> <span class="nf">_update_sync_mode</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">DomeSync</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">DomeSync</span><span class="o">.</span><span class="n">Response</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DomeSync</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">dome_sync</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">check</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_cmd</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">response</span>
+
+    <span class="k">def</span> <span class="nf">_update_enc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span> <span class="o">!=</span> <span class="s2">&quot;deg&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">frame</span> <span class="o">!=</span> <span class="s2">&quot;altaz&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Invalid encoder reading detected.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enc_az</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">lon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enc_time</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">time</span>
+
+<div class="viewcode-block" id="DomeController.command_realtime"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController.command_realtime">[docs]</a>    <span class="k">def</span> <span class="nf">command_realtime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">critical</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Guard condition activated&quot;</span><span class="p">,</span> <span class="n">throttle_duration_sec</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># Avoid sudden resumption of telescope drive</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
+
+        <span class="c1"># No realtime-ness check is performed, just filter outdated commands out</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">cmd</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">now</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">cmd</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">CoordMsg</span><span class="p">(</span>
+                <span class="n">lon</span><span class="o">=</span><span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">lat</span><span class="o">=</span><span class="n">cmd</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">time</span><span class="o">=</span><span class="n">cmd</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s2">&quot;altaz&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_parse_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">direct_mode</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">direct_mode</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">direct_mode</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">direct_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">direct_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got POINT-TO-COORD command: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">new_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">track</span><span class="p">(</span>
+            <span class="n">msg</span><span class="o">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">msg</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">msg</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="n">msg</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">new_generator</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DomeController.convert"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController.convert">[docs]</a>    <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enc_time</span> <span class="o">&lt;</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="mi">5</span><span class="p">):</span>
+            <span class="c1"># Don&#39;t resume normal operation after communication with encoder lost for 5s</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Lost the communication with the encoder. Command to drive to &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="si">}</span><span class="s2"> has been discarded.&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_command_offset_sec</span>
+        <span class="p">):</span>
+            <span class="c1"># This function will be called twice per 1s, to ensure no run-out of command</span>
+            <span class="c1"># but it can cause overloading the data, so judge command update necessity.</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">coord</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">(</span><span class="n">coord</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">StopIteration</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">az</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_drive_range</span><span class="p">(</span><span class="n">coord</span><span class="o">.</span><span class="n">az</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_az</span><span class="p">,</span> <span class="n">_t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="n">coord</span><span class="o">.</span><span class="n">time</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_az</span><span class="p">,</span> <span class="n">_t</span><span class="p">]):</span>
+                <span class="k">continue</span>
+            <span class="c1"># Remove chronologically duplicated/overlapping commands</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">_t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="p">))</span>
+
+            <span class="n">cmd</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">_az</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg&quot;</span><span class="p">)),</span> <span class="mf">45.0</span><span class="p">,</span> <span class="n">_t</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_validate_drive_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">az</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>  <span class="c1"># All values are Quantity.</span>
+        <span class="n">enc_az</span> <span class="o">=</span> <span class="mi">180</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc_az</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc_az</span>
+
+        <span class="n">_az</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="n">enc_az</span><span class="p">,</span> <span class="n">az</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg&quot;</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">_az</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_az</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="DomeController.telemetry"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.dome_controller.html#necst.ctrl.dome.dome_controller.DomeController.telemetry">[docs]</a>    <span class="k">def</span> <span class="nf">telemetry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ControlContext</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">ControlStatus</span><span class="p">(</span>
+                <span class="n">controlled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">tight</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">remote</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="o">.</span><span class="n">get</span><span class="p">())),</span>
+                <span class="n">interrupt_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_command_offset_sec</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">ControlStatus</span><span class="p">(</span>
+                <span class="n">controlled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">tight</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">tight</span><span class="p">,</span>
+                <span class="n">remote</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executing_generator</span><span class="o">.</span><span class="n">get</span><span class="p">())),</span>
+                <span class="n">interrupt_ok</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">infinite</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">waypoint</span><span class="p">),</span>
+                <span class="n">time</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_status</span> <span class="o">=</span> <span class="n">msg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_publisher</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div></div>
+</pre></div>
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, NECST Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

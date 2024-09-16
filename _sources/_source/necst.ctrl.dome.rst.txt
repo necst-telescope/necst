@@ -1,0 +1,43 @@
+
+
+
+necst.ctrl.dome
+===============
+
+
+
+
+.. automodule:: necst.ctrl.dome
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+Submodules
+----------
+
+.. autosummary::
+
+   necst.ctrl.dome.dome_controller
+   necst.ctrl.dome.dome_tracking
+   necst.ctrl.dome.encoder
+   necst.ctrl.dome.motor
+   necst.ctrl.dome.pid_controller
+   necst.ctrl.dome.sim_devices
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.ctrl.dome.dome_controller
+   necst.ctrl.dome.dome_tracking
+   necst.ctrl.dome.encoder
+   necst.ctrl.dome.motor
+   necst.ctrl.dome.pid_controller
+   necst.ctrl.dome.sim_devices

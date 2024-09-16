@@ -1,0 +1,7 @@
+necst.procedures.observations.position\_switching
+=================================================
+
+.. automodule:: necst.procedures.observations.position_switching
+   :members:
+   :undoc-members:
+   :show-inheritance:

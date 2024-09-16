@@ -1,0 +1,7 @@
+necst.ctrl.dome.dome\_tracking
+==============================
+
+.. automodule:: necst.ctrl.dome.dome_tracking
+   :members:
+   :undoc-members:
+   :show-inheritance:

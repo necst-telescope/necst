@@ -1,0 +1,354 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>necst.ctrl.dome.pid_controller &#8212; necst 4.0.1 documentation</title>
+    
+  <link href="../../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css" />
+    
+  <link rel="preload" as="script" href="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../../../../index.html">
+<p class="title">necst</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../index.html">
+  Home
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../_source/necst.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/necst-telescope/necst" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/necst/" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fas fa-cubes"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
+<!-- This will display the version of the docs -->
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.1</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for necst.ctrl.dome.pid_controller</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span> <span class="k">as</span> <span class="nn">pytime</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">neclib.controllers</span> <span class="kn">import</span> <span class="n">PIDController</span>
+<span class="kn">from</span> <span class="nn">neclib.data</span> <span class="kn">import</span> <span class="n">LinearInterp</span>
+<span class="kn">from</span> <span class="nn">neclib.safety</span> <span class="kn">import</span> <span class="n">Decelerate</span>
+<span class="kn">from</span> <span class="nn">neclib.utils</span> <span class="kn">import</span> <span class="n">ParameterList</span>
+<span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">CoordMsg</span><span class="p">,</span> <span class="n">DomeCommand</span>
+<span class="kn">from</span> <span class="nn">necst_msgs.srv</span> <span class="kn">import</span> <span class="n">DomeSync</span>
+
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">service</span>
+<span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">AlertHandlerNode</span>
+
+
+<div class="viewcode-block" id="DomePIDController"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController">[docs]</a><span class="k">class</span> <span class="nc">DomePIDController</span><span class="p">(</span><span class="n">AlertHandlerNode</span><span class="p">):</span>
+    <span class="n">NodeName</span> <span class="o">=</span> <span class="s2">&quot;controller&quot;</span>
+    <span class="n">Namespace</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">dome</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeName</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span>
+        <span class="n">pid_param</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_pid_param</span>
+        <span class="n">max_speed</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_max_speed</span>
+        <span class="n">max_accel</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_max_acceleration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span> <span class="o">=</span> <span class="n">PIDController</span><span class="p">(</span>
+            <span class="n">pid_param</span><span class="o">=</span><span class="n">pid_param</span><span class="o">.</span><span class="n">az</span><span class="p">,</span>
+            <span class="n">max_speed</span><span class="o">=</span><span class="n">max_speed</span><span class="o">.</span><span class="n">az</span><span class="p">,</span>
+            <span class="n">max_acceleration</span><span class="o">=</span><span class="n">max_accel</span><span class="o">.</span><span class="n">az</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decelerate_calc</span> <span class="o">=</span> <span class="n">Decelerate</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">antenna_drive_critical_limit_az</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg&quot;</span><span class="p">)),</span>
+            <span class="n">max_accel</span><span class="o">.</span><span class="n">az</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg/s^2&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">topic</span><span class="o">.</span><span class="n">dome_altaz_cmd</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_command</span><span class="p">)</span>
+        <span class="n">topic</span><span class="o">.</span><span class="n">dome_encoder</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_encoder_reading</span><span class="p">)</span>
+
+        <span class="n">topic</span><span class="o">.</span><span class="n">altaz_cmd</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_command_sync</span><span class="p">)</span>
+        <span class="n">topic</span><span class="o">.</span><span class="n">antenna_encoder</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_antenna_encoder_reading</span><span class="p">)</span>
+
+        <span class="n">service</span><span class="o">.</span><span class="n">dome_pid_sync</span><span class="o">.</span><span class="n">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_sync_mode</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">enc</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">CoordMsg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">CoordMsg</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">antenna_enc</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">CoordMsg</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_publisher</span> <span class="o">=</span> <span class="n">topic</span><span class="o">.</span><span class="n">dome_speed_cmd</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">coord_interp</span> <span class="o">=</span> <span class="n">LinearInterp</span><span class="p">(</span>
+            <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">CoordMsg</span><span class="o">.</span><span class="n">get_fields_and_field_types</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_guard_condition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">immediate_stop_no_resume</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domesync_threshold</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dome_sync_accuracy</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_sync_mode</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">DomeSync</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">DomeSync</span><span class="o">.</span><span class="n">Response</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DomeSync</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">dome_sync</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">check</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">response</span>
+
+<div class="viewcode-block" id="DomePIDController.update_command"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.update_command">[docs]</a>    <span class="k">def</span> <span class="nf">update_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DomePIDController.update_command_sync"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.update_command_sync">[docs]</a>    <span class="k">def</span> <span class="nf">update_command_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DomePIDController.update_encoder_reading"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.update_encoder_reading">[docs]</a>    <span class="k">def</span> <span class="nf">update_encoder_reading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">speed_command</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DomePIDController.update_antenna_encoder_reading"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.update_antenna_encoder_reading">[docs]</a>    <span class="k">def</span> <span class="nf">update_antenna_encoder_reading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">antenna_enc</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">antenna_enc</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">antenna_enc</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dome_sync</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">speed_command</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DomePIDController.immediate_stop_no_resume"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.immediate_stop_no_resume">[docs]</a>    <span class="k">def</span> <span class="nf">immediate_stop_no_resume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Immediate stop ordered.&quot;</span><span class="p">,</span> <span class="n">throttle_duration_sec</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">DomeCommand</span><span class="p">(</span><span class="n">turn</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_publisher</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DomePIDController.discard_outdated_commands"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.discard_outdated_commands">[docs]</a>    <span class="k">def</span> <span class="nf">discard_outdated_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">time</span> <span class="o">&lt;</span> <span class="n">now</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span></div>
+
+<div class="viewcode-block" id="DomePIDController.speed_command"><a class="viewcode-back" href="../../../../_source/necst.ctrl.dome.pid_controller.html#necst.ctrl.dome.pid_controller.DomePIDController.speed_command">[docs]</a>    <span class="k">def</span> <span class="nf">speed_command</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">critical</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Guard condition activated&quot;</span><span class="p">,</span> <span class="n">throttle_duration_sec</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gc</span><span class="o">.</span><span class="n">trigger</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">discard_outdated_commands</span><span class="p">()</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="c1"># Check if any command is available.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">immediate_stop_no_resume</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Check if command for immediate future exists or not.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_command_frequency</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;</span> <span class="n">now</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">now</span> <span class="o">-</span> <span class="n">cmd</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_command_frequency</span><span class="p">:</span>
+                <span class="n">cmd</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">now</span>  <span class="c1"># Not a real-time command.</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">now</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">enc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">error</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">lon</span> <span class="o">-</span> <span class="n">enc</span><span class="o">.</span><span class="n">lon</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">error</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">turn</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span>
+            <span class="k">elif</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">turn</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">immediate_stop_no_resume</span><span class="p">()</span>
+                <span class="k">return</span>
+
+            <span class="n">error</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="mf">5.0</span> <span class="ow">or</span> <span class="n">error</span> <span class="o">&gt;</span> <span class="mf">350.0</span><span class="p">:</span>
+                <span class="n">speed</span> <span class="o">=</span> <span class="s2">&quot;low&quot;</span>
+            <span class="k">elif</span> <span class="n">error</span> <span class="o">&gt;</span> <span class="mf">15.0</span> <span class="ow">or</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="mf">345.0</span><span class="p">:</span>
+                <span class="n">speed</span> <span class="o">=</span> <span class="s2">&quot;high&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">speed</span> <span class="o">=</span> <span class="s2">&quot;mid&quot;</span>
+
+            <span class="k">if</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">domesync_threshold</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">immediate_stop_no_resume</span><span class="p">()</span>
+                <span class="k">return</span>
+
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">DomeCommand</span><span class="p">(</span><span class="n">turn</span><span class="o">=</span><span class="n">turn</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="n">speed</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_publisher</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Duplicate command is supplied.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span></div></div>
+</pre></div>
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, NECST Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>
