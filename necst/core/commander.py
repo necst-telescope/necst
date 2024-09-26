@@ -922,6 +922,7 @@ class Commander(PrivilegedNode):
         content: Optional[str] = None,
         nth: Optional[int] = None,
         ch: Optional[int] = None,
+        spectrometer: Optional[str] = None,
     ) -> None:
         """Control the recording.
 
@@ -968,7 +969,7 @@ class Commander(PrivilegedNode):
 
         Change the number of spectral channels
 
-        >>> com.record("binning", ch=8192)
+        >>> com.record("binning", ch=8192, spectrometer="xffts")
 
         """
         CMD = cmd.upper()
@@ -996,7 +997,7 @@ class Commander(PrivilegedNode):
             msg = Sampling(nth=nth)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
-            msg = Binning(ch=ch)
+            msg = Binning(ch=ch, spectrometer=spectrometer)
             if ch > 100:
                 self.quick_look(
                     "ch", range=(0, 100), integ=1

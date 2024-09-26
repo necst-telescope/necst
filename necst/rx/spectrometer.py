@@ -145,9 +145,9 @@ class SpectralData(DeviceNode):
 
     def change_spec_chan(self, msg: Binning) -> None:
         record_chan = msg.ch
-        self.io.change_spec_ch(record_chan)
+        self.io[msg.spectrometer].change_spec_ch(record_chan)
         self.logger.info(
-            f"Record channel number changed; {record_chan} ch data will be saved"
+            f"Record channel number changed; {record_chan} ch data will be saved at {msg.spectrometer}"
         )
 
     def update_control_status(self, msg: ControlStatus) -> None:

@@ -67,7 +67,8 @@ class Observation(ABC):
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
-                self.binning(self._kwargs.pop("ch"))
+                for key, _ in config.spectrometer.items():
+                    self.binning(self._kwargs.pop("ch"),key)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
@@ -76,7 +77,8 @@ class Observation(ABC):
             finally:
                 self.com.record("stop")
                 self.com.antenna("stop")
-                self.binning(config.spectrometer.max_ch)  # set max channel number
+                for key, val in config.spectrometer.items():
+                    self.binning(val.max_ch, key)  # set max channel number
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60
@@ -172,9 +174,9 @@ class Observation(ABC):
         self.com.metadata("set", position="", id=str(id))
         self.logger.debug("Complete ON")
 
-    def binning(self, ch):
+    def binning(self, ch, spectrometer):
         if ch is not None:
             if (ch & (ch - 1)) == 0:
-                self.com.record("binning", ch=ch)
+                self.com.record("binning", ch=ch, spectrometer=spectrometer)
             else:
                 raise ValueError(f"Input channel number {ch} is not power of 2.")
