@@ -42,6 +42,7 @@ class SISBias(DeviceNode):
             time.sleep(0.01)
 
     def set_voltage(self, msg: SISBiasMsg) -> None:
+        self.stream()
         if msg.finalize:
             self.setter_io.finalize()
             return
@@ -62,3 +63,4 @@ class SISBias(DeviceNode):
             self.setter_io.apply_voltage()
             self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
             time.sleep(0.01)
+        self.stream()
