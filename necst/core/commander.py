@@ -1036,7 +1036,7 @@ class Commander(PrivilegedNode):
                 values = self.get_message("sis_bias")
                 for id in check.keys():
                     mes = values[f"sis_bias.{id}"].voltage
-                    if math.isclose(mes, value, range):
+                    if math.isclose(mes, value, abs_tol=range):
                         check[id] = True
                     else:
                         continue
