@@ -1052,6 +1052,7 @@ class Commander(PrivilegedNode):
         *,
         mV: Optional[Union[int, float]] = None,
         id: Optional[Union[str, list[str]]] = None,
+        thresh: Optional[Union[int, float]] = 0.05,
         wait: bool = True,
     ) -> None:
         """Control the SIS bias voltage.
@@ -1088,7 +1089,7 @@ class Commander(PrivilegedNode):
                 SISBias(voltage=float(mV), id=id, time=pytime.time())
             )
             if wait:
-                self.wait_device("sis", mV, 0.05, id)
+                self.wait_device("sis", mV, thresh, id)
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)
         elif CMD == "FINALIZE":
