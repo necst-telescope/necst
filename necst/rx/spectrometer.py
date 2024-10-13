@@ -247,7 +247,7 @@ class SpectralData(DeviceNode):
                     time=time,
                     id=metadata.id,
                     position=metadata.position,
-                    time_spectrometer = time_spectrometer
+                    time_spectrometer=time_spectrometer,
                 )
                 fields = msg.get_fields_and_field_types()
                 chunk = [
