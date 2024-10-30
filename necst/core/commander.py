@@ -915,7 +915,7 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "reduce", "binning", "?"],
+        cmd: Literal["start", "stop", "file", "reduce", "savespec", "binning", "?"],
         /,
         *,
         name: str = "",
@@ -995,6 +995,9 @@ class Commander(PrivilegedNode):
         elif CMD == "REDUCE":
             msg = Sampling(nth=nth)
             return self.publisher["spectra_smpl"].publish(msg)
+        elif CMD == "SAVESPEC":
+            msg = Sampling(bool=bool)
+            return self.publisher["save_spec"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
             if ch > 100:
