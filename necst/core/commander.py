@@ -994,7 +994,7 @@ class Commander(PrivilegedNode):
             req = File.Request(data=str(content), path=name)
             return self._send_request(req, self.client["record_file"])
         elif CMD == "REDUCE":
-            msg = Sampling(nth=nth)
+            msg = Sampling(nth=nth, save=True)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "SAVESPEC":
             msg = Sampling(save=save)
