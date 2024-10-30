@@ -922,6 +922,7 @@ class Commander(PrivilegedNode):
         content: Optional[str] = None,
         nth: Optional[int] = None,
         ch: Optional[int] = None,
+        save: Optional[int] = None,
     ) -> None:
         """Control the recording.
 
@@ -996,7 +997,7 @@ class Commander(PrivilegedNode):
             msg = Sampling(nth=nth)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "SAVESPEC":
-            msg = Sampling(bool=bool)
+            msg = Sampling(save=save)
             return self.publisher["save_spec"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
