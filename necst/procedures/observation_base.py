@@ -64,6 +64,9 @@ class Observation(ABC):
             try:
                 if not privileged:
                     raise NECSTAuthorityError("Couldn't acquire privilege")
+                if "save" in self._kwargs.keys():
+                    savespec = bool(self._kwargs.pop("save"))
+                    self.com.record("savespec", savespec)
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
@@ -75,6 +78,7 @@ class Observation(ABC):
                 self.run(**self._kwargs)
             finally:
                 self.com.record("stop")
+                self.com.record("savespec", True)
                 self.com.antenna("stop")
                 self.binning(config.spectrometer.max_ch)  # set max channel number
                 self.com.quit_privilege()
@@ -126,7 +130,8 @@ class Observation(ABC):
                 self.logger.error(f"Failed to save parameter file {filename!r}")
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> None: ...
+    def run(self, *args, **kwargs) -> None:
+        ...
 
     def hot(self, integ_time: Union[int, float], id: Any) -> None:
         # TODO: Remove this workaround, by attaching control section ID to spectra

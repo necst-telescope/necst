@@ -42,6 +42,14 @@ if __name__ == "__main__":
         help="Step voltage in mV",
         default=0.1,
     )
+    p.add_argument(
+        "-save",
+        "--save_spec",
+        type=bool,
+        default=False,
+        help="If ``True``, xffts data will be saved.",
+        required=False,
+    )
     args = p.parse_args()
 
     meas = SIS_IV(

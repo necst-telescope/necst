@@ -68,6 +68,14 @@ if __name__ == "__main__":
         type=int,
         help="Number of spectral channels.",
     )
+    p.add_argument(
+        "-save",
+        "--save_spec",
+        type=bool,
+        default=False,
+        help="If ``True``, xffts data will be saved.",
+        required=False,
+    )
     args = p.parse_args()
 
     if args.time is None:
