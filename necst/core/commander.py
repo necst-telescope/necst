@@ -922,7 +922,7 @@ class Commander(PrivilegedNode):
         content: Optional[str] = None,
         nth: Optional[int] = None,
         ch: Optional[int] = None,
-        save: Optional[int] = None,
+        save: Optional[bool] = None,
     ) -> None:
         """Control the recording.
 
