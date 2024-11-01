@@ -63,7 +63,7 @@ if __name__ == "__main__":
         required=False,
     )
     p.add_argument(
-        "-save_spec",
+        "--save_spec",
         action='store_true', 
         help="Spectral data will not be saved.",
         required=False,
