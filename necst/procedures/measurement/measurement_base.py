@@ -61,6 +61,9 @@ class Measurement(ABC):
             try:
                 if not privileged:
                     raise NECSTAuthorityError("Couldn't acquire privilege")
+                if "save" in self._kwargs.keys():
+                    savespec = self._kwargs.pop("save")
+                    self.com.record("savespec", save=savespec)
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
