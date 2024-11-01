@@ -63,13 +63,14 @@ if __name__ == "__main__":
         required=False,
     )
     p.add_argument(
-        "-save_spec",
-        type=bool,
-        default=False,
-        help="If ``True``, xffts data will be saved.",
+        "-skip_save",
+        action='store_true', 
+        help="Spectral data will not be saved.",
         required=False,
     )
     args = p.parse_args()
+
+    save_spec = not args.skip_save
 
     if args.time is None:
         obstime = None
@@ -81,6 +82,6 @@ if __name__ == "__main__":
         magnitude=(args.lower_mag, args.upper_mag),
         drive_test=args.drive_test,
         obstime=obstime,
-        save=args.save_spec
+        save=save_spec
     )
     obs.execute()

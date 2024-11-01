@@ -42,19 +42,20 @@ if __name__ == "__main__":
         default=0.1,
     )
     p.add_argument(
-        "-save_spec",
-        type=bool,
-        default=False,
-        help="If ``True``, xffts data will be saved.",
+        "-skip_save",
+        action='store_true', 
+        help="Spectral data will not be saved.",
         required=False,
     )
     args = p.parse_args()
+
+    save_spec = not args.skip_save
 
     meas = SIS_IV(
         id=args.id,
         min_voltage_mV=args.min,
         max_voltage_mV=args.max,
         step_voltage_mV=args.step,
-        save=args.save_spec
+        save=save_spec
     )
     meas.execute()
