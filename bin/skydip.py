@@ -27,13 +27,7 @@ if __name__ == "__main__":
         help="Integration time for the Skydip observation.",
         default=2,
     )
-    p.add_argument(
-        "-c",
-        "--channel",
-        type=int,
-        help="Number of spectral channels.",
-    )
     args = p.parse_args()
 
-    obs = Skydip(integ_time=args.integ, ch=args.channel)
+    obs = Skydip(integ_time=args.integ)
     obs.execute()

@@ -47,5 +47,5 @@ if __name__ == "__main__":
 
     args = p.parse_args()
 
-    obs = HotMonitor(integ_time=args.integ, rate=args.rate, ch=args.channel)
+    obs = HotMonitor(integ_time=args.integ, rate=args.rate)
     obs.execute()
