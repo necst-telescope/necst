@@ -65,13 +65,13 @@ class Observation(ABC):
                 if not privileged:
                     raise NECSTAuthorityError("Couldn't acquire privilege")
                 if "save" in self._kwargs.keys():
-                    savespec = bool(self._kwargs.pop("save"))
+                    savespec = self._kwargs.pop("save")
                     self.com.record("savespec", save=savespec)
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
-                if "ch" in self._kwargs.keys(self._kwargs.pop("ch")):
-                    pass
+                if "ch" in self._kwargs.keys():
+                    self.binning(self._kwargs.pop("ch"))
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()

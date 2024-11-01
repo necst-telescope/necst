@@ -32,5 +32,5 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
 
-    obs = OTF(file=args.file)
+    obs = OTF(file=args.file, ch=args.channel)
     obs.execute()

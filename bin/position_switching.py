@@ -41,7 +41,7 @@ if __name__ == "__main__":
         help="ON position in [RA, Dec]",
     )
     p.add_argument("-n", type=int, help="Observation iteration number.")
-
+    p.add_argument("-c", "--channel", type=int, help="Number of spectral channels.")
     args = p.parse_args()
 
     obs = PositionSwitching(

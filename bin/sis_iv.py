@@ -57,5 +57,6 @@ if __name__ == "__main__":
         min_voltage_mV=args.min,
         max_voltage_mV=args.max,
         step_voltage_mV=args.step,
+        save=args.save_spec
     )
     meas.execute()

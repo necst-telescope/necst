@@ -32,7 +32,13 @@ if __name__ == "__main__":
         help="Integration time for the R-Sky observation.",
         default=2,
     )
+    p.add_argument(
+        "-c",
+        "--channel",
+        type=int,
+        help="Number of spectral channels.",
+    )
     args = p.parse_args()
 
-    obs = RSky(n=args.n, integ_time=args.integ)
+    obs = RSky(n=args.n, integ_time=args.integ, ch=args.channel)
     obs.execute()
