@@ -43,8 +43,7 @@ if __name__ == "__main__":
         default=0.1,
     )
     p.add_argument(
-        "-save",
-        "--save_spec",
+        "-save_spec",
         type=bool,
         default=False,
         help="If ``True``, xffts data will be saved.",
