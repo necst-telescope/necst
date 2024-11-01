@@ -25,13 +25,7 @@ if __name__ == "__main__":
         help="Path to observation parameter file",
         required=True,
     )
-    p.add_argument(
-        "-c",
-        "--channel",
-        type=int,
-        help="Number of spectral channels.",
-    )
     args = p.parse_args()
 
-    obs = RadioPointing(file=args.file, ch=args.channel)
+    obs = RadioPointing(file=args.file)
     obs.execute()
