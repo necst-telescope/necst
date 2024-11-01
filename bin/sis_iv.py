@@ -45,7 +45,6 @@ if __name__ == "__main__":
         "--save_spec",
         action='store_true', 
         help="Spectral data will not be saved.",
-        required=False,
     )
     args = p.parse_args()
 
