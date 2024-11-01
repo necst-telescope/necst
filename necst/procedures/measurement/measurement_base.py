@@ -76,6 +76,7 @@ class Measurement(ABC):
             finally:
                 self.com.record("stop")
                 # self.binning(config.spectrometer.max_ch)  # set max channel number
+                self.com.record("savespec", save=True)
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60
