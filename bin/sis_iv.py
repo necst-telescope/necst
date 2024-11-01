@@ -36,8 +36,7 @@ if __name__ == "__main__":
         default=8.0,
     )
     p.add_argument(
-        "-s",
-        "--step",
+        "-step",
         type=float,
         help="Step voltage in mV",
         default=0.1,
