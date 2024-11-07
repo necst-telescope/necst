@@ -322,6 +322,10 @@ class Commander(PrivilegedNode):
 
         >>> com.antenna("error")
 
+        Check the current encoder values
+
+        >>> com.antenna("?")
+
         """
         CMD = cmd.upper()
         if CMD == "STOP":
@@ -614,6 +618,10 @@ class Commander(PrivilegedNode):
         Remove the absorber but don't wait until it has been removed
 
         >>> com.chopper("remove", wait=False)
+
+        Check the current status of the absorber
+
+        >>> com.chopper("?")
 
         """
         CMD = cmd.upper()
@@ -1044,13 +1052,13 @@ class Commander(PrivilegedNode):
 
         Examples
         --------
-        Set the SIS bias voltage to 100 mV on the device ``LSB``
+        Set the SIS bias voltage to 4.5 mV on the device ``LSB``
 
-        >>> com.sis_bias("set", mV=100, id="LSB")
+        >>> com.sis_bias("set", mV=4.5, id="LSB")
 
-        Read the SIS bias voltage on the device ``USB``
+        Read the SIS bias voltage and current on all devices
 
-        >>> com.sis_bias("?", id="USB")
+        >>> com.sis_bias("?")
 
         Set the SIS bias voltage to 0 mV as Finalize.
 
