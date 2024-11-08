@@ -97,6 +97,7 @@ class SpectralData(DeviceNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
+        self.nth = 1
 
         try:
             from neclib.devices import Spectrometer
