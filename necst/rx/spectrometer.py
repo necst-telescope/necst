@@ -27,6 +27,7 @@ class ObservingModeManager:
     def __init__(self) -> None:
         self.mode = []
         self._enabled = []
+        self.nth = 1
 
     def enabled(self, time: float) -> bool:
         try:
@@ -139,15 +140,16 @@ class SpectralData(DeviceNode):
         topic.channel_binning.subscription(self, self.change_spec_chan)
 
     def change_record_frequency(self, msg: Sampling) -> None:
-        nth = max(msg.nth, 1)
+        self.nth = max(msg.nth, 1)
         if msg.save:
-            self.record_condition = ConditionChecker(nth, True)
+            self.record_condition = ConditionChecker(self.nth, True)
             self.logger.info(
-                f"Record frequency changed; every {nth}th data will be saved"
+                f"Record frequency changed; every {self.nth}th data will be saved"
             )
         else:
-            self.record_condition = ConditionChecker(float("inf"), True)
-            self.logger.info("No data will be saved")
+            self.nth = float("inf")
+            self.record_condition = ConditionChecker(self.nth, True)
+            self.logger.info("Spectral data will NOT be saved")
 
     def change_spec_chan(self, msg: Binning) -> None:
         record_chan = msg.ch
