@@ -63,11 +63,11 @@ if __name__ == "__main__":
         required=False,
     )
     p.add_argument(
-        "-c",
-        "--channel",
-        type=int,
-        help="Number of spectral channels.",
+        "-save_spec",
+        action='store_true', 
+        help="Spectral data will not be saved.",
     )
+
     args = p.parse_args()
 
     if args.time is None:
@@ -80,6 +80,6 @@ if __name__ == "__main__":
         magnitude=(args.lower_mag, args.upper_mag),
         drive_test=args.drive_test,
         obstime=obstime,
-        ch=args.channel,
+        save=args.save_spec
     )
     obs.execute()
