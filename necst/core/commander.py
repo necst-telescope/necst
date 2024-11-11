@@ -445,7 +445,6 @@ class Commander(PrivilegedNode):
         direct_mode: bool = True,
         wait: bool = True,
     ) -> None:
-
         CMD = cmd.upper()
         if CMD == "POINT":
             kwargs = {}
@@ -974,6 +973,8 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "START":
+            if not self.savespec:
+                self.logger.warning("Spectral data will NOT be saved")
             recording = False
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
@@ -998,6 +999,7 @@ class Commander(PrivilegedNode):
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "SAVESPEC":
             msg = Sampling(save=save)
+            self.savespec = save
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
