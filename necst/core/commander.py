@@ -137,6 +137,8 @@ class Commander(PrivilegedNode):
 
         self.__check_topic()
 
+        self.savespec = True
+
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
             self.parameters[key] = ParameterList.new(keep, None)
@@ -999,8 +1001,8 @@ class Commander(PrivilegedNode):
             msg = Sampling(nth=nth, save=True)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "SAVESPEC":
-            msg = Sampling(save=save)
             self.savespec = save
+            msg = Sampling(save=self.savespec)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
