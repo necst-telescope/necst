@@ -49,3 +49,22 @@ class AttenuatorController(DeviceNode):
             loss = self.io[key].get_loss(id=key.rsplit(".")[1]).value.item()
             msg = DeviceReading(id=key, value=float(loss), time=time.time())
             publisher.publish(msg)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = AttenuatorController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.io.close()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()
