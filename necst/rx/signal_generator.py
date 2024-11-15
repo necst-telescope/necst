@@ -56,3 +56,22 @@ class SignalGeneratorController(DeviceNode):
                 id=name,
             )
             publisher.publish(msg)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = SignalGeneratorController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.io.close()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()

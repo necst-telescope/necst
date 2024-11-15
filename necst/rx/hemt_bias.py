@@ -16,12 +16,10 @@ class HEMTBias(DeviceNode):
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
-
         self.reader_io = HemtBiasReader()
-
         self.pub: Dict[str, Publisher] = {}
-
         self.create_timer(1, self.stream)
+        self.logger.info(f"Started {self.NodeName} Node...")
 
     def stream(self) -> None:
         hemt_channel = [
@@ -57,6 +55,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        node.logger.info(f"Killing {node.NodeName} Node...")
         node.reader_io.close()
         node.destroy_node()
         rclpy.try_shutdown()
