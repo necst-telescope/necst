@@ -45,3 +45,22 @@ class HEMTBias(DeviceNode):
                 self.pub[id] = topic.hemt_bias[id].publisher(self)
             self.pub[id].publish(msg)
             time.sleep(0.01)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = HEMTBias()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.reader_io.close()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()
