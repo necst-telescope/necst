@@ -26,11 +26,12 @@ class HEMTBias(DeviceNode):
             id for id in self.reader_io.Config.channel.keys() if id.startswith("hemt")
         ]
         channels = set(map(lambda x: x[:-4], hemt_channel))
+        data = self.reader_io.get_all("hemt")
         for id in channels:
-            v_drain = self.reader_io.get_voltage(f"{id}_Vdr").to_value("V").item()
-            v_gate1 = self.reader_io.get_voltage(f"{id}_Vg1").to_value("V").item()
-            v_gate2 = self.reader_io.get_voltage(f"{id}_Vg2").to_value("V").item()
-            i_drain = self.reader_io.get_current(f"{id}_Id").to_valus("mA").item()
+            v_drain = data[f"{id}_Vdr"].to_value("V").item()
+            v_gate1 = data[f"{id}_Vg1"].to_value("V").item()
+            v_gate2 = data[f"{id}_Vg2"].to_value("V").item()
+            i_drain = data[f"{id}_Idr"].to_value("mA").item()
             msg = HEMTBiasMsg(
                 time=time.time(),
                 v_drain=v_drain,

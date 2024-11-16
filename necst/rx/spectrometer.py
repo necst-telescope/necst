@@ -140,8 +140,15 @@ class SpectralData(DeviceNode):
 
     def change_record_frequency(self, msg: Sampling) -> None:
         nth = max(msg.nth, 1)
-        self.record_condition = ConditionChecker(nth, True)
-        self.logger.info(f"Record frequency changed; every {nth}th data will be saved")
+        if msg.save:
+            self.record_condition = ConditionChecker(nth, True)
+            self.logger.info(
+                f"Record frequency changed; every {nth}th data will be saved"
+            )
+        else:
+            nth = float("inf")
+            self.record_condition = ConditionChecker(nth, True)
+            self.logger.info("Spectral data will NOT be saved")
 
     def change_spec_chan(self, msg: Binning) -> None:
         record_chan = msg.ch
