@@ -21,6 +21,7 @@ class LocalAttenuatorController(DeviceNode):
         topic.local_attenuator_cmd.subscription(self, self.output_current)
         self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
+        self.logger.info(f"Started {self.NodeName} Node...")
 
     def output_current(self, msg: LocalAttenuatorMsg) -> None:
         if msg.finalize:
@@ -58,6 +59,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        node.logger.info(f"Killing {node.NodeName} Node...")
         node.io.close()
         node.destroy_node()
         rclpy.try_shutdown()
