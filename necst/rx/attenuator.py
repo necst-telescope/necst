@@ -21,7 +21,10 @@ class AttenuatorController(DeviceNode):
         topic.attenuator_cmd.subscription(self, self.set_loss)
         self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
-        self.logger.info(f"Started {self.NodeName} Node...")
+        self.logger.info(f"Started {self.NodeName} Node...\nStatus:")
+        for key in self.io.keys():
+            for ch in self.io[key].Config.channel.keys():
+                self.logger.info(f"{key}, {ch}: {self.io.get_loss(id = ch)}")
 
     def set_loss(self, msg: DeviceReading) -> None:
         keys = self.io.keys()
@@ -64,8 +67,7 @@ def main(args=None):
         pass
     finally:
         node.logger.info(f"Killing {node.NodeName} Node...")
-        for key in node.io.keys():
-            node.io[key].close()
+        _ = [node.io[key].close() for key in node.io.keys() if key not in None]
         node.destroy_node()
         rclpy.try_shutdown()
 
