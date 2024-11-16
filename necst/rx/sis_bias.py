@@ -30,6 +30,9 @@ class SISBias(DeviceNode):
             id for id in self.reader_io.Config.channel.keys() if id.startswith("sis")
         ]
         channels = set(map(lambda x: x[:-2], sis_channel))
+        data = self.reader_io.get_all(traget="sis")
+        for ch in channels:
+            self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
 
     def stream(self) -> None:
         sis_channel = [
