@@ -35,3 +35,22 @@ class VacuumGaugeController(DeviceNode):
 
             msg = DeviceReading(time=time.time(), value=pressure, id="")
             publisher.publish(msg)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = VacuumGaugeController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.io.close()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()
