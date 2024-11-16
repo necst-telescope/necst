@@ -25,6 +25,12 @@ class SISBias(DeviceNode):
         topic.sis_bias_cmd.subscription(self, self.set_voltage)
         self.create_timer(0.25, self.stream)
 
+        self.logger.info(f"Started {self.NodeName} Node...\nStatus:")
+        sis_channel = [
+            id for id in self.reader_io.Config.channel.keys() if id.startswith("sis")
+        ]
+        channels = set(map(lambda x: x[:-2], sis_channel))
+
     def stream(self) -> None:
         sis_channel = [
             id for id in self.reader_io.Config.channel.keys() if id.startswith("sis")
@@ -76,6 +82,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        node.logger.info(f"Killing {node.NodeName} Node...")
         node.reader_io.close()
         node.setter_io.close()
         node.destroy_node()
