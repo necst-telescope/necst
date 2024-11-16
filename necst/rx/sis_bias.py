@@ -64,3 +64,23 @@ class SISBias(DeviceNode):
             self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
             time.sleep(0.01)
         self.stream()
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = SISBias()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.reader_io.close()
+        node.setter_io.close()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()
