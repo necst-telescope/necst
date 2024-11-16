@@ -23,6 +23,8 @@ class VacuumGaugeController(DeviceNode):
 
         self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
+        self.logger.info(f"Started {self.NodeName} Node...\nStatus:")
+        self.logger.info(f"{self.io.get_pressure()}")
 
     def check_publisher(self) -> None:
         for name in self.io.keys():
@@ -47,6 +49,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        node.logger.info(f"Killing {node.NodeName} Node...")
         node.io.close()
         node.destroy_node()
         rclpy.try_shutdown()
