@@ -916,7 +916,9 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "reduce", "savespec", "binning", "?"],
+        cmd: Literal[
+            "start", "stop", "file", "reduce", "savespec", "binning", "tp", "?"
+        ],
         /,
         *,
         name: str = "",
@@ -925,6 +927,7 @@ class Commander(PrivilegedNode):
         ch: Optional[int] = None,
         save: Optional[bool] = None,
         saveapec: Optional[bool] = None,
+        tp: Optional[bool] = None,
     ) -> None:
         """Control the recording.
 
@@ -1013,6 +1016,9 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
+        elif CMD == "TP":
+            if self.tp:
+                self.logger.warning("Total power only will be saved")
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
