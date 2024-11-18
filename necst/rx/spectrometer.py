@@ -136,6 +136,7 @@ class SpectralData(DeviceNode):
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
         topic.antenna_control_status.subscription(self, self.update_control_status)
         topic.spectra_rec.subscription(self, self.change_record_frequency)
+        topic.spectra_rec.subscription(self, self.record)
         topic.channel_binning.subscription(self, self.change_spec_chan)
 
     def change_record_frequency(self, msg: Sampling) -> None:
@@ -227,7 +228,7 @@ class SpectralData(DeviceNode):
                 )
                 self.publisher[_id].publish(msg)
 
-    def record(self) -> None:
+    def record(self, msg: Sampling) -> None:
         _data_dict = self.get_data()
         if _data_dict is None:
             return
@@ -247,6 +248,10 @@ class SpectralData(DeviceNode):
                 return
 
             time, data = _data
+            tp = self.io.calc_tp(data)
+
+            if msg.save:
+                data = tp
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
                 msg = Spectral(

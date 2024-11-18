@@ -1018,7 +1018,9 @@ class Commander(PrivilegedNode):
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP":
             if self.tp:
-                self.logger.warning("Total power only will be saved")
+                self.logger.warning("Only total power will be saved")
+                msg = Sampling(tp=self.tp)
+                return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
