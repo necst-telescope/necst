@@ -152,7 +152,8 @@ class SpectralData(DeviceNode):
             self.logger.info("Spectral data will NOT be saved")
 
     def tp_mode_func(self, msg: TPModeMsg) -> None:
-        if msg.tp_mode:
+        self.tp = msg.tp_mode
+        if self.tp:
             self.logger.info("Only total power will be saved")
 
     def change_spec_chan(self, msg: Binning) -> None:
@@ -252,7 +253,7 @@ class SpectralData(DeviceNode):
                 return
 
             time, data = _data
-            if self.tp_mode:
+            if self.tp:
                 data = self.io.tp_calc(data)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
