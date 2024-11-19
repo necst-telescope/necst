@@ -1061,7 +1061,7 @@ class Commander(PrivilegedNode):
         *,
         mV: Optional[Union[int, float]] = None,
         id: Optional[Union[str, list[str]]] = None,
-        thresh: Optional[Union[int, float]] = 0.08,
+        thresh: Optional[Union[int, float]] = 0.07,
         wait: bool = True,
     ) -> None:
         """Control the SIS bias voltage.
