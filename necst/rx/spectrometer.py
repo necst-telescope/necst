@@ -233,7 +233,7 @@ class SpectralData(DeviceNode):
                 )
                 self.publisher[_id].publish(msg)
 
-    def record(self, msg: Sampling) -> None:
+    def record(self) -> None:
         _data_dict = self.get_data()
         if _data_dict is None:
             return
