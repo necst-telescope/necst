@@ -25,6 +25,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
     TimeOnly,
+    TPMsg,
 )
 from necst_msgs.srv import (
     CoordinateCommand,
@@ -138,6 +139,7 @@ class Commander(PrivilegedNode):
         self.__check_topic()
 
         self.savespec = True
+        self.tp_mode = False
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -917,7 +919,7 @@ class Commander(PrivilegedNode):
     def record(
         self,
         cmd: Literal[
-            "start", "stop", "file", "reduce", "savespec", "binning", "tp", "?"
+            "start", "stop", "file", "reduce", "savespec", "binning", "tp_mode", "?"
         ],
         /,
         *,
@@ -927,7 +929,7 @@ class Commander(PrivilegedNode):
         ch: Optional[int] = None,
         save: Optional[bool] = None,
         saveapec: Optional[bool] = None,
-        tp: Optional[bool] = None,
+        tp_mode: Optional[bool] = None,
     ) -> None:
         """Control the recording.
 
@@ -982,6 +984,10 @@ class Commander(PrivilegedNode):
             if not self.savespec:
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
+            if self.tp_mode:
+                self.logger.waring("Only total power will be saved")
+            else:
+                self.logger.waring("Total power will NOT be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -1017,9 +1023,9 @@ class Commander(PrivilegedNode):
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP":
-            if self.tp:
-                self.logger.warning("Only total power will be saved")
-                msg = Sampling(tp=self.tp)
+            self.tp_mode = tp_mode
+            if tp_mode:
+                msg = TPMsg(tp_mode=self.tp_mode)
                 return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
