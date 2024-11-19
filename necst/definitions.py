@@ -144,6 +144,7 @@ class topic:
         DomeOC,
         DomeLimit,
         TimeOnly,
+        Tp_mode,
     )
 
     from .utils import Topic
@@ -264,6 +265,7 @@ class topic:
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
+    tp_mode = Topic(tp_mode, "tp_mode", qos.realtime, namespace.core)
 
 
 class service:

@@ -95,6 +95,7 @@ class Commander(PrivilegedNode):
             "dome_alert_stop": topic.manual_stop_dome_alert,
             "dome_oc": topic.dome_oc,
             "timeonly": topic.timeonly,
+            "tp_mode": topic.tp_mode,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -985,7 +986,7 @@ class Commander(PrivilegedNode):
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
-                self.logger.waring("Only total power will be saved")
+                self.logger.waring("Spectral data will be saved")
             else:
                 self.logger.waring("Total power will NOT be saved")
             while not recording:
@@ -1022,7 +1023,7 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
-        elif CMD == "TP":
+        elif CMD == "TP_MODE":
             self.tp_mode = tp_mode
             if tp_mode:
                 msg = TPModeMsg(tp_mode=self.tp_mode)
