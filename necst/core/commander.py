@@ -25,7 +25,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
     TimeOnly,
-    TPMsg,
+    TPModeMsg,
 )
 from necst_msgs.srv import (
     CoordinateCommand,
@@ -1025,7 +1025,7 @@ class Commander(PrivilegedNode):
         elif CMD == "TP":
             self.tp_mode = tp_mode
             if tp_mode:
-                msg = TPMsg(tp_mode=self.tp_mode)
+                msg = TPModeMsg(tp_mode=self.tp_mode)
                 return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
