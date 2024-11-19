@@ -19,5 +19,7 @@ class SIS_IV(Measurement):
             int(round(1000 * step_voltage_mV)),
         ):
             self.com.sis_bias("set", mV=(bias_voltage / 1000), id=id)
-            time.sleep(2.0)
+            time.sleep(
+                2.0
+            )  # TODO: Is this sleep is needed? Wating voltage setting will be added.
         self.com.sis_bias("finalize")

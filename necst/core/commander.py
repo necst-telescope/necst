@@ -138,6 +138,8 @@ class Commander(PrivilegedNode):
 
         self.__check_topic()
 
+        self.savespec = True
+
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
             self.parameters[key] = ParameterList.new(keep, None)
@@ -446,7 +448,6 @@ class Commander(PrivilegedNode):
         direct_mode: bool = True,
         wait: bool = True,
     ) -> None:
-
         CMD = cmd.upper()
         if CMD == "POINT":
             kwargs = {}
@@ -916,13 +917,15 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "reduce", "binning", "?"],
+        cmd: Literal["start", "stop", "file", "reduce", "savespec", "binning", "?"],
         /,
         *,
         name: str = "",
         content: Optional[str] = None,
         nth: Optional[int] = None,
         ch: Optional[int] = None,
+        save: Optional[bool] = None,
+        saveapec: Optional[bool] = None,
     ) -> None:
         """Control the recording.
 
@@ -974,6 +977,8 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "START":
+            if not self.savespec:
+                self.logger.warning("Spectral data will NOT be saved")
             recording = False
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
@@ -994,7 +999,11 @@ class Commander(PrivilegedNode):
             req = File.Request(data=str(content), path=name)
             return self._send_request(req, self.client["record_file"])
         elif CMD == "REDUCE":
-            msg = Sampling(nth=nth)
+            msg = Sampling(nth=nth, save=True)
+            return self.publisher["spectra_smpl"].publish(msg)
+        elif CMD == "SAVESPEC":
+            self.savespec = save
+            msg = Sampling(save=self.savespec)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
