@@ -132,6 +132,8 @@ class SpectralData(DeviceNode):
 
         self.qlook_ch_range = (0, 100)
 
+        self.tp = False
+
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
         topic.antenna_control_status.subscription(self, self.update_control_status)
