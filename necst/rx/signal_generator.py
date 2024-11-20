@@ -24,7 +24,7 @@ class SignalGeneratorController(DeviceNode):
 
         self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
-        self.logger.info(f"Started {self.NodeName} Node...\nStatus:")
+        self.logger.info(f"Started {self.NodeName} Node...")
         for key in self.io.keys():
             self.logger.info(
                 f"{key}: {self.io[key].get_power()}, "

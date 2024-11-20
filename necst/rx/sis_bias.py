@@ -24,7 +24,7 @@ class SISBias(DeviceNode):
 
         topic.sis_bias_cmd.subscription(self, self.set_voltage)
         self.create_timer(0.25, self.stream)
-        self.logger.info(f"Started {self.NodeName} Node...\nStatus:")
+        self.logger.info(f"Started {self.NodeName} Node...")
         sis_channel = [
             id for id in self.reader_io.Config.channel.keys() if id.startswith("sis")
         ]

@@ -19,6 +19,7 @@ class HEMTBias(DeviceNode):
         self.reader_io = HemtBiasReader()
         self.pub: Dict[str, Publisher] = {}
         self.create_timer(1, self.stream)
+        self.logger.info(f"Started {self.NodeName} Node...")
         hemt_channel = [
             id for id in self.reader_io.Config.channel.keys() if id.startswith("hemt")
         ]
