@@ -27,7 +27,9 @@ class SignalGeneratorController(DeviceNode):
         self.logger.info(f"Started {self.NodeName} Node...\nStatus:")
         for key in self.io.keys():
             self.logger.info(
-                f"{key}: {self.io[key].get_power()}, {self.io[key].get_freq()}"
+                f"{key}: {self.io[key].get_power()}, "
+                f"{self.io[key].get_freq()}, "
+                f"Output is {self.io[key].get_ouput_status()}"
             )
 
     def check_publisher(self) -> None:
