@@ -85,7 +85,7 @@ def main(args=None):
     finally:
         node.reader_io.close()
         _ = [
-            node.setter_io[key].close() if None not in key else node.io.close()
+            node.setter_io[key].close() if None not in key else node.setter_io.close()
             for key in node.setter_io.keys()
         ]
         node.destroy_node()
