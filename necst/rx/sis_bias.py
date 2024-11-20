@@ -85,8 +85,8 @@ def main(args=None):
     finally:
         node.reader_io.close()
         _ = [
-            node.io[key].close() if None not in key else node.io.close()
-            for key in node.io.keys()
+            node.setter_io[key].close() if None not in key else node.io.close()
+            for key in node.setter_io.keys()
         ]
         node.destroy_node()
         rclpy.try_shutdown()
