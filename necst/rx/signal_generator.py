@@ -73,7 +73,6 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.logger.info(f"Killing {node.NodeName} Node...")
         _ = [node.io[key].close() for key in node.io.keys()]
         node.destroy_node()
         rclpy.try_shutdown()
