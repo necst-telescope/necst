@@ -24,6 +24,13 @@ class SignalGeneratorController(DeviceNode):
 
         self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
+        self.logger.info(f"Started {self.NodeName} Node...")
+        for key in self.io.keys():
+            self.logger.info(
+                f"{key}: {self.io[key].get_power()}, "
+                f"{self.io[key].get_freq()}, "
+                f"Output is {self.io[key].get_ouput_status()}"
+            )
 
     def check_publisher(self) -> None:
         for name in self.io.keys():
@@ -56,3 +63,22 @@ class SignalGeneratorController(DeviceNode):
                 id=name,
             )
             publisher.publish(msg)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = SignalGeneratorController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        _ = [node.io[key].close() for key in node.io.keys()]
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()

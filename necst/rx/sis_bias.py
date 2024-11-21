@@ -24,6 +24,14 @@ class SISBias(DeviceNode):
 
         topic.sis_bias_cmd.subscription(self, self.set_voltage)
         self.create_timer(0.25, self.stream)
+        self.logger.info(f"Started {self.NodeName} Node...")
+        sis_channel = [
+            id for id in self.reader_io.Config.channel.keys() if id.startswith("sis")
+        ]
+        channels = set(map(lambda x: x[:-2], sis_channel))
+        data = self.reader_io.get_all(traget="sis")
+        for ch in channels:
+            self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
 
     def stream(self) -> None:
         sis_channel = [
@@ -63,3 +71,26 @@ class SISBias(DeviceNode):
             self.setter_io.apply_voltage()
             self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
             time.sleep(0.01)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = SISBias()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.reader_io.close()
+        _ = [
+            node.setter_io[key].close() if None not in key else node.setter_io.close()
+            for key in node.setter_io.keys()
+        ]
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()
