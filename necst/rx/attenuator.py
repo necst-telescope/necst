@@ -28,29 +28,27 @@ class AttenuatorController(DeviceNode):
 
     def set_loss(self, msg: DeviceReading) -> None:
         keys = self.io.keys()
-        if None in keys:
-            self.io.set_loss(dB=int(msg.value), id=msg.id)
-        else:
-            for key in keys:
-                ch = self.io[key].Config.channel.keys()
-                if msg.id in ch:
-                    self.io[key].set_voltage(dB=msg.value, id=msg.id)
-                    break
-                else:
-                    continue
+        for key in keys:
+            ch = self.io[key].Config.channel.keys()
+            if msg.id in ch:
+                self.io[key].set_voltage(dB=msg.value, id=msg.id)
+                break
+            else:
+                continue
         time.sleep(0.01)
 
     def check_publisher(self) -> None:
         for key in self.io.keys():
             for name in self.io[key].Config.channel.keys():
-                if key not in self.publisher:
+                if key + "." + name not in self.publisher:
                     self.publisher[f"{key}" + "." + f"{name}"] = topic.attenuator[
                         f"{key}" + "." + f"{name}"
                     ].publisher(self)
 
     def stream(self) -> None:
         for key, publisher in self.publisher.items():
-            loss = self.io[key].get_loss(id=key.rsplit(".")[1]).value.item()
+            spl = key.rsplit(".")
+            loss = self.io[spl[0]].get_loss(id=spl[1]).value.item()
             msg = DeviceReading(id=key, value=float(loss), time=time.time())
             publisher.publish(msg)
 
