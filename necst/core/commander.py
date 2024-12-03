@@ -987,9 +987,9 @@ class Commander(PrivilegedNode):
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
-                self.logger.waring("Spectral data will be saved")
+                self.logger.info("Spectral data will NOT be saved")
             else:
-                self.logger.waring("Total power will NOT be saved")
+                self.logger.info("Total power will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
