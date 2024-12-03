@@ -1009,7 +1009,7 @@ class Commander(PrivilegedNode):
             return self._send_request(req, self.client["record_file"])
         elif CMD == "REDUCE":
             msg = Sampling(nth=nth, save=True)
-            return self.publisher["tp_mode"].publish(msg)
+            return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "SAVESPEC":
             self.savespec = save
             msg = Sampling(save=self.savespec)
@@ -1026,7 +1026,7 @@ class Commander(PrivilegedNode):
         elif CMD == "TP_MODE":
             self.tp_mode = tp_mode
             msg = TPModeMsg(tp_mode=self.tp_mode)
-            return self.publisher["spectra_smpl"].publish(msg)
+            return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
