@@ -1009,11 +1009,11 @@ class Commander(PrivilegedNode):
             return self._send_request(req, self.client["record_file"])
         elif CMD == "REDUCE":
             msg = Sampling(nth=nth, save=True)
-            return self.publisher["spectra_smpl"].publish(msg)
+            return self.publisher["tp_mode"].publish(msg)
         elif CMD == "SAVESPEC":
             self.savespec = save
             msg = Sampling(save=self.savespec)
-            return self.publisher["tp_mode"].publish(msg)
+            return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
             if ch > 100:
