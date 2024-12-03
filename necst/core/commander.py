@@ -930,6 +930,7 @@ class Commander(PrivilegedNode):
         ch: Optional[int] = None,
         save: Optional[bool] = None,
         saveapec: Optional[bool] = None,
+        tp: Optional[bool] = None,
         tp_mode: Optional[bool] = None,
     ) -> None:
         """Control the recording.
