@@ -29,7 +29,7 @@ class SignalGeneratorController(DeviceNode):
             self.logger.info(
                 f"{key}: {self.io[key].get_power()}, "
                 f"{self.io[key].get_freq()}, "
-                f"Output is {self.io[key].get_ouput_status()}"
+                f"Output is {self.io[key].get_output_status()}"
             )
 
     def check_publisher(self) -> None:
