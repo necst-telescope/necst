@@ -986,7 +986,7 @@ class Commander(PrivilegedNode):
             if not self.savespec:
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
-            if self.tp_mode:
+            if self.tp:
                 self.logger.info("Total power will be saved")
             else:
                 self.logger.info("Spectral data will be saved")
