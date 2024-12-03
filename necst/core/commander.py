@@ -987,9 +987,9 @@ class Commander(PrivilegedNode):
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
-                self.logger.info("Spectral data will NOT be saved")
-            else:
                 self.logger.info("Total power will be saved")
+            else:
+                self.logger.info("Spectral data will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -1025,7 +1025,7 @@ class Commander(PrivilegedNode):
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP_MODE":
-            self.tp_mode = tp_mode
+            self.tp = tp_mode
             if tp_mode:
                 msg = TPModeMsg(tp_mode=self.tp_mode)
                 return self.publisher["spectra_smpl"].publish(msg)
