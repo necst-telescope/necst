@@ -1026,9 +1026,8 @@ class Commander(PrivilegedNode):
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP_MODE":
             self.tp = tp_mode
-            if tp_mode:
-                msg = TPModeMsg(tp_mode=self.tp_mode)
-                return self.publisher["spectra_smpl"].publish(msg)
+            msg = TPModeMsg(tp_mode=self.tp)
+            return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
