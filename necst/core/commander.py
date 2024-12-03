@@ -140,7 +140,7 @@ class Commander(PrivilegedNode):
         self.__check_topic()
 
         self.savespec = True
-        self.tp_mode = False
+        self.tp = False
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
