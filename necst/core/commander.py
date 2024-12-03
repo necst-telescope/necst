@@ -1013,7 +1013,7 @@ class Commander(PrivilegedNode):
         elif CMD == "SAVESPEC":
             self.savespec = save
             msg = Sampling(save=self.savespec)
-            return self.publisher["spectra_smpl"].publish(msg)
+            return self.publisher["tp_mode"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
             if ch > 100:
