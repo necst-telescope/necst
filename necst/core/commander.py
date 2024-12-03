@@ -140,7 +140,7 @@ class Commander(PrivilegedNode):
         self.__check_topic()
 
         self.savespec = True
-        self.tp = False
+        self.tp_mode = False
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -930,7 +930,6 @@ class Commander(PrivilegedNode):
         ch: Optional[int] = None,
         save: Optional[bool] = None,
         saveapec: Optional[bool] = None,
-        tp: Optional[bool] = None,
         tp_mode: Optional[bool] = None,
     ) -> None:
         """Control the recording.
@@ -986,7 +985,7 @@ class Commander(PrivilegedNode):
             if not self.savespec:
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
-            if self.tp:
+            if self.tp_mode:
                 self.logger.info("Total power will be saved")
             else:
                 self.logger.info("Spectral data will be saved")
@@ -1025,8 +1024,8 @@ class Commander(PrivilegedNode):
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP_MODE":
-            self.tp = tp_mode
-            msg = TPModeMsg(tp_mode=self.tp)
+            self.tp_mode = tp_mode
+            msg = TPModeMsg(tp_mode=self.tp_mode)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
