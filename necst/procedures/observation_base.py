@@ -74,7 +74,7 @@ class Observation(ABC):
                     self.binning(self._kwargs.pop("ch"))
                 if "tp" in self._kwargs.keys():
                     tp_bool = self._kwargs.pop("tp")
-                    self.com.record("tp_mode", tp=tp_bool)
+                    self.com.record("tp_mode", tp_mode=tp_bool)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
