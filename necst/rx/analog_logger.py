@@ -39,7 +39,7 @@ class AnalogLoggerController(DeviceNode):
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            value = self.io.get_all(name)[name].item()
+            value = self.io.get_all(name)[name].item().value
             msg = DeviceReading(time=time.time(), value=value, id=name)
             publisher.publish(msg)
 
