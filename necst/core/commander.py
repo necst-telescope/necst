@@ -110,6 +110,7 @@ class Commander(PrivilegedNode):
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
             "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
+            "analog_logger": _SubscriptionCfg(topic.analog_logger, 1),
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
@@ -1307,6 +1308,27 @@ class Commander(PrivilegedNode):
             return self.get_message("vacuum_gauge", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+    def analog_logger(self, cmd: Literal["?"] = "?", /) -> None:
+        """Get the analog_logger reading.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+
+        Examples
+        --------
+        Get the analog_logger reading
+
+        >>> com.analog_logger("?")
+
+        """
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("analog_logger", timeout_sec=10)
+        else:
+            raise ValueError(f"Unkown command: {cmd!r}")
 
     sg = signal_generator
     """Alias of :meth:`signal_generator`."""
