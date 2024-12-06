@@ -1346,3 +1346,5 @@ class Commander(PrivilegedNode):
     """Alias of :meth:`local_attenuator`."""
     vg = vacuum_gauge
     """Alias of :meth:`vacuum_gauge`."""
+    al = analog_logger
+    """Alias of :meth:`analog_logger`"""
