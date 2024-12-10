@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple
 from neclib.data import Resize
 from neclib.recorders import NECSTDBWriter, Recorder
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import Binning, ControlStatus, Sampling, Spectral
+from necst_msgs.msg import Binning, ControlStatus, Sampling, Spectral, TPModeMsg
 from rclpy.publisher import Publisher
 
 from .. import config, namespace, topic
@@ -132,10 +132,13 @@ class SpectralData(DeviceNode):
 
         self.qlook_ch_range = (0, 100)
 
+        self.tp = False
+
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
         topic.antenna_control_status.subscription(self, self.update_control_status)
         topic.spectra_rec.subscription(self, self.change_record_frequency)
+        topic.tp_mode.subscription(self, self.tp_mode_func)
         topic.channel_binning.subscription(self, self.change_spec_chan)
 
     def change_record_frequency(self, msg: Sampling) -> None:
@@ -149,6 +152,11 @@ class SpectralData(DeviceNode):
             nth = float("inf")
             self.record_condition = ConditionChecker(nth, True)
             self.logger.info("Spectral data will NOT be saved")
+
+    def tp_mode_func(self, msg: TPModeMsg) -> None:
+        self.tp = msg.tp_mode
+        if self.tp:
+            self.logger.info("Only total power will be saved")
 
     def change_spec_chan(self, msg: Binning) -> None:
         record_chan = msg.ch
@@ -247,6 +255,8 @@ class SpectralData(DeviceNode):
                 return
 
             time, data = _data
+            if self.tp:
+                data = self.io[key].calc_tp(data)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
                 msg = Spectral(

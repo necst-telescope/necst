@@ -25,6 +25,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
     TimeOnly,
+    TPModeMsg,
 )
 from necst_msgs.srv import (
     CoordinateCommand,
@@ -94,6 +95,7 @@ class Commander(PrivilegedNode):
             "dome_alert_stop": topic.manual_stop_dome_alert,
             "dome_oc": topic.dome_oc,
             "timeonly": topic.timeonly,
+            "tp_mode": topic.tp_mode,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -138,6 +140,7 @@ class Commander(PrivilegedNode):
         self.__check_topic()
 
         self.savespec = True
+        self.tp_mode = False
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -916,7 +919,9 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "reduce", "savespec", "binning", "?"],
+        cmd: Literal[
+            "start", "stop", "file", "reduce", "savespec", "binning", "tp_mode", "?"
+        ],
         /,
         *,
         name: str = "",
@@ -925,6 +930,7 @@ class Commander(PrivilegedNode):
         ch: Optional[int] = None,
         save: Optional[bool] = None,
         saveapec: Optional[bool] = None,
+        tp_mode: Optional[bool] = None,
     ) -> None:
         """Control the recording.
 
@@ -979,6 +985,10 @@ class Commander(PrivilegedNode):
             if not self.savespec:
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
+            if self.tp_mode:
+                self.logger.info("Total power will be saved")
+            else:
+                self.logger.info("Spectral data will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -1013,6 +1023,10 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
+        elif CMD == "TP_MODE":
+            self.tp_mode = tp_mode
+            msg = TPModeMsg(tp_mode=self.tp_mode)
+            return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
