@@ -256,6 +256,7 @@ class SpectralData(DeviceNode):
 
             time, data = _data
             if self.tp:
+                print(self.tp)
                 data = self.io.tp_calc(data)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
