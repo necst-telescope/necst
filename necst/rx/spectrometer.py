@@ -138,7 +138,7 @@ class SpectralData(DeviceNode):
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
         topic.antenna_control_status.subscription(self, self.update_control_status)
         topic.spectra_rec.subscription(self, self.change_record_frequency)
-        topic.spectra_rec.subscription(self, self.tp_mode_func)
+        topic.tp_mode.subscription(self, self.tp_mode_func)
         topic.channel_binning.subscription(self, self.change_spec_chan)
 
     def change_record_frequency(self, msg: Sampling) -> None:
