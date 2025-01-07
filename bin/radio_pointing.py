@@ -31,7 +31,13 @@ if __name__ == "__main__":
         type=int,
         help="Number of spectral channels.",
     )
+    p.add_argument(
+        "-tp",
+        "--tp_mode",
+        type=bool,
+        help="Save Total Power.",
+    )
     args = p.parse_args()
 
-    obs = RadioPointing(file=args.file, ch=args.channel)
+    obs = RadioPointing(file=args.file, ch=args.channel, tp=args.tp_mode)
     obs.execute()
