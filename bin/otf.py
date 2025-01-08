@@ -30,7 +30,13 @@ if __name__ == "__main__":
         type=int,
         help="Number of spectral channels.",
     )
+    p.add_argument(
+        "-tp",
+        "--tp_mode",
+        action="store_true",
+        help="Save Total Power.",
+    )
     args = p.parse_args()
 
-    obs = OTF(file=args.file, ch=args.channel)
+    obs = OTF(file=args.file, ch=args.channel, tp=args.tp_mode)
     obs.execute()

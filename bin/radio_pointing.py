@@ -34,7 +34,7 @@ if __name__ == "__main__":
     p.add_argument(
         "-tp",
         "--tp_mode",
-        type=bool,
+        action="store_true",
         help="Save Total Power.",
     )
     args = p.parse_args()
