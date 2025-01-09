@@ -82,7 +82,7 @@ class Observation(ABC):
                 self.run(**self._kwargs)
             finally:
                 self.com.record("stop")
-                self.com.record("tp_mode", tp=False)
+                self.com.record("tp_mode", tp_mode=False)
                 self.com.record("savespec", save=True)
                 self.com.antenna("stop")
                 self.binning(config.spectrometer.max_ch)  # set max channel number
