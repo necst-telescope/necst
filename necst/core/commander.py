@@ -1012,7 +1012,7 @@ class Commander(PrivilegedNode):
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "SAVESPEC":
             self.savespec = save
-            msg = Sampling(save=self.savespec)
+            msg = Sampling(save=save)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
@@ -1025,7 +1025,7 @@ class Commander(PrivilegedNode):
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP_MODE":
             self.tp_mode = tp_mode
-            msg = TPModeMsg(tp_mode=self.tp_mode)
+            msg = TPModeMsg(tp_mode=tp_mode)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
