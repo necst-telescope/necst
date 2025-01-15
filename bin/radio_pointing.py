@@ -44,10 +44,10 @@ if __name__ == "__main__":
         help="Channel range of Total Power.",
         metavar=["START", "END"],
     )
-    if p.tp_range:
-        p.tp_mode = True
 
     args = p.parse_args()
+    if args.tp_range:
+        args.tp_mode = True
 
     obs = RadioPointing(
         file=args.file, ch=args.channel, tp=args.tp_mode, tp_range=args.tp_range

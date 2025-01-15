@@ -140,7 +140,6 @@ class SpectralData(DeviceNode):
         topic.antenna_control_status.subscription(self, self.update_control_status)
         topic.spectra_rec.subscription(self, self.change_record_frequency)
         topic.tp_mode.subscription(self, self.tp_mode_func)
-        topic.tp_range.subscription(self, self.tp_mode_func)
         topic.channel_binning.subscription(self, self.change_spec_chan)
 
     def change_record_frequency(self, msg: Sampling) -> None:
@@ -265,13 +264,8 @@ class SpectralData(DeviceNode):
 
             time, data = _data
 
-            if self.tp_range:
-                start, end = self.tp_range
-                for board_id, spectral_data in data.items():
-                    data[board_id] = spectral_data[start : end + 1]
-
             if self.tp_mode:
-                data = self.io[key].calc_tp(data)
+                data = self.io[key].calc_tp(data, self.tp_range)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
                 msg = Spectral(

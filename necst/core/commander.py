@@ -927,7 +927,6 @@ class Commander(PrivilegedNode):
             "savespec",
             "binning",
             "tp_mode",
-            "tp_range",
             "?",
         ],
         /,
@@ -1032,14 +1031,14 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
-        elif CMD == "TP_MODE":
+        elif CMD == "TP_MODE":  # record("tp_mode", tp_mode=True, tp_range=[0, 100])
             self.tp_mode = tp_mode
-            msg = TPModeMsg(tp_mode=tp_mode)
+            self.tp_range = tp_range
+            if tp_range:
+                msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
+            else:
+                msg = TPModeMsg(tp_mode=tp_mode)
             return self.publisher["tp_mode"].publish(msg)
-        elif CMD == "TP_RANGE":
-            self.tp_mode = tp_mode
-            self.tp_range = tp_range  # list
-            msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
