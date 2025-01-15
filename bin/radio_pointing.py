@@ -37,7 +37,19 @@ if __name__ == "__main__":
         action="store_true",
         help="Save Total Power.",
     )
+    p.add_argument(
+        "--tp_range",
+        type=int,
+        nargs=2,
+        help="Channel range of Total Power.",
+        metavar=["START", "END"],
+    )
+    if p.tp_range:
+        p.tp_mode = True
+
     args = p.parse_args()
 
-    obs = RadioPointing(file=args.file, ch=args.channel, tp=args.tp_mode)
+    obs = RadioPointing(
+        file=args.file, ch=args.channel, tp=args.tp_mode, tp_range=args.tp_range
+    )
     obs.execute()

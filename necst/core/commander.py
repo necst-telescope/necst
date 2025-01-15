@@ -920,7 +920,15 @@ class Commander(PrivilegedNode):
     def record(
         self,
         cmd: Literal[
-            "start", "stop", "file", "reduce", "savespec", "binning", "tp_mode", "?"
+            "start",
+            "stop",
+            "file",
+            "reduce",
+            "savespec",
+            "binning",
+            "tp_mode",
+            "tp_range",
+            "?",
         ],
         /,
         *,
@@ -931,6 +939,7 @@ class Commander(PrivilegedNode):
         save: Optional[bool] = None,
         saveapec: Optional[bool] = None,
         tp_mode: Optional[bool] = None,
+        tp_range: Optional[list] = None,
     ) -> None:
         """Control the recording.
 
@@ -1027,6 +1036,10 @@ class Commander(PrivilegedNode):
             self.tp_mode = tp_mode
             msg = TPModeMsg(tp_mode=tp_mode)
             return self.publisher["tp_mode"].publish(msg)
+        elif CMD == "TP_RANGE":
+            self.tp_mode = tp_mode
+            self.tp_range = tp_range  # list
+            msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:

@@ -132,13 +132,15 @@ class SpectralData(DeviceNode):
 
         self.qlook_ch_range = (0, 100)
 
-        self.tp = False
+        self.tp_mode = False
+        self.tp_range = []
 
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
         topic.antenna_control_status.subscription(self, self.update_control_status)
         topic.spectra_rec.subscription(self, self.change_record_frequency)
         topic.tp_mode.subscription(self, self.tp_mode_func)
+        topic.tp_range.subscription(self, self.tp_mode_func)
         topic.channel_binning.subscription(self, self.change_spec_chan)
 
     def change_record_frequency(self, msg: Sampling) -> None:
@@ -153,10 +155,17 @@ class SpectralData(DeviceNode):
             self.record_condition = ConditionChecker(nth, True)
             self.logger.info("Spectral data will NOT be saved")
 
-    def tp_mode_func(self, msg: TPModeMsg) -> None:
-        self.tp = msg.tp_mode
-        if self.tp:
-            self.logger.info("Only total power will be saved")
+    def tp_mode_func(
+        self, msg: TPModeMsg
+    ) -> None:  # tp_mode: Bool, channels: List[int]
+        self.tp_mode = msg.tp_mode
+        self.tp_range = msg.tp_range
+
+        if self.tp_mode:
+            if self.tp_range:
+                self.logger.info(f"Total power will be saved. Range: {self.tp_range}")
+            else:
+                self.logger.info("Total power will be saved. Range: all channels")
 
     def change_spec_chan(self, msg: Binning) -> None:
         record_chan = msg.ch
@@ -255,7 +264,13 @@ class SpectralData(DeviceNode):
                 return
 
             time, data = _data
-            if self.tp:
+
+            if self.tp_range:
+                start, end = self.tp_range
+                for board_id, spectral_data in data.items():
+                    data[board_id] = spectral_data[start : end + 1]
+
+            if self.tp_mode:
                 data = self.io[key].calc_tp(data)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
