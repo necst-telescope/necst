@@ -27,7 +27,37 @@ class FileBasedObservation(Observation):
         raise ValueError(f"Invalid coordinate: {coord}")
 
     def run(self, file: Union[os.PathLike, str, IO]) -> None:
+        scan_frag = 1
+        bydirectional = self.obsspec.bydirectional
+        reset_scan = self.obsspec.reset_scan
+        if reset_scan:
+            direction = self.obsspec.scan_direction.lower
+            start_position = self.obsspec["start_position_" + direction]
+            if self.obsspec.relative:
+                delta = (
+                    self.obsspec.delta_lambda.value
+                    if direction == "x"
+                    else self.obsspec.delta_beta.value
+                )
+            else:
+                off_point = (
+                    self.obsspec.lambda_off.value
+                    if direction == "x"
+                    else self.obsspec.beta_off.value
+                )
+                on_point = (
+                    self.obsspec.lambda_on.value
+                    if direction == "x"
+                    else self.obsspec.beta_on.value
+                )
+                delta = off_point - on_point
+            if delta * start_position > 0:
+                reset = 1
+            else:
+                reset = -1
+
         self.com.record("file", name=file)
+
         for waypoint in self.obsspec:
             if waypoint.mode == ObservationMode.HOT:  # Hot observation
                 self.hot(waypoint.integration.to_value("s"), waypoint.id)
@@ -42,12 +72,22 @@ class FileBasedObservation(Observation):
                 reference = self._coord_to_tuple(_reference) if _reference else None
                 kwargs.update(target=target, reference=reference)
             if waypoint.is_scan:
-                kwargs.update(
-                    start=self._coord_to_tuple(waypoint.start),
-                    stop=self._coord_to_tuple(waypoint.stop),
-                    scan_frame=waypoint.scan_frame,
-                    speed=waypoint.speed.to_value("deg/s"),
-                )
+                if scan_frag == 1:
+                    kwargs.update(
+                        start=self._coord_to_tuple(waypoint.start),
+                        stop=self._coord_to_tuple(waypoint.stop),
+                        scan_frame=waypoint.scan_frame,
+                        speed=waypoint.speed.to_value("deg/s"),
+                    )
+                else:
+                    kwargs.update(
+                        start=self._coord_to_tuple(waypoint.stop),
+                        stop=self._coord_to_tuple(waypoint.start),
+                        scan_frame=waypoint.scan_frame,
+                        speed=waypoint.speed.to_value("deg/s"),
+                    )
+                if bydirectional:
+                    scan_frag *= -1
             if waypoint.with_offset:
                 kwargs.update(offset=self._coord_to_tuple(waypoint.offset))
 
@@ -55,11 +95,20 @@ class FileBasedObservation(Observation):
                 if not waypoint.is_scan:
                     self.com.antenna("point", **kwargs)
                     self.off(waypoint.integration.to_value("s"), waypoint.id)
+                    if reset_scan and bydirectional:
+                        scan_frag = reset
                 else:
                     raise ValueError("Scan drive is not supported for OFF/SKY mode.")
 
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
+                    self.logger.info("Move to ON...")
+                    self.com.antenna(
+                        "point",
+                        target=self._coord_to_tuple(waypoint.start),
+                        frame=waypoint.scan_frame,
+                        unit="deg",
+                    )
                     self.logger.info("Starting ON...")
                     self.com.metadata(
                         "set", position="ON", id=waypoint.id, intercept=False
