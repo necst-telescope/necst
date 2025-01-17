@@ -141,6 +141,7 @@ class Commander(PrivilegedNode):
 
         self.savespec = True
         self.tp_mode = False
+        self.tp_range = None
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -927,6 +928,7 @@ class Commander(PrivilegedNode):
             "savespec",
             "binning",
             "tp_mode",
+            "tp_range",
             "?",
         ],
         /,
@@ -1031,13 +1033,14 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
-        elif CMD == "TP_MODE":  # record("tp_mode", tp_mode=True, tp_range=[0, 100])
+        elif CMD == "TP_RANGE":
+            tp_mode = True
+            self.tp_range = tp_range  # [0, 100]
+            msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
+            return self.publisher["tp_mode"].publish(msg)
+        elif CMD == "TP_MODE":  # record("tp_mode", tp_mode=True)
             self.tp_mode = tp_mode
-            self.tp_range = tp_range
-            if tp_range:
-                msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
-            else:
-                msg = TPModeMsg(tp_mode=tp_mode)
+            msg = TPModeMsg(tp_mode=tp_mode)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")

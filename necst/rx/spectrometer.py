@@ -133,7 +133,7 @@ class SpectralData(DeviceNode):
         self.qlook_ch_range = (0, 100)
 
         self.tp_mode = False
-        self.tp_range = []
+        self.tp_range = None
 
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
@@ -154,17 +154,15 @@ class SpectralData(DeviceNode):
             self.record_condition = ConditionChecker(nth, True)
             self.logger.info("Spectral data will NOT be saved")
 
-    def tp_mode_func(
-        self, msg: TPModeMsg
-    ) -> None:  # tp_mode: Bool, channels: List[int]
+    def tp_mode_func(self, msg: TPModeMsg) -> None:
+        # tp_mode: Bool, channels: List[int]
         self.tp_mode = msg.tp_mode
         self.tp_range = msg.tp_range
 
-        if self.tp_mode:
-            if self.tp_range:
-                self.logger.info(f"Total power will be saved. Range: {self.tp_range}")
-            else:
-                self.logger.info("Total power will be saved. Range: all channels")
+        if self.tp_range:
+            self.logger.info(f"Total power will be saved. Range: {self.tp_range}")
+        elif self.tp_range == []:
+            self.logger.info("Total power will be saved. Range: All channels")
 
     def change_spec_chan(self, msg: Binning) -> None:
         record_chan = msg.ch
