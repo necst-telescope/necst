@@ -132,8 +132,7 @@ class SpectralData(DeviceNode):
 
         self.qlook_ch_range = (0, 100)
 
-        self.tp_mode = False
-        self.tp_range = None
+        self.tp_mode = None
 
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
@@ -155,13 +154,11 @@ class SpectralData(DeviceNode):
             self.logger.info("Spectral data will NOT be saved")
 
     def tp_mode_func(self, msg: TPModeMsg) -> None:
-        # tp_mode: Bool, channels: List[int]
+        # tp_mode: List[int]
         self.tp_mode = msg.tp_mode
-        self.tp_range = msg.tp_range
-
-        if self.tp_range:
-            self.logger.info(f"Total power will be saved. Range: {self.tp_range}")
-        elif self.tp_range == []:
+        if self.tp_mode:
+            self.logger.info(f"Total power will be saved. Range: {self.tp_mode}")
+        elif self.tp_mode == []:
             self.logger.info("Total power will be saved. Range: All channels")
 
     def change_spec_chan(self, msg: Binning) -> None:
@@ -263,7 +260,7 @@ class SpectralData(DeviceNode):
             time, data = _data
 
             if self.tp_mode:
-                data = self.io[key].calc_tp(data, self.tp_range)
+                data = self.io[key].calc_tp(data, self.tp_mode)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
                 msg = Spectral(

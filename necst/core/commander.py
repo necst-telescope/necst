@@ -140,8 +140,7 @@ class Commander(PrivilegedNode):
         self.__check_topic()
 
         self.savespec = True
-        self.tp_mode = False
-        self.tp_range = None
+        self.tp_mode = None
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -928,7 +927,6 @@ class Commander(PrivilegedNode):
             "savespec",
             "binning",
             "tp_mode",
-            "tp_range",
             "?",
         ],
         /,
@@ -939,8 +937,7 @@ class Commander(PrivilegedNode):
         ch: Optional[int] = None,
         save: Optional[bool] = None,
         saveapec: Optional[bool] = None,
-        tp_mode: Optional[bool] = None,
-        tp_range: Optional[list] = None,
+        tp_mode: Optional[list] = None,
     ) -> None:
         """Control the recording.
 
@@ -996,7 +993,9 @@ class Commander(PrivilegedNode):
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
-                self.logger.info("Total power will be saved")
+                self.logger.info(f"Total power will be saved. Range: {self.tp_mode}")
+            elif self.tp_mode == []:
+                self.logger.info("Total power will be saved. Range: All channels")
             else:
                 self.logger.info("Spectral data will be saved")
             while not recording:
@@ -1033,11 +1032,11 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
-        elif CMD == "TP_RANGE":
-            tp_mode = True
-            self.tp_range = tp_range  # [0, 100]
-            msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
-            return self.publisher["tp_mode"].publish(msg)
+        # elif CMD == "TP_RANGE":
+        #     tp_mode = True
+        #     self.tp_range = tp_range  # [0, 100]
+        #     msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
+        #     return self.publisher["tp_mode"].publish(msg)
         elif CMD == "TP_MODE":  # record("tp_mode", tp_mode=True)
             self.tp_mode = tp_mode
             msg = TPModeMsg(tp_mode=tp_mode)
