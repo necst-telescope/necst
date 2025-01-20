@@ -132,13 +132,15 @@ class SpectralData(DeviceNode):
 
         self.qlook_ch_range = (0, 100)
 
-        self.tp_mode = None
+        self.tp_mode = False
+        self.tp_range = None
 
         topic.spectra_meta.subscription(self, self.update_metadata)
         topic.qlook_meta.subscription(self, self.update_qlook_conf)
         topic.antenna_control_status.subscription(self, self.update_control_status)
         topic.spectra_rec.subscription(self, self.change_record_frequency)
         topic.tp_mode.subscription(self, self.tp_mode_func)
+        topic.tp_range.subscription(self, self.tp_mode_func)
         topic.channel_binning.subscription(self, self.change_spec_chan)
 
     def change_record_frequency(self, msg: Sampling) -> None:
@@ -154,12 +156,14 @@ class SpectralData(DeviceNode):
             self.logger.info("Spectral data will NOT be saved")
 
     def tp_mode_func(self, msg: TPModeMsg) -> None:
-        # tp_mode: List[int]
+        # tp_range: List[int]
         self.tp_mode = msg.tp_mode
+        self.tp_range = msg.tp_range
         if self.tp_mode:
-            self.logger.info(f"Total power will be saved. Range: {self.tp_mode}")
-        elif self.tp_mode == []:
-            self.logger.info("Total power will be saved. Range: All channels")
+            if self.tp_range:
+                self.logger.info(f"Total power will be saved. Range: {self.tp_range}")
+            elif self.tp_range is None:
+                self.logger.info("Total power will be saved. Range: all channels")
 
     def change_spec_chan(self, msg: Binning) -> None:
         record_chan = msg.ch
@@ -260,7 +264,7 @@ class SpectralData(DeviceNode):
             time, data = _data
 
             if self.tp_mode:
-                data = self.io[key].calc_tp(data, self.tp_mode)
+                data = self.io[key].calc_tp(data, self.tp_range)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
                 msg = Spectral(
