@@ -928,7 +928,6 @@ class Commander(PrivilegedNode):
             "savespec",
             "binning",
             "tp_mode",
-            "tp_range",
             "?",
         ],
         /,
@@ -1040,7 +1039,7 @@ class Commander(PrivilegedNode):
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP_MODE":  # record("tp_mode", tp_mode=True)
             self.tp_mode = tp_mode
-            self.tp_range = [0, 100]
+            self.tp_range = tp_range
             msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
