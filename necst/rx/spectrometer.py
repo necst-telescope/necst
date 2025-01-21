@@ -156,13 +156,13 @@ class SpectralData(DeviceNode):
             self.logger.info("Spectral data will NOT be saved")
 
     def tp_mode_func(self, msg: TPModeMsg) -> None:
-        # tp_range: List[int]
+        # tp_range: List[int, int] or None
         self.tp_mode = msg.tp_mode
         self.tp_range = msg.tp_range
         if self.tp_mode:
             if self.tp_range:
                 self.logger.info(f"Total power will be saved. Range: {self.tp_range}")
-            elif self.tp_range is None:
+            elif self.tp_range == []:
                 self.logger.info("Total power will be saved. Range: all channels")
 
     def change_spec_chan(self, msg: Binning) -> None:
