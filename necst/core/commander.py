@@ -937,7 +937,7 @@ class Commander(PrivilegedNode):
         nth: Optional[int] = None,
         ch: Optional[int] = None,
         save: Optional[bool] = None,
-        saveapec: Optional[bool] = None,
+        savespec: Optional[bool] = None,
         tp_mode: Optional[bool] = None,
         tp_range: Optional[list[int, int]] = None,
     ) -> None:
@@ -1037,13 +1037,15 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
-        elif CMD == "TP_MODE":  # record("tp_mode", tp_mode=True)
+        elif CMD == "TP_MODE":
             self.tp_mode = tp_mode
             self.tp_range = tp_range
-            if tp_range:
-                msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
+            if tp_mode or tp_range:
+                msg = TPModeMsg(tp_mode=True, tp_range=tp_range)
             else:
-                msg = TPModeMsg(tp_mode=tp_mode)
+                msg = TPModeMsg(tp_mode=False, tp_range=[])
+            # elif tp_mode == None and tp_range:
+            #     msg = TPModeMsg(tp_mode=True, tp_range=tp_range)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
