@@ -141,7 +141,7 @@ class Commander(PrivilegedNode):
 
         self.savespec = True
         self.tp_mode = False
-        self.tp_range = None
+        self.tp_range = []
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -1040,7 +1040,10 @@ class Commander(PrivilegedNode):
         elif CMD == "TP_MODE":  # record("tp_mode", tp_mode=True)
             self.tp_mode = tp_mode
             self.tp_range = tp_range
-            msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
+            if tp_range:
+                msg = TPModeMsg(tp_mode=tp_mode, tp_range=tp_range)
+            else:
+                msg = TPModeMsg(tp_mode=tp_mode)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
