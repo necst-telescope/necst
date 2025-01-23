@@ -1040,12 +1040,12 @@ class Commander(PrivilegedNode):
         elif CMD == "TP_MODE":
             self.tp_mode = tp_mode
             self.tp_range = tp_range
-            if tp_mode or tp_range:
+            if tp_mode is None and tp_range == []:
+                msg = TPModeMsg(tp_mode=False, tp_range=[])
+            elif tp_mode or tp_range:  # tp_mode becomes True when tp_range is not empty
                 msg = TPModeMsg(tp_mode=True, tp_range=tp_range)
             else:
                 msg = TPModeMsg(tp_mode=False, tp_range=[])
-            # elif tp_mode == None and tp_range:
-            #     msg = TPModeMsg(tp_mode=True, tp_range=tp_range)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
