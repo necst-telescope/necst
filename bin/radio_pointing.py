@@ -34,7 +34,6 @@ if __name__ == "__main__":
     p.add_argument(
         "-tp",
         "--tp_mode",
-        type=bool, 
         action="store_true",
         default=False, 
         help="Total Power Mode",
