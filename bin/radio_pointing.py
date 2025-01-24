@@ -53,8 +53,11 @@ if __name__ == "__main__":
     if args.tp_range:
         if len(args.tp_range) != 2 or args.tp_range[0] > args.tp_range[1]:
             p.error("Invalid channel range for Total Power.")
-
-    obs = RadioPointing(
-        file=args.file, ch=args.channel, tp_mode=args.tp_mode, tp_range=args.tp_range
-        )
+        obs = RadioPointing(
+            file=args.file, ch=args.channel, tp_mode=True, tp_range=args.tp_range
+            )
+    else:
+        obs = RadioPointing(
+            file=args.file, ch=args.channel, tp_mode=args.tp_mode, tp_range=[]
+            )
     obs.execute()
