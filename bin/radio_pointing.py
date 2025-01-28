@@ -35,13 +35,13 @@ if __name__ == "__main__":
         "-tp",
         "--tp_mode",
         action="store_true",
-        default=False, 
+        default=False,
         help="Total Power Mode",
     )
     p.add_argument(
         "--tp_range",
         type=int,
-        nargs=2,
+        nargs="+",
         default=None,
         help="Channel range of Total Power.",
         metavar="[START, END]",
@@ -50,13 +50,15 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     if args.tp_range:
-        if len(args.tp_range) != 2 or args.tp_range[0] > args.tp_range[1]:
-            p.error("Invalid channel range for Total Power.")
+        if len(args.tp_range) % 2 == 0:
+            args.tp_range = [
+                args.tp_range[i : i + 2] for i in range(0, len(args.tp_range), 2)
+            ]
         obs = RadioPointing(
             file=args.file, ch=args.channel, tp_mode=True, tp_range=args.tp_range
-            )
+        )
     else:
         obs = RadioPointing(
             file=args.file, ch=args.channel, tp_mode=args.tp_mode, tp_range=[]
-            )
+        )
     obs.execute()
