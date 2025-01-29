@@ -1040,8 +1040,6 @@ class Commander(PrivilegedNode):
         elif CMD == "TP_MODE":
             self.tp_mode = tp_mode if tp_mode is not None else self.tp_mode
             self.tp_range = tp_range if tp_range is not None else self.tp_range
-            if tp_range and (len(tp_range) != 2):
-                raise ValueError("Invalid range")
             if (
                 tp_mode or tp_range is not None
             ):  # tp_mode becomes True when tp_range is not empty
