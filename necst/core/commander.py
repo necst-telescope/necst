@@ -1042,7 +1042,7 @@ class Commander(PrivilegedNode):
             self.tp_range = tp_range if tp_range is not None else self.tp_range
             if len(self.tp_range) % 2 != 0:
                 raise ValueError("tp_range must be a list of even number of elements")
-            elif tp_mode == False:
+            elif not tp_mode:
                 self.tp_range = []
                 msg = TPModeMsg(tp_mode=tp_mode, tp_range=self.tp_range)
             elif tp_mode or tp_range is not None:
