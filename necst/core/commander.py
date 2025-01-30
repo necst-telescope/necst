@@ -1042,13 +1042,16 @@ class Commander(PrivilegedNode):
             self.tp_range = tp_range if tp_range is not None else self.tp_range
             if len(self.tp_range) % 2 != 0:
                 raise ValueError("tp_range must be a list of even number of elements")
+            elif tp_mode == False:
+                self.tp_range = []
+                msg = TPModeMsg(tp_mode=tp_mode, tp_range=self.tp_range)
             elif tp_mode or tp_range is not None:
                 self.tp_mode = True
                 msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range)
             else:
-                self.tp_mode = False
-                self.tp_range = []
-                msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range)
+                raise ValueError(
+                    f"Unknown command: tp_mode={self.tp_mode}, tp_range={self.tp_range}"
+                )
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
