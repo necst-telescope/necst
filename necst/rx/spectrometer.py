@@ -157,7 +157,7 @@ class SpectralData(DeviceNode):
     def tp_mode_func(self, msg: TPModeMsg) -> None:
         # tp_range: List[int, int] or None
         self.tp_mode = msg.tp_mode
-        self.tp_range = msg.tp_range
+        self.tp_range = msg.tp_range.tolist()
         if self.tp_mode:
             if self.tp_range:
                 self.logger.info(f"Total power will be saved. Range: {self.tp_range}")
