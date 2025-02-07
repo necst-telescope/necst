@@ -1046,7 +1046,7 @@ class Commander(PrivilegedNode):
                 raise ValueError("tp_range must be a list of even number of elements")
             if tp_range:
                 self.tp_mode = True
-            if not tp_mode:
+            elif not tp_mode:
                 self.tp_range = []
             msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range)
             return self.publisher["tp_mode"].publish(msg)
