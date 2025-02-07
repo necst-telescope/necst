@@ -997,10 +997,10 @@ class Commander(PrivilegedNode):
             if self.tp_mode:
                 if self.tp_range:
                     self.logger.info(
-                        f"Total power will be saved. Range: {self.tp_range}"
+                        f"\033[93mTotal power will be saved. Range: {self.tp_range}"
                     )
                 elif self.tp_range == []:
-                    self.logger.info("Total power will be saved. Range: All channels")
+                    self.logger.info("\033[93mTotal power will be saved. Range: All channels")
             else:
                 self.logger.info("Spectral data will be saved")
             while not recording:
@@ -1044,8 +1044,6 @@ class Commander(PrivilegedNode):
                 raise ValueError("tp_range must be a list of even number of elements")
             if tp_range:
                 self.tp_mode = True
-            else:
-                self.tp_mode = False
             msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
