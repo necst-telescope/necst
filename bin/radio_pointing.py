@@ -42,22 +42,15 @@ if __name__ == "__main__":
         "--tp_range",
         type=int,
         nargs="+",
-        default=None,
+        default=[],
         help="Channel range of Total Power.",
         metavar="[START, END]",
     )
 
     args = p.parse_args()
 
-    if args.tp_range:
-        if len(args.tp_range) % 2 == 0:
-            obs = RadioPointing(
-                file=args.file, ch=args.channel, tp_mode=True, tp_range=args.tp_range
-            )
-        else:
-            raise ValueError("Invalid number of arguments for --tp_range")
-    else:
-        obs = RadioPointing(
-            file=args.file, ch=args.channel, tp_mode=args.tp_mode, tp_range=[]
-        )
+    obs = RadioPointing(
+        file=args.file, ch=args.channel, tp_mode=args.tp_mode, tp_range=args.tp_range
+    )
+
     obs.execute()
