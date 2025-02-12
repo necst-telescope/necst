@@ -72,7 +72,7 @@ class Observation(ABC):
                     self.com.record("reduce", nth=conv_rate)
                 if "ch" in self._kwargs.keys():
                     self.binning(self._kwargs.pop("ch"))
-                if "tp_mode" in self._kwargs.keys():
+                if "tp" in self._kwargs.keys():
                     tp_mode = self._kwargs.pop("tp_mode")
                     tp_range = self._kwargs.pop("tp_range")
                     self.com.record("tp_mode", tp_mode=tp_mode, tp_range=tp_range)
