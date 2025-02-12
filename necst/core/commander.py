@@ -988,6 +988,14 @@ class Commander(PrivilegedNode):
 
         >>> com.record("binning", ch=8192)
 
+        Change the recording mode to total power mode : All channels
+
+        >>> com.record("tp_mode", tp_mode=True)
+
+        Change the recording mode to total power mode : 1000-2000, 3000-4000 channels
+
+        >>> com.record("tp_mode", tp_range=[1000, 2000, 3000, 4000])
+
         """
         CMD = cmd.upper()
         if CMD == "START":
