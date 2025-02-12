@@ -1056,7 +1056,8 @@ class Commander(PrivilegedNode):
                 self.tp_mode = True
             elif not tp_mode:
                 self.tp_range = []
-            msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range)
+            now = pytime.time()
+            msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range, time=now)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
