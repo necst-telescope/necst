@@ -7,7 +7,9 @@ The number of channel can be set 2^n.
 
 Examples
 --------
-$ radio_pointing -f  "pt_orikl.toml" -tp --tp_range 200 300
+$ radio_pointing -f  "pt_orikl.toml"
+$ radio_pointing -f  "pt_orikl.toml" -tp
+$ radio_pointing -f  "pt_orikl.toml" --tp_range 1000 2000 3000 4000
 
 """
 
