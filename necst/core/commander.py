@@ -25,6 +25,7 @@ from necst_msgs.msg import (
     SISBias,
     Spectral,
     TimeOnly,
+    TPModeMsg,
 )
 from necst_msgs.srv import (
     CoordinateCommand,
@@ -94,6 +95,7 @@ class Commander(PrivilegedNode):
             "dome_alert_stop": topic.manual_stop_dome_alert,
             "dome_oc": topic.dome_oc,
             "timeonly": topic.timeonly,
+            "tp_mode": topic.tp_mode,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -138,6 +140,8 @@ class Commander(PrivilegedNode):
         self.__check_topic()
 
         self.savespec = True
+        self.tp_mode = False
+        self.tp_range = []
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -916,7 +920,16 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "reduce", "savespec", "binning", "?"],
+        cmd: Literal[
+            "start",
+            "stop",
+            "file",
+            "reduce",
+            "savespec",
+            "binning",
+            "tp_mode",
+            "?",
+        ],
         /,
         *,
         name: str = "",
@@ -924,7 +937,9 @@ class Commander(PrivilegedNode):
         nth: Optional[int] = None,
         ch: Optional[int] = None,
         save: Optional[bool] = None,
-        saveapec: Optional[bool] = None,
+        savespec: Optional[bool] = None,
+        tp_mode: Optional[bool] = None,
+        tp_range: Optional[list[int, int]] = None,
     ) -> None:
         """Control the recording.
 
@@ -973,12 +988,31 @@ class Commander(PrivilegedNode):
 
         >>> com.record("binning", ch=8192)
 
+        Change the recording mode to total power mode : All channels
+
+        >>> com.record("tp_mode", tp_mode=True)
+
+        Change the recording mode to total power mode : 1000-2000, 3000-4000 channels
+
+        >>> com.record("tp_mode", tp_range=[1000, 2000, 3000, 4000])
+
         """
         CMD = cmd.upper()
         if CMD == "START":
             if not self.savespec:
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
+            if self.tp_mode:
+                if self.tp_range:
+                    self.logger.info(
+                        f"\033[93mTotal power will be saved. Range: {self.tp_range}"
+                    )
+                elif self.tp_range == []:
+                    self.logger.info(
+                        "\033[93mTotal power will be saved. Range: All channels"
+                    )
+            else:
+                self.logger.info("Spectral data will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -1002,7 +1036,7 @@ class Commander(PrivilegedNode):
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "SAVESPEC":
             self.savespec = save
-            msg = Sampling(save=self.savespec)
+            msg = Sampling(save=save)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch)
@@ -1013,6 +1047,18 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
+        elif CMD == "TP_MODE":
+            self.tp_mode = tp_mode if tp_mode is not None else self.tp_mode
+            self.tp_range = tp_range if tp_range is not None else self.tp_range
+            if len(self.tp_range) % 2 != 0:
+                raise ValueError("tp_range must be a list of even number of elements")
+            if tp_range:
+                self.tp_mode = True
+            elif not tp_mode:
+                self.tp_range = []
+            now = pytime.time()
+            msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range, time=now)
+            return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:

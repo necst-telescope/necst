@@ -8,6 +8,8 @@ The number of channel can be set 2^n.
 Examples
 --------
 $ radio_pointing -f  "pt_orikl.toml"
+$ radio_pointing -f  "pt_orikl.toml" -tp
+$ radio_pointing -f  "pt_orikl.toml" --tp_range 1000 2000 3000 4000
 
 """
 
@@ -31,7 +33,26 @@ if __name__ == "__main__":
         type=int,
         help="Number of spectral channels.",
     )
+    p.add_argument(
+        "-tp",
+        "--tp_mode",
+        action="store_true",
+        default=False,
+        help="Total Power Mode",
+    )
+    p.add_argument(
+        "--tp_range",
+        type=int,
+        nargs="+",
+        default=[],
+        help="Channel range of Total Power.",
+        metavar="[START, END]",
+    )
+
     args = p.parse_args()
 
-    obs = RadioPointing(file=args.file, ch=args.channel)
+    obs = RadioPointing(
+        file=args.file, ch=args.channel, tp_mode=args.tp_mode, tp_range=args.tp_range
+    )
+
     obs.execute()
