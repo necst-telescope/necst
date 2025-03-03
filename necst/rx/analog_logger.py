@@ -29,6 +29,7 @@ class AnalogLoggerController(DeviceNode):
             for id in self.io.Config.channel.keys()
             if not (id.startswith("sis") | id.startswith("hemt"))
         ]
+        time.sleep(0.5)
         for key in self.measure_channel:
             self.logger.info(f"{key}: {self.io.get_all(key)[key]}")
 
