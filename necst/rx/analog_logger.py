@@ -3,6 +3,7 @@ from typing import Dict
 
 from neclib.devices import AnalogLogger
 from necst_msgs.msg import DeviceReading
+from necst_msgs.msg import SISBias as SISBiasMsg
 from rclpy.publisher import Publisher
 
 from .. import namespace, topic
@@ -18,20 +19,52 @@ class AnalogLoggerController(DeviceNode):
 
         self.logger = self.get_logger()
         self.io = AnalogLogger()
-
+        self.sis_channel = [
+            id for id in self.io.Config.channel.keys() if id.startswith("sis")
+        ]
+        self.hemt_channel = [
+            id for id in self.io.Config.channel.keys() if id.startswith("hemt")
+        ]
+        self.other_channel = [
+            id
+            for id in self.io.Config.channel.keys()
+            if not (id.startswith("sis") | id.startwith("hemt"))
+        ]
         self.publisher: Dict[str, Publisher] = {}
 
         self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
+        if len(self.sis_channel) != 0:
+            from neclib.devices import SisBiasSetter
+
+            self.setter_io = SisBiasSetter()
+            topic.sis_bias_cmd.subscription(self, self.set_voltage)
         self.logger.info(f"Started {self.NodeName} Node...")
-        self.measure_channel = [
-            id
-            for id in self.io.Config.channel.keys()
-            if not (id.startswith("sis") | id.startswith("hemt"))
-        ]
         time.sleep(0.5)
         for key in self.measure_channel:
             self.logger.info(f"{key}: {self.io.get_all(key)[key]}")
+
+    def set_voltage(self, msg: SISBiasMsg) -> None:
+        if msg.finalize:
+            self.setter_io.finalize()
+            return
+        else:
+            keys = self.setter_io.keys()
+            if None in keys:
+                for id in msg.id:
+                    self.setter_io.set_voltage(mV=msg.voltage, id=id)
+            else:
+                for id in msg.id:
+                    for key in keys:
+                        ch = self.setter_io[key].Config.channel.keys()
+                        if id in ch:
+                            self.setter_io[key].set_voltage(mV=msg.voltage, id=id)
+                            break
+                        else:
+                            continue
+            self.setter_io.apply_voltage()
+            self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
+            time.sleep(0.01)
 
     def check_publisher(self) -> None:
         for name in self.measure_channel:
