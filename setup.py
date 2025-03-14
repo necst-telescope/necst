@@ -31,7 +31,7 @@ executor_entrypoints = get_executor_entrypoints()
 
 setup(
     name=package_name,
-    version="4.0.2",
+    version="4.0.3",
     packages=find_packages(),
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
