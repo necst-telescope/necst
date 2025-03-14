@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.procedures.measurement.measurement_base &#8212; necst 4.0.1 documentation</title>
+    <title>necst.procedures.measurement.measurement_base &#8212; necst 4.0.7 documentation</title>
     
   <link href="../../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -120,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.1</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.7</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -210,10 +210,12 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">privileged</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">NECSTAuthorityError</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t acquire privilege&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;save&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">savespec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;save&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;savespec&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="n">savespec</span><span class="p">)</span>
                 <span class="k">if</span> <span class="s2">&quot;rate&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="n">conv_rate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;reduce&quot;</span><span class="p">,</span> <span class="n">nth</span><span class="o">=</span><span class="n">conv_rate</span><span class="p">)</span>
-                <span class="c1"># self.binning(self._kwargs.pop(&quot;ch&quot;))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">record_name</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">record_parameter_files</span><span class="p">()</span>
@@ -221,7 +223,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="p">)</span>
             <span class="k">finally</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;stop&quot;</span><span class="p">)</span>
-                <span class="c1"># self.binning(config.spectrometer.max_ch)  # set max channel number</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;savespec&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">quit_privilege</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span>
                 <span class="n">_observing_duration</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span>

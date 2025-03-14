@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.rx.spectrometer &#8212; necst 4.0.1 documentation</title>
+    <title>necst.rx.spectrometer &#8212; necst 4.0.7 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -120,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.1</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.7</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -159,7 +159,7 @@
 <span class="kn">from</span> <span class="nn">neclib.data</span> <span class="kn">import</span> <span class="n">Resize</span>
 <span class="kn">from</span> <span class="nn">neclib.recorders</span> <span class="kn">import</span> <span class="n">NECSTDBWriter</span><span class="p">,</span> <span class="n">Recorder</span>
 <span class="kn">from</span> <span class="nn">neclib.utils</span> <span class="kn">import</span> <span class="n">ConditionChecker</span>
-<span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">Binning</span><span class="p">,</span> <span class="n">ControlStatus</span><span class="p">,</span> <span class="n">Sampling</span><span class="p">,</span> <span class="n">Spectral</span>
+<span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">Binning</span><span class="p">,</span> <span class="n">ControlStatus</span><span class="p">,</span> <span class="n">Sampling</span><span class="p">,</span> <span class="n">Spectral</span><span class="p">,</span> <span class="n">TPModeMsg</span>
 <span class="kn">from</span> <span class="nn">rclpy.publisher</span> <span class="kn">import</span> <span class="n">Publisher</span>
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">topic</span>
@@ -281,16 +281,37 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">qlook_ch_range</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="n">topic</span><span class="o">.</span><span class="n">spectra_meta</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_metadata</span><span class="p">)</span>
         <span class="n">topic</span><span class="o">.</span><span class="n">qlook_meta</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_qlook_conf</span><span class="p">)</span>
         <span class="n">topic</span><span class="o">.</span><span class="n">antenna_control_status</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_control_status</span><span class="p">)</span>
         <span class="n">topic</span><span class="o">.</span><span class="n">spectra_rec</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">change_record_frequency</span><span class="p">)</span>
+        <span class="n">topic</span><span class="o">.</span><span class="n">tp_mode</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode_func</span><span class="p">)</span>
         <span class="n">topic</span><span class="o">.</span><span class="n">channel_binning</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">change_spec_chan</span><span class="p">)</span>
 
 <div class="viewcode-block" id="SpectralData.change_record_frequency"><a class="viewcode-back" href="../../../_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData.change_record_frequency">[docs]</a>    <span class="k">def</span> <span class="nf">change_record_frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Sampling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">nth</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">nth</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">record_condition</span> <span class="o">=</span> <span class="n">ConditionChecker</span><span class="p">(</span><span class="n">nth</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Record frequency changed; every </span><span class="si">{</span><span class="n">nth</span><span class="si">}</span><span class="s2">th data will be saved&quot;</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">save</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">record_condition</span> <span class="o">=</span> <span class="n">ConditionChecker</span><span class="p">(</span><span class="n">nth</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Record frequency changed; every </span><span class="si">{</span><span class="n">nth</span><span class="si">}</span><span class="s2">th data will be saved&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nth</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">record_condition</span> <span class="o">=</span> <span class="n">ConditionChecker</span><span class="p">(</span><span class="n">nth</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Spectral data will NOT be saved&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SpectralData.tp_mode_func"><a class="viewcode-back" href="../../../_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData.tp_mode_func">[docs]</a>    <span class="k">def</span> <span class="nf">tp_mode_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">TPModeMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># tp_range: List[int, int] or None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">tp_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">tp_range</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total power will be saved. Range: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span> <span class="o">==</span> <span class="p">[]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Total power will be saved. Range: all channels&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SpectralData.change_spec_chan"><a class="viewcode-back" href="../../../_source/necst.rx.spectrometer.html#necst.rx.spectrometer.SpectralData.change_spec_chan">[docs]</a>    <span class="k">def</span> <span class="nf">change_spec_chan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Binning</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">record_chan</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">ch</span>
@@ -389,6 +410,9 @@
                 <span class="k">return</span>
 
             <span class="n">time</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">_data</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">calc_tp</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">board_id</span><span class="p">,</span> <span class="n">spectral_data</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="n">Spectral</span><span class="p">(</span>

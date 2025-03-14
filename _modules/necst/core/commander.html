@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.core.commander &#8212; necst 4.0.1 documentation</title>
+    <title>necst.core.commander &#8212; necst 4.0.7 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -120,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.1</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.7</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -174,6 +174,7 @@
     <span class="n">SISBias</span><span class="p">,</span>
     <span class="n">Spectral</span><span class="p">,</span>
     <span class="n">TimeOnly</span><span class="p">,</span>
+    <span class="n">TPModeMsg</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">necst_msgs.srv</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">CoordinateCommand</span><span class="p">,</span>
@@ -243,6 +244,7 @@
             <span class="s2">&quot;dome_alert_stop&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">manual_stop_dome_alert</span><span class="p">,</span>
             <span class="s2">&quot;dome_oc&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">dome_oc</span><span class="p">,</span>
             <span class="s2">&quot;timeonly&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">timeonly</span><span class="p">,</span>
+            <span class="s2">&quot;tp_mode&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="o">.</span><span class="n">tp_mode</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Publisher</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -285,6 +287,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__check_topic</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">__check_topic</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">savespec</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">def</span> <span class="nf">__callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">keep</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
@@ -594,7 +600,6 @@
         <span class="n">direct_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-
         <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;POINT&quot;</span><span class="p">:</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1064,13 +1069,26 @@
 
 <div class="viewcode-block" id="Commander.record"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.record">[docs]</a>    <span class="k">def</span> <span class="nf">record</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="s2">&quot;reduce&quot;</span><span class="p">,</span> <span class="s2">&quot;binning&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">],</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+            <span class="s2">&quot;start&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;stop&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reduce&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;savespec&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;binning&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;tp_mode&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;?&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
         <span class="o">/</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
         <span class="n">content</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">nth</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">save</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">savespec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tp_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tp_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Control the recording.</span>
 
@@ -1119,10 +1137,31 @@
 
 <span class="sd">        &gt;&gt;&gt; com.record(&quot;binning&quot;, ch=8192)</span>
 
+<span class="sd">        Change the recording mode to total power mode : All channels</span>
+
+<span class="sd">        &gt;&gt;&gt; com.record(&quot;tp_mode&quot;, tp_mode=True)</span>
+
+<span class="sd">        Change the recording mode to total power mode : 1000-2000, 3000-4000 channels</span>
+
+<span class="sd">        &gt;&gt;&gt; com.record(&quot;tp_mode&quot;, tp_range=[1000, 2000, 3000, 4000])</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;START&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">savespec</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Spectral data will NOT be saved&quot;</span><span class="p">)</span>
             <span class="n">recording</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[93mTotal power will be saved. Range: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span> <span class="o">==</span> <span class="p">[]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[93mTotal power will be saved. Range: All channels&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Spectral data will be saved&quot;</span><span class="p">)</span>
             <span class="k">while</span> <span class="ow">not</span> <span class="n">recording</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="n">RecordMsg</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">),</span> <span class="n">stop</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;recorder&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
@@ -1142,7 +1181,11 @@
             <span class="n">req</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">content</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="s2">&quot;record_file&quot;</span><span class="p">])</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;REDUCE&quot;</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="n">Sampling</span><span class="p">(</span><span class="n">nth</span><span class="o">=</span><span class="n">nth</span><span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">Sampling</span><span class="p">(</span><span class="n">nth</span><span class="o">=</span><span class="n">nth</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;spectra_smpl&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;SAVESPEC&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">savespec</span> <span class="o">=</span> <span class="n">save</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">Sampling</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="n">save</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;spectra_smpl&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;BINNING&quot;</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="n">Binning</span><span class="p">(</span><span class="n">ch</span><span class="o">=</span><span class="n">ch</span><span class="p">)</span>
@@ -1153,6 +1196,18 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">quick_look</span><span class="p">(</span><span class="s2">&quot;ch&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ch</span><span class="p">),</span> <span class="n">integ</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;channel_binning&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;TP_MODE&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span> <span class="o">=</span> <span class="n">tp_mode</span> <span class="k">if</span> <span class="n">tp_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span> <span class="o">=</span> <span class="n">tp_range</span> <span class="k">if</span> <span class="n">tp_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;tp_range must be a list of even number of elements&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tp_range</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">tp_mode</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">now</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">TPModeMsg</span><span class="p">(</span><span class="n">tp_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tp_mode</span><span class="p">,</span> <span class="n">tp_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tp_range</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;tp_mode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Command </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2"> is not implemented yet.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
