@@ -17,7 +17,7 @@ COPY . $ROS2_WS/src/necst/
 
 RUN pip install --upgrade pip==22.0.2
 RUN pip install --upgrade setuptools
-RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git && pip install ipython )
+RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git)
 
 RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
     && . /opt/ros/humble/setup.bash \
