@@ -10,7 +10,6 @@ import rclpy
 from neclib import NECSTAuthorityError, get_logger
 from neclib.coordinates import PointingError
 
-
 from .. import config
 from ..core import Commander
 
@@ -67,8 +66,9 @@ class Observation(ABC):
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
-                for key, _ in config.spectrometer.items():
-                    self.binning(self._kwargs.pop("ch"),key)
+                if "ch" in self._kwargs.keys():
+                    for key, _ in config.spectrometer.items():
+                        self.binning(self._kwargs.pop("ch"),key)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
