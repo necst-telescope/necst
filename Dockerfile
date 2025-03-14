@@ -15,7 +15,7 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 COPY . $ROS2_WS/src/necst/
 
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip==9.0.1
 RUN pip install --upgrade --break-system-packages setuptools
 RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git && pip install ipython )
 
