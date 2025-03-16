@@ -1,5 +1,6 @@
 import time
 
+from neclib.data import LinearExtrapolate
 from neclib.utils import ConditionChecker, ParameterList
 from necst_msgs.msg import CoordMsg, TrackingStatus
 from rclpy.node import Node
@@ -18,11 +19,13 @@ class AntennaTrackingStatus(Node):
             int(0.5 * config.antenna_command_frequency), reset_on_failure=True
         )
 
-        cfg = config.antenna_command
-        n_cmd_to_keep = cfg.frequency * (cfg.offset_sec + 0.5)
-        self.cmd = ParameterList.new(int(n_cmd_to_keep))
-        self.enc = ParameterList.new(1)
+        self.cmd = ParameterList.new(2, CoordMsg)
+        self.enc = ParameterList.new(1, CoordMsg)
+
         self.threshold = config.antenna_pointing_accuracy.to_value("deg").item()
+        self.coord_ext = LinearExtrapolate(
+            "time", CoordMsg.get_fields_and_field_types().keys()
+        )
 
         self.pub = topic.antenna_tracking.publisher(self)
         topic.antenna_encoder.subscription(self, lambda msg: self.enc.push(msg))
@@ -33,16 +36,15 @@ class AntennaTrackingStatus(Node):
 
     def antenna_tracking_status(self) -> None:
         now = time.time()
-        if all(not isinstance(x, CoordMsg) for x in self.cmd):
+        if any(not isinstance(p.time, float) for p in self.cmd):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
-        elif all(not isinstance(x, CoordMsg) for x in self.enc):
+        elif any(not isinstance(p.time, float) for p in self.enc):
             self.tracking_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
-            (enc,) = self.enc
-            cmd_msgs = [msg for msg in self.cmd if isinstance(msg, CoordMsg)]
-            cmd, *_ = sorted(cmd_msgs, key=lambda msg: abs(msg.time - now))
+            enc = self.enc[0]
+            cmd = self.coord_ext(CoordMsg(time=enc.time), self.cmd)
 
             error = ((enc.lon - cmd.lon) ** 2 + (enc.lat - cmd.lat) ** 2) ** 0.5
             ok = self.tracking_checker.check(error < self.threshold)

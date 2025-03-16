@@ -8,14 +8,17 @@ ENV SHELL=/bin/bash
 RUN apt-get update \
     && apt-get -y install curl git pciutils python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp \
     && apt-get clean \
-    && apt-get -y install emacs vim
+    && apt-get -y install emacs vim python3.10
 
 ENV ROS2_WS=/root/ros2_ws
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 COPY . $ROS2_WS/src/necst/
 
-RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git && pip install ipython )
+RUN pip install --upgrade pip==24.1.2
+RUN pip install setuptools==70.3.0
+RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git)
+RUN pip install ipython
 
 RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
     && . /opt/ros/humble/setup.bash \
