@@ -8,7 +8,6 @@ from rclpy.publisher import Publisher
 
 from .. import namespace, topic
 from ..core import DeviceNode
-from . import channel_parser
 
 
 class AnalogLoggerController(DeviceNode):
