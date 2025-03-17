@@ -49,7 +49,7 @@ class AnalogLoggerController(DeviceNode):
 
     def stream(self) -> None:
         channels = set(map(lambda x: x[:-4], self.hemt_channel))
-        data = self.reader_io.get_all("hemt")
+        data = self.io.get_all("hemt")
         if len(self.hemt_channel) != 0:
             for id in channels:
                 v_drain = data[f"{id}_Vdr"].to_value("V").item()
