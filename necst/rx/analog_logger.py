@@ -68,7 +68,7 @@ class AnalogLoggerController(DeviceNode):
                 time.sleep(0.01)
         if len(self.other_channel) != 0:
             for name in self.other_channel:
-                value = self.io.get_from_id(name).item()
+                value = float(self.io.get_from_id(name).item())
                 msg = DeviceReading(time=time.time(), value=value, id=name)
                 self.publisher[name].publish(msg)
                 time.sleep(0.01)
