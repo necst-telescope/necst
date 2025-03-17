@@ -50,26 +50,28 @@ class AnalogLoggerController(DeviceNode):
     def stream(self) -> None:
         channels = set(map(lambda x: x[:-4], self.hemt_channel))
         data = self.reader_io.get_all("hemt")
-        for id in channels:
-            v_drain = data[f"{id}_Vdr"].to_value("V").item()
-            v_gate1 = data[f"{id}_Vg1"].to_value("V").item()
-            v_gate2 = data[f"{id}_Vg2"].to_value("V").item()
-            i_drain = data[f"{id}_Idr"].to_value("mA").item()
-            msg = HEMTBiasMsg(
-                time=time.time(),
-                v_drain=v_drain,
-                v_gate1=v_gate1,
-                v_gate2=v_gate2,
-                i_drain=i_drain,
-                id=id,
-            )
-            self.publisher[id].publish(msg)
-            time.sleep(0.01)
-        for name in self.other_channel:
-            value = self.io.get_from_id(name).item()
-            msg = DeviceReading(time=time.time(), value=value, id=name)
-            self.publisher[name].publish(msg)
-            time.sleep(0.01)
+        if len(self.hemt_channel) != 0:
+            for id in channels:
+                v_drain = data[f"{id}_Vdr"].to_value("V").item()
+                v_gate1 = data[f"{id}_Vg1"].to_value("V").item()
+                v_gate2 = data[f"{id}_Vg2"].to_value("V").item()
+                i_drain = data[f"{id}_Idr"].to_value("mA").item()
+                msg = HEMTBiasMsg(
+                    time=time.time(),
+                    v_drain=v_drain,
+                    v_gate1=v_gate1,
+                    v_gate2=v_gate2,
+                    i_drain=i_drain,
+                    id=id,
+                )
+                self.publisher[id].publish(msg)
+                time.sleep(0.01)
+        if len(self.other_channel) != 0:
+            for name in self.other_channel:
+                value = self.io.get_from_id(name).item()
+                msg = DeviceReading(time=time.time(), value=value, id=name)
+                self.publisher[name].publish(msg)
+                time.sleep(0.01)
 
 
 def main(args=None):
