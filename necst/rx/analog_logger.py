@@ -28,8 +28,8 @@ class AnalogLoggerController(DeviceNode):
         ]
         self.publisher: Dict[str, Publisher] = {}
 
-        self.create_timer(1, self.stream)
         self.create_timer(1, self.check_publisher)
+        self.create_timer(1, self.stream)
         self.logger.warning("SIS Tuning and Measuring are no implemented in this Node.")
         self.logger.warning("Please use `sis_bias` Node to control SIS Bias.")
         # TODO: Implement SIS Control. Just measuring Bias Parameters...
