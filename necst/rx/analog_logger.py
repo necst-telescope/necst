@@ -24,7 +24,7 @@ class AnalogLoggerController(DeviceNode):
         ]
         self.hemt_channel = [id for id in self.measure_channel if id.startswith("hemt")]
         self.other_channel = [
-            id for id in self.measure_channel if not id.startwith("hemt")
+            id for id in self.measure_channel if not id.startswith("hemt")
         ]
         self.publisher: Dict[str, Publisher] = {}
 
