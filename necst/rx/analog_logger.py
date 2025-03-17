@@ -23,13 +23,13 @@ class AnalogLoggerController(DeviceNode):
             id for id in self.io.Config.channel.keys() if not id.startswith("sis")
         ]
         self.hemt_channel = [id for id in self.measure_channel if id.startswith("hemt")]
+        self.hemt_name = set(map(lambda x: x[:-4], self.hemt_channel))
         self.other_channel = [
             id for id in self.measure_channel if not id.startswith("hemt")
         ]
         self.publisher: Dict[str, Publisher] = {}
 
         self.create_timer(1, self.check_publisher)
-        time.sleep(1.1)
         self.create_timer(1, self.stream)
         self.logger.warning("SIS Tuning and Measuring are no implemented in this Node.")
         self.logger.warning("Please use `sis_bias` Node to control SIS Bias.")
@@ -44,7 +44,7 @@ class AnalogLoggerController(DeviceNode):
         for name in self.other_channel:
             if name not in self.publisher:
                 self.publisher[name] = topic.analog_logger[name].publisher(self)
-        for name in self.hemt_channel:
+        for name in self.hemt_name:
             if name not in self.publisher:
                 self.publisher[name] = topic.hemt_bias[name].publisher(self)
 
