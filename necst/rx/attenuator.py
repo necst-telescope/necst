@@ -14,17 +14,21 @@ class AttenuatorController(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
-        self.io = Attenuator()
-        self.publisher: Dict[str, Publisher] = {}
-        topic.attenuator_cmd.subscription(self, self.set_loss)
-        self.create_timer(1, self.stream)
-        self.create_timer(1, self.check_publisher)
-        self.logger.info(f"Started {self.NodeName} Node...")
-        for key in self.io.keys():
-            for ch in self.io[key].Config.channel.keys():
-                self.logger.info(f"{key}, {ch}: {self.io.get_loss(ch)}")
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
+            self.logger = self.get_logger()
+            self.io = Attenuator()
+            self.publisher: Dict[str, Publisher] = {}
+            topic.attenuator_cmd.subscription(self, self.set_loss)
+            self.create_timer(1, self.stream)
+            self.create_timer(1, self.check_publisher)
+            self.logger.info(f"Started {self.NodeName} Node...")
+            for key in self.io.keys():
+                for ch in self.io[key].Config.channel.keys():
+                    self.logger.info(f"{key}, {ch}: {self.io.get_loss(ch)}")
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def set_loss(self, msg: DeviceReading) -> None:
         keys = self.io.keys()

@@ -14,24 +14,30 @@ class HEMTBias(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
-        self.reader_io = HemtBiasReader()
-        self.pub: Dict[str, Publisher] = {}
-        self.create_timer(1, self.stream)
-        self.logger.info(f"Started {self.NodeName} Node...")
-        hemt_channel = [
-            id for id in self.reader_io.Config.channel.keys() if id.startswith("hemt")
-        ]
-        channels = set(map(lambda x: x[:-4], hemt_channel))
-        data = self.reader_io.get_all("hemt")
-        for ch in channels:
-            self.logger.info(
-                f"{ch}: {data[ch+'_Vdr']}, "
-                f"{data[ch+'_Vg1']}, "
-                f"{data[ch+'_Vg2']}, "
-                f"{data[ch+'_Idr']}"
-            )
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
+            self.logger = self.get_logger()
+            self.reader_io = HemtBiasReader()
+            self.pub: Dict[str, Publisher] = {}
+            self.create_timer(1, self.stream)
+            self.logger.info(f"Started {self.NodeName} Node...")
+            hemt_channel = [
+                id
+                for id in self.reader_io.Config.channel.keys()
+                if id.startswith("hemt")
+            ]
+            channels = set(map(lambda x: x[:-4], hemt_channel))
+            data = self.reader_io.get_all("hemt")
+            for ch in channels:
+                self.logger.info(
+                    f"{ch}: {data[ch+'_Vdr']}, "
+                    f"{data[ch+'_Vg1']}, "
+                    f"{data[ch+'_Vg2']}, "
+                    f"{data[ch+'_Idr']}"
+                )
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def stream(self) -> None:
         hemt_channel = [

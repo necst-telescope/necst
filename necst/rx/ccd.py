@@ -11,12 +11,16 @@ class CCDController(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
+            self.logger = self.get_logger()
 
-        self.ccd = CCD_Device()
+            self.ccd = CCD_Device()
 
-        service.ccd_cmd.service(self, self.capture)
+            service.ccd_cmd.service(self, self.capture)
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def capture(
         self, request: CCDCommand.Request, response: CCDCommand.Response

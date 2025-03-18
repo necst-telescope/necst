@@ -14,24 +14,30 @@ class SISBias(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
+            self.logger = self.get_logger()
 
-        self.reader_io = SisBiasReader()
-        self.setter_io = SisBiasSetter()
+            self.reader_io = SisBiasReader()
+            self.setter_io = SisBiasSetter()
 
-        self.pub: Dict[str, Publisher] = {}
+            self.pub: Dict[str, Publisher] = {}
 
-        topic.sis_bias_cmd.subscription(self, self.set_voltage)
-        self.create_timer(0.25, self.stream)
-        self.logger.info(f"Started {self.NodeName} Node...")
-        sis_channel = [
-            id for id in self.reader_io.Config.channel.keys() if id.startswith("sis")
-        ]
-        channels = set(map(lambda x: x[:-2], sis_channel))
-        data = self.reader_io.get_all(target="sis")
-        for ch in channels:
-            self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
+            topic.sis_bias_cmd.subscription(self, self.set_voltage)
+            self.create_timer(0.25, self.stream)
+            self.logger.info(f"Started {self.NodeName} Node...")
+            sis_channel = [
+                id
+                for id in self.reader_io.Config.channel.keys()
+                if id.startswith("sis")
+            ]
+            channels = set(map(lambda x: x[:-2], sis_channel))
+            data = self.reader_io.get_all(target="sis")
+            for ch in channels:
+                self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def stream(self) -> None:
         sis_channel = [
