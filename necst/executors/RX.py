@@ -35,8 +35,8 @@ def main(args=None) -> None:
     except KeyboardInterrupt:
         pass
     finally:
-        executor.shutdown()
         _ = [n.destroy_node() for n in executor.get_nodes()]
+        executor.shutdown()
         rclpy.try_shutdown()
 
 
