@@ -22,9 +22,8 @@ class SISBias(DeviceNode):
             self.setter_io = SisBiasSetter()
 
             self.pub: Dict[str, Publisher] = {}
-
-            topic.sis_bias_cmd.subscription(self, self.set_voltage)
-            self.create_timer(0.25, self.stream)
+            self.create_safe_subscription(topic.sis_bias_cmd, self.set_voltage)
+            self.create_safe_timer(0.25, self.stream)
             self.logger.info(f"Started {self.NodeName} Node...")
             sis_channel = [
                 id

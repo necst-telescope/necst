@@ -19,9 +19,9 @@ class AttenuatorController(DeviceNode):
             self.logger = self.get_logger()
             self.io = Attenuator()
             self.publisher: Dict[str, Publisher] = {}
-            topic.attenuator_cmd.subscription(self, self.set_loss)
-            self.create_timer(1, self.stream)
-            self.create_timer(1, self.check_publisher)
+            self.create_safe_subscription(topic.attenuator_cmd, self.set_loss)
+            self.create_safe_timer(1, self.stream)
+            self.create_safe_timer(1, self.check_publisher)
             self.logger.info(f"Started {self.NodeName} Node...")
             for key in self.io.keys():
                 for ch in self.io[key].Config.channel.keys():

@@ -22,8 +22,8 @@ class VacuumGaugeController(DeviceNode):
 
             self.publisher: Dict[str, Publisher] = {}
 
-            self.create_timer(1, self.stream)
-            self.create_timer(1, self.check_publisher)
+            self.create_safe_timer(1, self.stream)
+            self.create_safe_timer(1, self.check_publisher)
             self.logger.info(f"Started {self.NodeName} Node...")
             self.logger.info(f"{self.io.get_pressure()}")
         except Exception as e:

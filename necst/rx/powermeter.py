@@ -20,8 +20,8 @@ class PowermeterController(DeviceNode):
             self.logger = self.get_logger()
             self.io = PowerMeter()
             self.publisher: Dict[str, Publisher] = {}
-            self.create_timer(1, self.stream)
-            self.create_timer(1, self.check_publisher)
+            self.create_safe_timer(1, self.stream)
+            self.create_safe_timer(1, self.check_publisher)
             self.logger.info(f"Started {self.NodeName} Node...")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
