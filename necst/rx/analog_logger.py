@@ -15,30 +15,38 @@ class AnalogLoggerController(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.logger = self.get_logger()
-        self.io = AnalogLogger()
-        self.measure_channel = [
-            id for id in self.io.Config.channel.keys() if not id.startswith("sis")
-        ]
-        self.hemt_channel = [id for id in self.measure_channel if id.startswith("hemt")]
-        self.hemt_name = set(map(lambda x: x[:-4], self.hemt_channel))
-        self.other_channel = [
-            id for id in self.measure_channel if not id.startswith("hemt")
-        ]
-        self.publisher: Dict[str, Publisher] = {}
+            self.logger = self.get_logger()
+            self.io = AnalogLogger()
+            self.measure_channel = [
+                id for id in self.io.Config.channel.keys() if not id.startswith("sis")
+            ]
+            self.hemt_channel = [
+                id for id in self.measure_channel if id.startswith("hemt")
+            ]
+            self.hemt_name = set(map(lambda x: x[:-4], self.hemt_channel))
+            self.other_channel = [
+                id for id in self.measure_channel if not id.startswith("hemt")
+            ]
+            self.publisher: Dict[str, Publisher] = {}
 
-        self.create_timer(1, self.check_publisher)
-        self.create_timer(1, self.stream)
-        self.logger.warning("SIS Tuning and Measuring are no implemented in this Node.")
-        self.logger.warning("Please use `sis_bias` Node to control SIS Bias.")
-        # TODO: Implement SIS Control. Just measuring Bias Parameters...
-        self.logger.info(f"Started {self.NodeName} Node...")
-        time.sleep(0.5)
-        for key in self.measure_channel:
-            self.logger.info(f"{key}: {self.io.get_from_id(key)}")
-            time.sleep(0.01)
+            self.create_safe_timer(1, self.check_publisher)
+            self.create_safe_timer(1, self.stream)
+            self.logger.warning(
+                "SIS Tuning and Measuring are no implemented in this Node."
+            )
+            self.logger.warning("Please use `sis_bias` Node to control SIS Bias.")
+            # TODO: Implement SIS Control. Just measuring Bias Parameters...
+            self.logger.info(f"Started {self.NodeName} Node...")
+            time.sleep(0.5)
+            for key in self.measure_channel:
+                self.logger.info(f"{key}: {self.io.get_from_id(key)}")
+                time.sleep(0.01)
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def check_publisher(self) -> None:
         for name in self.other_channel:
