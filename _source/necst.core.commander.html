@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.core.commander &#8212; necst 4.0.7 documentation</title>
+    <title>necst.core.commander &#8212; necst 4.0.19 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -123,7 +123,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.7</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.19</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -495,6 +495,11 @@
    </i>
   </label>
   <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.analog_logger.html">
+     necst.rx.analog_logger
+    </a>
+   </li>
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.attenuator.html">
      necst.rx.attenuator
@@ -1283,6 +1288,25 @@ path specified by environment variable <code class="docutils literal notranslate
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.analog_logger">
+<span class="sig-name descname"><span class="pre">analog_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'?'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/commander.html#Commander.analog_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.commander.Commander.analog_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the analog_logger reading.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'?'</em><em>]</em>) – Command to execute.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Get the analog_logger reading</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">com</span><span class="o">.</span><span class="n">analog_logger</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="necst.core.commander.Commander.sg">
 <span class="sig-name descname"><span class="pre">sg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dBm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.sg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.signal_generator" title="necst.core.commander.Commander.signal_generator"><code class="xref py py-meth docutils literal notranslate"><span class="pre">signal_generator()</span></code></a>.</p>
@@ -1414,6 +1438,20 @@ path specified by environment variable <code class="docutils literal notranslate
 <dt class="sig sig-object py" id="necst.core.commander.Commander.vg">
 <span class="sig-name descname"><span class="pre">vg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'?'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.vg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.vacuum_gauge" title="necst.core.commander.Commander.vacuum_gauge"><code class="xref py py-meth docutils literal notranslate"><span class="pre">vacuum_gauge()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'?'</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.core.commander.Commander.al">
+<span class="sig-name descname"><span class="pre">al</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'?'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#necst.core.commander.Commander.al" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias of <a class="reference internal" href="#necst.core.commander.Commander.analog_logger" title="necst.core.commander.Commander.analog_logger"><code class="xref py py-meth docutils literal notranslate"><span class="pre">analog_logger()</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>cmd</strong> (<em>Literal</em><em>[</em><em>'?'</em><em>]</em>) – </p>

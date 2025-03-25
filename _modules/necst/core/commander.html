@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.core.commander &#8212; necst 4.0.7 documentation</title>
+    <title>necst.core.commander &#8212; necst 4.0.19 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -120,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.7</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.19</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -261,6 +261,7 @@
             <span class="s2">&quot;antenna_control&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">antenna_control_status</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;sis_bias&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">sis_bias</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;hemt_bias&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">hemt_bias</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;analog_logger&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">analog_logger</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;lo_signal&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">lo_signal</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;thermometer&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">thermometer</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
             <span class="s2">&quot;attenuator&quot;</span><span class="p">:</span> <span class="n">_SubscriptionCfg</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">attenuator</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -1503,6 +1504,27 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Commander.analog_logger"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.analog_logger">[docs]</a>    <span class="k">def</span> <span class="nf">analog_logger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get the analog_logger reading.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cmd</span>
+<span class="sd">            Command to execute.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Get the analog_logger reading</span>
+
+<span class="sd">        &gt;&gt;&gt; com.analog_logger(&quot;?&quot;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">CMD</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">CMD</span> <span class="o">==</span> <span class="s2">&quot;?&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s2">&quot;analog_logger&quot;</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unkown command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
     <span class="n">sg</span> <span class="o">=</span> <span class="n">signal_generator</span>
     <span class="sd">&quot;&quot;&quot;Alias of :meth:`signal_generator`.&quot;&quot;&quot;</span>
     <span class="n">patt</span> <span class="o">=</span> <span class="n">attenuator</span>
@@ -1518,7 +1540,9 @@
     <span class="n">loatt</span> <span class="o">=</span> <span class="n">local_attenuator</span>
     <span class="sd">&quot;&quot;&quot;Alias of :meth:`local_attenuator`.&quot;&quot;&quot;</span>
     <span class="n">vg</span> <span class="o">=</span> <span class="n">vacuum_gauge</span>
-    <span class="sd">&quot;&quot;&quot;Alias of :meth:`vacuum_gauge`.&quot;&quot;&quot;</span></div>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`vacuum_gauge`.&quot;&quot;&quot;</span>
+    <span class="n">al</span> <span class="o">=</span> <span class="n">analog_logger</span>
+    <span class="sd">&quot;&quot;&quot;Alias of :meth:`analog_logger`&quot;&quot;&quot;</span></div>
 </pre></div>
 
               </div>

@@ -23,6 +23,7 @@ Submodules
 
 .. autosummary::
 
+   necst.rx.analog_logger
    necst.rx.attenuator
    necst.rx.ccd
    necst.rx.hemt_bias
@@ -39,6 +40,7 @@ Submodules
    :titlesonly:
    :hidden:
 
+   necst.rx.analog_logger
    necst.rx.attenuator
    necst.rx.ccd
    necst.rx.hemt_bias

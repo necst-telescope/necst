@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.core.device_node &#8212; necst 4.0.7 documentation</title>
+    <title>necst.core.device_node &#8212; necst 4.0.19 documentation</title>
     
   <link href="../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -120,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.7</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.19</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -152,6 +152,26 @@
 
 <div class="viewcode-block" id="DeviceNode"><a class="viewcode-back" href="../../../_source/necst.core.device_node.html#necst.core.device_node.DeviceNode">[docs]</a><span class="k">class</span> <span class="nc">DeviceNode</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Device handling node, which knows procedures required to control devices.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DeviceNode.create_safe_timer"><a class="viewcode-back" href="../../../_source/necst.core.device_node.html#necst.core.device_node.DeviceNode.create_safe_timer">[docs]</a>    <span class="k">def</span> <span class="nf">create_safe_timer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">safe_callback</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Exception in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="n">period</span><span class="p">,</span> <span class="n">safe_callback</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DeviceNode.create_safe_subscription"><a class="viewcode-back" href="../../../_source/necst.core.device_node.html#necst.core.device_node.DeviceNode.create_safe_subscription">[docs]</a>    <span class="k">def</span> <span class="nf">create_safe_subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">safe_callback</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Exception in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">topic</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">safe_callback</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="DeviceNode.destroy_node"><a class="viewcode-back" href="../../../_source/necst.core.device_node.html#necst.core.device_node.DeviceNode.destroy_node">[docs]</a>    <span class="k">def</span> <span class="nf">destroy_node</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Override destroy_node to ensure that the device is finalized.</span>

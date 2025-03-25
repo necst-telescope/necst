@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.utils.callbacks &#8212; necst 4.0.19 documentation</title>
+    <title>necst.rx.analog_logger &#8212; necst 4.0.19 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -37,8 +37,8 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.utils.ros_interface" href="necst.utils.ros_interface.html" />
-    <link rel="prev" title="necst.utils" href="necst.utils.html" />
+    <link rel="next" title="necst.rx.attenuator" href="necst.rx.attenuator.html" />
+    <link rel="prev" title="necst.rx" href="necst.rx.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="en">
     
@@ -485,18 +485,18 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="necst.rx.html">
    necst.rx
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
   <label for="toctree-checkbox-14">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.rx.analog_logger.html">
+  <ul class="current">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
      necst.rx.analog_logger
     </a>
    </li>
@@ -552,18 +552,18 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1 current active has-children">
+ <li class="toctree-l1 has-children">
   <a class="reference internal" href="necst.utils.html">
    necst.utils
   </a>
-  <input checked="" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+  <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
   <label for="toctree-checkbox-15">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul class="current">
-   <li class="toctree-l2 current active">
-    <a class="current reference internal" href="#">
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.utils.callbacks.html">
      necst.utils.callbacks
     </a>
    </li>
@@ -622,24 +622,50 @@
               
               <div>
                 
-  <section id="module-necst.utils.callbacks">
-<span id="necst-utils-callbacks"></span><h1>necst.utils.callbacks<a class="headerlink" href="#module-necst.utils.callbacks" title="Permalink to this heading">¶</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="necst.utils.callbacks.respond_to_ping">
-<span class="sig-name descname"><span class="pre">respond_to_ping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/callbacks.html#respond_to_ping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.callbacks.respond_to_ping" title="Permalink to this definition">¶</a></dt>
-<dd><p>Callback function for ping server, which uses <code class="docutils literal notranslate"><span class="pre">std_srvs.srv.Empty</span></code>.</p>
+  <section id="module-necst.rx.analog_logger">
+<span id="necst-rx-analog-logger"></span><h1>necst.rx.analog_logger<a class="headerlink" href="#module-necst.rx.analog_logger" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.rx.analog_logger.AnalogLoggerController">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnalogLoggerController</span></span><a class="reference internal" href="../_modules/necst/rx/analog_logger.html#AnalogLoggerController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.analog_logger.AnalogLoggerController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="necst.core.device_node.html#necst.core.device_node.DeviceNode" title="necst.core.device_node.DeviceNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceNode</span></code></a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>request</strong> (<em>Empty_Request</em>) – </p></li>
-<li><p><strong>response</strong> (<em>Empty_Response</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Empty_Response</em></p>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.rx.analog_logger.AnalogLoggerController.NodeName">
+<span class="sig-name descname"><span class="pre">NodeName</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'analog_logger'</span></em><a class="headerlink" href="#necst.rx.analog_logger.AnalogLoggerController.NodeName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.rx.analog_logger.AnalogLoggerController.Namespace">
+<span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/rx'</span></em><a class="headerlink" href="#necst.rx.analog_logger.AnalogLoggerController.Namespace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.rx.analog_logger.AnalogLoggerController.check_publisher">
+<span class="sig-name descname"><span class="pre">check_publisher</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/rx/analog_logger.html#AnalogLoggerController.check_publisher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.analog_logger.AnalogLoggerController.check_publisher" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.rx.analog_logger.AnalogLoggerController.stream">
+<span class="sig-name descname"><span class="pre">stream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/rx/analog_logger.html#AnalogLoggerController.stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.analog_logger.AnalogLoggerController.stream" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.rx.analog_logger.main">
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/rx/analog_logger.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.rx.analog_logger.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </section>
 
@@ -649,17 +675,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="necst.utils.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="necst.rx.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">necst.utils</p>
+            <p class="prev-next-title">necst.rx</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.utils.ros_interface.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.rx.attenuator.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.utils.ros_interface</p>
+        <p class="prev-next-title">necst.rx.attenuator</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
