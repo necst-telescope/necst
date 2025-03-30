@@ -25,7 +25,7 @@ class AttenuatorController(DeviceNode):
             self.logger.info(f"Started {self.NodeName} Node...")
             for key in self.io.keys():
                 for ch in self.io[key].Config.channel.keys():
-                    self.logger.info(f"{key}, {ch}: {self.io.get_loss(ch)}")
+                    self.logger.info(f"{key}, {ch}: {self.io[key].get_loss(ch)}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
