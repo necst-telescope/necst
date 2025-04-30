@@ -643,7 +643,7 @@ class Commander(PrivilegedNode):
             if wait:
                 self.wait_oc(target="chopper", position=CMD.lower())
         else:
-            msg = ChopperMsg(insert=None, position=cmd, time=pytime.time())
+            msg = ChopperMsg(position=cmd, time=pytime.time())
             self.publisher["chopper"].publish(msg)
             if wait:
                 self.wait_oc(target="chopper", position=cmd)
@@ -775,12 +775,18 @@ class Commander(PrivilegedNode):
     def wait_oc(
         self,
         target: Literal["dome", "membrane", "chopper"],
-        position: Literal["insert", "remove"] = None,
+        position: Union[Literal["insert", "remove"], int] = None,
     ):
         if target == "chopper":
-            target_status = position == "insert"
-            while self.get_message(target).insert is not target_status:
-                pytime.sleep(0.1)
+            print("current_status", self.get_message(target).position)
+            print("position", position)
+            if isinstance(position, int):
+                while not self.get_message(target).position == position:
+                    pytime.sleep(0.1)
+            else:
+                target_status = position == "insert"
+                while self.get_message(target).insert is not target_status:
+                    pytime.sleep(0.1)
         else:
             pytime.sleep(1.1)
             while self.get_message(target).move:
