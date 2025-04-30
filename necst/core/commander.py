@@ -600,7 +600,13 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
     @require_privilege(escape_cmd=["?"])
-    def chopper(self, cmd: Literal["insert", "remove", "?"], /, *, wait: bool = True):
+    def chopper(
+        self,
+        cmd: Union[Literal["insert", "remove", "?"], float],
+        /,
+        *,
+        wait: bool = True,
+    ):
         """Control the position of ambient temperature radio absorber.
 
         Parameters
@@ -622,20 +628,25 @@ class Commander(PrivilegedNode):
         >>> com.chopper("remove", wait=False)
 
         """
-        CMD = cmd.upper()
-        if CMD == "?":
-            return self.get_message("chopper", timeout_sec=10)
-        elif CMD == "INSERT":
-            msg = ChopperMsg(insert=True, time=pytime.time())
-            self.publisher["chopper"].publish(msg)
-        elif CMD == "REMOVE":
-            msg = ChopperMsg(insert=False, time=pytime.time())
-            self.publisher["chopper"].publish(msg)
+        if isinstance(cmd, str):
+            CMD = cmd.upper()
+            if CMD == "?":
+                return self.get_message("chopper", timeout_sec=10)
+            elif CMD == "INSERT":
+                msg = ChopperMsg(insert=True, time=pytime.time())
+                self.publisher["chopper"].publish(msg)
+            elif CMD == "REMOVE":
+                msg = ChopperMsg(insert=False, time=pytime.time())
+                self.publisher["chopper"].publish(msg)
+            else:
+                raise ValueError(f"Unknown command: {cmd!r}")
+            if wait:
+                self.wait_oc(target="chopper", position=CMD.lower())
         else:
-            raise ValueError(f"Unknown command: {cmd!r}")
-
-        if wait:
-            self.wait_oc(target="chopper", position=CMD.lower())
+            msg = ChopperMsg(insert=None, position=cmd, time=pytime.time())
+            self.publisher["chopper"].publish(msg)
+            if wait:
+                self.wait_oc(target="chopper", position=cmd)
 
     @require_privilege(escape_cmd=["?"])
     def mirror(
