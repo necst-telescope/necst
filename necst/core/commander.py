@@ -633,10 +633,10 @@ class Commander(PrivilegedNode):
             if CMD == "?":
                 return self.get_message("chopper", timeout_sec=10)
             elif CMD == "INSERT":
-                msg = ChopperMsg(insert=True, position=None, time=pytime.time())
+                msg = ChopperMsg(insert=True, time=pytime.time())
                 self.publisher["chopper"].publish(msg)
             elif CMD == "REMOVE":
-                msg = ChopperMsg(insert=False, position=None, time=pytime.time())
+                msg = ChopperMsg(insert=False, time=pytime.time())
                 self.publisher["chopper"].publish(msg)
             else:
                 raise ValueError(f"Unknown command: {cmd!r}")
