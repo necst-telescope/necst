@@ -27,6 +27,7 @@ class ThermometerSubscriber(DeviceNode):
     def _make_callback(self, ch: str):
         def _cb(msg: DeviceReading):
             self.logger.info(f"[{ch}] value={msg.value:.2f}  time={msg.time:.6f}")
+
         return _cb
 
 
