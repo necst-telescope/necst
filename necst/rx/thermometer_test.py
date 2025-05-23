@@ -11,7 +11,8 @@ class ThermometerSubscriber(DeviceNode):
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
-        self.logger.info("Started ThermometerTest...")
+        self.logger.info(f"Started ${self.NodeName}...")
+        self.io = ThermometerSubscriber()
 
         self.channels = list(self.io.Config.thermometer.channel.keys())
 
