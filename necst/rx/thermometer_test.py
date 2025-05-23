@@ -14,7 +14,7 @@ class ThermometerSubscriber(DeviceNode):
 
         self.io = Thermometer()
         topic_name = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
-        self.create_subscription(DeviceReading, topic_name, self.callback)
+        self.create_subscription(DeviceReading, topic_name, self.callback, 10)
 
     def callback(self, msg):
         self.get_logger().info(f"Received message: {msg.id} - {msg.value} K")
