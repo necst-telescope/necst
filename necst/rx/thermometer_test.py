@@ -2,6 +2,7 @@ import rclpy
 from .. import namespace
 from ..core import DeviceNode
 from necst_msgs.msg import DeviceReading
+from neclib.devices import Thermometer
 
 
 class ThermometerSubscriber(DeviceNode):
@@ -11,7 +12,7 @@ class ThermometerSubscriber(DeviceNode):
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.io = ThermometerSubscriber()
+        self.io = Thermometer()
         topic_name = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
         self.create_subscription(DeviceReading, topic_name, self.callback)
 
