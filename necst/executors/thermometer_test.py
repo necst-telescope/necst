@@ -1,43 +1,30 @@
 import rclpy
-from necst_msgs.msg import DeviceReading
-from .. import namespace, topic
-from ..core import DeviceNode
+from rclpy.executors import SingleThreadedExecutor
+
+from ..rx.thermometer_test import ThermometerSubscriber
 
 
-class ThermometerSubscriber(DeviceNode):
-    NodeName = "thermometer_test"
-    Namespace = namespace.rx
-
-    def __init__(self):
-        super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
-        self.logger.info("Started ThermometerTest...")
-
-        self.channels = list(self.io.Config.thermometer.channel.keys())
-
-        for ch in self.channels:
-            topic_name = topic.thermometer[ch].fullname
-            self.create_safe_subscription(
-                DeviceReading,
-                topic_name,
-                self._make_callback(ch),
-                qos=10,
-            )
-
-    def _make_callback(self, ch: str):
-        def _cb(msg: DeviceReading):
-            self.logger.info(f"[{ch}] value={msg.value:.2f}  time={msg.time:.6f}")
-
-        return _cb
+def configure_executor() -> SingleThreadedExecutor:
+    executor = SingleThreadedExecutor()
+    nodes = [
+        ThermometerSubscriber(),
+    ]
+    _ = [executor.add_node(n) for n in nodes]
+    return executor
 
 
-def main(args=None):
+def main(args=None) -> None:
     rclpy.init(args=args)
-    node = ThermometerSubscriber()
+
+    executor = configure_executor()
+
     try:
-        rclpy.spin(node)
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
     finally:
-        node.destroy_node()
+        executor.shutdown()
+        _ = [n.destroy_node() for n in executor.get_nodes()]
         rclpy.try_shutdown()
 
 
