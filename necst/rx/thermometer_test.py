@@ -1,7 +1,7 @@
 import rclpy
-from necst_msgs.msg import DeviceReading
-from .. import namespace, topic
+from .. import namespace
 from ..core import DeviceNode
+from necst_msgs.msg import DeviceReading
 
 
 class ThermometerSubscriber(DeviceNode):
@@ -10,34 +10,24 @@ class ThermometerSubscriber(DeviceNode):
 
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
-        self.logger.info(f"Started ${self.NodeName}...")
+
         self.io = ThermometerSubscriber()
+        topic_name = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
+        self.create_subscription(DeviceReading, topic_name, self.callback)
 
-        self.channels = list(self.io.Config.thermometer.channel.keys())
-
-        for ch in self.channels:
-            topic_name = topic.thermometer[ch].fullname
-            self.create_safe_subscription(
-                DeviceReading,
-                topic_name,
-                self._make_callback(ch),
-                qos=10,
-            )
-
-    def _make_callback(self, ch: str):
-        def _cb(msg: DeviceReading):
-            self.logger.info(f"[{ch}] value={msg.value:.2f}  time={msg.time:.6f}")
-
-        return _cb
+    def callback(self, msg):
+        self.get_logger().info(f"Received message: {msg.id} - {msg.value} K")
 
 
-def main(args=None):
-    rclpy.init(args=args)
+def main():
+    rclpy.init()
     node = ThermometerSubscriber()
     try:
         rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
     finally:
+        node.io.close()
         node.destroy_node()
         rclpy.try_shutdown()
 
