@@ -1,4 +1,6 @@
 import rclpy
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
+
 from .. import namespace
 from ..core import DeviceNode
 from necst_msgs.msg import DeviceReading
@@ -12,9 +14,20 @@ class ThermometerSubscriber(DeviceNode):
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
+        self.logger = self.get_logger()
         self.io = Thermometer()
         topic_name = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
-        self.create_subscription(DeviceReading, topic_name, self.callback, 10)
+
+        qos_profile_subscriber = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+            durability=DurabilityPolicy.VOLATILE,
+        )
+
+        self.create_subscription(
+            DeviceReading, topic_name, self.callback, qos_profile_subscriber
+        )
 
     def callback(self, msg):
         self.get_logger().info(f"Received message: {msg.id} - {msg.value} K")
