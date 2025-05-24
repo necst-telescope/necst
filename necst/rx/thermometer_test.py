@@ -1,49 +1,51 @@
 import rclpy
+from rclpy.node import Node
+from necst_msgs.msg import DeviceReading
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 
-from .. import namespace
-from ..core import DeviceNode
-from necst_msgs.msg import DeviceReading
-from neclib.devices import Thermometer
 
-
-class ThermometerSubscriber(DeviceNode):
-    NodeName = "thermometer_test"
-    Namespace = namespace.rx
-
+class ThermometrSubscrider(Node):
     def __init__(self):
-        super().__init__(self.NodeName, namespace=self.Namespace)
+        super().__init__("thermometer_test")
 
-        self.logger = self.get_logger()
-        self.io = Thermometer()
-        topic_name = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
+        self.topic_name = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
+        self.msg_type = DeviceReading
 
-        qos_profile_subscriber = QoSProfile(
+        qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
             depth=10,
             durability=DurabilityPolicy.VOLATILE,
         )
 
-        self.create_subscription(
-            DeviceReading, topic_name, self.callback, qos_profile_subscriber
+        self.subscription = self.create_subscription(
+            self.msg_type, self.topic_name, self.listener_callback, qos_profile
+        )
+        self.get_logger().info(
+            f"Node '{self.get_name()}' subscribed to topic: {self.topic_name}"
         )
 
-    def callback(self, msg):
-        self.get_logger().info(f"Received message: {msg.id} - {msg.value} K")
+    def listener_callback(self, msg: DeviceReading):
+        self.get_logger().info(
+            f"Received on '{self.topic_name}': "
+            f"ID='{msg.id}', Value={msg.value:.2f} K, OK={msg.is_ok}"
+        )
 
 
-def main():
-    rclpy.init()
-    node = ThermometerSubscriber()
+def main(args=None):
+    rclpy.init(args=args)
+
+    minimal_node = ThermometrSubscrider()
+
     try:
-        rclpy.spin(node)
+        rclpy.spin(minimal_node)
     except KeyboardInterrupt:
-        pass
+        minimal_node.get_logger().info("KeyboardInterrupt, shutting down...")
     finally:
-        node.io.close()
-        node.destroy_node()
-        rclpy.try_shutdown()
+        if minimal_node and rclpy.ok() and not minimal_node.is_shutdown:
+            minimal_node.destroy_node()
+        if rclpy.ok():
+            rclpy.try_shutdown()
 
 
 if __name__ == "__main__":
