@@ -1,12 +1,15 @@
 import rclpy
 from necst_msgs.msg import DeviceReading
 from ..core import DeviceNode
-from .. import qos
+from .. import qos, namespace
 
 
 class ThermometerSubscriber(DeviceNode):
+    NodeName = "thermometer_test"
+    Namespace = namespace.rx
+
     def __init__(self):
-        super().__init__("thermometer_test")
+        super().__init__(self.NodeName, namespace=self.Namespace)
 
         topic_name = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
 
