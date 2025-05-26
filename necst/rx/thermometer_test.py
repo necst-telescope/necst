@@ -1,10 +1,10 @@
 import rclpy
-from rclpy.node import Node
 from necst_msgs.msg import DeviceReading
+from ..core import DeviceNode
 from .. import qos
 
 
-class ThermometerSubscriber(Node):
+class ThermometerSubscriber(DeviceNode):
     def __init__(self):
         super().__init__("thermometer_test")
 
