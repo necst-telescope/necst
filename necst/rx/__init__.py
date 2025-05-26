@@ -6,6 +6,7 @@ from .hemt_bias import HEMTBias  # noqa: F401
 from .spectrometer import SpectralData  # noqa: F401
 from .thermometer import ThermometerController  # noqa: F401
 from .vacuum_gauge import VacuumGaugeController  # noqa: F401
+from .thermometer_test import ThermometerSubscriber  # noqa: F401
 
 try:
     from .ccd import CCDController  # noqa: F401
