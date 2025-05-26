@@ -2,7 +2,6 @@ import time
 import sqlite3
 
 import rclpy
-from rclpy.node import Node
 from necst_msgs.msg import DeviceReading
 from necst.core import DeviceNode
 from necst import qos, namespace
@@ -19,7 +18,8 @@ class ThermometerSubscriber(DeviceNode):
         self.db_path = "thermometer_data.db"
         self.conn = sqlite3.connect(self.db_path)
         self.cur = self.conn.cursor()
-        self.cur.execute("""
+        self.cur.execute(
+            """
             CREATE TABLE IF NOT EXISTS thermometer_data (
                 timestamp REAL,
                 Shield40K1 REAL,
@@ -27,7 +27,8 @@ class ThermometerSubscriber(DeviceNode):
                 Stage4K1   REAL,
                 Stage4K2   REAL
             )
-        """)
+        """
+        )
         self.conn.commit()
 
         self.topic_names = ["Shield40K1", "Shield40K2", "Stage4K1", "Stage4K2"]
@@ -38,7 +39,7 @@ class ThermometerSubscriber(DeviceNode):
                 DeviceReading,
                 topic_path,
                 self._make_cb(ch),
-                qos.adaptive(ch, self),
+                qos.realtime,
             )
 
         self.create_timer(1.0, self._flush_if_complete)
@@ -46,7 +47,8 @@ class ThermometerSubscriber(DeviceNode):
     def _make_cb(self, ch: str):
         def _cb(msg: DeviceReading):
             self.data_dict[ch] = msg.value
-            self.get_logger().debug(f"{ch} ← {msg.value:.2f} K @ {msg.time:.0f}")
+            self.get_logger().info(f"{ch} ← {msg.value:.2f} K @ {msg.time:.0f}")
+
         return _cb
 
     def _flush_if_complete(self):
