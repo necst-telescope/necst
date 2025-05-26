@@ -17,7 +17,7 @@ class ThermometerSubscriber(DeviceNode):
         topic_names = ["Shield40K1", "Shield40K2", "Shield4K1", "Shield4K2"]
         self.data_dict = {}
 
-        for topic_name in topic_names.split(","):
+        for topic_name in topic_names:
             self.subscription = self.create_subscription(
                 DeviceReading,
                 f"{name}/{topic_name}",
