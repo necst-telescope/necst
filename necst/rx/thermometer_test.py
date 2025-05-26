@@ -15,10 +15,10 @@ class ThermometerSubscriber(DeviceNode):
 
         topic_names = ["Shield40K1", "Shield40K2", "Stage4K1", "Stage4K2"]
         self.data_dict = {}
-        self.subscriptions = {}
+        self.sub_map = {}
         for ch in topic_names:
             topic_path = f"/necst/OMU1P85M/rx/thermometer/{ch}"
-            self.subscriptions[ch] = self.create_safe_subscription(
+            self.sub_map[ch] = self.create_safe_subscription(
                 DeviceReading,
                 topic_path,
                 self.listener_callback,
