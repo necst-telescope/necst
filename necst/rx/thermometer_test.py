@@ -13,20 +13,21 @@ class ThermometerSubscriber(DeviceNode):
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        name = "/necst/OMU1P85M/rx/thermometer/"
-        topic_names = ["Shield40K1", "Shield40K2", "Shield4K1", "Shield4K2"]
+        topic_names = ["Shield40K1", "Shield40K2", "Stage4K1", "Stage4K2"]
         self.data_dict = {}
-
-        for topic_name in topic_names:
-            self.subscription = self.create_subscription(
+        self.subscriptions = {}
+        for ch in topic_names:
+            topic_path = f"/necst/OMU1P85M/rx/thermometer/{ch}"
+            self.subscriptions[ch] = self.create_safe_subscription(
                 DeviceReading,
-                f"{name}/{topic_name}",
+                topic_path,
                 self.listener_callback,
-                qos.realtime,
+                qos.adaptive(ch, self),
             )
 
     def listener_callback(self, msg: DeviceReading):
         self.data_dict[msg.id] = msg.value
+        print(self.data_dict)
         print(
             f"Received - ID: {msg.id}, Value: {msg.value:.2f} K, Time: {msg.time:.0f}"
         )
