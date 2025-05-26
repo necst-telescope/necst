@@ -1,51 +1,73 @@
-import rclpy
-from necst_msgs.msg import DeviceReading
-from ..core import DeviceNode
-from .. import qos, namespace
+import time
+import sqlite3
 
-# import sqlite3
+import rclpy
+from rclpy.node import Node
+from necst_msgs.msg import DeviceReading
+from necst.core import DeviceNode
+from necst import qos, namespace
 
 
 class ThermometerSubscriber(DeviceNode):
-    NodeName = "thermometer_test"
+    NodeName = "thermometer_sqlite_logger"
     Namespace = namespace.rx
 
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
+        self.get_logger().info("Started ThermometerSQLiteLogger…")
 
-        topic_names = ["Shield40K1", "Shield40K2", "Stage4K1", "Stage4K2"]
+        self.db_path = "thermometer_data.db"
+        self.conn = sqlite3.connect(self.db_path)
+        self.cur = self.conn.cursor()
+        self.cur.execute("""
+            CREATE TABLE IF NOT EXISTS thermometer_data (
+                timestamp REAL,
+                Shield40K1 REAL,
+                Shield40K2 REAL,
+                Stage4K1   REAL,
+                Stage4K2   REAL
+            )
+        """)
+        self.conn.commit()
+
+        self.topic_names = ["Shield40K1", "Shield40K2", "Stage4K1", "Stage4K2"]
         self.data_dict = {}
-        self.sub_map = {}
-        for ch in topic_names:
+        for ch in self.topic_names:
             topic_path = f"/necst/OMU1P85M/rx/thermometer/{ch}"
-            self.sub_map[ch] = self.create_safe_subscription(
+            self.create_subscription(
                 DeviceReading,
                 topic_path,
-                self.listener_callback,
+                self._make_cb(ch),
                 qos.adaptive(ch, self),
             )
 
-    def listener_callback(self, msg: DeviceReading):
-        self.data_dict[msg.id] = msg.value
-        print(self.data_dict)
-        print(
-            f"Received - ID: {msg.id}, Value: {msg.value:.2f} K, Time: {msg.time:.0f}"
-        )
+        self.create_timer(1.0, self._flush_if_complete)
 
-    #     self.record_db(msg)
+    def _make_cb(self, ch: str):
+        def _cb(msg: DeviceReading):
+            self.data_dict[ch] = msg.value
+            self.get_logger().debug(f"{ch} ← {msg.value:.2f} K @ {msg.time:.0f}")
+        return _cb
 
-    # def record_db(self, msg: DeviceReading):
-    #     conn = sqlite3.connect("thermometer_data.db")
-    #     cursor = conn.cursor()
-    #     cursor.execute(
-    #         "CREATE TABLE IF NOT EXISTS readings (id TEXT, value REAL, time REAL)"
-    #     )
-    #     cursor.execute(
-    #         "INSERT INTO readings (id, value, time) VALUES (?, ?, ?)",
-    #         (msg.id, msg.value, msg.time),
-    #     )
-    #     conn.commit()
-    #     conn.close()
+    def _flush_if_complete(self):
+        if len(self.data_dict) == len(self.topic_names):
+            ts = time.time()
+            cols = ", ".join(self.topic_names)
+            placeholders = ", ".join(["?"] * (len(self.topic_names) + 1))
+            sql = f"INSERT INTO thermometer_data (timestamp, {cols}) VALUES ({placeholders})"
+            params = [ts] + [self.data_dict[ch] for ch in self.topic_names]
+            self.cur.execute(sql, params)
+            self.conn.commit()
+            self.get_logger().info(f"Saved @ {ts:.0f}: {self.data_dict}")
+            self.data_dict.clear()
+
+    def destroy_node(self):
+        try:
+            if self.conn:
+                self.conn.close()
+        except Exception:
+            pass
+        super().destroy_node()
 
 
 def main(args=None):
@@ -53,12 +75,9 @@ def main(args=None):
     node = ThermometerSubscriber()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
     finally:
-        node.io.close()
         node.destroy_node()
-        rclpy.try_shutdown()
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":
