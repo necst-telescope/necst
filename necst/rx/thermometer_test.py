@@ -15,7 +15,7 @@ class ThermometerSubscriber(DeviceNode):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.get_logger().info("Started ThermometerSQLiteLogger…")
 
-        self.db_path = "thermometer_data.db"
+        self.db_path = "/root/data/thermometer_data.db"
         self.conn = sqlite3.connect(self.db_path)
         self.cur = self.conn.cursor()
         self.cur.execute(
@@ -47,7 +47,7 @@ class ThermometerSubscriber(DeviceNode):
     def _make_cb(self, ch: str):
         def _cb(msg: DeviceReading):
             self.data_dict[ch] = msg.value
-            self.get_logger().info(f"{ch} ← {msg.value:.2f} K @ {msg.time:.0f}")
+            print(f"{ch} : {msg.value:.2f} K")
 
         return _cb
 
