@@ -775,7 +775,7 @@ class Commander(PrivilegedNode):
     def wait_oc(
         self,
         target: Literal["dome", "membrane", "chopper"],
-        position: Union[Literal["insert", "remove"],int] = None,
+        position: Union[Literal["insert", "remove"], int] = None,
     ):
         if target == "chopper":
             print("current_status", self.get_message(target).position)
