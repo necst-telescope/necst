@@ -21,6 +21,7 @@ class FileBasedObservation(Observation):
 
     def _coord_to_tuple(self, coord: tuple):
         if len(coord) == 2:
+            print(coord)
             return tuple(x.to_value("deg") for x in coord)
         elif len(coord) == 3:
             return tuple(x.to_value("deg") for x in coord[:2]) + (coord[2],)
@@ -32,6 +33,7 @@ class FileBasedObservation(Observation):
             if waypoint.mode == ObservationMode.HOT:  # Hot observation
                 self.hot(waypoint.integration.to_value("s"), waypoint.id)
                 continue
+            print(waypoint.speed)
 
             kwargs = dict(unit="deg")
             if waypoint.name_query:
