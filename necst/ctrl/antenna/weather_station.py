@@ -32,7 +32,7 @@ class WeatherStationReader(DeviceNode):
     def check_publisher(self) -> None:
         for name in self.io.keys():
             if name not in self.publisher:
-                self.publisher[name] = topic.lo_signal[name].publisher(self)
+                self.publisher[name] = topic.thermometer[name].publisher(self)
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
