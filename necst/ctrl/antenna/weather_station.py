@@ -36,6 +36,7 @@ class WeatherStationReader(DeviceNode):
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
+            print(name)
             msg = WeatherMsg(
                 temperature=float(self.io[name].get_temperature().to_value("K")),
                 pressure=float(self.io[name].get_pressure().to_value("hPa")),
