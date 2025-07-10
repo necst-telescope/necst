@@ -41,7 +41,6 @@ class WeatherStationReader(DeviceNode):
                 pressure=float(self.io[name].get_pressure().to_value("hPa")),
                 humidity=float(self.io[name].get_humidity()),
                 time=time.time(),
-                id=name,
             )
             publisher.publish(msg)
 
