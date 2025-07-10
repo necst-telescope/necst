@@ -33,10 +33,10 @@ class WeatherStationReader(DeviceNode):
         for name in self.io.keys():
             if name not in self.publisher:
                 self.publisher[name] = topic.weather[name].publisher(self)
+        print(self.publisher)
 
     def stream(self) -> None:
         for name, publisher in self.publisher.items():
-            print(name)
             msg = WeatherMsg(
                 temperature=float(self.io[name].get_temperature().to_value("K")),
                 pressure=float(self.io[name].get_pressure().to_value("hPa")),
