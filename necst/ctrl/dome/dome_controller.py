@@ -74,7 +74,7 @@ class DomeController(AlertHandlerNode):
 
         """
         if self.dome_sync:
-            response.check = False
+            response.id = ""
             return response
         else:
             self.cmd = request
