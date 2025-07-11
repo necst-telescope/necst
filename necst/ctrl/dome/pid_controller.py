@@ -137,13 +137,16 @@ class DomePIDController(AlertHandlerNode):
 
         enc = self.enc[0]
 
-        error = cmd.lon - enc.lon
+        dist = cmd.lon % 360
+        pos = enc.lon % 360
+
+        error = (dist - pos) % 360
 
         try:
-            if error > 0:
-                turn = "right"
-            elif error < 0:
+            if error >= 180:
                 turn = "left"
+            elif error < 180:
+                turn = "right"
             else:
                 self.immediate_stop_no_resume()
                 return

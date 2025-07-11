@@ -81,6 +81,10 @@ class Observation(ABC):
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
                 rclpy.uninstall_signal_handlers()
+                if hasattr(config, "dome"):
+                    self.com.dome("sync", dome_sync=True)
+                    self.com.dome("open")
+                    self.logger.info("Dome opened")
                 self.run(**self._kwargs)
             finally:
                 self.com.record("stop")
@@ -88,6 +92,10 @@ class Observation(ABC):
                 self.com.record("savespec", save=True)
                 self.com.antenna("stop")
                 self.binning(config.spectrometer.max_ch)  # set max channel number
+                if hasattr(config, "dome"):
+                    self.com.dome("close")
+                    self.logger.info("Dome closed")
+                    self.com.dome("sync", dome_sync=False)
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60
