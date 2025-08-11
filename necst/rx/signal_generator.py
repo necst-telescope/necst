@@ -14,16 +14,26 @@ class SignalGeneratorController(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.logger = self.get_logger()
-        self.io = SignalGenerator()
+            self.logger = self.get_logger()
+            self.io = SignalGenerator()
 
-        self.publisher: Dict[str, Publisher] = {}
-        topic.lo_signal_cmd.subscription(self, self.set_param)
-
-        self.create_timer(1, self.stream)
-        self.create_timer(1, self.check_publisher)
+            self.publisher: Dict[str, Publisher] = {}
+            self.create_safe_subscription(topic.lo_signal_cmd, self.set_param)
+            self.create_safe_timer(1, self.stream)
+            self.create_safe_timer(1, self.check_publisher)
+            self.logger.info(f"Started {self.NodeName} Node...")
+            for key in self.io.keys():
+                self.logger.info(
+                    f"{key}: {self.io[key].get_power()}, "
+                    f"{self.io[key].get_freq()}, "
+                    f"Output is {self.io[key].get_output_status()}"
+                )
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def check_publisher(self) -> None:
         for name in self.io.keys():
@@ -56,3 +66,22 @@ class SignalGeneratorController(DeviceNode):
                 id=name,
             )
             publisher.publish(msg)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = SignalGeneratorController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        _ = [node.io[key].close() for key in node.io.keys()]
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()

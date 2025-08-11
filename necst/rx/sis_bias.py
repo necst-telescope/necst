@@ -14,25 +14,39 @@ class SISBias(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
+            self.logger = self.get_logger()
 
-        self.reader_io = SisBiasReader()
-        self.setter_io = SisBiasSetter()
+            self.reader_io = SisBiasReader()
+            self.setter_io = SisBiasSetter()
 
-        self.pub: Dict[str, Publisher] = {}
-
-        topic.sis_bias_cmd.subscription(self, self.set_voltage)
-        self.create_timer(0.25, self.stream)
+            self.pub: Dict[str, Publisher] = {}
+            self.create_safe_subscription(topic.sis_bias_cmd, self.set_voltage)
+            self.create_safe_timer(0.25, self.stream)
+            self.logger.info(f"Started {self.NodeName} Node...")
+            sis_channel = [
+                id
+                for id in self.reader_io.Config.channel.keys()
+                if id.startswith("sis")
+            ]
+            channels = set(map(lambda x: x[:-2], sis_channel))
+            data = self.reader_io.get_all(target="sis")
+            for ch in channels:
+                self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def stream(self) -> None:
         sis_channel = [
             id for id in self.reader_io.Config.channel.keys() if id.startswith("sis")
         ]
         channels = set(map(lambda x: x[:-2], sis_channel))
+        data = self.reader_io.get_all(target="sis")
         for id in channels:
-            current = self.reader_io.get_current(f"{id}_I").to_value("uA").item()
-            voltage = self.reader_io.get_voltage(f"{id}_V").to_value("mV").item()
+            current = data[f"{id}_I"].to_value("uA").item()
+            voltage = data[f"{id}_V"].to_value("mV").item()
             msg = SISBiasMsg(
                 time=time.time(), current=current, voltage=voltage, id=[id]
             )
@@ -62,3 +76,26 @@ class SISBias(DeviceNode):
             self.setter_io.apply_voltage()
             self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
             time.sleep(0.01)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = SISBias()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.reader_io.close()
+        _ = [
+            node.setter_io[key].close() if None not in key else node.setter_io.close()
+            for key in node.setter_io.keys()
+        ]
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()

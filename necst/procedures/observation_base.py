@@ -64,10 +64,19 @@ class Observation(ABC):
             try:
                 if not privileged:
                     raise NECSTAuthorityError("Couldn't acquire privilege")
+                if "save" in self._kwargs.keys():
+                    savespec = self._kwargs.pop("save")
+                    self.com.record("savespec", save=savespec)
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
-                self.binning(self._kwargs.pop("ch"))
+                if "ch" in self._kwargs.keys():
+                    self.binning(self._kwargs.pop("ch"))
+                if "tp" in self._kwargs:
+                    if "tp_mode" in self._kwargs and "tp_range" in self._kwargs:
+                        tp_mode = self._kwargs.pop("tp_mode")
+                        tp_range = self._kwargs.pop("tp_range")
+                        self.com.record("tp_mode", tp_mode=tp_mode, tp_range=tp_range)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
@@ -75,6 +84,8 @@ class Observation(ABC):
                 self.run(**self._kwargs)
             finally:
                 self.com.record("stop")
+                self.com.record("tp_mode", tp_mode=False, tp_range=[])
+                self.com.record("savespec", save=True)
                 self.com.antenna("stop")
                 self.binning(config.spectrometer.max_ch)  # set max channel number
                 self.com.quit_privilege()

@@ -14,15 +14,22 @@ class ThermometerController(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.logger = self.get_logger()
-        self.io = Thermometer()
+            self.logger = self.get_logger()
+            self.io = Thermometer()
 
-        self.publisher: Dict[str, Publisher] = {}
+            self.publisher: Dict[str, Publisher] = {}
 
-        self.create_timer(1, self.stream)
-        self.create_timer(1, self.check_publisher)
+            self.create_safe_timer(1, self.stream)
+            self.create_safe_timer(1, self.check_publisher)
+            self.logger.info(f"Started {self.NodeName} Node...")
+            for key in self.io.Config.thermometer.channel.keys():
+                self.logger.info(f"{key}: {self.io.get_temp(key)}")
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def check_publisher(self) -> None:
         for name in self.io.Config.thermometer.channel.keys():
@@ -34,3 +41,22 @@ class ThermometerController(DeviceNode):
             temperature = self.io.get_temp(name).to_value("K").item()
             msg = DeviceReading(time=time.time(), value=temperature, id=name)
             publisher.publish(msg)
+
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = ThermometerController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.io.close()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == "__main__":
+    main()
