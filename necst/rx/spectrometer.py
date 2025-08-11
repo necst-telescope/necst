@@ -263,6 +263,7 @@ class SpectralData(DeviceNode):
             time, time_spectrometer, data = _data
 
             if self.tp_mode:
+                data = self.io[key].calc_tp(data, self.tp_range)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
                 msg = Spectral(
