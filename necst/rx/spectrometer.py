@@ -215,7 +215,7 @@ class SpectralData(DeviceNode):
                 return
 
             self.last_data[key] = data_queue.get()
-            timestamp, data = self.last_data[key]
+            timestamp, _time_spectrometer, data = self.last_data[key]
             for board_id, _data in data.items():
                 self.resizers[key][board_id].push(_data, timestamp)
 
@@ -260,7 +260,7 @@ class SpectralData(DeviceNode):
                 )
                 return
 
-            time, data = _data
+            time, time_spectrometer, data = _data
 
             if self.tp_mode:
                 data = self.io[key].calc_tp(data, self.tp_range)
@@ -271,6 +271,7 @@ class SpectralData(DeviceNode):
                     time=time,
                     id=metadata.id,
                     position=metadata.position,
+                    time_spectrometer=time_spectrometer,
                 )
                 fields = msg.get_fields_and_field_types()
                 chunk = [
