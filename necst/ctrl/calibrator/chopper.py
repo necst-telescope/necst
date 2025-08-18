@@ -23,10 +23,7 @@ class ChopperController(DeviceNode):
 
     def move(self, msg: ChopperMsg) -> None:
         self.telemetry()
-        if msg.coord is not None:
-            position = msg.coord
-        else:
-            position = "insert" if msg.insert else "remove"
+        position = "insert" if msg.insert else "remove"
         self.motor.set_step(position, "chopper")
         self.telemetry()
 
