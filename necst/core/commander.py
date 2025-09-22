@@ -1074,16 +1074,21 @@ class Commander(PrivilegedNode):
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP_MODE":
-            self.tp_mode = tp_mode if tp_mode is not None else self.tp_mode
-            self.tp_range = tp_range if tp_range is not None else self.tp_range
+            self.tp_mode: bool = tp_mode if tp_mode is not None else self.tp_mode
+            self.tp_range: list[int] = (
+                tp_range if tp_range is not None else self.tp_range
+            )
             if len(self.tp_range) % 2 != 0:
                 raise ValueError("tp_range must be a list of even number of elements")
             if tp_range:
                 self.tp_mode = True
             elif not tp_mode:
-                self.tp_range = []
-            now = pytime.time()
-            msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range, time=now)
+                self.tp_range = None
+            msg = TPModeMsg(
+                tp_mode=self.tp_mode,
+                tp_range=self.tp_range,
+                time=pytime.time(),
+            )
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
