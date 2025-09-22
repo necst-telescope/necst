@@ -1018,6 +1018,7 @@ class Commander(PrivilegedNode):
         CMD = cmd.upper()
         if CMD == "START":
             if not self.savespec:
+            # TODO revise following proccess
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
