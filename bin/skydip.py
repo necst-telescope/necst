@@ -33,7 +33,16 @@ if __name__ == "__main__":
         type=int,
         help="Number of spectral channels.",
     )
+    p.add_argument(
+        "-t",
+        "--tp_range",
+        type=int,
+        nargs="*",
+        help="enable Total Power mode."
+             "If you want to set multiple ranges, for example -t 100 200 500 600",
+        default=None,
+    )
     args = p.parse_args()
 
-    obs = Skydip(integ_time=args.integ, ch=args.channel)
+    obs = Skydip(integ_time=args.integ, ch=args.channel, tp=args.tp_range)
     obs.execute()
