@@ -1075,7 +1075,7 @@ class Commander(PrivilegedNode):
             return self.publisher["channel_binning"].publish(msg)
         elif CMD == "TP_MODE":
             self.tp_mode: bool = tp_mode if tp_mode is not None else self.tp_mode
-            self.tp_range: list[int] = (
+            self.tp_range: Union[list[int], None] = (
                 tp_range if tp_range is not None else self.tp_range
             )
             if len(self.tp_range) % 2 != 0:
