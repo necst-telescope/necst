@@ -253,7 +253,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.finder.pressure = 0
             self.finder.relative_humidity = 0
 
-        elif not self.direct_mode and msg.id=self.ambient:
+        elif not self.direct_mode and msg.id == self.ambient:
             self.finder.temperature = msg.temperature
             self.finder.pressure = msg.pressure
             self.finder.relative_humidity = msg.humidity
