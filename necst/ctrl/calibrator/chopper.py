@@ -33,10 +33,4 @@ class ChopperController(DeviceNode):
             msg = ChopperMsg(insert=True, time=time.time())
         elif position == config.chopper_motor_position["remove"]:
             msg = ChopperMsg(insert=False, time=time.time())
-        else:
-            self.logger.warning(
-                f"Chopper wheel is off the expected position (={position})",
-                throttle_duration_sec=5,
-            )
-            return
         self.pub.publish(msg)
