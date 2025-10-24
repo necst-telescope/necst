@@ -34,4 +34,3 @@ class ChopperController(DeviceNode):
         elif position == config.chopper_motor_position["remove"]:
             msg = ChopperMsg(insert=False, time=time.time())
         self.pub.publish(msg)
-
