@@ -5,7 +5,7 @@ from neclib.simulators.chopper import ChopperEmulator
 from necst_msgs.msg import ChopperMsg
 from rclpy.node import Node
 
-from necst import config, namespace, topic
+from necst import namespace, topic
 
 
 class ChopperSimulator(Node):
