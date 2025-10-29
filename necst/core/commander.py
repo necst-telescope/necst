@@ -643,7 +643,8 @@ class Commander(PrivilegedNode):
                 msg = ChopperMsg(
                     insert=False,
                     position=config.chopper_motor_position["remove"],
-                    time=pytime.time())
+                    time=pytime.time()
+                    )
                 self.publisher["chopper"].publish(msg)
             else:
                 raise ValueError(f"Unknown command: {cmd!r}")
