@@ -147,10 +147,15 @@ class Observation(ABC):
 
         self.logger.info("Starting HOT...")
         self.com.chopper("insert")
+        print("after insert")
         self.com.metadata("set", position="HOT", id=str(id))
+        print("after metadata")
         time.sleep(integ_time)
+        print("after sleep")
         self.com.metadata("set", position="", id=str(id))
+        print("after metadata2")
         self.com.chopper("remove")
+        print("after remove")
         self.logger.debug("Complete HOT")
 
     def sky(self, integ_time: Union[int, float], id: Any) -> None:
