@@ -9,7 +9,7 @@ from .. import namespace, topic
 from ..core import DeviceNode
 
 
-class SISBias(DeviceNode):
+class Sourcemeter(DeviceNode):
     NodeName = "sourcemeter"
     Namespace = namespace.rx
 
@@ -77,7 +77,7 @@ def main(args=None):
     import rclpy
 
     rclpy.init(args=args)
-    node = SISBias()
+    node = Sourcemeter()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
