@@ -23,12 +23,12 @@ class SISBias(DeviceNode):
 
             self.pub: Dict[str, Publisher] = {}
             self.create_safe_subscription(topic.sis_bias_cmd, self.set_voltage)
-            self.create_safe_timer(1, self.stream) # 0.25 s at sis_bias 
+            self.create_safe_timer(1, self.stream)  # 0.25 s at sis_bias
             self.logger.info(f"Started {self.NodeName} Node...")
 
             self.keys = self.reader_io.Config.keys()
             # ex) sis_channel = ["sis_USB_V", "sis_USB_I", "sis_LSB_V", "sis_LSB_I"]
-            _sis_channel: List[str] = [ id for id in self.keys if id.startswith("sis") ]
+            _sis_channel: List[str] = [id for id in self.keys if id.startswith("sis")]
             # ex) self.channels = set("sis_USB", "sis_LSB")
             self.channels: Set[str] = set(map(lambda x: x[:-2], _sis_channel))
 
@@ -83,7 +83,6 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        # change
         node.reader_io.close()
         _ = [
             node.reader_io[key].close() if None not in key else node.reader_io.close()
