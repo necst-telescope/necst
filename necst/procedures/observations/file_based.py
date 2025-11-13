@@ -31,7 +31,7 @@ class FileBasedObservation(Observation):
         bydirectional = self.obsspec.bydirectional > 0
         reset_scan = self.obsspec.reset_scan > 0
         if reset_scan:
-            direction = self.obsspec.scan_direction.lower
+            direction = self.obsspec.scan_direction.lower()
             start_position = self.obsspec["start_position_" + direction]
             if self.obsspec.relative:
                 delta = (
