@@ -105,7 +105,7 @@ class FileBasedObservation(Observation):
                     self.logger.info("Move to ON...")
                     self.com.antenna(
                         "point",
-                        target=self._coord_to_tuple(waypoint.start) + (waypoint.scan_frame),
+                        target=self._coord_to_tuple(waypoint.start) + (waypoint.scan_frame,),
                         unit="deg",
                     )
                     self.logger.info("Starting ON...")
