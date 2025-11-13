@@ -86,7 +86,8 @@ class FileBasedObservation(Observation):
                         scan_frame=waypoint.scan_frame,
                         speed=waypoint.speed.to_value("deg/s"),
                     )
-
+                if bydirectional:
+                    scan_frag *= -1
             if waypoint.with_offset:
                 kwargs.update(offset=self._coord_to_tuple(waypoint.offset))
 
@@ -102,20 +103,12 @@ class FileBasedObservation(Observation):
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
                     self.logger.info("Move to ON...")
-                    if scan_frag > 0:
-                        self.com.antenna(
-                            "point",
-                            target=self._coord_to_tuple(waypoint.start) + (waypoint.scan_frame,),
-                            unit="deg",
-                        )
-                    else:
-                        self.com.antenna(
-                            "point",
-                            target=self._coord_to_tuple(waypoint.stop) + (waypoint.scan_frame,),
-                            unit="deg",
-                        )
-                    if bydirectional:
-                        scan_frag *= -1
+                    
+                    self.com.antenna(
+                        "point",
+                        target=kwargs.start + (waypoint.scan_frame,),
+                        unit="deg",
+                    )
 
                     self.logger.info("Starting ON...")
                     self.com.metadata(
