@@ -86,8 +86,7 @@ class FileBasedObservation(Observation):
                         scan_frame=waypoint.scan_frame,
                         speed=waypoint.speed.to_value("deg/s"),
                     )
-                if bydirectional:
-                    scan_frag *= -1
+
             if waypoint.with_offset:
                 kwargs.update(offset=self._coord_to_tuple(waypoint.offset))
 
@@ -115,6 +114,8 @@ class FileBasedObservation(Observation):
                             target=self._coord_to_tuple(waypoint.stop) + (waypoint.scan_frame,),
                             unit="deg",
                         )
+                    if bydirectional:
+                        scan_frag *= -1
 
                     self.logger.info("Starting ON...")
                     self.com.metadata(
