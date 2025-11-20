@@ -14,14 +14,20 @@ class LocalAttenuatorController(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
-        self.io = LocalAttenuator()
-        self.publisher: Dict[str, Publisher] = {}
-        topic.local_attenuator_cmd.subscription(self, self.output_current)
-        self.create_timer(1, self.stream)
-        self.create_timer(1, self.check_publisher)
-        self.logger.info(f"Started {self.NodeName} Node...")
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
+            self.logger = self.get_logger()
+            self.io = LocalAttenuator()
+            self.publisher: Dict[str, Publisher] = {}
+            self.create_safe_subscription(
+                topic.local_attenuator_cmd, self.output_current
+            )
+            self.create_safe_timer(1, self.stream)
+            self.create_safe_timer(1, self.check_publisher)
+            self.logger.info(f"Started {self.NodeName} Node...")
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def output_current(self, msg: LocalAttenuatorMsg) -> None:
         if msg.finalize:

@@ -144,6 +144,7 @@ class topic:
         DomeOC,
         DomeLimit,
         TimeOnly,
+        TPModeMsg,
     )
 
     from .utils import Topic
@@ -208,6 +209,9 @@ class topic:
     lo_signal = Topic(LocalSignal, "lo_signal", qos.realtime, namespace.rx, True)
     clock = Topic(Clock, "clock", qos.realtime, namespace.root)
     thermometer = Topic(DeviceReading, "thermometer", qos.realtime, namespace.rx, True)
+    analog_logger = Topic(
+        DeviceReading, "analog_logger", qos.realtime, namespace.rx, True
+    )
     attenuator = Topic(DeviceReading, "attenuator", qos.realtime, namespace.rx, True)
     attenuator_cmd = Topic(DeviceReading, "attenuator_cmd", qos.reliable, namespace.rx)
     local_attenuator = Topic(
@@ -264,6 +268,7 @@ class topic:
     com_delay_get_time = Topic(
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
+    tp_mode = Topic(TPModeMsg, "tp_mode", qos.realtime, namespace.core)
 
 
 class service:
