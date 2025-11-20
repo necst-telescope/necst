@@ -29,7 +29,7 @@ class FileBasedObservation(Observation):
 
     def run(self, file: Union[os.PathLike, str, IO]) -> None:
         scan_frag = 1
-        
+
         bydirectional = self.obsspec.bydirectional > 0
         reset_scan = self.obsspec.reset_scan > 0
         margin = config.antenna.scan_margin.value
@@ -108,7 +108,7 @@ class FileBasedObservation(Observation):
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
                     self.logger.info("Move to ON...")
-                    
+                  
                     start = kwargs["start"]
                     reference = kwargs["reference"]
                     start_position = (start[0]+reference[0], start[1]+reference[1])

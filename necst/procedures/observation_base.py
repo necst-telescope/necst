@@ -89,7 +89,7 @@ class Observation(ABC):
                 self.com.antenna("stop")
                 if hasattr(config, "spectrometer"):
                     for key in config.spectrometer.keys():
-                        self.binning(config.spectrometer[key].max_ch)  # set max channel number
+                        self.binning(config.spectrometer[key].max_ch)
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60
