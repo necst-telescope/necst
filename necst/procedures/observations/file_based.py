@@ -111,19 +111,18 @@ class FileBasedObservation(Observation):
                     
                     start = kwargs["start"]
                     reference = kwargs["reference"]
-                    target = (start[0]+reference[0], start[1]+reference[1]) + (waypoint.scan_frame,)
+                    start_position = (start[0]+reference[0], start[1]+reference[1])
+                    target = start_position + (waypoint.scan_frame,)
                     offset_margin = scan_frag*margin
                     if direction == "x":
-                        offset = [offset_margin, 0]
+                        offset_position = (offset_margin, 0)
                     elif direction == "y":
-                        offset = [0, offset_margin]
+                        offset_position = (0, offset_margin)
                     self.com.antenna(
                         "point",
                         target=target,
                         unit="deg",
-                        offset_lon=offset[0],
-                        offset_lat=offset[1],
-                        offset_frame=waypoint.scan_frame
+                        offset=offset_position + (waypoint.scan_frame,),
                     )
 
                     self.logger.info("Starting ON...")
