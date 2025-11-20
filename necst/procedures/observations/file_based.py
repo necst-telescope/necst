@@ -8,6 +8,7 @@ from neclib.coordinates.observations.observation_spec_base import (
 )
 
 from ..observation_base import Observation
+from ... import config
 
 
 class FileBasedObservation(Observation):
@@ -31,6 +32,7 @@ class FileBasedObservation(Observation):
         
         bydirectional = self.obsspec.bydirectional > 0
         reset_scan = self.obsspec.reset_scan > 0
+        margin = config.antenna.scan_margin.value
 
         print(f"check: {bydirectional}, {reset_scan}")
         if reset_scan:
@@ -107,13 +109,15 @@ class FileBasedObservation(Observation):
                 if waypoint.is_scan:
                     self.logger.info("Move to ON...")
                     
-                    target = kwargs["start"] + (waypoint.scan_frame,)
+                    start = kwargs["start"]
+                    reference = kwargs["reference"]
+                    target = (start[0]+reference[0], start[1]+reference[1]) + (waypoint.scan_frame,)
+
                     print(f"target: {target}")
                     self.com.antenna(
                         "point",
                         target=target,
                         unit="deg",
-                        reference = kwargs["reference"]
                     )
 
                     self.logger.info("Starting ON...")
