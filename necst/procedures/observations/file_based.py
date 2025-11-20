@@ -113,7 +113,6 @@ class FileBasedObservation(Observation):
                     reference = kwargs["reference"]
                     target = (start[0]+reference[0], start[1]+reference[1]) + (waypoint.scan_frame,)
 
-                    print(f"target: {target}")
                     self.com.antenna(
                         "point",
                         target=target,
