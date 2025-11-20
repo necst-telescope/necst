@@ -107,9 +107,11 @@ class FileBasedObservation(Observation):
                 if waypoint.is_scan:
                     self.logger.info("Move to ON...")
                     
+                    target = kwargs["start"] + (waypoint.scan_frame,)
+                    print(f"target: {target}")
                     self.com.antenna(
                         "point",
-                        target=kwargs["start"] + (waypoint.scan_frame,),
+                        target=target,
                         unit="deg",
                     )
 
@@ -117,6 +119,7 @@ class FileBasedObservation(Observation):
                     self.com.metadata(
                         "set", position="ON", id=waypoint.id, intercept=False
                     )
+                    print(kwargs)
                     self.com.antenna("scan", **kwargs)
                     self.com.metadata("set", position="", id="")
                 else:
