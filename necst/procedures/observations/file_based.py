@@ -113,6 +113,7 @@ class FileBasedObservation(Observation):
                         "point",
                         target=target,
                         unit="deg",
+                        reference = kwargs["reference"]
                     )
 
                     self.logger.info("Starting ON...")
