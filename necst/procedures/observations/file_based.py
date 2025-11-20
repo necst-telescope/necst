@@ -28,8 +28,11 @@ class FileBasedObservation(Observation):
 
     def run(self, file: Union[os.PathLike, str, IO]) -> None:
         scan_frag = 1
+        
         bydirectional = self.obsspec.bydirectional > 0
         reset_scan = self.obsspec.reset_scan > 0
+
+        print(f"check: {bydirectional}, {reset_scan}")
         if reset_scan:
             direction = self.obsspec.scan_direction.lower()
             start_position = self.obsspec["start_position_" + direction]
