@@ -107,8 +107,7 @@ class FileBasedObservation(Observation):
 
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
-                    self.logger.info("Move to ON...")
-                  
+                    self.logger.info("Move to ON...")                
                     start = kwargs["start"]
                     reference = kwargs["reference"]
                     start_position = (start[0]+reference[0], start[1]+reference[1])
