@@ -107,7 +107,7 @@ class FileBasedObservation(Observation):
 
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
-                    self.logger.info("Move to ON...") 
+                    self.logger.info("Move to ON...")
 
                     start = kwargs["start"]
                     reference = kwargs["reference"]
@@ -118,7 +118,7 @@ class FileBasedObservation(Observation):
                     if direction == "x":
                         offset_position = (-offset_margin, 0)
                     elif direction == "y":
-                        offset_position = (0, -offset_margin)                       
+                        offset_position = (0, -offset_margin)                      
                     self.com.antenna(
                         "point",
                         target=target,
