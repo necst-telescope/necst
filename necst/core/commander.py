@@ -1,6 +1,7 @@
 """Interface to send command to any remotely controlled part of telescope."""
 
 import time as pytime
+import math
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Literal, Optional, Tuple, Union
@@ -486,10 +487,10 @@ class Commander(PrivilegedNode):
                 pytime.sleep(0.5)
             req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_sync"])
-            print(f"{res.check} DomeController Synced")
+
             req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_pid_sync"])
-            print(f"{res.check} DomePIDController Synced")
+            self.logger.info(f"Dome sync status: {res.check}")
             return res.check
         elif CMD == "STOP":
             msg = AlertMsg(critical=True, warning=True, target=[namespace.dome])
@@ -1095,6 +1096,29 @@ class Commander(PrivilegedNode):
             TimeOnly(input_topic_time=pytime.time(), output_topic_time=pytime.time())
         )
 
+    def wait_device(
+        self,
+        target: Literal["sis"],
+        value: Optional[Union[int, float]] = None,
+        range: Optional[Union[int, float]] = None,
+        id: Optional[Union[str, list[str]]] = None,
+    ):
+        if target == "sis":
+            check = {i: False for i in id}
+            while False in check.values():
+                values = self.get_message("sis_bias")
+                for id in check.keys():
+                    mes = values[f"sis_bias.{id}"].voltage
+                    print(f"{id}, {mes}")
+                    if math.isclose(mes, value, abs_tol=range):
+                        check[id] = True
+                    else:
+                        continue
+                print(check)
+                pytime.sleep(0.01)
+        else:
+            raise ValueError(f"Unkown device: {target}")
+
     @require_privilege(escape_cmd=["?"])
     def sis_bias(
         self,
@@ -1103,6 +1127,8 @@ class Commander(PrivilegedNode):
         *,
         mV: Optional[Union[int, float]] = None,
         id: Optional[Union[str, list[str]]] = None,
+        thresh: Optional[Union[int, float]] = 0.199,
+        wait: bool = False,
     ) -> None:
         """Control the SIS bias voltage.
 
@@ -1137,6 +1163,8 @@ class Commander(PrivilegedNode):
             self.publisher["sis_bias"].publish(
                 SISBias(voltage=float(mV), id=id, time=pytime.time())
             )
+            if wait:
+                self.wait_device("sis", mV, thresh, id)
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)
         elif CMD == "FINALIZE":
