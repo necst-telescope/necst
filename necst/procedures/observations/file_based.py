@@ -109,7 +109,7 @@ class FileBasedObservation(Observation):
                     
                     self.com.antenna(
                         "point",
-                        target=kwargs.start + (waypoint.scan_frame,),
+                        target=kwargs["start"] + (waypoint.scan_frame,),
                         unit="deg",
                     )
 
