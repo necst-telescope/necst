@@ -115,9 +115,9 @@ class FileBasedObservation(Observation):
                     target = start_position + (waypoint.scan_frame,)
                     offset_margin = scan_frag*margin
                     if direction == "x":
-                        offset_position = (offset_margin, 0)
+                        offset_position = (-offset_margin, 0)
                     elif direction == "y":
-                        offset_position = (0, offset_margin)
+                        offset_position = (0, -offset_margin)
                     self.com.antenna(
                         "point",
                         target=target,
