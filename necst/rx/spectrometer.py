@@ -169,7 +169,7 @@ class SpectralData(DeviceNode):
             record_chan = msg.ch
             io.change_spec_ch(record_chan)
             self.logger.info(
-                f"{key}'s Record channel number changed; {record_chan} ch data will be saved"
+                f"{key}'s channel number changed; {record_chan} ch data will be saved"
             )
 
     def update_control_status(self, msg: ControlStatus) -> None:
