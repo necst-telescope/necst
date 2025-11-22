@@ -73,10 +73,15 @@ class Observation(ABC):
                 if "ch" in self._kwargs.keys():
                     self.binning(self._kwargs.pop("ch"))
                 if "tp" in self._kwargs:
-                    if "tp_mode" in self._kwargs and "tp_range" in self._kwargs:
-                        tp_mode = self._kwargs.pop("tp_mode")
-                        tp_range = self._kwargs.pop("tp_range")
-                        self.com.record("tp_mode", tp_mode=tp_mode, tp_range=tp_range)
+                    # if "tp_mode" in self._kwargs and "tp_range" in self._kwargs:
+                    #     tp_mode = self._kwargs.pop("tp_mode")
+                    #     tp_range = self._kwargs.pop("tp_range")
+                    # self.com.record("tp_mode", tp_mode=tp_mode, tp_range=tp_range)
+                    tp_range = self._kwargs.pop("tp")
+                    if tp_range:
+                        self.com.record("tp_mode", tp_mode=True, tp_range=tp_range)
+                    elif tp_range is None:
+                        self.com.record("tp_mode", tp_mode=False)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
@@ -88,6 +93,7 @@ class Observation(ABC):
                 self.run(**self._kwargs)
             finally:
                 self.com.record("stop")
+                # TODO tp_range=None
                 self.com.record("tp_mode", tp_mode=False, tp_range=[])
                 self.com.record("savespec", save=True)
                 self.com.antenna("stop")
