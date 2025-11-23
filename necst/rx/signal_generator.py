@@ -24,6 +24,7 @@ class SignalGeneratorController(DeviceNode):
             self.create_safe_subscription(topic.lo_signal_cmd, self.set_param)
             self.create_safe_timer(1, self.stream)
             self.create_safe_timer(1, self.check_publisher)
+            self.create_safe_timer(1, self.check_status)
             self.logger.info(f"Started {self.NodeName} Node...")
             for key in self.io.keys():
                 self.logger.info(
@@ -66,6 +67,12 @@ class SignalGeneratorController(DeviceNode):
                 id=name,
             )
             publisher.publish(msg)
+
+    def check_status(self):
+        if self.io.check_reference_status():
+            pass
+        else:
+            self.logger.warning("WARNING: using internal reference")
 
 
 def main(args=None):
