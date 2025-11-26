@@ -2,13 +2,21 @@ import rclpy
 from rclpy.executors import SingleThreadedExecutor
 
 from ..rx.sis_bias import SISBias
+from ..rx.sourcemeter import Sourcemeter
+from .. import config
 
 
 def configure_executor() -> SingleThreadedExecutor:
     executor = SingleThreadedExecutor()
-    nodes = [
-        SISBias(),
-    ]
+    try:
+        if config.sis_bias_reader.sis_USB._ == "KEITHLEY2450":
+            nodes = [
+                Sourcemeter(),
+            ]
+    except AttributeError:
+        nodes = [
+            SISBias(),
+        ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
 
