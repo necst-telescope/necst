@@ -26,10 +26,10 @@ class Sourcemeter(DeviceNode):
             self.create_safe_timer(1, self.stream)  # 0.25 s at sis_bias
             self.logger.info(f"Started {self.NodeName} Node...")
 
-            self.keys = self.reader_io.Config.keys()
+            self.keys = list(self.reader_io.Config.keys())
 
             data: Dict[str] = self.reader_io.get_all(target="sis")
-            for ch in self.keys():
+            for ch in self.keys:
                 self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
@@ -38,7 +38,7 @@ class Sourcemeter(DeviceNode):
 
     def stream(self) -> None:
         data: Dict[str, float] = self.reader_io.get_all(target="sis")
-        for id in self.keys():
+        for id in self.keys:
             current = data[f"{id}_I"].to_value("uA").item()
             voltage = data[f"{id}_V"].to_value("mV").item()
             msg = SISBiasMsg(
