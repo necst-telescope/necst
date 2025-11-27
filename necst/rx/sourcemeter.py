@@ -30,13 +30,15 @@ class Sourcemeter(DeviceNode):
             # ex) sis_channel = ["sis_USB_V", "sis_USB_I", "sis_LSB_V", "sis_LSB_I"]
             _sis_channel = self.reader_io.Config.channel()
             self.channels: Set[str] = set(id for id in _sis_channel if id.startswith("sis"))
+            print(self.channels)
 
             data: Dict[str] = self.reader_io.get_all(target="sis")
             for ch in self.channels:
-                self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
+                self.logger.info(f"{ch}: {data[ch]}, {data[ch]}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
+            raise e
 
     def stream(self) -> None:
         data: Dict[str, float] = self.reader_io.get_all(target="sis")
