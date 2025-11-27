@@ -30,7 +30,7 @@ class Sourcemeter(DeviceNode):
 
             data: Dict[str] = self.reader_io.get_all(target="sis")
             for ch in self.keys():
-                self.logger.info(f"{ch}: {data[ch+"_V"]}, {data[ch+"_I"]}")
+                self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
