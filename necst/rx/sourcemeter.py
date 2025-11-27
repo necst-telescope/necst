@@ -28,9 +28,8 @@ class Sourcemeter(DeviceNode):
 
             self.keys = self.reader_io.Config.keys()
             # ex) sis_channel = ["sis_USB_V", "sis_USB_I", "sis_LSB_V", "sis_LSB_I"]
-            _sis_channel: List[str] = [id for id in self.keys if id.startswith("sis")]
-            # ex) self.channels = set("sis_USB", "sis_LSB")
-            self.channels: Set[str] = set(map(lambda x: x[:-2], _sis_channel))
+            _sis_channel = self.reader_io.Config.channel()
+            self.channels: Set[str] = set(id for id in _sis_channel if id.startswith("sis"))
 
             data: Dict[str] = self.reader_io.get_all(target="sis")
             for ch in self.channels:
