@@ -19,18 +19,32 @@ class Sourcemeter(DeviceNode):
             self.logger = self.get_logger()
 
             self.reader_io: Dict[Optional[str], object] = SisBiasReader()
+            print(self.reader_io)
             # self.setter_io = SisBiasSetter()
 
             self.pub: Dict[str, Publisher] = {}
             self.create_safe_subscription(topic.sis_bias_cmd, self.set_voltage)
-            self.create_safe_timer(1, self.stream)  # 0.25 s at sis_bias
+            self.create_safe_timer(1, self.stream)
             self.logger.info(f"Started {self.NodeName} Node...")
 
+            # self.keys = ["sis_USB", "sis_LSB"]
             self.keys = list(self.reader_io.Config.keys())
 
-            data: Dict[str] = self.reader_io.get_all(target="sis")
-            for ch in self.keys:
-                self.logger.info(f"{ch}: {data[ch+'_V']}, {data[ch+'_I']}")
+            """
+            data = {
+            "sis_USB": {
+                'sis_USB_V': <Quantity -1.129927e-06 mV>,
+                'sis_USB_I': <Quantity 2.449562e-06 uA>
+                }, 
+            "sis_LSB": {
+                'sis_LSB_V': <Quantity -1.129927e-06 mV>,
+                'sis_LSB_I': <Quantity 2.449562e-06 uA> 
+                }
+            }
+            """
+            data: Dict[str, Dict] = self.reader_io.get_all(target="sis")
+            for id, data_dict in data.items():
+                self.logger.info(f"{id}: {data_dict[id+'_V']}, {data_dict[id+'_I']}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
@@ -38,12 +52,13 @@ class Sourcemeter(DeviceNode):
 
     def stream(self) -> None:
         data: Dict[str, float] = self.reader_io.get_all(target="sis")
-        for id in self.keys:
-            current = data[f"{id}_I"].to_value("uA").item()
-            voltage = data[f"{id}_V"].to_value("mV").item()
+        for id, data_dict in data.items():
+            current = data_dict[f"{id}_I"].to_value("uA").item()
+            voltage = data_dict[f"{id}_V"].to_value("mV").item()
             msg = SISBiasMsg(
                 time=time.time(), current=current, voltage=voltage, id=[id]
             )
+            print([id])
             if id not in self.pub:
                 self.pub[id] = topic.sis_bias[id].publisher(self)
             self.pub[id].publish(msg)
