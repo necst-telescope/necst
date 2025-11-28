@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Set, Optional
+from typing import Dict, Optional
 
 from neclib.devices import SisBiasReader
 from necst_msgs.msg import SISBias as SISBiasMsg
@@ -35,10 +35,10 @@ class Sourcemeter(DeviceNode):
             "sis_USB": {
                 'sis_USB_V': <Quantity -1.129927e-06 mV>,
                 'sis_USB_I': <Quantity 2.449562e-06 uA>
-                }, 
+                },
             "sis_LSB": {
                 'sis_LSB_V': <Quantity -1.129927e-06 mV>,
-                'sis_LSB_I': <Quantity 2.449562e-06 uA> 
+                'sis_LSB_I': <Quantity 2.449562e-06 uA>
                 }
             }
             """
