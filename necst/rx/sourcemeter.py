@@ -48,7 +48,6 @@ class Sourcemeter(DeviceNode):
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
-            raise e
 
     def stream(self) -> None:
         data: Dict[str, float] = self.reader_io.get_all(target="sis")
@@ -56,9 +55,8 @@ class Sourcemeter(DeviceNode):
             current = data_dict[f"{id}_I"].to_value("uA").item()
             voltage = data_dict[f"{id}_V"].to_value("mV").item()
             msg = SISBiasMsg(
-                time=time.time(), current=current, voltage=voltage, id=[id]
+                time=time.time(), current=current, voltage=voltage, id=id
             )
-            print([id])
             if id not in self.pub:
                 self.pub[id] = topic.sis_bias[id].publisher(self)
             self.pub[id].publish(msg)

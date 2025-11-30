@@ -13,7 +13,7 @@ def configure_executor() -> SingleThreadedExecutor:
             nodes = [
                 Sourcemeter(),
             ]
-    except AttributeError:
+    except Exception:
         nodes = [
             SISBias(),
         ]
