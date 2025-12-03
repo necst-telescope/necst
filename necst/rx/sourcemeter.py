@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Optional
+from typing import List, Dict, Optional
 
 from neclib.devices import SisBiasReader
 from necst_msgs.msg import SISBias as SISBiasMsg
@@ -55,7 +55,7 @@ class Sourcemeter(DeviceNode):
             current = data_dict[f"{id}_I"].to_value("uA").item()
             voltage = data_dict[f"{id}_V"].to_value("mV").item()
             msg = SISBiasMsg(
-                time=time.time(), current=current, voltage=voltage, id=id
+                time=time.time(), current=current, voltage=voltage, id=[id]
             )
             if id not in self.pub:
                 self.pub[id] = topic.sis_bias[id].publisher(self)
@@ -63,11 +63,11 @@ class Sourcemeter(DeviceNode):
             time.sleep(0.01)
 
     def set_voltage(self, msg: SISBiasMsg) -> None:
-        id = msg.id
+        id: List = msg.id
         if msg.finalize:
             self.reader_io.finalize()
             return
-        else:
+        elif self.reader_io.Config.keys() == id[0]:
             self.reader_io[id].set_voltage(mV=msg.voltage, id=id)
             self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
             time.sleep(0.01)
