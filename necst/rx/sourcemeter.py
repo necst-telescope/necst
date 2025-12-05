@@ -14,39 +14,39 @@ class Sourcemeter(DeviceNode):
     Namespace = namespace.rx
 
     def __init__(self) -> None:
-        # try:
-        super().__init__(self.NodeName, namespace=self.Namespace)
-        self.logger = self.get_logger()
+        try:
+            super().__init__(self.NodeName, namespace=self.Namespace)
+            self.logger = self.get_logger()
 
-        self.reader_io: Dict[Optional[str], object] = SisBiasReader()
-        # self.setter_io = SisBiasSetter()
+            self.reader_io: Dict[Optional[str], object] = SisBiasReader()
+            # self.setter_io = SisBiasSetter()
 
-        self.pub: Dict[str, Publisher] = {}
-        self.create_safe_subscription(topic.sis_bias_cmd, self.set_voltage)
-        self.create_safe_timer(1, self.stream)
-        self.logger.info(f"Started {self.NodeName} Node...")
+            self.pub: Dict[str, Publisher] = {}
+            self.create_safe_subscription(topic.sis_bias_cmd, self.set_voltage)
+            self.create_safe_timer(1, self.stream)
+            self.logger.info(f"Started {self.NodeName} Node...")
 
-        # self.keys = ["sis_USB", "sis_LSB"]
-        self.keys = list(self.reader_io.Config.keys())
+            # self.keys = ["sis_USB", "sis_LSB"]
+            self.keys = list(self.reader_io.Config.keys())
 
-        """
-        data = {
-        "sis_USB": {
-            'sis_USB_V': <Quantity -1.129927e-06 mV>,
-            'sis_USB_I': <Quantity 2.449562e-06 uA>
-            },
-        "sis_LSB": {
-            'sis_LSB_V': <Quantity -1.129927e-06 mV>,
-            'sis_LSB_I': <Quantity 2.449562e-06 uA>
+            """
+            data = {
+            "sis_USB": {
+                'sis_USB_V': <Quantity -1.129927e-06 mV>,
+                'sis_USB_I': <Quantity 2.449562e-06 uA>
+                },
+            "sis_LSB": {
+                'sis_LSB_V': <Quantity -1.129927e-06 mV>,
+                'sis_LSB_I': <Quantity 2.449562e-06 uA>
+                }
             }
-        }
-        """
-        data: Dict[str, Dict] = self.reader_io.get_all(target="sis")
-        for id, data_dict in data.items():
-            self.logger.info(f"{id}: {data_dict[id+'_V']}, {data_dict[id+'_I']}")
-        # except Exception as e:
-        #     self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
-        #     self.destroy_node()
+            """
+            data: Dict[str, Dict] = self.reader_io.get_all(target="sis")
+            for id, data_dict in data.items():
+                self.logger.info(f"{id}: {data_dict[id+'_V']}, {data_dict[id+'_I']}")
+        except Exception as e:
+            self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
+            self.destroy_node()
 
     def stream(self) -> None:
         data: Dict[str, float] = self.reader_io.get_all(target="sis")
