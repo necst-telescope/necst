@@ -67,7 +67,7 @@ class Sourcemeter(DeviceNode):
         if msg.finalize:
             self.reader_io.finalize()
             return
-        elif self.reader_io.Config.keys() == id[0]:
+        elif self.keys in id[0]:
             self.reader_io[id[0]].set_voltage(mV=msg.voltage)
             self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
             time.sleep(0.01)
