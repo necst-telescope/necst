@@ -62,14 +62,22 @@ class Sourcemeter(DeviceNode):
             time.sleep(0.01)
 
     def set_voltage(self, msg: SISBiasMsg) -> None:
-        id: List = msg.id
         if msg.finalize:
-            self.reader_io.finalize()
+            self.setter_io.finalize()
             return
-        elif id[0] in self.keys:
-            self.reader_io[id[0]].set_voltage(mV=msg.voltage)
-            self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
-            time.sleep(0.01)
+        else:
+            if None in self.keys:
+                for id in msg.id:
+                    self.reader_io.set_voltage(mV=msg.voltage, id=id)
+            else:
+                for id in msg.id:
+                    for key in self.keys:
+                        ch = self.reader_io[key].Config.channel.keys()
+                        if id in ch:
+                            self.reader_io[key].set_voltage(mV=msg.voltage, id=id)
+                            break
+                        else:
+                            continue
 
 
 def main(args=None):
