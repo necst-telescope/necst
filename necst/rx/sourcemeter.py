@@ -17,7 +17,7 @@ class Sourcemeter(DeviceNode):
         try:
             super().__init__(self.NodeName, namespace=self.Namespace)
             self.logger = self.get_logger()
-
+            self.logger.info(f"{self.NodeName.upper()} is started.")
             self.reader_io: Dict[Optional[str], object] = SisBiasReader()
             # self.setter_io = SisBiasSetter()
 
