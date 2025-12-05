@@ -9,7 +9,7 @@ from .. import config
 def configure_executor() -> SingleThreadedExecutor:
     executor = SingleThreadedExecutor()
     try:
-        if config.sis_bias_reader.sis_USB._ == "KEITHLEY2450":
+        if "KEITHLEY2450" in config.sis_bias_reader.values():
             nodes = [
                 Sourcemeter(),
             ]
