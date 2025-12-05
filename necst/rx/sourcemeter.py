@@ -40,18 +40,18 @@ class Sourcemeter(DeviceNode):
                 }
             }
             """
-            data: Dict[str, Dict] = self.reader_io.get_all(target="sis")
+            data: Dict[str, Dict] = self.reader_io.get_all()
             for id, data_dict in data.items():
-                self.logger.info(f"{id}: {data_dict[id+'_V']}, {data_dict[id+'_I']}")
+                self.logger.info(f"{id}: {data_dict['sis_'+id+'_V']}, {data_dict['sis_'+id+'_I']}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
 
     def stream(self) -> None:
-        data: Dict[str, float] = self.reader_io.get_all(target="sis")
+        data: Dict[str, float] = self.reader_io.get_all()
         for id, data_dict in data.items():
-            current = data_dict[f"{id}_I"].to_value("uA").item()
-            voltage = data_dict[f"{id}_V"].to_value("mV").item()
+            current = data_dict[f"sis_{id}_I"].to_value("uA").item()
+            voltage = data_dict[f"sis_{id}_V"].to_value("mV").item()
             msg = SISBiasMsg(
                 time=time.time(), current=current, voltage=voltage, id=[id]
             )
@@ -72,11 +72,11 @@ class Sourcemeter(DeviceNode):
                 for id in msg.id:
                     if id in self.keys:
                         self.reader_io[id].set_voltage(mV=msg.voltage)
+                        self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
+                        time.sleep(0.01)
                         break
                     else:
                         continue
-            self.logger.info(f"Set voltage {msg.voltage} mV for ch {msg.id}")
-            time.sleep(0.01)
 
 
 def main(args=None):
