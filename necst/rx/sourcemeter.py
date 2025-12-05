@@ -71,13 +71,11 @@ class Sourcemeter(DeviceNode):
                     self.reader_io.set_voltage(mV=msg.voltage, id=id)
             else:
                 for id in msg.id:
-                    for key in self.keys:
-                        ch = self.reader_io[key].Config.channel.keys()
-                        if id in ch:
-                            self.reader_io[key].set_voltage(mV=msg.voltage, id=id)
-                            break
-                        else:
-                            continue
+                    if id in self.keys:
+                        self.reader_io[id].set_voltage(mV=msg.voltage, id=id)
+                        break
+                    else:
+                        continue
 
 
 def main(args=None):
