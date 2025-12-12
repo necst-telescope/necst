@@ -42,7 +42,7 @@ class Sourcemeter(DeviceNode):
             data: Dict[str, Dict] = self.reader_io.get_all()
             for id, data_dict in data.items():
                 self.dict_key = id if id.startswith("sis") else f"sis_{id}"
-                self.logger.info(f"{id}: {data_dict[dict_key+'_V']}, {data_dict[dict_key+'_I']}")
+                self.logger.info(f"{id}: {data_dict[self.dict_key+'_V']}, {data_dict[self.dict_key+'_I']}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
@@ -75,7 +75,7 @@ class Sourcemeter(DeviceNode):
                         time.sleep(0.01)
                         break
                     else:
-                        self.logger.waring(f"Invalid channel {msg.id}")
+                        self.logger.error(f"Invalid channel {msg.id}")
 
 
 def main(args=None):
