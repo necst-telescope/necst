@@ -41,7 +41,7 @@ class Sourcemeter(DeviceNode):
             """
             data: Dict[str, Dict] = self.reader_io.get_all()
             for id, data_dict in data.items():
-                dict_key = id if id.startswith("sis") else f"sis_{id}"
+                self.dict_key = id if id.startswith("sis") else f"sis_{id}"
                 self.logger.info(f"{id}: {data_dict[dict_key+'_V']}, {data_dict[dict_key+'_I']}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
@@ -50,8 +50,8 @@ class Sourcemeter(DeviceNode):
     def stream(self) -> None:
         data: Dict[str, float] = self.reader_io.get_all()
         for id, data_dict in data.items():
-            current = data_dict[f"sis_{id}_I"].to_value("uA").item()
-            voltage = data_dict[f"sis_{id}_V"].to_value("mV").item()
+            current = data_dict[f"{self.dict_key}_I"].to_value("uA").item()
+            voltage = data_dict[f"{self.dict_key}_V"].to_value("mV").item()
             msg = SISBiasMsg(
                 time=time.time(), current=current, voltage=voltage, id=[id]
             )
