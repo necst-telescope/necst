@@ -25,7 +25,6 @@ class Sourcemeter(DeviceNode):
             self.create_safe_timer(1, self.stream)
             self.logger.info(f"Started {self.NodeName} Node...")
 
-            # self.keys = ["sis_USB", "sis_LSB"]
             self.keys = list(self.reader_io.Config.keys())
 
             """
@@ -42,7 +41,8 @@ class Sourcemeter(DeviceNode):
             """
             data: Dict[str, Dict] = self.reader_io.get_all()
             for id, data_dict in data.items():
-                self.logger.info(f"{id}: {data_dict['sis_'+id+'_V']}, {data_dict['sis_'+id+'_I']}")
+                dict_key = id if id.startswith("sis") else f"sis_{id}"
+                self.logger.info(f"{id}: {data_dict[dict_key+'_V']}, {data_dict[dict_key+'_I']}")
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
@@ -62,7 +62,6 @@ class Sourcemeter(DeviceNode):
 
     def set_voltage(self, msg: SISBiasMsg) -> None:
         if msg.finalize:
-            self.setter_io.finalize()
             return
         else:
             if None in self.keys:
@@ -76,7 +75,7 @@ class Sourcemeter(DeviceNode):
                         time.sleep(0.01)
                         break
                     else:
-                        continue
+                        self.logger.waring(f"Invalid channel {msg.id}")
 
 
 def main(args=None):
