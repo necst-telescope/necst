@@ -62,6 +62,7 @@ class Sourcemeter(DeviceNode):
 
     def set_voltage(self, msg: SISBiasMsg) -> None:
         if msg.finalize:
+            self.reader_io.finalize()
             return
         else:
             if None in self.keys:
