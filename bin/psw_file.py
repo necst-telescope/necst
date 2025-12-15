@@ -6,7 +6,7 @@ The number of channel can be set 2^n.
 
 Examples
 --------
-$ necst otf -f "otf_orikl.toml"
+$ necst psw_file -f "otf_orikl.toml"
 
 """
 
