@@ -1,4 +1,4 @@
-from .file_based import OTF, RadioPointing  # noqa: F401
+from .file_based import OTF, RadioPointing, PSW  # noqa: F401
 from .hot_monitor import HotMonitor  # noqa: F401
 from .optical_pointing import OpticalPointing  # noqa: F401
 from .rsky import RSky  # noqa: F401
