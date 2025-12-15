@@ -69,10 +69,11 @@ class SignalGeneratorController(DeviceNode):
             publisher.publish(msg)
 
     def check_status(self):
-        if self.io.check_reference_status():
-            pass
-        else:
-            self.logger.warning("WARNING: using internal reference")
+        for name, _value in self.io.items():
+            if self.io[name].check_reference_status():
+                pass
+            else:
+                print("warning")
 
 
 def main(args=None):
