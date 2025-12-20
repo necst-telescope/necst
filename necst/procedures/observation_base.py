@@ -94,7 +94,7 @@ class Observation(ABC):
                 if hasattr(config, "spectrometer"):
                     for key in config.spectrometer.keys():
                         self.binning(config.spectrometer[key].max_ch)
-                # self.binning(config.spectrometer.max_ch)  # set max channel number
+                self.binning(config.spectrometer.max_ch)  # set max channel number
                 if hasattr(config, "dome"):
                     self.com.dome("close")
                     self.logger.info("Dome closed")
