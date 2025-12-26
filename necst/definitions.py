@@ -170,7 +170,7 @@ class topic:
     manual_stop_alert = Topic(
         AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
     )
-    weather = Topic(WeatherMsg, "ambient", qos.realtime, namespace.weather)
+    weather = Topic(WeatherMsg, "ambient", qos.realtime, namespace.weather, True)
     antenna_motor_speed = Topic(
         TimedAzElFloat64, "actual_speed", qos.realtime, namespace.antenna
     )

@@ -37,6 +37,7 @@ class HorizontalCoord(AlertHandlerNode):
                 drive_limit.critical_limit_el, drive_limit.warning_limit_el
             ),
         }
+        self.ambient = config.ambient_id
 
         self.publisher = topic.altaz_cmd.publisher(self)
         topic.antenna_encoder.subscription(self, self._update_enc)
@@ -252,7 +253,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.finder.pressure = 0
             self.finder.relative_humidity = 0
 
-        else:
+        elif not self.direct_mode and msg.id == self.ambient:
             self.finder.temperature = msg.temperature
             self.finder.pressure = msg.pressure
             self.finder.relative_humidity = msg.humidity
