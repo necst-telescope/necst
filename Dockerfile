@@ -1,4 +1,4 @@
-ARG DISTRO=Jazzy
+ARG DISTRO=jazzy
 FROM ros:${DISTRO}-ros-base
 ARG DISTRO
 
@@ -21,10 +21,10 @@ RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescop
 RUN pip install ipython
 
 RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
-    && . /opt/ros/Jazzy/setup.bash \
+    && . /opt/ros/jazzy/setup.bash \
     && ( cd $ROS2_WS && colcon build --symlink-install ) \
     && . $ROS2_WS/install/setup.bash \
-    && echo ". /opt/ros/Jazzy/setup.bash" >> /root/.bashrc \
+    && echo ". /opt/ros/jazzy/setup.bash" >> /root/.bashrc \
     && echo ". $ROS2_WS/install/setup.bash" >> /root/.bashrc \
     && echo "PS1='\[\033[1;36m\][NECST]\[\033[0m\]\w\$ '" >> /root/.bashrc \
     && echo -e 'PATH=$ROS2_WS/src/necst/bin:$PATH' >> /root/.bashrc \
