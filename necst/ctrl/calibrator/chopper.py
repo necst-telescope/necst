@@ -42,5 +42,5 @@ class ChopperController(DeviceNode):
                 f"Chopper wheel is off the expected position (={position})",
                 throttle_duration_sec=5,
             )
-            return
+            msg = ChopperMsg(insert=True, position=position, time=time.time())
         self.pub.publish(msg)
