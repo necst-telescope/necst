@@ -2,6 +2,7 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
 from ..ctrl.antenna import AntennaEncoderController, AntennaMotor
+from ..ctrl.calibrator import ChopperController
 
 
 def configure_executor() -> MultiThreadedExecutor:
@@ -9,6 +10,8 @@ def configure_executor() -> MultiThreadedExecutor:
     nodes = [
         AntennaEncoderController(),
         AntennaMotor(),
+        # TODO このブランチをmergeする前に削除する
+        ChopperController()
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
