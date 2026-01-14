@@ -11,7 +11,7 @@ def configure_executor() -> MultiThreadedExecutor:
         AntennaEncoderController(),
         AntennaMotor(),
         # TODO このブランチをmergeする前に削除する
-        ChopperController()
+        ChopperController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
