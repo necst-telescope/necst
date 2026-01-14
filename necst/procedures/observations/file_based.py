@@ -151,4 +151,3 @@ class RadioPointing(FileBasedObservation):
 class PSW(FileBasedObservation):
     observation_type = "PSW"
     SpecParser = PSWSpec
-    
