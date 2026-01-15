@@ -1,4 +1,5 @@
 import rclpy
+import os
 from rclpy.executors import MultiThreadedExecutor
 
 from ..ctrl.antenna import AntennaEncoderController, AntennaMotor
@@ -10,9 +11,10 @@ def configure_executor() -> MultiThreadedExecutor:
     nodes = [
         AntennaEncoderController(),
         AntennaMotor(),
-        # TODO このブランチをmergeする前に削除する
-        ChopperController(),
     ]
+    if os.environ["TELESCOPE"] == "OMU1p85m":
+        nodes.append(ChopperController())
+
     _ = [executor.add_node(n) for n in nodes]
     return executor
 
