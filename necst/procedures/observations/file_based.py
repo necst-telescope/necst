@@ -1,7 +1,7 @@
 import os
 from typing import IO, Optional, Type, Union
 
-from neclib.coordinates.observations import OTFSpec, RadioPointingSpec
+from neclib.coordinates.observations import OTFSpec, RadioPointingSpec, PSWSpec
 from neclib.coordinates.observations.observation_spec_base import (
     ObservationMode,
     ObservationSpec,
@@ -148,3 +148,8 @@ class OTF(FileBasedObservation):
 class RadioPointing(FileBasedObservation):
     observation_type = "RadioPointing"
     SpecParser = RadioPointingSpec
+
+
+class PSW(FileBasedObservation):
+    observation_type = "PSW"
+    SpecParser = PSWSpec
