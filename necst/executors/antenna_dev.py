@@ -1,7 +1,9 @@
 import rclpy
+import os
 from rclpy.executors import MultiThreadedExecutor
 
 from ..ctrl.antenna import AntennaEncoderController, AntennaMotor
+from ..ctrl.calibrator import ChopperController
 
 
 def configure_executor() -> MultiThreadedExecutor:
@@ -10,6 +12,9 @@ def configure_executor() -> MultiThreadedExecutor:
         AntennaEncoderController(),
         AntennaMotor(),
     ]
+    if os.environ["TELESCOPE"] == "OMU1p85m":
+        nodes.append(ChopperController())
+
     _ = [executor.add_node(n) for n in nodes]
     return executor
 

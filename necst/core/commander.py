@@ -634,17 +634,25 @@ class Commander(PrivilegedNode):
             if CMD == "?":
                 return self.get_message("chopper", timeout_sec=10)
             elif CMD == "INSERT":
-                msg = ChopperMsg(insert=True, time=pytime.time())
+                msg = ChopperMsg(
+                    insert=True,
+                    position=config.chopper_motor_position["insert"],
+                    time=pytime.time(),
+                )
                 self.publisher["chopper"].publish(msg)
             elif CMD == "REMOVE":
-                msg = ChopperMsg(insert=False, time=pytime.time())
+                msg = ChopperMsg(
+                    insert=False,
+                    position=config.chopper_motor_position["remove"],
+                    time=pytime.time(),
+                )
                 self.publisher["chopper"].publish(msg)
             else:
                 raise ValueError(f"Unknown command: {cmd!r}")
             if wait:
                 self.wait_oc(target="chopper", position=CMD.lower())
         else:
-            msg = ChopperMsg(position=cmd, time=pytime.time())
+            msg = ChopperMsg(insert=True, position=cmd, time=pytime.time())
             self.publisher["chopper"].publish(msg)
             if wait:
                 self.wait_oc(target="chopper", position=cmd)
@@ -779,8 +787,6 @@ class Commander(PrivilegedNode):
         position: Union[Literal["insert", "remove"], int] = None,
     ):
         if target == "chopper":
-            print("current_status", self.get_message(target).position)
-            print("position", position)
             if isinstance(position, int):
                 while not self.get_message(target).position == position:
                     pytime.sleep(0.1)
