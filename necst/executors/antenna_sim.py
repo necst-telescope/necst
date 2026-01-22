@@ -3,7 +3,7 @@ from rclpy.executors import MultiThreadedExecutor
 
 from ..ctrl.antenna import AntennaDeviceSimulator, AntennaPIDController, HorizontalCoord
 
-from ..ctrl.calibrator import ChopperSimulator
+# from ..ctrl.calibrator import ChopperController
 
 
 def configure_executor() -> MultiThreadedExecutor:
@@ -12,7 +12,7 @@ def configure_executor() -> MultiThreadedExecutor:
         AntennaPIDController(),
         HorizontalCoord(),
         AntennaDeviceSimulator(),
-        ChopperSimulator(),
+        # ChopperController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor
