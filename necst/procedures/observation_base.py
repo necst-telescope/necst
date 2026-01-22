@@ -91,9 +91,6 @@ class Observation(ABC):
                 self.com.record("tp_mode", tp_mode=False, tp_range=[])
                 self.com.record("savespec", save=True)
                 self.com.antenna("stop")
-                if hasattr(config, "spectrometer"):
-                    for key in config.spectrometer.keys():
-                        self.binning(config.spectrometer[key].max_ch)
                 self.binning(config.spectrometer.max_ch)  # set max channel number
                 if hasattr(config, "dome"):
                     self.com.dome("close")
