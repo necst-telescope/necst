@@ -1,5 +1,4 @@
 import time
-
 from neclib.devices import WeatherStation
 from necst_msgs.msg import WeatherMsg
 
@@ -33,4 +32,3 @@ class WeatherStationReader(DeviceNode):
             time=time.time()
         )
         self.publisher.publish(msg)
-        
