@@ -7,7 +7,6 @@ from ...core import DeviceNode
 
 
 class WeatherStationReader(DeviceNode):
-
     NodeName = "thermometer_reader"
     Namespace = namespace.root
 
@@ -29,6 +28,6 @@ class WeatherStationReader(DeviceNode):
             wind_speed=float(self.thermo.get_wind_speed().to_value("m/s")),
             wind_direction=float(self.thermo.get_wind_direction().to_value("deg")),
             rain_rate=float(self.thermo.get_rain_rate()),
-            time=time.time()
+            time=time.time(),
         )
         self.publisher.publish(msg)
