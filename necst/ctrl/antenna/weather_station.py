@@ -33,3 +33,4 @@ class WeatherStationReader(DeviceNode):
             time=time.time()
         )
         self.publisher.publish(msg)
+        
