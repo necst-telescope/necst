@@ -1,6 +1,5 @@
 import time
 
-import rclpy
 from neclib.devices import WeatherStation
 from necst_msgs.msg import WeatherMsg
 
@@ -34,19 +33,3 @@ class WeatherStationReader(DeviceNode):
             time=time.time()
         )
         self.publisher.publish(msg)
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = WeatherStationReader()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
-
-
-if __name__ == "__main__":
-    main()
