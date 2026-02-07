@@ -27,7 +27,7 @@ class FileBasedObservation(Observation):
             return tuple(x.to_value("deg") for x in coord[:2]) + (coord[2],)
         raise ValueError(f"Invalid coordinate: {coord}")
 
-    def run(self, file: Union[os.PathLike, str, IO]) -> None:
+    def run(self, file: Union[os.PathLike, str, IO], **kwargs) -> None:
         scan_frag = 1
 
         if self.observation_type == "OTF":
