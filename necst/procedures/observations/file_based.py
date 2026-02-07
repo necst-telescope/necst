@@ -61,6 +61,7 @@ class FileBasedObservation(Observation):
                 else:
                     reset = -1
         else:
+            reset_scan = True
             bydirectional = False
             reset = 1
 
