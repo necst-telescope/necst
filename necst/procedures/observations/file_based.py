@@ -30,36 +30,39 @@ class FileBasedObservation(Observation):
     def run(self, file: Union[os.PathLike, str, IO]) -> None:
         scan_frag = 1
 
-        bydirectional = self.obsspec.bydirectional > 0
-        reset_scan = self.obsspec.reset_scan > 0
-        margin = config.antenna.scan_margin.value
+        if self.observation_type == "OTF":
+            bydirectional = self.obsspec.bydirectional > 0
+            reset_scan = self.obsspec.reset_scan > 0
+            margin = config.antenna.scan_margin.value
 
-        print(f"check: {bydirectional}, {reset_scan}")
-        if reset_scan:
-            direction = self.obsspec.scan_direction.lower()
-            start_position = self.obsspec["start_position_" + direction]
-            if self.obsspec.relative:
-                delta = (
-                    self.obsspec.delta_lambda.value
-                    if direction == "x"
-                    else self.obsspec.delta_beta.value
-                )
-            else:
-                off_point = (
-                    self.obsspec.lambda_off.value
-                    if direction == "x"
-                    else self.obsspec.beta_off.value
-                )
-                on_point = (
-                    self.obsspec.lambda_on.value
-                    if direction == "x"
-                    else self.obsspec.beta_on.value
-                )
-                delta = off_point - on_point
-            if delta * start_position > 0:
-                reset = 1
-            else:
-                reset = -1
+            if reset_scan:
+                direction = self.obsspec.scan_direction.lower()
+                start_position = self.obsspec["start_position_" + direction]
+                if self.obsspec.relative:
+                    delta = (
+                        self.obsspec.delta_lambda.value
+                        if direction == "x"
+                        else self.obsspec.delta_beta.value
+                    )
+                else:
+                    off_point = (
+                        self.obsspec.lambda_off.value
+                        if direction == "x"
+                        else self.obsspec.beta_off.value
+                    )
+                    on_point = (
+                        self.obsspec.lambda_on.value
+                        if direction == "x"
+                        else self.obsspec.beta_on.value
+                    )
+                    delta = off_point - on_point
+                if delta * start_position > 0:
+                    reset = 1
+                else:
+                    reset = -1
+        else:
+            bydirectional = False
+            reset = 1
 
         self.com.record("file", name=file)
 
