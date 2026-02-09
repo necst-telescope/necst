@@ -109,7 +109,13 @@ class HorizontalCoord(AlertHandlerNode):
 
         if cmd:
             msg = CoordMsg(
-                lon=cmd[0], lat=cmd[1], time=cmd[2], unit="deg", frame="altaz"
+                lon=cmd[0],
+                lat=cmd[1],
+                dAz=cmd[2],
+                dEl=cmd[3],
+                time=cmd[4],
+                unit="deg",
+                frame="altaz",
             )
             self.publisher.publish(msg)
 
