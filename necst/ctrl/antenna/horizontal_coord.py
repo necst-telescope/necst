@@ -227,7 +227,6 @@ class HorizontalCoord(AlertHandlerNode):
             self.executing_generator.clear()
             return self.telemetry(None)
 
-        print("necst", coord.dAz, coord.dEl)
         az, el = self._validate_drive_range(coord.az, coord.el)
         for _az, _el, _dAz, _dEl, _t in zip(az, el, coord.dAz, coord.dEl, coord.time):
             if any(x is None for x in [_az, _el, _t]):
@@ -242,6 +241,7 @@ class HorizontalCoord(AlertHandlerNode):
                 float(_dEl.to_value("deg")),
                 _t,
             )
+            print(cmd)
             self.result_queue.append(cmd)
 
     def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
