@@ -104,7 +104,7 @@ class HorizontalCoord(AlertHandlerNode):
         if len(self.result_queue) > 0:
             while len(self.result_queue) > 0:
                 cmd = self.result_queue.pop(0)
-                if cmd[2] > now:
+                if cmd[4] > now:
                     break
 
         if cmd:
@@ -228,13 +228,19 @@ class HorizontalCoord(AlertHandlerNode):
             return self.telemetry(None)
 
         az, el = self._validate_drive_range(coord.az, coord.el)
-        for _az, _el, _t in zip(az, el, coord.time):
+        for _az, _el, _dAz, _dEl, _t in zip(az, el, coord.dAz, coord.dEl, coord.time):
             if any(x is None for x in [_az, _el, _t]):
                 continue
             # Remove chronologically duplicated/overlapping commands
             self.result_queue = list(filter(lambda x: x[2] < _t, self.result_queue))
 
-            cmd = (float(_az.to_value("deg")), float(_el.to_value("deg")), _t)
+            cmd = (
+                float(_az.to_value("deg")),
+                float(_el.to_value("deg")),
+                float(_dAz.to_value("deg")),
+                float(_dEl.to_value("deg")),
+                _t,
+            )
             self.result_queue.append(cmd)
 
     def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
