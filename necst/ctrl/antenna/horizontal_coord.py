@@ -111,8 +111,8 @@ class HorizontalCoord(AlertHandlerNode):
             msg = CoordMsg(
                 lon=cmd[0],
                 lat=cmd[1],
-                dAz=cmd[2],
-                dEl=cmd[3],
+                dlon=cmd[2],
+                dlat=cmd[3],
                 time=cmd[4],
                 unit="deg",
                 frame="altaz",
