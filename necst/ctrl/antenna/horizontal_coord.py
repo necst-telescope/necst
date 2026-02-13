@@ -108,6 +108,7 @@ class HorizontalCoord(AlertHandlerNode):
                     break
 
         if cmd:
+            print(cmd)
             msg = CoordMsg(
                 lon=cmd[0],
                 lat=cmd[1],
