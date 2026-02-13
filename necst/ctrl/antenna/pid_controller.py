@@ -85,8 +85,8 @@ class AntennaPIDController(AlertHandlerNode):
         now = pytime.time()
         while len(self.command_list) > 1:
             if self.command_list[0].time < now:
-                self.command_list.pop(0)
-                print("delete command")
+                _cmd = self.command_list.pop(0)
+                print("delete command", _cmd)
             else:
                 break
 
