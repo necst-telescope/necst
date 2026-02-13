@@ -117,7 +117,6 @@ class HorizontalCoord(AlertHandlerNode):
                 unit="deg",
                 frame="altaz",
             )
-            print(msg)
             self.publisher.publish(msg)
 
     def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
