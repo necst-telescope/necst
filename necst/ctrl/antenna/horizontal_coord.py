@@ -108,7 +108,7 @@ class HorizontalCoord(AlertHandlerNode):
                     break
 
         if cmd:
-            print(cmd)
+            # print(cmd)
             msg = CoordMsg(
                 lon=cmd[0],
                 lat=cmd[1],
@@ -228,6 +228,7 @@ class HorizontalCoord(AlertHandlerNode):
             return self.telemetry(None)
 
         az, el = self._validate_drive_range(coord.az, coord.el)
+        print(az, el)
         for _az, _el, _dAz, _dEl, _t in zip(az, el, coord.dAz, coord.dEl, coord.time):
             if any(x is None for x in [_az, _el, _t]):
                 continue
