@@ -108,7 +108,7 @@ class HorizontalCoord(AlertHandlerNode):
                     break
 
         if cmd:
-            # print(cmd)
+            print(cmd)
             msg = CoordMsg(
                 lon=cmd[0],
                 lat=cmd[1],
@@ -241,7 +241,6 @@ class HorizontalCoord(AlertHandlerNode):
                 float(_dEl.to_value("deg")),
                 _t,
             )
-            print(cmd)
             self.result_queue.append(cmd)
 
     def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
