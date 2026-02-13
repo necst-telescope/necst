@@ -227,8 +227,8 @@ class HorizontalCoord(AlertHandlerNode):
             self.executing_generator.clear()
             return self.telemetry(None)
 
+        print(coord.az, coord.el)
         az, el = self._validate_drive_range(coord.az, coord.el)
-        print(az, el)
         for _az, _el, _dAz, _dEl, _t in zip(az, el, coord.dAz, coord.dEl, coord.time):
             if any(x is None for x in [_az, _el, _t]):
                 continue
