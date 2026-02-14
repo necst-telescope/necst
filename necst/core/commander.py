@@ -762,6 +762,7 @@ class Commander(PrivilegedNode):
 
                     ctrl = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
                     # print("commander", ctrl)
+                    print(ctrl.id, id)
                     if ctrl.id == id:
                         print("experienced", ctrl.id)
                         experienced = True
