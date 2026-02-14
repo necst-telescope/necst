@@ -288,6 +288,7 @@ class HorizontalCoord(AlertHandlerNode):
                 interrupt_ok=status.infinite and (not status.waypoint),
                 time=status.start,
             )
+            print("telemetry ", msg)
         self.last_status = msg
         self.status_publisher.publish(msg)
 
