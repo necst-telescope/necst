@@ -215,7 +215,7 @@ class HorizontalCoord(AlertHandlerNode):
             return self.telemetry(None)
 
         if (len(self.result_queue) > 1) and (
-            self.result_queue[-1][2] > time.time() + config.antenna_command_offset_sec
+            self.result_queue[-1][4] > time.time() + config.antenna_command_offset_sec
         ):
             # This function will be called twice per 1s, to ensure no run-out of command
             # but it can cause overloading the data, so judge command update necessity.
@@ -237,7 +237,7 @@ class HorizontalCoord(AlertHandlerNode):
             if any(x is None for x in [_az, _el, _t]):
                 continue
             # Remove chronologically duplicated/overlapping commands
-            self.result_queue = list(filter(lambda x: x[2] < _t, self.result_queue))
+            self.result_queue = list(filter(lambda x: x[4] < _t, self.result_queue))
 
             cmd = (
                 float(_az.to_value("deg")),
