@@ -423,9 +423,7 @@ class Commander(PrivilegedNode):
             self.wait("antenna")
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
             if wait:
-                # print("wait start", pytime.time())
                 self.wait("antenna", mode="control", id=res.id)
-                # print("wait end", pytime.time())
             return res.id
 
         elif CMD == "ERROR":
@@ -761,15 +759,10 @@ class Commander(PrivilegedNode):
                     )
 
                     ctrl = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
-                    # print("commander", ctrl)
-                    print(ctrl.id, id)
                     if ctrl.id == id:
-                        print("experienced", ctrl.id)
                         experienced = True
                     finished = experienced and (ctrl.id != id)
                     appendix = ctrl.interrupt_ok and (ctrl.id == id)
-                    print("finished", finished)
-                    print("appendix", appendix)
                     if checker.check(finished or appendix):
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)
