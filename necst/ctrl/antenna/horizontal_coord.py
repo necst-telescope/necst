@@ -209,6 +209,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
             self.cmd = None
         if self.cmd is None:
+            print("cmd None", self.cmd)
             return self.telemetry(None)
 
         if (len(self.result_queue) > 1) and (
@@ -224,6 +225,7 @@ class HorizontalCoord(AlertHandlerNode):
         except (StopIteration, TypeError):
             self.cmd = None
             self.executing_generator.clear()
+            print("except")
             return self.telemetry(None)
 
         az, el = self._validate_drive_range(coord.az, coord.el)
@@ -279,7 +281,7 @@ class HorizontalCoord(AlertHandlerNode):
                 interrupt_ok=True,
                 time=time.time() + config.antenna_command_offset_sec,
             )
-            print("telemetry None", msg)
+            # print("telemetry None", msg)
         else:
             msg = ControlStatus(
                 controlled=True,
@@ -289,7 +291,7 @@ class HorizontalCoord(AlertHandlerNode):
                 interrupt_ok=status.infinite and (not status.waypoint),
                 time=status.start,
             )
-            print("telemetry ", msg)
+            # print("telemetry ", msg)
         self.last_status = msg
         self.status_publisher.publish(msg)
 
