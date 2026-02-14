@@ -279,6 +279,7 @@ class HorizontalCoord(AlertHandlerNode):
                 interrupt_ok=True,
                 time=time.time() + config.antenna_command_offset_sec,
             )
+            print("telemetry None", msg)
         else:
             msg = ControlStatus(
                 controlled=True,
