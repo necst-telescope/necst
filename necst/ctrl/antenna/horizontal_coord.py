@@ -78,7 +78,6 @@ class HorizontalCoord(AlertHandlerNode):
 
         """
         self.cmd = request
-        print("uprade_cmd ", request)
         self._parse_cmd(request)
         self.result_queue.clear()
 
@@ -222,7 +221,9 @@ class HorizontalCoord(AlertHandlerNode):
             return
 
         try:
+            print("try")
             coord = next(self.executing_generator)
+            print("next", coord)
             self.telemetry(coord.context)
         except (StopIteration, TypeError):
             self.cmd = None
