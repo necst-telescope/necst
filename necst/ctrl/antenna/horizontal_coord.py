@@ -78,6 +78,7 @@ class HorizontalCoord(AlertHandlerNode):
 
         """
         self.cmd = request
+        print("uprade_cmd ", request)
         self._parse_cmd(request)
         self.result_queue.clear()
 
@@ -202,7 +203,7 @@ class HorizontalCoord(AlertHandlerNode):
 
     def convert(self) -> None:
         if (self.cmd is not None) and (self.enc_time < time.time() - 5):
-            print("timeout", self.enc_time, time.time())
+            # print("timeout", self.enc_time, time.time())
             # Don't resume normal operation after communication with encoder lost for 5s
             self.logger.error(
                 "Lost the communication with the encoder. Command to drive to "
