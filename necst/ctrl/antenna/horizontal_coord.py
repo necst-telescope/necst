@@ -202,6 +202,7 @@ class HorizontalCoord(AlertHandlerNode):
 
     def convert(self) -> None:
         if (self.cmd is not None) and (self.enc_time < time.time() - 5):
+            print("timeout", self.enc_time, time.time())
             # Don't resume normal operation after communication with encoder lost for 5s
             self.logger.error(
                 "Lost the communication with the encoder. Command to drive to "
@@ -209,7 +210,7 @@ class HorizontalCoord(AlertHandlerNode):
             )
             self.cmd = None
         if self.cmd is None:
-            print("cmd None", self.cmd)
+            # print("cmd None", self.cmd)
             return self.telemetry(None)
 
         if (len(self.result_queue) > 1) and (
@@ -225,7 +226,7 @@ class HorizontalCoord(AlertHandlerNode):
         except (StopIteration, TypeError):
             self.cmd = None
             self.executing_generator.clear()
-            print("except")
+            # print("except")
             return self.telemetry(None)
 
         az, el = self._validate_drive_range(coord.az, coord.el)
