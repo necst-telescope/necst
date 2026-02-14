@@ -763,9 +763,12 @@ class Commander(PrivilegedNode):
                     ctrl = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
                     # print("commander", ctrl)
                     if ctrl.id == id:
+                        print("experienced", ctrl.id)
                         experienced = True
                     finished = experienced and (ctrl.id != id)
                     appendix = ctrl.interrupt_ok and (ctrl.id == id)
+                    print("finished", finished)
+                    print("appendix", appendix)
                     if checker.check(finished or appendix):
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)

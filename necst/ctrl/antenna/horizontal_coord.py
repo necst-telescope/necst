@@ -94,7 +94,7 @@ class HorizontalCoord(AlertHandlerNode):
 
     def command_realtime(self) -> None:
         if self.status.critical():
-            print("self.status", self.status)
+            # print("self.status", self.status)
             self.logger.warning("Guard condition activated", throttle_duration_sec=1)
             # Avoid sudden resumption of telescope drive
             return self.gc.trigger()
