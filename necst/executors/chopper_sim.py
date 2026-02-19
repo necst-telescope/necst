@@ -1,13 +1,13 @@
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
-from ..ctrl.calibrator import ChopperSimulator
+from ..ctrl.calibrator import ChopperController
 
 
 def configure_executor() -> MultiThreadedExecutor:
     executor = MultiThreadedExecutor()
     nodes = [
-        ChopperSimulator(),
+        ChopperController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor

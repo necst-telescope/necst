@@ -12,4 +12,4 @@ class Knife_edge(Measurement):
     ) -> None:
         for position in positions:
             self.com.chopper(int(position))
-        self.com.chopper(cmd="remove")
+        self.com.chopper("remove")

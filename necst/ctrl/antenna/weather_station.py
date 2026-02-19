@@ -1,6 +1,4 @@
 import time
-
-import rclpy
 from neclib.devices import WeatherStation
 from necst_msgs.msg import WeatherMsg
 
@@ -23,24 +21,13 @@ class WeatherStationReader(DeviceNode):
     def stream(self):
         msg = WeatherMsg(
             temperature=float(self.thermo.get_temperature().to_value("K")),
+            in_temperature=float(self.thermo.get_in_temperature().to_value("K")),
             pressure=float(self.thermo.get_pressure().to_value("hPa")),
             humidity=float(self.thermo.get_humidity()),
+            in_humidity=float(self.thermo.get_in_humidity()),
+            wind_speed=float(self.thermo.get_wind_speed().to_value("m/s")),
+            wind_direction=float(self.thermo.get_wind_direction().to_value("deg")),
+            rain_rate=float(self.thermo.get_rain_rate()),
             time=time.time(),
         )
         self.publisher.publish(msg)
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = WeatherStationReader()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
-
-
-if __name__ == "__main__":
-    main()
