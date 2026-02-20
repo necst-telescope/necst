@@ -165,11 +165,12 @@ class SpectralData(DeviceNode):
                 self.logger.info("Total power will be saved. Range: all channels")
 
     def change_spec_chan(self, msg: Binning) -> None:
-        record_chan = msg.ch
-        self.io.change_spec_ch(record_chan)
-        self.logger.info(
-            f"Record channel number changed; {record_chan} ch data will be saved"
-        )
+        for key, io in self.io.items():
+            record_chan = msg.ch
+            io.change_spec_ch(record_chan)
+            self.logger.info(
+                f"{key}'s channel number changed; {record_chan} ch data will be saved"
+            )
 
     def update_control_status(self, msg: ControlStatus) -> None:
         if msg.tight:
