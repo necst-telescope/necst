@@ -117,7 +117,7 @@ class FileBasedObservation(Observation):
                     reference = kwargs["reference"]
                     start_position = (start[0] + reference[0], start[1] + reference[1])
                     target = start_position + (waypoint.scan_frame,)
-                    offset_margin = scan_frag*margin
+                    offset_margin = scan_frag * margin
                     offset_margin = scan_frag * margin
 
                     if direction == "x":
