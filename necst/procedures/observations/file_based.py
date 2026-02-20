@@ -35,9 +35,9 @@ class FileBasedObservation(Observation):
             bydirectional = self.obsspec.bydirectional > 0
             reset_scan = self.obsspec.reset_scan > 0
             margin = config.antenna.scan_margin.value
+            direction = self.obsspec.scan_direction.lower()
 
             if reset_scan:
-                direction = self.obsspec.scan_direction.lower()
                 start_position = self.obsspec["start_position_" + direction]
                 if self.obsspec.relative:
                     delta = (
