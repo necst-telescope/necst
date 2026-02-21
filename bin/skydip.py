@@ -39,7 +39,7 @@ if __name__ == "__main__":
         type=int,
         nargs="*",
         help="enable Total Power mode."
-             "If you want to set multiple ranges, for example -t 100 200 500 600",
+            "If you want to set multiple ranges, for example -t 100 200 500 600",
         default=None,
     )
     args = p.parse_args()
