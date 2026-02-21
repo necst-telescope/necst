@@ -34,7 +34,7 @@ if __name__ == "__main__":
         help="Number of spectral channels.",
     )
     p.add_argument(
-        "-t",
+        "-tp",
         "--tp_range",
         type=int,
         nargs="*",
