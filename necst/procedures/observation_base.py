@@ -78,9 +78,9 @@ class Observation(ABC):
                     or "tp_range" in self._kwargs
                 ):
                     tp_range = self._kwargs.pop("tp_range", None)
-                    tp_mode = bool(self._kwargs.pop("tp_mode", False))
+                    tp_mode = self._kwargs.pop("tp_mode", False)
 
-                    if tp_mode or bool(tp_range):
+                    if tp_mode or tp_range:
                         self.com.record("tp_mode", tp_mode=True, tp_range=tp_range or [])
                     else:
                         self.com.record("tp_mode", tp_mode=False)
