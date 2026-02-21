@@ -1025,7 +1025,7 @@ class Commander(PrivilegedNode):
         CMD = cmd.upper()
         if CMD == "START":
             if not self.savespec:
-                # TODO revise following proccess and L1033
+                # TODO revise following process and L1033
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
@@ -1037,8 +1037,6 @@ class Commander(PrivilegedNode):
                     self.logger.info(
                         "\033[93mTotal power will be saved. Range: All channels"
                     )
-            else:
-                self.logger.info("Spectral data will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -1068,7 +1066,7 @@ class Commander(PrivilegedNode):
             msg = Binning(ch=ch)
             if ch > 100:
                 self.quick_look(
-                    "ch", range=(0, 100), integ=1
+                    "ch", raznge=(0, 100), integ=1
                 )  # reset to default values
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
