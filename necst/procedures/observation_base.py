@@ -81,7 +81,9 @@ class Observation(ABC):
                     tp_mode = self._kwargs.pop("tp_mode", False)
 
                     if tp_mode or tp_range:
-                        self.com.record("tp_mode", tp_mode=True, tp_range=tp_range or [])
+                        self.com.record(
+                            "tp_mode", tp_mode=True, tp_range=tp_range or []
+                        )
                     else:
                         self.com.record("tp_mode", tp_mode=False)
                 self.com.metadata("set", position="", id="")
@@ -156,7 +158,8 @@ class Observation(ABC):
                 self.logger.error(f"Failed to save parameter file {filename!r}")
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> None: ...
+    def run(self, *args, **kwargs) -> None:
+        ...
 
     def hot(self, integ_time: Union[int, float], id: Any) -> None:
         # TODO: Remove this workaround, by attaching control section ID to spectra
