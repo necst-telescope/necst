@@ -28,47 +28,49 @@ class FileBasedObservation(Observation):
             return tuple(x.to_value("deg") for x in coord[:2]) + (coord[2],)
         raise ValueError(f"Invalid coordinate: {coord}")
 
-    def run(self, file: Union[os.PathLike, str, IO]) -> None:
+    def run(self, file: Union[os.PathLike, str, IO], **kwargs) -> None:
         scan_frag = 1
 
-        bydirectional = self.obsspec.bydirectional > 0
-        reset_scan = self.obsspec.reset_scan > 0
-        margin = config.antenna.scan_margin.value
-
-        print(f"check: {bydirectional}, {reset_scan}")
-        if reset_scan:
+        if self.observation_type == "OTF":
+            bydirectional = self.obsspec.bydirectional > 0
+            reset_scan = self.obsspec.reset_scan > 0
+            margin = config.antenna.scan_margin.value
             direction = self.obsspec.scan_direction.lower()
-            start_position = self.obsspec["start_position_" + direction]
-            if self.obsspec.relative:
-                delta = (
-                    self.obsspec.delta_lambda.value
-                    if direction == "x"
-                    else self.obsspec.delta_beta.value
-                )
-            else:
-                off_point = (
-                    self.obsspec.lambda_off.value
-                    if direction == "x"
-                    else self.obsspec.beta_off.value
-                )
-                on_point = (
-                    self.obsspec.lambda_on.value
-                    if direction == "x"
-                    else self.obsspec.beta_on.value
-                )
-                delta = off_point - on_point
-            if delta * start_position > 0:
-                reset = 1
-            else:
-                reset = -1
+
+            if reset_scan:
+                start_position = self.obsspec["start_position_" + direction]
+                if self.obsspec.relative:
+                    delta = (
+                        self.obsspec.delta_lambda.value
+                        if direction == "x"
+                        else self.obsspec.delta_beta.value
+                    )
+                else:
+                    off_point = (
+                        self.obsspec.lambda_off.value
+                        if direction == "x"
+                        else self.obsspec.beta_off.value
+                    )
+                    on_point = (
+                        self.obsspec.lambda_on.value
+                        if direction == "x"
+                        else self.obsspec.beta_on.value
+                    )
+                    delta = off_point - on_point
+                if delta * start_position > 0:
+                    reset = 1
+                else:
+                    reset = -1
+        else:
+            reset_scan = True
+            bydirectional = False
+            reset = 1
 
         self.com.record("file", name=file)
-
         for waypoint in self.obsspec:
             if waypoint.mode == ObservationMode.HOT:  # Hot observation
                 self.hot(waypoint.integration.to_value("s"), waypoint.id)
                 continue
-            print(waypoint.speed)
 
             kwargs = dict(unit="deg")
             if waypoint.name_query:
@@ -115,6 +117,7 @@ class FileBasedObservation(Observation):
                     reference = kwargs["reference"]
                     start_position = (start[0] + reference[0], start[1] + reference[1])
                     target = start_position + (waypoint.scan_frame,)
+                    offset_margin = scan_frag * margin
                     offset_margin = scan_frag * margin
 
                     if direction == "x":
