@@ -101,8 +101,9 @@ class Observation(ABC):
                 self.com.record("savespec", save=True)
                 self.com.antenna("stop")
                 if hasattr(config, "spectrometer"):
-                    for key in config.spectrometer.keys():
-                        self.binning(config.spectrometer[key].max_ch)
+                    for key, value in config.spectrometer.items():
+                        if "max_ch" in key:
+                            self.binning(value)
                 else:
                     self.binning(config.spectrometer.max_ch)
                 if hasattr(config, "dome"):
