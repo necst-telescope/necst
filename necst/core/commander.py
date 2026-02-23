@@ -1066,7 +1066,7 @@ class Commander(PrivilegedNode):
             msg = Binning(ch=ch)
             if ch > 100:
                 self.quick_look(
-                    "ch", raznge=(0, 100), integ=1
+                    "ch", range=(0, 100), integ=1
                 )  # reset to default values
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
