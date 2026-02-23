@@ -24,8 +24,6 @@ class SignalGeneratorController(DeviceNode):
             self.create_safe_subscription(topic.lo_signal_cmd, self.set_param)
             self.create_safe_timer(1, self.stream)
             self.create_safe_timer(1, self.check_publisher)
-            for name in self.io.keys():
-                self.io[name].create_safe_timer(1, self.check_status)
             self.logger.info(f"Started {self.NodeName} Node...")
             for key in self.io.keys():
                 self.logger.info(
@@ -33,6 +31,11 @@ class SignalGeneratorController(DeviceNode):
                     f"{self.io[key].get_freq()}, "
                     f"Output is {self.io[key].get_output_status()}"
                 )
+            for key in self.io.keys():
+                if "FSW" in self.io[key].Model.upper():
+                    self.create_safe_timer(1, self.check_status)
+                    break
+
         except Exception as e:
             self.logger.error(f"{self.NodeName} Node is shutdown due to Exception: {e}")
             self.destroy_node()
@@ -70,11 +73,14 @@ class SignalGeneratorController(DeviceNode):
             publisher.publish(msg)
 
     def check_status(self):
-        for name in self.io.keys():
-            if self.io[name].check_reference_status():
+        for key in self.io.keys():
+            if (
+                self.io[key].check_reference_status()
+                or "FSW" not in self.io[key].Model.upper()
+            ):
                 pass
             else:
-                self.logger.warning("Warning: Internal reference selected")
+                self.logger.warning(f"{key}: Internal reference selected")
 
 
 def main(args=None):
