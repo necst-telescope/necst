@@ -24,7 +24,8 @@ class SignalGeneratorController(DeviceNode):
             self.create_safe_subscription(topic.lo_signal_cmd, self.set_param)
             self.create_safe_timer(1, self.stream)
             self.create_safe_timer(1, self.check_publisher)
-            self.create_safe_timer(1, self.check_status)
+            for name in self.io.keys():
+                self.io[name].create_safe_timer(1, self.check_status)
             self.logger.info(f"Started {self.NodeName} Node...")
             for key in self.io.keys():
                 self.logger.info(
