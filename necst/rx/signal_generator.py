@@ -74,12 +74,9 @@ class SignalGeneratorController(DeviceNode):
 
     def check_status(self):
         for key in self.io.keys():
-            if (
-                self.io[key].check_reference_status()
-                or "FSW" not in self.io[key].Model.upper()
-            ):
-                pass
-            else:
+            if "FSW" not in self.io[key].Model.upper():
+                continue
+            if not self.io[key].check_reference_status():
                 self.logger.warning(f"{key}: Internal reference selected")
 
 
