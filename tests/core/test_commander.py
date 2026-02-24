@@ -90,11 +90,8 @@ class TestCommander(TesterNode):
                 time.sleep(0.02)
             com.quit_privilege()
 
-        print("before destroy")
         destroy([com, auth_server])
-        print("after destroy com, auth")
         destroy(sub, self.node)
-        print("after destroy others")
 
     def test_antenna_point_with_wait(self):
         print("in with_wait")
