@@ -91,7 +91,7 @@ class TestCommander(TesterNode):
             com.quit_privilege()
 
         destroy([com, auth_server])
-        destroy(sub, self.node)
+        destroy([sub, self.node])
 
     def test_antenna_point_with_wait(self):
         print("in with_wait")
