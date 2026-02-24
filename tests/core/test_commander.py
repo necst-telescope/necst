@@ -94,13 +94,18 @@ class TestCommander(TesterNode):
         destroy(sub, node=self.node)
 
     def test_antenna_point_with_wait(self):
-        print("in with_wait")
         com = Commander()
+        print("1")
         auth_server = Authorizer()
+        print("2")
         horizontal = HorizontalCoord()
+        print("3")
         pid = AntennaPIDController()
+        print("4")
         dev = AntennaDeviceSimulator()
+        print("5")
         tracking = AntennaTrackingStatus()
+        print("6")
 
         dev.enc.position.az = 29.0
         dev.enc.position.el = 44.0
