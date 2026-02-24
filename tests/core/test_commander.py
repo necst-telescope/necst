@@ -112,7 +112,7 @@ class TestCommander(TesterNode):
         #     com.antenna("point", **cmd, wait=True)
         #     com.quit_privilege()
 
-        # destroy([com, auth_server, horizontal, pid, dev, tracking])
+        destroy([com, auth_server, horizontal, pid, dev, tracking])
 
     def test_antenna_stop(self):
         com = Commander()
