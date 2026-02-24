@@ -97,6 +97,7 @@ class TestCommander(TesterNode):
         print("after destroy others")
 
     def test_antenna_point_with_wait(self):
+        print("in with_wait")
         com = Commander()
         auth_server = Authorizer()
         horizontal = HorizontalCoord()
@@ -108,7 +109,7 @@ class TestCommander(TesterNode):
         dev.enc.position.el = 44.0
 
         cmd = {"target": (30.0, 45.0, "altaz"), "unit": "deg"}
-        print("in with_point")
+        
         with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
             com.get_privilege()
             com.antenna("point", **cmd, wait=True)
