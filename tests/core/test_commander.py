@@ -93,7 +93,7 @@ class TestCommander(TesterNode):
 
         destroy([com, auth_server])
         destroy(sub, node=self.node)
-# fmt: on
+# fmt: off
     def test_antenna_point_with_wait(self):
         com = Commander()
         auth_server = Authorizer()
