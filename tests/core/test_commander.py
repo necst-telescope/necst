@@ -107,6 +107,7 @@ class TestCommander(TesterNode):
 
         cmd = {"target": (30.0, 45.0, "altaz"), "unit": "deg"}
         with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
+            print("in spin")
             com.get_privilege()
             com.antenna("point", **cmd, wait=True)
             com.quit_privilege()
