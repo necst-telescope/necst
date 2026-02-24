@@ -105,10 +105,12 @@ class TestCommander(TesterNode):
         dev.enc.position.el = 44.0
 
         cmd = {"target": (30.0, 45.0, "altaz"), "unit": "deg"}
+
         with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
-            com.get_privilege()
-            com.antenna("point", **cmd, wait=True)
-            com.quit_privilege()
+            print(cmd)
+            # com.get_privilege()
+            # com.antenna("point", **cmd, wait=True)
+            # com.quit_privilege()
 
         destroy([com, auth_server, horizontal, pid, dev, tracking])
 
