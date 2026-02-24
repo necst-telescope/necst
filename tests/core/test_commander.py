@@ -1,4 +1,3 @@
-# flake8: noqa
 import time
 
 from necst_msgs.msg import ChopperMsg, CoordMsg
@@ -93,7 +92,7 @@ class TestCommander(TesterNode):
 
         destroy([com, auth_server])
         destroy(sub, node=self.node)
-# fmt: off
+
     def test_antenna_point_with_wait(self):
         com = Commander()
         auth_server = Authorizer()
@@ -106,14 +105,15 @@ class TestCommander(TesterNode):
         dev.enc.position.el = 44.0
 
         cmd = {"target": (30.0, 45.0, "altaz"), "unit": "deg"}
-        # with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
-        #     print("in spin")
+        print(cmd, com)
+        with spinning([auth_server, horizontal, pid, dev, tracking], n_thread=6):
+            print("in spin")
         #     com.get_privilege()
         #     com.antenna("point", **cmd, wait=True)
         #     com.quit_privilege()
 
         # destroy([com, auth_server, horizontal, pid, dev, tracking])
-# fmt: on
+
     def test_antenna_stop(self):
         com = Commander()
         auth_server = Authorizer()
