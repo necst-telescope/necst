@@ -104,6 +104,7 @@ class HorizontalCoord(AlertHandlerNode):
         if len(self.result_queue) > 0:
             while len(self.result_queue) > 0:
                 cmd = self.result_queue.pop(0)
+                print(f"command discarded, result queue length:{len(self.result_queue)}")
                 if cmd[4] > now:
                     break
 
