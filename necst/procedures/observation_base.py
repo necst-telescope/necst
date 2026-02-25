@@ -76,11 +76,6 @@ class Observation(ABC):
                     for spec_name in specnames:
                         print("set", spec_name)
                         self.binning(self._kwargs.pop("ch"), spec_name)
-                    # print debug
-                    for _key, val in config.spectrometer.items():
-                        spec_name, key = _key.split(".", 1)
-                        if key == "max_ch":
-                            print("end", val, spec_name)
                 if "tp" in self._kwargs:
                     if "tp_mode" in self._kwargs and "tp_range" in self._kwargs:
                         tp_mode = self._kwargs.pop("tp_mode")
