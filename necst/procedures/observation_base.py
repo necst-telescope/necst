@@ -71,7 +71,7 @@ class Observation(ABC):
                     self.com.record("reduce", nth=conv_rate)
                 if "ch" in self._kwargs.keys():
                     for key, _ in config.spectrometer.items():
-                        self.binning(self._kwargs.pop("ch"),key)
+                        self.binning(self._kwargs.pop("ch"), key)
                     self.binning(self._kwargs.pop("ch"))
                 if "tp" in self._kwargs:
                     if "tp_mode" in self._kwargs and "tp_range" in self._kwargs:
@@ -92,18 +92,12 @@ class Observation(ABC):
                 self.com.record("tp_mode", tp_mode=False, tp_range=[])
                 self.com.record("savespec", save=True)
                 self.com.antenna("stop")
-<<<<<<< HEAD
                 for key, val in config.spectrometer.items():
                     self.binning(val.max_ch, key)  # set max channel number
-=======
-                if hasattr(config, "spectrometer"):
-                    for key in config.spectrometer.keys():
-                        self.binning(config.spectrometer[key].max_ch)
                 if hasattr(config, "dome"):
                     self.com.dome("close")
                     self.logger.info("Dome closed")
                     self.com.dome("sync", dome_sync=False)
->>>>>>> main
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60
