@@ -47,7 +47,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.status_publisher = topic.antenna_control_status.publisher(self)
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
-        self.create_timer(0.1, self.convert)
+        self.create_timer(0.5, self.convert)
 
         self.result_queue = []
         self.tracking_ok = False
