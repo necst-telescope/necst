@@ -261,7 +261,6 @@ class SpectralData(DeviceNode):
                 )
                 return
 
-            print(_data)
             time, time_spectrometer, data = _data
 
             if self.tp_mode:
