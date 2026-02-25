@@ -118,9 +118,9 @@ class AntennaPIDController(AlertHandlerNode):
                 cmd.time = now  # Not a real-time command.
         elif len(self.command_list) == 1:
             cmd = self.command_list.pop(0)
-            print("not a real-time command")
             cmd.time = now
         else:
+            print("not a real-time command")
             cmd = self.command_list.pop(0)
 
         enc = self.enc[0]
