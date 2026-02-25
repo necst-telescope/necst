@@ -1,13 +1,13 @@
 import rclpy
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import SingleThreadedExecutor
 
-from ..ctrl.calibrator import ChopperSimulator
+from ..rx.analog_logger import AnalogLoggerController
 
 
-def configure_executor() -> MultiThreadedExecutor:
-    executor = MultiThreadedExecutor()
+def configure_executor() -> SingleThreadedExecutor:
+    executor = SingleThreadedExecutor()
     nodes = [
-        ChopperSimulator(),
+        AnalogLoggerController(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor

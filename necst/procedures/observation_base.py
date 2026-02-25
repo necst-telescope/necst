@@ -63,22 +63,47 @@ class Observation(ABC):
             try:
                 if not privileged:
                     raise NECSTAuthorityError("Couldn't acquire privilege")
+                if "save" in self._kwargs.keys():
+                    savespec = self._kwargs.pop("save")
+                    self.com.record("savespec", save=savespec)
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
                 if "ch" in self._kwargs.keys():
                     for key, _ in config.spectrometer.items():
                         self.binning(self._kwargs.pop("ch"),key)
+                    self.binning(self._kwargs.pop("ch"))
+                if "tp" in self._kwargs:
+                    if "tp_mode" in self._kwargs and "tp_range" in self._kwargs:
+                        tp_mode = self._kwargs.pop("tp_mode")
+                        tp_range = self._kwargs.pop("tp_range")
+                        self.com.record("tp_mode", tp_mode=tp_mode, tp_range=tp_range)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
                 rclpy.uninstall_signal_handlers()
+                if hasattr(config, "dome"):
+                    self.com.dome("sync", dome_sync=True)
+                    self.com.dome("open")
+                    self.logger.info("Dome opened")
                 self.run(**self._kwargs)
             finally:
                 self.com.record("stop")
+                self.com.record("tp_mode", tp_mode=False, tp_range=[])
+                self.com.record("savespec", save=True)
                 self.com.antenna("stop")
+<<<<<<< HEAD
                 for key, val in config.spectrometer.items():
                     self.binning(val.max_ch, key)  # set max channel number
+=======
+                if hasattr(config, "spectrometer"):
+                    for key in config.spectrometer.keys():
+                        self.binning(config.spectrometer[key].max_ch)
+                if hasattr(config, "dome"):
+                    self.com.dome("close")
+                    self.logger.info("Dome closed")
+                    self.com.dome("sync", dome_sync=False)
+>>>>>>> main
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60

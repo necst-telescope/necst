@@ -1,20 +1,26 @@
 import rclpy
-import os
 from rclpy.executors import MultiThreadedExecutor
 
-from ..ctrl.antenna import AntennaEncoderController, AntennaMotor
-from ..ctrl.calibrator import ChopperController
+from ..rx.attenuator import AttenuatorController
+from ..rx.hemt_bias import HEMTBias
+from ..rx.local_attenuator import LocalAttenuatorController
+from ..rx.signal_generator import SignalGeneratorController
+from ..rx.sis_bias import SISBias
+from ..rx.thermometer import ThermometerController
+from ..rx.vacuum_gauge import VacuumGaugeController
 
 
 def configure_executor() -> MultiThreadedExecutor:
     executor = MultiThreadedExecutor()
     nodes = [
-        AntennaEncoderController(),
-        AntennaMotor(),
+        AttenuatorController(),
+        HEMTBias(),
+        LocalAttenuatorController(),
+        SignalGeneratorController(),
+        SISBias(),
+        ThermometerController(),
+        VacuumGaugeController(),
     ]
-    if os.environ["TELESCOPE"] == "OMU1p85m":
-        nodes.append(ChopperController())
-
     _ = [executor.add_node(n) for n in nodes]
     return executor
 

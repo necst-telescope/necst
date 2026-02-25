@@ -42,7 +42,6 @@ if __name__ == "__main__":
     )
     p.add_argument("-n", type=int, help="Observation iteration number.")
     p.add_argument("-c", "--channel", type=int, help="Number of spectral channels.")
-
     args = p.parse_args()
 
     obs = PositionSwitching(

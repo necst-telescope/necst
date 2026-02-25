@@ -16,3 +16,8 @@ try:
     from .powermeter import PowermeterController  # noqa: F401
 except ImportError:
     pass
+
+try:
+    from .analog_logger import AnalogLoggerController  # noqa: F401
+except ImportError:
+    pass

@@ -1,5 +1,6 @@
 """Interface to send command to any remotely controlled part of telescope."""
 
+import math
 import time as pytime
 from dataclasses import dataclass
 from functools import partial
@@ -12,27 +13,22 @@ from necst_msgs.msg import (
     Binning,
     Boolean,
     ChopperMsg,
-    MirrorMsg,
     DeviceReading,
     DomeOC,
     DriveMsg,
-    LocalSignal,
     LocalAttenuatorMsg,
+    LocalSignal,
     MembraneMsg,
+    MirrorMsg,
     PIDMsg,
     RecordMsg,
     Sampling,
     SISBias,
     Spectral,
     TimeOnly,
+    TPModeMsg,
 )
-from necst_msgs.srv import (
-    CoordinateCommand,
-    File,
-    CCDCommand,
-    DomeSync,
-    ComDelaySrv,
-)
+from necst_msgs.srv import CCDCommand, ComDelaySrv, CoordinateCommand, DomeSync, File
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -94,6 +90,7 @@ class Commander(PrivilegedNode):
             "dome_alert_stop": topic.manual_stop_dome_alert,
             "dome_oc": topic.dome_oc,
             "timeonly": topic.timeonly,
+            "tp_mode": topic.tp_mode,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -110,6 +107,7 @@ class Commander(PrivilegedNode):
             "antenna_control": _SubscriptionCfg(topic.antenna_control_status, 1),
             "sis_bias": _SubscriptionCfg(topic.sis_bias, 1),
             "hemt_bias": _SubscriptionCfg(topic.hemt_bias, 1),
+            "analog_logger": _SubscriptionCfg(topic.analog_logger, 1),
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
@@ -136,6 +134,10 @@ class Commander(PrivilegedNode):
         self.create_timer(1, self.__check_topic)
 
         self.__check_topic()
+
+        self.savespec = True
+        self.tp_mode = False
+        self.tp_range = []
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -445,7 +447,6 @@ class Commander(PrivilegedNode):
         direct_mode: bool = True,
         wait: bool = True,
     ) -> None:
-
         CMD = cmd.upper()
         if CMD == "POINT":
             kwargs = {}
@@ -480,10 +481,10 @@ class Commander(PrivilegedNode):
                 pytime.sleep(0.5)
             req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_sync"])
-            print(f"{res.check} DomeController Synced")
+
             req = DomeSync.Request(dome_sync=dome_sync)
             res = self._send_request(req, self.client["dome_pid_sync"])
-            print(f"{res.check} DomePIDController Synced")
+            self.logger.info(f"Dome sync status: {res.check}")
             return res.check
         elif CMD == "STOP":
             msg = AlertMsg(critical=True, warning=True, target=[namespace.dome])
@@ -594,7 +595,13 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
     @require_privilege(escape_cmd=["?"])
-    def chopper(self, cmd: Literal["insert", "remove", "?"], /, *, wait: bool = True):
+    def chopper(
+        self,
+        cmd: Union[Literal["insert", "remove", "?"], float],
+        /,
+        *,
+        wait: bool = True,
+    ):
         """Control the position of ambient temperature radio absorber.
 
         Parameters
@@ -616,20 +623,33 @@ class Commander(PrivilegedNode):
         >>> com.chopper("remove", wait=False)
 
         """
-        CMD = cmd.upper()
-        if CMD == "?":
-            return self.get_message("chopper", timeout_sec=10)
-        elif CMD == "INSERT":
-            msg = ChopperMsg(insert=True, time=pytime.time())
-            self.publisher["chopper"].publish(msg)
-        elif CMD == "REMOVE":
-            msg = ChopperMsg(insert=False, time=pytime.time())
-            self.publisher["chopper"].publish(msg)
+        if isinstance(cmd, str):
+            CMD = cmd.upper()
+            if CMD == "?":
+                return self.get_message("chopper", timeout_sec=10)
+            elif CMD == "INSERT":
+                msg = ChopperMsg(
+                    insert=True,
+                    position=config.chopper_motor_position["insert"],
+                    time=pytime.time(),
+                )
+                self.publisher["chopper"].publish(msg)
+            elif CMD == "REMOVE":
+                msg = ChopperMsg(
+                    insert=False,
+                    position=config.chopper_motor_position["remove"],
+                    time=pytime.time(),
+                )
+                self.publisher["chopper"].publish(msg)
+            else:
+                raise ValueError(f"Unknown command: {cmd!r}")
+            if wait:
+                self.wait_oc(target="chopper", position=CMD.lower())
         else:
-            raise ValueError(f"Unknown command: {cmd!r}")
-
-        if wait:
-            self.wait_oc(target="chopper", position=CMD.lower())
+            msg = ChopperMsg(insert=True, position=cmd, time=pytime.time())
+            self.publisher["chopper"].publish(msg)
+            if wait:
+                self.wait_oc(target="chopper", position=cmd)
 
     @require_privilege(escape_cmd=["?"])
     def mirror(
@@ -758,12 +778,16 @@ class Commander(PrivilegedNode):
     def wait_oc(
         self,
         target: Literal["dome", "membrane", "chopper"],
-        position: Literal["insert", "remove"] = None,
+        position: Union[Literal["insert", "remove"], int] = None,
     ):
         if target == "chopper":
-            target_status = position == "insert"
-            while self.get_message(target).insert is not target_status:
-                pytime.sleep(0.1)
+            if isinstance(position, int):
+                while not self.get_message(target).position == position:
+                    pytime.sleep(0.1)
+            else:
+                target_status = position == "insert"
+                while self.get_message(target).insert is not target_status:
+                    pytime.sleep(0.1)
         else:
             pytime.sleep(1.1)
             while self.get_message(target).move:
@@ -915,7 +939,16 @@ class Commander(PrivilegedNode):
 
     def record(
         self,
-        cmd: Literal["start", "stop", "file", "reduce", "binning", "?"],
+        cmd: Literal[
+            "start",
+            "stop",
+            "file",
+            "reduce",
+            "savespec",
+            "binning",
+            "tp_mode",
+            "?",
+        ],
         /,
         *,
         name: str = "",
@@ -923,6 +956,10 @@ class Commander(PrivilegedNode):
         nth: Optional[int] = None,
         ch: Optional[int] = None,
         spectrometer: Optional[str] = None,
+        save: Optional[bool] = None,
+        savespec: Optional[bool] = None,
+        tp_mode: Optional[bool] = None,
+        tp_range: Optional[list[int, int]] = None,
     ) -> None:
         """Control the recording.
 
@@ -971,10 +1008,31 @@ class Commander(PrivilegedNode):
 
         >>> com.record("binning", ch=8192, spectrometer="xffts")
 
+        Change the recording mode to total power mode : All channels
+
+        >>> com.record("tp_mode", tp_mode=True)
+
+        Change the recording mode to total power mode : 1000-2000, 3000-4000 channels
+
+        >>> com.record("tp_mode", tp_range=[1000, 2000, 3000, 4000])
+
         """
         CMD = cmd.upper()
         if CMD == "START":
+            if not self.savespec:
+                self.logger.warning("Spectral data will NOT be saved")
             recording = False
+            if self.tp_mode:
+                if self.tp_range:
+                    self.logger.info(
+                        f"\033[93mTotal power will be saved. Range: {self.tp_range}"
+                    )
+                elif self.tp_range == []:
+                    self.logger.info(
+                        "\033[93mTotal power will be saved. Range: All channels"
+                    )
+            else:
+                self.logger.info("Spectral data will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -994,7 +1052,11 @@ class Commander(PrivilegedNode):
             req = File.Request(data=str(content), path=name)
             return self._send_request(req, self.client["record_file"])
         elif CMD == "REDUCE":
-            msg = Sampling(nth=nth)
+            msg = Sampling(nth=nth, save=True)
+            return self.publisher["spectra_smpl"].publish(msg)
+        elif CMD == "SAVESPEC":
+            self.savespec = save
+            msg = Sampling(save=save)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
             msg = Binning(ch=ch, spectrometer=spectrometer)
@@ -1005,6 +1067,18 @@ class Commander(PrivilegedNode):
             else:
                 self.quick_look("ch", range=(0, ch), integ=1)
             return self.publisher["channel_binning"].publish(msg)
+        elif CMD == "TP_MODE":
+            self.tp_mode = tp_mode if tp_mode is not None else self.tp_mode
+            self.tp_range = tp_range if tp_range is not None else self.tp_range
+            if len(self.tp_range) % 2 != 0:
+                raise ValueError("tp_range must be a list of even number of elements")
+            if tp_range:
+                self.tp_mode = True
+            elif not tp_mode:
+                self.tp_range = []
+            now = pytime.time()
+            msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range, time=now)
+            return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
@@ -1023,6 +1097,29 @@ class Commander(PrivilegedNode):
             TimeOnly(input_topic_time=pytime.time(), output_topic_time=pytime.time())
         )
 
+    def wait_device(
+        self,
+        target: Literal["sis"],
+        value: Optional[Union[int, float]] = None,
+        range: Optional[Union[int, float]] = None,
+        id: Optional[Union[str, list[str]]] = None,
+    ):
+        if target == "sis":
+            check = {i: False for i in id}
+            while False in check.values():
+                values = self.get_message("sis_bias")
+                for id in check.keys():
+                    mes = values[f"sis_bias.{id}"].voltage
+                    print(f"{id}, {mes}")
+                    if math.isclose(mes, value, abs_tol=range):
+                        check[id] = True
+                    else:
+                        continue
+                print(check)
+                pytime.sleep(0.01)
+        else:
+            raise ValueError(f"Unkown device: {target}")
+
     @require_privilege(escape_cmd=["?"])
     def sis_bias(
         self,
@@ -1031,6 +1128,8 @@ class Commander(PrivilegedNode):
         *,
         mV: Optional[Union[int, float]] = None,
         id: Optional[Union[str, list[str]]] = None,
+        thresh: Optional[Union[int, float]] = 0.199,
+        wait: bool = False,
     ) -> None:
         """Control the SIS bias voltage.
 
@@ -1065,6 +1164,8 @@ class Commander(PrivilegedNode):
             self.publisher["sis_bias"].publish(
                 SISBias(voltage=float(mV), id=id, time=pytime.time())
             )
+            if wait:
+                self.wait_device("sis", mV, thresh, id)
         elif CMD == "?":
             return self.get_message("sis_bias", timeout_sec=10)
         elif CMD == "FINALIZE":
@@ -1300,6 +1401,27 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
+    def analog_logger(self, cmd: Literal["?"] = "?", /) -> None:
+        """Get the analog_logger reading.
+
+        Parameters
+        ----------
+        cmd
+            Command to execute.
+
+        Examples
+        --------
+        Get the analog_logger reading
+
+        >>> com.analog_logger("?")
+
+        """
+        CMD = cmd.upper()
+        if CMD == "?":
+            return self.get_message("analog_logger", timeout_sec=10)
+        else:
+            raise ValueError(f"Unkown command: {cmd!r}")
+
     sg = signal_generator
     """Alias of :meth:`signal_generator`."""
     patt = attenuator
@@ -1316,3 +1438,5 @@ class Commander(PrivilegedNode):
     """Alias of :meth:`local_attenuator`."""
     vg = vacuum_gauge
     """Alias of :meth:`vacuum_gauge`."""
+    al = analog_logger
+    """Alias of :meth:`analog_logger`"""
