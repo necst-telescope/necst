@@ -104,7 +104,7 @@ class HorizontalCoord(AlertHandlerNode):
         if len(self.result_queue) > 0:
             while len(self.result_queue) > 0:
                 cmd = self.result_queue.pop(0)
-                print(f"command discarded, result queue length:{len(self.result_queue)}")
+                # print(f"command discarded, result queue length:{len(self.result_queue)}")
                 if cmd[4] > now:
                     break
 
@@ -119,7 +119,7 @@ class HorizontalCoord(AlertHandlerNode):
                 frame="altaz",
             )
             self.publisher.publish(msg)
-            print("command published")
+            # print(f"command published, time:{cmd.time}")
 
     def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
         target_coord = (msg.lon, msg.lat)
