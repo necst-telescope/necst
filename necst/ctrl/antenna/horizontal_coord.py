@@ -111,8 +111,8 @@ class HorizontalCoord(AlertHandlerNode):
             msg = CoordMsg(
                 lon=cmd[0],
                 lat=cmd[1],
-                # dlon=cmd[2],
-                # dlat=cmd[3],
+                dlon=cmd[2],
+                dlat=cmd[3],
                 time=cmd[4],
                 unit="deg",
                 frame="altaz",
@@ -236,8 +236,8 @@ class HorizontalCoord(AlertHandlerNode):
             cmd = (
                 float(_az.to_value("deg")),
                 float(_el.to_value("deg")),
-                float(_dAz.to_value("deg")),
-                float(_dEl.to_value("deg")),
+                float(_dAz.to_value("arcsec")),
+                float(_dEl.to_value("arcsec")),
                 _t,
             )
             self.result_queue.append(cmd)
