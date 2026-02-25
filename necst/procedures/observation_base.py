@@ -70,9 +70,11 @@ class Observation(ABC):
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
                 if "ch" in self._kwargs.keys():
-                    for key, _ in config.spectrometer.items():
-                        self.binning(self._kwargs.pop("ch"), key)
-                    self.binning(self._kwargs.pop("ch"))
+                    specnames = set(
+                        [val.split(".")[0] for val in config.spectrometer.keys()]
+                    )
+                    for spec_name in specnames:
+                        self.binning(self._kwargs.pop("ch"), spec_name)
                 if "tp" in self._kwargs:
                     if "tp_mode" in self._kwargs and "tp_range" in self._kwargs:
                         tp_mode = self._kwargs.pop("tp_mode")
@@ -92,11 +94,10 @@ class Observation(ABC):
                 self.com.record("tp_mode", tp_mode=False, tp_range=[])
                 self.com.record("savespec", save=True)
                 self.com.antenna("stop")
-                for key in vars(config.spectrometer):
-                    view = getattr(config.spectrometer, key)
-                    if hasattr(view, "max_ch"):
-                        max_ch = getattr(view.max_ch, "value", view.max_ch)
-                        self.binning(max_ch, key)  # set max channel number
+                for _key, val in config.spectrometer.items():
+                    spec_name, key = _key.split(".", 1)
+                    if key == "max_ch":
+                        self.binning(val, spec_name)  # set max channel number
                 if hasattr(config, "dome"):
                     self.com.dome("close")
                     self.logger.info("Dome closed")
