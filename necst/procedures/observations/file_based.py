@@ -113,31 +113,30 @@ class FileBasedObservation(Observation):
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
 
-                    start = kwargs["start"]
-                    if hasattr(kwargs, "reference"):
-                        reference = kwargs["reference"]
-                    else: 
-                        reference = (0, 0)
-                    start_position = (start[0] + reference[0], start[1] + reference[1])
-                    target = start_position + (waypoint.scan_frame,)
-                    offset_margin = scan_frag * margin
+                    if not waypoint.name_query:
+                        start = kwargs["start"]
+                        if hasattr(kwargs, "reference"):
+                            reference = kwargs["reference"]
+                        else: 
+                            reference = (0, 0)
+                        start_position = (start[0] + reference[0], start[1] + reference[1])
+                        target = start_position + (waypoint.scan_frame,)
+                        offset_margin = scan_frag * margin
 
-                    if direction == "x":
-                        offset_position = (-offset_margin, 0)
-                    elif direction == "y":
-                        offset_position = (0, -offset_margin)
-                    else:
-                        offset_position = (-offset_margin, -offset_margin)
-                    
-                    print(f"target:{target}")
-                    print(f"offset:{offset_position}")
-                    self.logger.info("Move to ON...")
-                    self.com.antenna(
-                        "point",
-                        target=target,
-                        unit="deg",
-                        offset=offset_position + (waypoint.scan_frame,),
-                    )
+                        if direction == "x":
+                            offset_position = (-offset_margin, 0)
+                        elif direction == "y":
+                            offset_position = (0, -offset_margin)
+                        else:
+                            offset_position = (-offset_margin, -offset_margin)
+                        
+                        self.logger.info("Move to ON...")
+                        self.com.antenna(
+                            "point",
+                            target=target,
+                            unit="deg",
+                            offset=offset_position + (waypoint.scan_frame,),
+                        )
 
                     self.logger.info("Starting ON...")
                     self.com.metadata(
