@@ -129,7 +129,6 @@ class FileBasedObservation(Observation):
                             offset_position = (0, -offset_margin)
                         else:
                             offset_position = (-offset_margin, -offset_margin)
-                   
                         self.logger.info("Move to ON...")
                         self.com.antenna(
                             "point",
