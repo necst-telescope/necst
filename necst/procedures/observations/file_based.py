@@ -22,7 +22,6 @@ class FileBasedObservation(Observation):
 
     def _coord_to_tuple(self, coord: tuple):
         if len(coord) == 2:
-            print(coord)
             return tuple(x.to_value("deg") for x in coord)
         elif len(coord) == 3:
             return tuple(x.to_value("deg") for x in coord[:2]) + (coord[2],)
