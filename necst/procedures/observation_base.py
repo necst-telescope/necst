@@ -10,7 +10,6 @@ import rclpy
 from neclib import NECSTAuthorityError, get_logger
 from neclib.coordinates import PointingError
 
-
 from .. import config
 from ..core import Commander
 
@@ -71,7 +70,11 @@ class Observation(ABC):
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
                 if "ch" in self._kwargs.keys():
-                    self.binning(self._kwargs.pop("ch"))
+                    specnames = set(
+                        [val.split(".")[0] for val in config.spectrometer.keys()]
+                    )
+                    for spec_name in specnames:
+                        self.binning(self._kwargs.pop("ch"), spec_name)
                 if "tp" in self._kwargs:
                     if "tp_mode" in self._kwargs and "tp_range" in self._kwargs:
                         tp_mode = self._kwargs.pop("tp_mode")
@@ -91,9 +94,10 @@ class Observation(ABC):
                 self.com.record("tp_mode", tp_mode=False, tp_range=[])
                 self.com.record("savespec", save=True)
                 self.com.antenna("stop")
-                if hasattr(config, "spectrometer"):
-                    for key in config.spectrometer.keys():
-                        self.binning(config.spectrometer[key].max_ch)
+                for _key, val in config.spectrometer.items():
+                    spec_name, key = _key.split(".", 1)
+                    if key == "max_ch":
+                        self.binning(val, spec_name)  # set max channel number
                 if hasattr(config, "dome"):
                     self.com.dome("close")
                     self.logger.info("Dome closed")
@@ -193,9 +197,9 @@ class Observation(ABC):
         self.com.metadata("set", position="", id=str(id))
         self.logger.debug("Complete ON")
 
-    def binning(self, ch):
+    def binning(self, ch, spectrometer):
         if ch is not None:
             if (ch & (ch - 1)) == 0:
-                self.com.record("binning", ch=ch)
+                self.com.record("binning", ch=ch, spectrometer=spectrometer)
             else:
                 raise ValueError(f"Input channel number {ch} is not power of 2.")
