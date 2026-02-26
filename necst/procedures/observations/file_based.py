@@ -7,7 +7,7 @@ from neclib.coordinates.observations.observation_spec_base import (
     ObservationSpec,
 )
 
-from ..observation_base import Observation
+from .observation_base import Observation
 from ... import config
 
 
@@ -75,7 +75,6 @@ class FileBasedObservation(Observation):
 
             kwargs = dict(unit="deg")
             if waypoint.name_query:
-                _target, _reference = waypoint.target, waypoint.reference
                 kwargs.update(name=waypoint.target or waypoint.reference)
             else:
                 _target, _reference = waypoint.target, waypoint.reference
@@ -116,8 +115,7 @@ class FileBasedObservation(Observation):
                     self.logger.info("Move to ON...")
 
                     start = kwargs["start"]
-                    print(_reference)
-                    reference = kwargs["reference"] if _reference else (0, 0)
+                    reference = kwargs["reference"] if hasattr(kwargs, "reference") else (0, 0)
                     start_position = (start[0] + reference[0], start[1] + reference[1])
                     target = start_position + (waypoint.scan_frame,)
                     offset_margin = scan_frag * margin
