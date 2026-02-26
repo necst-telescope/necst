@@ -30,11 +30,11 @@ class FileBasedObservation(Observation):
 
     def run(self, file: Union[os.PathLike, str, IO], **kwargs) -> None:
         scan_frag = 1
+        margin = config.antenna.scan_margin.value
 
         if self.observation_type == "OTF":
             bydirectional = self.obsspec.bydirectional > 0
             reset_scan = self.obsspec.reset_scan > 0
-            margin = config.antenna.scan_margin.value
             direction = self.obsspec.scan_direction.lower()
 
             if reset_scan:
@@ -64,6 +64,7 @@ class FileBasedObservation(Observation):
         else:
             reset_scan = True
             bydirectional = False
+            direction = None
             reset = 1
 
         self.com.record("file", name=file)
@@ -114,7 +115,7 @@ class FileBasedObservation(Observation):
                     self.logger.info("Move to ON...")
 
                     start = kwargs["start"]
-                    reference = kwargs["reference"]
+                    reference = kwargs["reference"] if _reference else (0, 0)
                     start_position = (start[0] + reference[0], start[1] + reference[1])
                     target = start_position + (waypoint.scan_frame,)
                     offset_margin = scan_frag * margin
@@ -124,6 +125,9 @@ class FileBasedObservation(Observation):
                         offset_position = (-offset_margin, 0)
                     elif direction == "y":
                         offset_position = (0, -offset_margin)
+                    else:
+                        offset_position = (0, 0)
+
                     self.com.antenna(
                         "point",
                         target=target,
