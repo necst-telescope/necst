@@ -125,7 +125,7 @@ class FileBasedObservation(Observation):
                     elif direction == "y":
                         offset_position = (0, -offset_margin)
                     else:
-                        offset_position = (-margin, -margin)
+                        offset_position = (-offset_margin, -offset_margin)
 
                     self.com.antenna(
                         "point",
