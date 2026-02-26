@@ -113,13 +113,14 @@ class FileBasedObservation(Observation):
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
 
-                    if not waypoint.name_query:
+                    if self.observation_type == "OTF":
                         start = kwargs["start"]
                         if hasattr(kwargs, "reference"):
                             reference = kwargs["reference"]
                         else: 
                             reference = (0, 0)
-                        start_position = (start[0] + reference[0], start[1] + reference[1])
+                        start_position = (start[0] + reference[0], 
+                                          start[1] + reference[1])
                         target = start_position + (waypoint.scan_frame,)
                         offset_margin = scan_frag * margin
 
@@ -142,7 +143,6 @@ class FileBasedObservation(Observation):
                     self.com.metadata(
                         "set", position="ON", id=waypoint.id, intercept=False
                     )
-                    print(kwargs)
                     self.com.antenna("scan", **kwargs)
                     self.com.metadata("set", position="", id="")
                 else:
