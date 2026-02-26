@@ -115,6 +115,7 @@ class FileBasedObservation(Observation):
                     self.logger.info("Move to ON...")
 
                     start = kwargs["start"]
+                    print(hasattr(kwargs, "reference"))
                     reference = kwargs["reference"] if hasattr(kwargs, "reference") else (0, 0)
                     start_position = (start[0] + reference[0], start[1] + reference[1])
                     target = start_position + (waypoint.scan_frame,)
