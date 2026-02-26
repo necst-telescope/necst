@@ -5,7 +5,7 @@ import time
 from neclib import config
 from neclib.coordinates.observations import OpticalPointingSpec
 
-from ..observation_base import Observation
+from .observation_base import Observation
 
 
 class OpticalPointing(Observation):
