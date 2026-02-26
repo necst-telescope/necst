@@ -75,6 +75,7 @@ class FileBasedObservation(Observation):
 
             kwargs = dict(unit="deg")
             if waypoint.name_query:
+                _target, _reference = waypoint.target, waypoint.reference
                 kwargs.update(name=waypoint.target or waypoint.reference)
             else:
                 _target, _reference = waypoint.target, waypoint.reference
