@@ -1,7 +1,7 @@
 """Interface to send command to any remotely controlled part of telescope."""
 
-import time as pytime
 import math
+import time as pytime
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Literal, Optional, Tuple, Union
@@ -13,13 +13,13 @@ from necst_msgs.msg import (
     Binning,
     Boolean,
     ChopperMsg,
-    MirrorMsg,
     DeviceReading,
     DomeOC,
     DriveMsg,
-    LocalSignal,
     LocalAttenuatorMsg,
+    LocalSignal,
     MembraneMsg,
+    MirrorMsg,
     PIDMsg,
     RecordMsg,
     Sampling,
@@ -28,13 +28,7 @@ from necst_msgs.msg import (
     TimeOnly,
     TPModeMsg,
 )
-from necst_msgs.srv import (
-    CoordinateCommand,
-    File,
-    CCDCommand,
-    DomeSync,
-    ComDelaySrv,
-)
+from necst_msgs.srv import CCDCommand, ComDelaySrv, CoordinateCommand, DomeSync, File
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -961,6 +955,7 @@ class Commander(PrivilegedNode):
         content: Optional[str] = None,
         nth: Optional[int] = None,
         ch: Optional[int] = None,
+        spectrometer: Optional[str] = None,
         save: Optional[bool] = None,
         savespec: Optional[bool] = None,
         tp_mode: Optional[bool] = None,
@@ -1011,7 +1006,7 @@ class Commander(PrivilegedNode):
 
         Change the number of spectral channels
 
-        >>> com.record("binning", ch=8192)
+        >>> com.record("binning", ch=8192, spectrometer="xffts")
 
         Change the recording mode to total power mode : All channels
 
@@ -1063,7 +1058,7 @@ class Commander(PrivilegedNode):
             msg = Sampling(save=save)
             return self.publisher["spectra_smpl"].publish(msg)
         elif CMD == "BINNING":
-            msg = Binning(ch=ch)
+            msg = Binning(ch=ch, spectrometer=spectrometer)
             if ch > 100:
                 self.quick_look(
                     "ch", range=(0, 100), integ=1

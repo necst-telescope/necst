@@ -7,7 +7,7 @@ from neclib.coordinates.observations.observation_spec_base import (
     ObservationSpec,
 )
 
-from ..observation_base import Observation
+from .observation_base import Observation
 from ... import config
 
 
@@ -22,7 +22,6 @@ class FileBasedObservation(Observation):
 
     def _coord_to_tuple(self, coord: tuple):
         if len(coord) == 2:
-            print(coord)
             return tuple(x.to_value("deg") for x in coord)
         elif len(coord) == 3:
             return tuple(x.to_value("deg") for x in coord[:2]) + (coord[2],)
@@ -30,11 +29,11 @@ class FileBasedObservation(Observation):
 
     def run(self, file: Union[os.PathLike, str, IO], **kwargs) -> None:
         scan_frag = 1
+        margin = config.antenna.scan_margin.value
 
         if self.observation_type == "OTF":
             bydirectional = self.obsspec.bydirectional > 0
             reset_scan = self.obsspec.reset_scan > 0
-            margin = config.antenna.scan_margin.value
             direction = self.obsspec.scan_direction.lower()
 
             if reset_scan:
@@ -64,6 +63,7 @@ class FileBasedObservation(Observation):
         else:
             reset_scan = True
             bydirectional = False
+            direction = None
             reset = 1
 
         self.com.record("file", name=file)
@@ -111,31 +111,38 @@ class FileBasedObservation(Observation):
 
             if waypoint.mode == ObservationMode.ON:
                 if waypoint.is_scan:
-                    self.logger.info("Move to ON...")
+                    if self.observation_type == "OTF":
+                        start = kwargs["start"]
+                        if hasattr(kwargs, "reference"):
+                            reference = kwargs["reference"]
+                        else:
+                            reference = (0, 0)
+                        start_position = (
+                            start[0] + reference[0],
+                            start[1] + reference[1],
+                        )
+                        target = start_position + (waypoint.scan_frame,)
+                        offset_margin = scan_frag * margin
 
-                    start = kwargs["start"]
-                    reference = kwargs["reference"]
-                    start_position = (start[0] + reference[0], start[1] + reference[1])
-                    target = start_position + (waypoint.scan_frame,)
-                    offset_margin = scan_frag * margin
-                    offset_margin = scan_frag * margin
+                        if direction == "x":
+                            offset_position = (-offset_margin, 0)
+                        elif direction == "y":
+                            offset_position = (0, -offset_margin)
+                        else:
+                            offset_position = (-offset_margin, -offset_margin)
 
-                    if direction == "x":
-                        offset_position = (-offset_margin, 0)
-                    elif direction == "y":
-                        offset_position = (0, -offset_margin)
-                    self.com.antenna(
-                        "point",
-                        target=target,
-                        unit="deg",
-                        offset=offset_position + (waypoint.scan_frame,),
-                    )
+                        self.logger.info("Move to ON...")
+                        self.com.antenna(
+                            "point",
+                            target=target,
+                            unit="deg",
+                            offset=offset_position + (waypoint.scan_frame,),
+                        )
 
                     self.logger.info("Starting ON...")
                     self.com.metadata(
                         "set", position="ON", id=waypoint.id, intercept=False
                     )
-                    print(kwargs)
                     self.com.antenna("scan", **kwargs)
                     self.com.metadata("set", position="", id="")
                 else:
