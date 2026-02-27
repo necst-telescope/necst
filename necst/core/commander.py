@@ -1020,6 +1020,7 @@ class Commander(PrivilegedNode):
         CMD = cmd.upper()
         if CMD == "START":
             if not self.savespec:
+                # TODO revise following process and L1033
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
@@ -1031,8 +1032,6 @@ class Commander(PrivilegedNode):
                     self.logger.info(
                         "\033[93mTotal power will be saved. Range: All channels"
                     )
-            else:
-                self.logger.info("Spectral data will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -1076,8 +1075,11 @@ class Commander(PrivilegedNode):
                 self.tp_mode = True
             elif not tp_mode:
                 self.tp_range = []
-            now = pytime.time()
-            msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range, time=now)
+            msg = TPModeMsg(
+                tp_mode=self.tp_mode,
+                tp_range=self.tp_range,
+                time=pytime.time(),
+            )
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")

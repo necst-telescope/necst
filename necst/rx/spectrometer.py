@@ -152,7 +152,6 @@ class SpectralData(DeviceNode):
         else:
             nth = float("inf")
             self.record_condition = ConditionChecker(nth, True)
-            self.logger.info("Spectral data will NOT be saved")
 
     def tp_mode_func(self, msg: TPModeMsg) -> None:
         # tp_range: List[int, int] or None
