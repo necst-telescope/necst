@@ -5,6 +5,19 @@ ARG DISTRO
 SHELL ["/bin/bash", "-c"]
 ENV SHELL=/bin/bash
 
+RUN rm -f /etc/apt/sources.list.d/ros*.list \
+    && rm -f /etc/apt/trusted.gpg.d/ros*.gpg \
+    && rm -f /etc/apt/sources.list.d/ros*.list \
+    && rm -f /etc/apt/trusted.gpg.d/ros*.gpg
+
+RUN apt-get update && apt-get install -y \
+    curl gnupg lsb-release \
+    && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+    | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+    http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" \
+    > /etc/apt/sources.list.d/ros2.list
+
 RUN apt-get update \
     && apt-get -y install curl git pciutils python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp \
     && apt-get clean \
