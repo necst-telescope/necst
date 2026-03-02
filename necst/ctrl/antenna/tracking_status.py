@@ -1,4 +1,5 @@
 import time
+import math
 
 from neclib.data import LinearExtrapolate
 from neclib.utils import ConditionChecker, ParameterList
@@ -46,7 +47,11 @@ class AntennaTrackingStatus(Node):
             enc = self.enc[0]
             cmd = self.coord_ext(CoordMsg(time=enc.time), self.cmd)
 
-            error = ((enc.lon - cmd.lon) ** 2 + (enc.lat - cmd.lat) ** 2) ** 0.5
+            daz = enc.lon - cmd.lon
+            del_ = enc.lat - cmd.lat
+            cos_el = math.cos(math.radians(enc.lat))
+            error = ((daz * cos_el) ** 2 + (del_) ** 2) ** 0.5
+
             ok = self.tracking_checker.check(error < self.threshold)
             msg = TrackingStatus(ok=ok, error=error, time=now)
         self.pub.publish(msg)
