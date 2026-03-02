@@ -135,7 +135,7 @@ class DomePIDController(AlertHandlerNode):
         else:
             cmd = self.command_list.pop(0)
 
-        enc = self.enc[0]
+        enc = self.enc[-1]
 
         dist = cmd.lon % 360
         pos = enc.lon % 360
