@@ -70,7 +70,6 @@ class Observation(ABC):
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
                 if "ch" in self._kwargs.keys():
-                    self.binning(self._kwargs.pop("ch"))
                     specnames = set(
                         [val.split(".")[0] for val in config.spectrometer.keys()]
                     )
