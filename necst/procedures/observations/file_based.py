@@ -36,6 +36,12 @@ class FileBasedObservation(Observation):
         scan_frag = 1
         margin = config.antenna.scan_margin.value
 
+        # cos(lat) correction option for longitude offsets
+        params = getattr(self.obsspec, "parameters", {}) or {}
+        cos_global = bool(params.get("cos_correction", False))
+        cos_scan = bool(params.get("scan_cos_correction", cos_global))
+        cos_point = bool(params.get("point_cos_correction", cos_global))
+
         if self.observation_type == "OTF":
             bydirectional = self.obsspec.bydirectional > 0
             reset_scan = self.obsspec.reset_scan > 0
@@ -78,6 +84,8 @@ class FileBasedObservation(Observation):
                 continue
 
             kwargs = dict(unit="deg")
+            # Apply cos correction depending on command type (scan vs point)
+            kwargs.update(cos_correction=cos_scan if waypoint.is_scan else cos_point)
             if waypoint.name_query:
                 kwargs.update(name=waypoint.target or waypoint.reference)
             else:
@@ -142,6 +150,7 @@ class FileBasedObservation(Observation):
                             target=target,
                             unit="deg",
                             offset=offset_position + (waypoint.scan_frame,),
+                            cos_correction=cos_scan,
                         )
 
                     self.logger.info("Starting ON...")

@@ -216,6 +216,7 @@ class Commander(PrivilegedNode):
         speed: Optional[Union[int, float]] = None,
         margin: Optional[float] = None,
         direct_mode: bool = False,
+        cos_correction: bool = False,
     ) -> None:
         """Control antenna direction and motion.
 
@@ -376,6 +377,15 @@ class Commander(PrivilegedNode):
                     unit=unit,
                     direct_mode=direct_mode,
                 )
+
+            # Propagate optional cos correction for longitude offsets.
+            # Backward compatible: only set if the service definition includes the field.
+            try:
+                _tmp = CoordinateCommand.Request()
+                if hasattr(_tmp, "cos_correction"):
+                    kwargs.update(cos_correction=bool(cos_correction))
+            except Exception:
+                pass
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
             if wait:
@@ -384,6 +394,13 @@ class Commander(PrivilegedNode):
 
         elif CMD == "SCAN":
             scan_kwargs = dict(speed=float(speed), unit=unit)
+            # Backward compatible: only set if the service definition includes the field.
+            try:
+                _tmp = CoordinateCommand.Request()
+                if hasattr(_tmp, "cos_correction"):
+                    scan_kwargs.update(cos_correction=bool(cos_correction))
+            except Exception:
+                pass
 
             if margin is None:
                 margin = config.antenna_scan_margin.value

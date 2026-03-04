@@ -43,7 +43,7 @@ if __name__ == "__main__":
     )
     p.add_argument(
         "--save_spec",
-        action='store_true', 
+        action="store_true",
         help="Spectral data will not be saved.",
     )
     args = p.parse_args()
@@ -53,6 +53,6 @@ if __name__ == "__main__":
         min_voltage_mV=args.min,
         max_voltage_mV=args.max,
         step_voltage_mV=args.step,
-        save=args.save_spec
+        save=args.save_spec,
     )
     meas.execute()

@@ -142,6 +142,7 @@ class HorizontalCoord(AlertHandlerNode):
                 msg.lat[0],
                 msg.frame,
                 unit=msg.unit,
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif (not scan) and (not named) and with_offset:
             self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
@@ -151,16 +152,20 @@ class HorizontalCoord(AlertHandlerNode):
                 msg.frame,
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif (not scan) and named and (not with_offset):
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET command: {msg}")
-            new_generator = self.finder.track(msg.name)
+            new_generator = self.finder.track(
+                msg.name, cos_correction=getattr(msg, "cos_correction", False)
+            )
         elif (not scan) and named and with_offset:
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET-WITH-OFFSET command: {msg}")
             new_generator = self.finder.track(
                 msg.name,
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif target_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-ABSOLUTE-COORD command: {msg}")
@@ -171,6 +176,7 @@ class HorizontalCoord(AlertHandlerNode):
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=msg.margin,
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif offset_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-RELATIVE-COORD command: {msg}")
@@ -184,6 +190,7 @@ class HorizontalCoord(AlertHandlerNode):
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=msg.margin,
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif offset_scan and named:
             self.logger.debug(f"Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: {msg}")
@@ -195,6 +202,7 @@ class HorizontalCoord(AlertHandlerNode):
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=msg.margin,
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         else:
             raise ValueError(f"Cannot determine command type for {msg}")
