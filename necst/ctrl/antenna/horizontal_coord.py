@@ -103,11 +103,12 @@ class HorizontalCoord(AlertHandlerNode):
         cmd = None
         if len(self.result_queue) > 0:
             while len(self.result_queue) > 0:
-                cmd = self.result_queue.pop(0)
-                if cmd[4] > now:
+                cand = self.result_queue.pop(0)
+                if cand[4] > now:
+                    cmd = cand
                     break
 
-        if cmd:
+        if cmd is not None:
             msg = CoordMsg(
                 lon=cmd[0],
                 lat=cmd[1],
