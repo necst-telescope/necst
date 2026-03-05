@@ -131,9 +131,8 @@ class FileBasedObservation(Observation):
                 if waypoint.is_scan:
                     if self.observation_type == "OTF":
                         start = kwargs["start"]
-                        if hasattr(kwargs, "reference"):
-                            reference = kwargs["reference"]
-                        else:
+                        reference = kwargs.get("reference", None)
+                        if reference is None:
                             reference = (0, 0)
                         start_position = (
                             start[0] + reference[0],
