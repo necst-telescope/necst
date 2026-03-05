@@ -42,14 +42,15 @@ class FileBasedObservation(Observation):
         #cos_scan = bool(params.get("scan_cos_correction", cos_global))
         #cos_point = bool(params.get("point_cos_correction", cos_global))
 
-        cos_global = bool(getattr(self.obsspec, "cos_correction", False))
-        cos_scan = bool(getattr(self.obsspec, "scan_cos_correction", cos_global))
-        cos_point = bool(getattr(self.obsspec, "point_cos_correction", cos_global))
+        params = self.obsspec.parameters or {}
+        cos_global = bool(params.get("cos_correction", False))
+        cos_scan   = bool(params.get("scan_cos_correction", cos_global))
+        cos_point  = bool(params.get("point_cos_correction", cos_global))
 
         if self.observation_type == "OTF":
-            bydirectional = self.obsspec.bydirectional > 0
-            reset_scan = self.obsspec.reset_scan > 0
-            direction = self.obsspec.scan_direction.lower()
+            bydirectional = bool((getattr(self.obsspec, "bydirectional", 0) or 0) > 0)
+            reset_scan = bool((getattr(self.obsspec, "reset_scan", 0) or 0) > 0)
+            direction = str(getattr(self.obsspec, "scan_direction", "x") or "x").lower()
 
             if reset_scan:
                 start_position = self.obsspec["start_position_" + direction]
