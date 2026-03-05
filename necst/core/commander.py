@@ -217,6 +217,7 @@ class Commander(PrivilegedNode):
         margin: Optional[float] = None,
         direct_mode: bool = False,
         cos_correction: bool = False,
+        obsfreq: float = 0.0,
     ) -> None:
         """Control antenna direction and motion.
 
@@ -384,6 +385,8 @@ class Commander(PrivilegedNode):
                 _tmp = CoordinateCommand.Request()
                 if hasattr(_tmp, "cos_correction"):
                     kwargs.update(cos_correction=bool(cos_correction))
+                if hasattr(_tmp, "obsfreq"):
+                    kwargs.update(obsfreq=float(obsfreq))
             except Exception:
                 pass
             req = CoordinateCommand.Request(**kwargs)
@@ -399,6 +402,8 @@ class Commander(PrivilegedNode):
                 _tmp = CoordinateCommand.Request()
                 if hasattr(_tmp, "cos_correction"):
                     scan_kwargs.update(cos_correction=bool(cos_correction))
+                if hasattr(_tmp, "obsfreq"):
+                    scan_kwargs.update(obsfreq=float(obsfreq))
             except Exception:
                 pass
 

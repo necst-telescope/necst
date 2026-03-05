@@ -171,6 +171,11 @@ class HorizontalCoord(AlertHandlerNode):
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
 
+        # Apply observation frequency if specified (0.0 means "use config default").
+        obsfreq = getattr(msg, "obsfreq", 0.0)
+        if obsfreq > 0:
+            self.finder.obsfreq = obsfreq  # GHz; QuantityValidator handles units
+
         if (not scan) and (not named) and (not with_offset):
             self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
             new_generator = self.finder.track(

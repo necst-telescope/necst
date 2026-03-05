@@ -47,6 +47,16 @@ class FileBasedObservation(Observation):
         cos_scan   = bool(params.get("scan_cos_correction", cos_global))
         cos_point  = bool(params.get("point_cos_correction", cos_global))
 
+        # Observation frequency: from observation spec if available, else config.
+        obsfreq = float(params.get("observation_frequency", 0.0))
+        if obsfreq <= 0:
+            _cfg_freq = getattr(config, "observation_frequency", None)
+            if _cfg_freq is not None:
+                try:
+                    obsfreq = float(_cfg_freq)
+                except (TypeError, ValueError):
+                    obsfreq = 0.0
+
         if self.observation_type == "OTF":
             bydirectional = bool((getattr(self.obsspec, "bydirectional", 0) or 0) > 0)
             reset_scan = bool((getattr(self.obsspec, "reset_scan", 0) or 0) > 0)
@@ -88,7 +98,7 @@ class FileBasedObservation(Observation):
                 self.hot(waypoint.integration.to_value("s"), waypoint.id)
                 continue
 
-            kwargs = dict(unit="deg")
+            kwargs = dict(unit="deg", obsfreq=obsfreq)
             # Apply cos correction depending on command type (scan vs point)
             kwargs.update(cos_correction=cos_scan if waypoint.is_scan else cos_point)
             if waypoint.name_query:
