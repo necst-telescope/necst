@@ -37,10 +37,14 @@ class FileBasedObservation(Observation):
         margin = config.antenna.scan_margin.value
 
         # cos(lat) correction option for longitude offsets
-        params = getattr(self.obsspec, "parameters", {}) or {}
-        cos_global = bool(params.get("cos_correction", False))
-        cos_scan = bool(params.get("scan_cos_correction", cos_global))
-        cos_point = bool(params.get("point_cos_correction", cos_global))
+        #params = getattr(self.obsspec, "parameters", {}) or {}
+        #cos_global = bool(params.get("cos_correction", False))
+        #cos_scan = bool(params.get("scan_cos_correction", cos_global))
+        #cos_point = bool(params.get("point_cos_correction", cos_global))
+
+        cos_global = bool(getattr(self.obsspec, "cos_correction", False))
+        cos_scan = bool(getattr(self.obsspec, "scan_cos_correction", cos_global))
+        cos_point = bool(getattr(self.obsspec, "point_cos_correction", cos_global))
 
         if self.observation_type == "OTF":
             bydirectional = self.obsspec.bydirectional > 0
