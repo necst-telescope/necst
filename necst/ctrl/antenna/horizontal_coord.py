@@ -134,22 +134,56 @@ class HorizontalCoord(AlertHandlerNode):
             # Avoid sudden resumption of telescope drive
             return self.gc.trigger()
 
-        # Publish the earliest future command and drop outdated ones.
         now = time.time()
-        cmd = None
+        
+        # Target ideal transmission time (horizon)
+        offset = float(config.antenna_command_offset_sec)
+        target_time = now + offset
+
+        cmds = []
+        queue_len = 0
+        head_lead = None
+
         with self._rq_lock:
+            # 1. Discard outdated commands that are entirely in the past.
             while self.result_queue and self.result_queue[0][4] <= now:
                 self.result_queue.popleft()
-            if self.result_queue and self.result_queue[0][4] > now:
-                cmd = self.result_queue.popleft()
+            
+            queue_len = len(self.result_queue)
+            if queue_len > 0:
+                head_lead = self.result_queue[0][4] - now
 
-        if cmd is not None:
+            # 2. Retrieve all commands that have reached their scheduled transmission time based on real-time.
+            # Depending on timer precision, this may retrieve 0, 1, or multiple commands,
+            # maintaining tight synchronization with real-time.
+            max_publish = 5  # Safety mechanism to prevent QoS overflow (max burst per tick)
+            while (
+                self.result_queue 
+                and self.result_queue[0][4] <= target_time 
+                and len(cmds) < max_publish
+            ):
+                cmds.append(self.result_queue.popleft())
+
+        # 3. Output diagnostic logs.
+        if head_lead is not None:
+            self.logger.debug(
+                f"Queue Info: length={queue_len}, head_lead={head_lead:.3f}s, published={len(cmds)}",
+                throttle_duration_sec=1.0
+            )
+        else:
+            self.logger.debug(
+                "Queue Info: length=0 (Buffer empty!)",
+                throttle_duration_sec=1.0
+            )
+
+        # Publish retrieved commands sequentially.
+        for cmd in cmds:
             msg = CoordMsg(
-                lon=cmd[0],
-                lat=cmd[1],
-                dlon=cmd[2],
-                dlat=cmd[3],
-                time=cmd[4],
+                lon=float(cmd[0]),
+                lat=float(cmd[1]),
+                dlon=float(cmd[2]),
+                dlat=float(cmd[3]),
+                time=float(cmd[4]),
                 unit="deg",
                 frame="altaz",
             )
