@@ -51,95 +51,100 @@ class HorizontalCoord(AlertHandlerNode):
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(0.2, self.convert)
 
-        # ---------------------------------------------------------------------
-        # Command buffer (producer: convert(), consumer: command_realtime()).
-        #
-        # - Each entry is a 5-tuple:
-        #     (az_deg, el_deg, dAz_deg, dEl_deg, cmd_time_unix)
-        # - `cmd_time_unix` is the *future* time when the command should be valid.
-        # - `command_realtime()` publishes the earliest future command and drops
-        #   outdated ones.
-        # - `convert()` replenishes the buffer in groups produced by
-        #   CoordinateGeneratorManager (PathFinder.from_function()).
-        #
-        # Performance / safety notes:
-        # - Use deque for O(1) popleft.
-        # - Avoid rebuilding the entire queue for dedup (the original code did a
-        #   list(filter(...)) per point).
-        # - When convert() is delayed (e.g., heavy astropy transforms/IERS/cache
-        #   spikes), replenish multiple groups in one call to avoid run-out.
-        # - Fast-forward blocks that are already behind the desired schedule
-        #   (now + command_offset).
-        # ---------------------------------------------------------------------
         self.result_queue = deque()
         self._rq_lock = threading.Lock()
-
         self._gen_lock = threading.RLock()
 
-        # Buffer policy (relative to "now + antenna_command_offset_sec"):
-        # Keep at least this much headroom, but do not grow without bound.
-        # These values were chosen to be conservative for 50 Hz control.
         self._min_buffer_sec = 0.5
         self._max_buffer_sec = 3.0
-        self._max_groups_per_convert = 10  # capped to avoid long blocking in convert()
+        self._max_groups_per_convert = 10
 
         self.tracking_ok = False
         self.executing_generator = CoordinateGeneratorManager()
         self.last_status = None
 
-        # True after the coordinate generator has exhausted, but while there are still
-        # future commands left in `result_queue` to be published.
-        #
-        # This is critical for scan continuity: the upper layer may send the next raw
-        # command when `controlled=False` is observed. If we publish `controlled=False`
-        # before the buffered tail of the current scan is consumed, `_update_cmd()` will
-        # clear that remaining tail and the telescope appears to stop early.
+        # Execution lifecycle state.
+        # `_current_exec_id` must remain stable until the buffered tail of that
+        # execution has been completely published. Commander.wait(mode="control")
+        # treats an ID change as completion, so changing it at generator exhaustion is
+        # too early if `result_queue` still holds future commands.
+        self._exec_seq = 0
+        self._idle_exec_id = self._next_exec_id()
+        self._current_exec_id: Optional[str] = None
         self._generator_exhausted = False
         self._last_active_context: Optional[ControlContext] = None
 
         self.gc = self.create_guard_condition(self._clear_cmd)
 
-    def _clear_cmd(self) -> None:
+    def _next_exec_id(self) -> str:
+        self._exec_seq += 1
+        return f"exec-{self._exec_seq}"
+
+
+    def _request_summary(self, request: CoordinateCommand.Request) -> str:
+        try:
+            target_scan = all(len(x) == 2 for x in (request.lon, request.lat))
+            offset_scan = all(len(x) == 2 for x in (request.offset_lon, request.offset_lat))
+            named = request.name != ""
+            with_offset = any(len(x) != 0 for x in (request.offset_lon, request.offset_lat))
+            if target_scan and (not named):
+                return f"scan(abs,{request.frame},speed={request.speed})"
+            if offset_scan and named:
+                return f"scan(named+offset,{request.offset_frame},speed={request.speed},name={request.name})"
+            if offset_scan and (not named):
+                return f"scan(offset,{request.offset_frame},speed={request.speed})"
+            if (not target_scan) and named and with_offset:
+                return f"point(named+offset,{request.offset_frame},name={request.name})"
+            if (not target_scan) and named:
+                return f"point(named,{request.frame},name={request.name})"
+            if (not target_scan) and with_offset:
+                return f"point(offset,{request.offset_frame})"
+            return f"point({request.frame})"
+        except Exception:
+            return "request(?)"
+
+    def _transition_to_idle(self) -> None:
+        with self._gen_lock:
+            self.executing_generator.clear()
+            self._current_exec_id = None
+            self._generator_exhausted = False
+            self._last_active_context = None
+            self._idle_exec_id = self._next_exec_id()
         self.cmd = None
-        self._generator_exhausted = False
-        self._last_active_context = None
+
+    def _clear_cmd(self) -> None:
+        self._transition_to_idle()
         with self._rq_lock:
             self.result_queue.clear()
 
     def _update_cmd(
         self, request: CoordinateCommand.Request, response: CoordinateCommand.Response
     ) -> CoordinateCommand.Response:
-        """Update the target coordinate command.
-
-        When new command has been received, conversion result will stop for a moment,
-        since coordinate conversion for new coordinate cannot be performed immediately.
-        This suspension won't affect PID control, as it checks the command time.
-
-        Notes
-        -----
-        The conversion result will be cleared immediately after receiving the new
-        command. This won't irregular drive, as this command doesn't contain detailed
-        and frequent coordinate information. This is the case for scan command, as the
-        command only contains start/stop position and scan speed.
-
-        """
+        req_summary = self._request_summary(request)
         with self._gen_lock:
-            # Prevent convert() from consuming a half-updated generator/cmd.
             self.cmd = request
             self._generator_exhausted = False
             self._last_active_context = None
+            self._current_exec_id = self._next_exec_id()
             self._parse_cmd(request)
-            with self._rq_lock:
-                if self.result_queue:
-                    now = time.time()
-                    head = self.result_queue[0][4] - now
-                    tail = self.result_queue[-1][4] - now
-                    self.logger.warning(
-                        "Clearing buffered commands due to new raw_coord request: "
-                        f"n={len(self.result_queue)}, head={head:.3f}s, tail={tail:.3f}s"
-                    )
-                self.result_queue.clear()
-            response.id = str(id(self.executing_generator.get()))
+
+        with self._rq_lock:
+            if self.result_queue:
+                now = time.time()
+                head = self.result_queue[0][4] - now
+                tail = self.result_queue[-1][4] - now
+                self.logger.warning(
+                    "Clearing buffered commands due to new raw_coord request: "
+                    f"req={req_summary}, new_id={self._current_exec_id}, n={len(self.result_queue)}, "
+                    f"head={head:.3f}s, tail={tail:.3f}s, generator_exhausted={self._generator_exhausted}"
+                )
+            else:
+                self.logger.info(
+                    f"Accepted raw_coord request immediately: req={req_summary}, new_id={self._current_exec_id}"
+                )
+            self.result_queue.clear()
+
+        response.id = self._current_exec_id or self._idle_exec_id
         return response
 
     def _update_enc(self, msg: CoordMsg) -> None:
@@ -153,12 +158,9 @@ class HorizontalCoord(AlertHandlerNode):
     def command_realtime(self) -> None:
         if self.status.critical():
             self.logger.warning("Guard condition activated", throttle_duration_sec=1)
-            # Avoid sudden resumption of telescope drive
             return self.gc.trigger()
 
         now = time.time()
-        
-        # 目標とする理想の送信時刻（ホライズン）
         offset = float(config.antenna_command_offset_sec)
         target_time = now + offset
 
@@ -167,37 +169,32 @@ class HorizontalCoord(AlertHandlerNode):
         head_lead = None
 
         with self._rq_lock:
-            # 1. 完全に過去になってしまった古いコマンドは捨てる）
             while self.result_queue and self.result_queue[0][4] <= now:
                 self.result_queue.popleft()
-            
+
             queue_len = len(self.result_queue)
             if queue_len > 0:
                 head_lead = self.result_queue[0][4] - now
 
-            # 2. 実時間ベースで「送るべき時刻」に達しているコマンドを全て取り出す
-            # タイマーが早ければ0個、正確なら1個、遅れれば2〜3個となり、完全に実時間と同期します
-            max_publish = 5  # QoS溢れを防ぐ安全装置（1Tickでの最大バースト数）
+            max_publish = 5
             while (
-                self.result_queue 
-                and self.result_queue[0][4] <= target_time 
+                self.result_queue
+                and self.result_queue[0][4] <= target_time
                 and len(cmds) < max_publish
             ):
                 cmds.append(self.result_queue.popleft())
 
-        # 3. 診断ログの出力
         if head_lead is not None:
             self.logger.debug(
                 f"Queue Info: length={queue_len}, head_lead={head_lead:.3f}s, published={len(cmds)}",
-                throttle_duration_sec=1.0
+                throttle_duration_sec=1.0,
             )
         else:
             self.logger.debug(
                 "Queue Info: length=0 (Buffer empty!)",
-                throttle_duration_sec=1.0
+                throttle_duration_sec=1.0,
             )
 
-        # 取り出したコマンドを順次Publish
         for cmd in cmds:
             msg = CoordMsg(
                 lon=float(cmd[0]),
@@ -209,7 +206,6 @@ class HorizontalCoord(AlertHandlerNode):
                 frame="altaz",
             )
             self.publisher.publish(msg)
-
 
     def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
         target_coord = (msg.lon, msg.lat)
@@ -300,56 +296,46 @@ class HorizontalCoord(AlertHandlerNode):
             self.executing_generator.attach(new_generator)
 
     def convert(self) -> None:
-        """Replenish `result_queue` with future commands.
-
-        This method is called periodically (0.2 s). It generates command groups
-        from `executing_generator` and appends them to `result_queue`.
-
-        Key design:
-        - Keep a buffer window ahead of wall clock time:
-            [now + offset + min_buffer, now + offset + max_buffer]
-        - If convert() was delayed and the generator is behind, fast-forward by
-          discarding groups whose last cmd.time is not beyond (now + offset).
-        - Generate multiple groups per call (capped) to catch up quickly.
-        - When the generator exhausts, keep `controlled=True` until the buffered
-          tail is fully published. This prevents the upper layer from sending the
-          next raw command too early and clearing the remaining scan tail.
-        """
         if (self.cmd is not None) and (self.enc_time != 0) and (self.enc_time < time.time() - 5):
-            # Don't resume normal operation after communication with encoder lost for 5s
             self.logger.error(
                 "Lost the communication with the encoder. Command to drive to "
                 f"{self.cmd} has been discarded."
             )
-            self.cmd = None
+            self._transition_to_idle()
+            with self._rq_lock:
+                self.result_queue.clear()
+            return self.telemetry(None)
 
         if self._generator_exhausted:
             with self._rq_lock:
                 draining = len(self.result_queue) > 0
+                tail_lead = (self.result_queue[-1][4] - time.time()) if self.result_queue else None
             if draining:
+                if tail_lead is not None:
+                    self.logger.debug(
+                        f"Generator exhausted; draining buffered tail for {tail_lead:.3f}s",
+                        throttle_duration_sec=0.5,
+                    )
                 if self._last_active_context is not None:
                     return self.telemetry(self._last_active_context)
                 return
 
-            self._generator_exhausted = False
-            self._last_active_context = None
+            self.logger.info("Buffered tail drained; finishing current execution")
+            self._transition_to_idle()
             return self.telemetry(None)
 
         if self.cmd is None:
-            self._last_active_context = None
             return self.telemetry(None)
 
         eps_dup = 1e-9
 
-        # Replenishment loop.
         for _ in range(self._max_groups_per_convert):
             now = time.time()
             offset = float(config.antenna_command_offset_sec)
             min_horizon = now + offset + self._min_buffer_sec
             max_horizon = now + offset + self._max_buffer_sec
-            min_accept_t = now + offset  # keep schedule in the future
+            min_accept_t = now + offset
 
-            # Trim too-far future (safety net) and check current tail.
             with self._rq_lock:
                 while self.result_queue and self.result_queue[-1][4] > max_horizon:
                     self.result_queue.pop()
@@ -366,23 +352,21 @@ class HorizontalCoord(AlertHandlerNode):
             except (StopIteration, TypeError):
                 self.cmd = None
                 self._generator_exhausted = True
-                with self._gen_lock:
-                    self.executing_generator.clear()
-
                 with self._rq_lock:
-                    draining = len(self.result_queue) > 0
-
-                if draining:
+                    qlen = len(self.result_queue)
+                    tail_lead = (self.result_queue[-1][4] - time.time()) if self.result_queue else None
+                self.logger.warning(
+                    "Coordinate generator exhausted; entering drain mode: "
+                    f"queue_len={qlen}, tail_lead={tail_lead if tail_lead is not None else 'None'}"
+                )
+                if qlen > 0:
                     if self._last_active_context is not None:
                         return self.telemetry(self._last_active_context)
                     return
 
-                self._generator_exhausted = False
-                self._last_active_context = None
+                self._transition_to_idle()
                 return self.telemetry(None)
 
-            # Fast-forward: if this whole group is not beyond min_accept_t,
-            # discard it quickly and continue.
             try:
                 t_last = float(coord.time[-1]) if len(coord.time) else None
             except Exception:
@@ -396,7 +380,6 @@ class HorizontalCoord(AlertHandlerNode):
 
             with self._rq_lock:
                 last_t = self.result_queue[-1][4] if self.result_queue else None
-                # Ensure we never append commands at/before min_accept_t
                 if last_t is None:
                     last_t = min_accept_t
                 else:
@@ -409,7 +392,6 @@ class HorizontalCoord(AlertHandlerNode):
                         continue
                     t_val = float(_t)
                     if t_val <= float(last_t) + eps_dup:
-                        # duplicate/backward timestamp or too-close
                         continue
 
                     cmd = (
@@ -422,13 +404,10 @@ class HorizontalCoord(AlertHandlerNode):
                     self.result_queue.append(cmd)
                     last_t = t_val
 
-                # Safety trim again (in case a group overshoots max_horizon)
                 while self.result_queue and self.result_queue[-1][4] > max_horizon:
                     self.result_queue.pop()
 
-        # If we never produced a valid coord.context in the loop, keep previous status.
-
-    def _validate_drive_range(self, az, el) -> Tuple:  # All values are Quantity.
+    def _validate_drive_range(self, az, el) -> Tuple:
         enc_az = 180 if self.enc_az is None else self.enc_az
         enc_el = 45 if self.enc_el is None else self.enc_el
 
@@ -441,24 +420,20 @@ class HorizontalCoord(AlertHandlerNode):
 
     def _update_weather(self, msg: WeatherMsg) -> None:
         if (self.last_status is not None) and (self.last_status.tight):
-            # Updating weather data may cause jump in calculated coordinate, so the
-            # parameter update is disabled while antenna is in tight control.
             return
 
         if self.direct_mode:
             self.finder.temperature = 0
             self.finder.pressure = 0
             self.finder.relative_humidity = 0
-
         else:
             self.finder.temperature = msg.temperature
             self.finder.pressure = msg.pressure
             self.finder.relative_humidity = msg.humidity
 
     def telemetry(self, status: Optional[ControlContext]) -> None:
-        with self._gen_lock:
-            exec_id = str(id(self.executing_generator.get()))
         if status is None:
+            exec_id = self._idle_exec_id
             msg = ControlStatus(
                 controlled=False,
                 tight=False,
@@ -468,6 +443,7 @@ class HorizontalCoord(AlertHandlerNode):
                 time=time.time() + config.antenna_command_offset_sec,
             )
         else:
+            exec_id = self._current_exec_id or self._idle_exec_id
             msg = ControlStatus(
                 controlled=True,
                 tight=status.tight,

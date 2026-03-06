@@ -217,7 +217,6 @@ class Commander(PrivilegedNode):
         margin: Optional[float] = None,
         direct_mode: bool = False,
         cos_correction: bool = False,
-        obsfreq: float = 0.0,
     ) -> None:
         """Control antenna direction and motion.
 
@@ -383,10 +382,8 @@ class Commander(PrivilegedNode):
             # Backward compatible: only set if the service definition includes the field.
             try:
                 _tmp = CoordinateCommand.Request()
-                if hasattr(_tmp, "cos_correction"):
+                if hasattr(_tmp, 'cos_correction'):
                     kwargs.update(cos_correction=bool(cos_correction))
-                if hasattr(_tmp, "obsfreq"):
-                    kwargs.update(obsfreq=float(obsfreq))
             except Exception:
                 pass
             req = CoordinateCommand.Request(**kwargs)
@@ -400,10 +397,8 @@ class Commander(PrivilegedNode):
             # Backward compatible: only set if the service definition includes the field.
             try:
                 _tmp = CoordinateCommand.Request()
-                if hasattr(_tmp, "cos_correction"):
+                if hasattr(_tmp, 'cos_correction'):
                     scan_kwargs.update(cos_correction=bool(cos_correction))
-                if hasattr(_tmp, "obsfreq"):
-                    scan_kwargs.update(obsfreq=float(obsfreq))
             except Exception:
                 pass
 
@@ -786,6 +781,11 @@ class Commander(PrivilegedNode):
                     finished = experienced and (ctrl.id != id)
                     appendix = ctrl.interrupt_ok and (ctrl.id == id)
                     if checker.check(finished or appendix):
+                        reason = "finished(id_changed)" if finished else "appendix(interrupt_ok_same_id)"
+                        self.logger.warning(
+                            f"wait(control) return: requested_id={id}, ctrl_id={ctrl.id}, "
+                            f"experienced={experienced}, reason={reason}, ctrl_time={ctrl.time:.6f}, now={now:.6f}"
+                        )
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)
                         return
@@ -1042,7 +1042,6 @@ class Commander(PrivilegedNode):
         CMD = cmd.upper()
         if CMD == "START":
             if not self.savespec:
-                # TODO revise following process and L1033
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
@@ -1054,6 +1053,8 @@ class Commander(PrivilegedNode):
                     self.logger.info(
                         "\033[93mTotal power will be saved. Range: All channels"
                     )
+            else:
+                self.logger.info("Spectral data will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -1097,11 +1098,8 @@ class Commander(PrivilegedNode):
                 self.tp_mode = True
             elif not tp_mode:
                 self.tp_range = []
-            msg = TPModeMsg(
-                tp_mode=self.tp_mode,
-                tp_range=self.tp_range,
-                time=pytime.time(),
-            )
+            now = pytime.time()
+            msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range, time=now)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
