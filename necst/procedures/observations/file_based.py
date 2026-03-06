@@ -1,12 +1,7 @@
 import os
 from typing import IO, Optional, Type, Union
 
-from neclib.coordinates.observations import (
-    OTFSpec,
-    RadioPointingSpec,
-    PSWSpec,
-    GridSpec,
-)
+from neclib.coordinates.observations import OTFSpec, RadioPointingSpec, PSWSpec
 from neclib.coordinates.observations.observation_spec_base import (
     ObservationMode,
     ObservationSpec,
@@ -41,26 +36,16 @@ class FileBasedObservation(Observation):
         #cos_global = bool(params.get("cos_correction", False))
         #cos_scan = bool(params.get("scan_cos_correction", cos_global))
         #cos_point = bool(params.get("point_cos_correction", cos_global))
+        # params という辞書を介さず、getattr で直接 obsspec から取得（見つからなければ False を返す）
+        cos_global = bool(getattr(self.obsspec, "cos_correction", False))
+        cos_scan = bool(getattr(self.obsspec, "scan_cos_correction", cos_global))
+        cos_point = bool(getattr(self.obsspec, "point_cos_correction", cos_global))
 
-        params = self.obsspec.parameters or {}
-        cos_global = bool(params.get("cos_correction", False))
-        cos_scan   = bool(params.get("scan_cos_correction", cos_global))
-        cos_point  = bool(params.get("point_cos_correction", cos_global))
-
-        # Observation frequency: from observation spec if available, else config.
-        obsfreq = float(params.get("observation_frequency", 0.0))
-        if obsfreq <= 0:
-            _cfg_freq = getattr(config, "observation_frequency", None)
-            if _cfg_freq is not None:
-                try:
-                    obsfreq = float(_cfg_freq)
-                except (TypeError, ValueError):
-                    obsfreq = 0.0
 
         if self.observation_type == "OTF":
-            bydirectional = bool((getattr(self.obsspec, "bydirectional", 0) or 0) > 0)
-            reset_scan = bool((getattr(self.obsspec, "reset_scan", 0) or 0) > 0)
-            direction = str(getattr(self.obsspec, "scan_direction", "x") or "x").lower()
+            bydirectional = self.obsspec.bydirectional > 0
+            reset_scan = self.obsspec.reset_scan > 0
+            direction = self.obsspec.scan_direction.lower()
 
             if reset_scan:
                 start_position = self.obsspec["start_position_" + direction]
@@ -98,7 +83,7 @@ class FileBasedObservation(Observation):
                 self.hot(waypoint.integration.to_value("s"), waypoint.id)
                 continue
 
-            kwargs = dict(unit="deg", obsfreq=obsfreq)
+            kwargs = dict(unit="deg")
             # Apply cos correction depending on command type (scan vs point)
             kwargs.update(cos_correction=cos_scan if waypoint.is_scan else cos_point)
             if waypoint.name_query:
@@ -141,8 +126,9 @@ class FileBasedObservation(Observation):
                 if waypoint.is_scan:
                     if self.observation_type == "OTF":
                         start = kwargs["start"]
-                        reference = kwargs.get("reference", None)
-                        if reference is None:
+                        if ("reference" in kwargs) and (kwargs["reference"] is not None):
+                            reference = kwargs["reference"]
+                        else:
                             reference = (0, 0)
                         start_position = (
                             start[0] + reference[0],
@@ -191,8 +177,3 @@ class RadioPointing(FileBasedObservation):
 class PSW(FileBasedObservation):
     observation_type = "PSW"
     SpecParser = PSWSpec
-
-
-class Grid(FileBasedObservation):
-    observation_type = "Grid"
-    SpecParser = GridSpec

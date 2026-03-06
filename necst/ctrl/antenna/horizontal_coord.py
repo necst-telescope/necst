@@ -87,10 +87,22 @@ class HorizontalCoord(AlertHandlerNode):
         self.executing_generator = CoordinateGeneratorManager()
         self.last_status = None
 
+        # True after the coordinate generator has exhausted, but while there are still
+        # future commands left in `result_queue` to be published.
+        #
+        # This is critical for scan continuity: the upper layer may send the next raw
+        # command when `controlled=False` is observed. If we publish `controlled=False`
+        # before the buffered tail of the current scan is consumed, `_update_cmd()` will
+        # clear that remaining tail and the telescope appears to stop early.
+        self._generator_exhausted = False
+        self._last_active_context: Optional[ControlContext] = None
+
         self.gc = self.create_guard_condition(self._clear_cmd)
 
     def _clear_cmd(self) -> None:
         self.cmd = None
+        self._generator_exhausted = False
+        self._last_active_context = None
         with self._rq_lock:
             self.result_queue.clear()
 
@@ -114,8 +126,18 @@ class HorizontalCoord(AlertHandlerNode):
         with self._gen_lock:
             # Prevent convert() from consuming a half-updated generator/cmd.
             self.cmd = request
+            self._generator_exhausted = False
+            self._last_active_context = None
             self._parse_cmd(request)
             with self._rq_lock:
+                if self.result_queue:
+                    now = time.time()
+                    head = self.result_queue[0][4] - now
+                    tail = self.result_queue[-1][4] - now
+                    self.logger.warning(
+                        "Clearing buffered commands due to new raw_coord request: "
+                        f"n={len(self.result_queue)}, head={head:.3f}s, tail={tail:.3f}s"
+                    )
                 self.result_queue.clear()
             response.id = str(id(self.executing_generator.get()))
         return response
@@ -136,7 +158,7 @@ class HorizontalCoord(AlertHandlerNode):
 
         now = time.time()
         
-        # Target ideal transmission time (horizon)
+        # 目標とする理想の送信時刻（ホライズン）
         offset = float(config.antenna_command_offset_sec)
         target_time = now + offset
 
@@ -145,7 +167,7 @@ class HorizontalCoord(AlertHandlerNode):
         head_lead = None
 
         with self._rq_lock:
-            # 1. Discard outdated commands that are entirely in the past.
+            # 1. 完全に過去になってしまった古いコマンドは捨てる）
             while self.result_queue and self.result_queue[0][4] <= now:
                 self.result_queue.popleft()
             
@@ -153,10 +175,9 @@ class HorizontalCoord(AlertHandlerNode):
             if queue_len > 0:
                 head_lead = self.result_queue[0][4] - now
 
-            # 2. Retrieve all commands that have reached their scheduled transmission time based on real-time.
-            # Depending on timer precision, this may retrieve 0, 1, or multiple commands,
-            # maintaining tight synchronization with real-time.
-            max_publish = 5  # Safety mechanism to prevent QoS overflow (max burst per tick)
+            # 2. 実時間ベースで「送るべき時刻」に達しているコマンドを全て取り出す
+            # タイマーが早ければ0個、正確なら1個、遅れれば2〜3個となり、完全に実時間と同期します
+            max_publish = 5  # QoS溢れを防ぐ安全装置（1Tickでの最大バースト数）
             while (
                 self.result_queue 
                 and self.result_queue[0][4] <= target_time 
@@ -164,7 +185,7 @@ class HorizontalCoord(AlertHandlerNode):
             ):
                 cmds.append(self.result_queue.popleft())
 
-        # 3. Output diagnostic logs.
+        # 3. 診断ログの出力
         if head_lead is not None:
             self.logger.debug(
                 f"Queue Info: length={queue_len}, head_lead={head_lead:.3f}s, published={len(cmds)}",
@@ -176,7 +197,7 @@ class HorizontalCoord(AlertHandlerNode):
                 throttle_duration_sec=1.0
             )
 
-        # Publish retrieved commands sequentially.
+        # 取り出したコマンドを順次Publish
         for cmd in cmds:
             msg = CoordMsg(
                 lon=float(cmd[0]),
@@ -188,6 +209,7 @@ class HorizontalCoord(AlertHandlerNode):
                 frame="altaz",
             )
             self.publisher.publish(msg)
+
 
     def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
         target_coord = (msg.lon, msg.lat)
@@ -204,11 +226,6 @@ class HorizontalCoord(AlertHandlerNode):
         else:
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
-
-        # Apply observation frequency if specified (0.0 means "use config default").
-        obsfreq = getattr(msg, "obsfreq", 0.0)
-        if obsfreq > 0:
-            self.finder.obsfreq = obsfreq  # GHz; QuantityValidator handles units
 
         if (not scan) and (not named) and (not with_offset):
             self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
@@ -294,6 +311,9 @@ class HorizontalCoord(AlertHandlerNode):
         - If convert() was delayed and the generator is behind, fast-forward by
           discarding groups whose last cmd.time is not beyond (now + offset).
         - Generate multiple groups per call (capped) to catch up quickly.
+        - When the generator exhausts, keep `controlled=True` until the buffered
+          tail is fully published. This prevents the upper layer from sending the
+          next raw command too early and clearing the remaining scan tail.
         """
         if (self.cmd is not None) and (self.enc_time != 0) and (self.enc_time < time.time() - 5):
             # Don't resume normal operation after communication with encoder lost for 5s
@@ -302,7 +322,21 @@ class HorizontalCoord(AlertHandlerNode):
                 f"{self.cmd} has been discarded."
             )
             self.cmd = None
+
+        if self._generator_exhausted:
+            with self._rq_lock:
+                draining = len(self.result_queue) > 0
+            if draining:
+                if self._last_active_context is not None:
+                    return self.telemetry(self._last_active_context)
+                return
+
+            self._generator_exhausted = False
+            self._last_active_context = None
+            return self.telemetry(None)
+
         if self.cmd is None:
+            self._last_active_context = None
             return self.telemetry(None)
 
         eps_dup = 1e-9
@@ -327,11 +361,24 @@ class HorizontalCoord(AlertHandlerNode):
             try:
                 with self._gen_lock:
                     coord = next(self.executing_generator)
+                self._last_active_context = coord.context
                 self.telemetry(coord.context)
             except (StopIteration, TypeError):
                 self.cmd = None
+                self._generator_exhausted = True
                 with self._gen_lock:
                     self.executing_generator.clear()
+
+                with self._rq_lock:
+                    draining = len(self.result_queue) > 0
+
+                if draining:
+                    if self._last_active_context is not None:
+                        return self.telemetry(self._last_active_context)
+                    return
+
+                self._generator_exhausted = False
+                self._last_active_context = None
                 return self.telemetry(None)
 
             # Fast-forward: if this whole group is not beyond min_accept_t,
