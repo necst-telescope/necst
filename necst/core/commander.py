@@ -438,9 +438,14 @@ class Commander(PrivilegedNode):
 
             req = CoordinateCommand.Request(**scan_kwargs)
             res = self._send_request(req, self.client["raw_coord"])
-            self.logger.warning(f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}")
+            self.logger.warning(
+                f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}, "
+                f"start={start}, stop={stop}, scan_frame={scan_frame}, speed={speed}, margin={margin}"
+            )
             self.wait("antenna")
-            self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
+            trans_now = pytime.time()
+            self.publisher["cmd_trans"].publish(Boolean(data=True, time=trans_now))
+            self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={trans_now:.6f}")
             if wait:
                 self.wait("antenna", mode="control", id=res.id)
             return res.id
@@ -783,11 +788,16 @@ class Commander(PrivilegedNode):
                     finished = experienced and (ctrl.id != id)
                     appendix = ctrl.interrupt_ok and (ctrl.id == id)
                     if checker.check(finished or appendix):
-                        reason = "finished(id_changed)" if finished else "appendix(interrupt_ok_same_id)"
+                        if finished:
+                            reason = "finished(id_changed)"
+                        elif appendix:
+                            reason = "appendix(interrupt_ok_same_id)"
+                        else:
+                            reason = "checker_true(unknown)"
                         self.logger.warning(
-                            f"wait(control) return: requested_id={id}, ctrl_id={ctrl.id}, "
-                            f"experienced={experienced}, reason={reason}, "
-                            f"ctrl_time={ctrl.time:.6f}, now={now:.6f}"
+                            "wait(control) return: "
+                            f"requested_id={id}, ctrl_id={ctrl.id}, experienced={experienced}, "
+                            f"reason={reason}, ctrl_time={ctrl.time}, now={now}, dt={ctrl.time-now:.6f}"
                         )
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)

@@ -73,6 +73,10 @@ class HorizontalCoord(AlertHandlerNode):
         self._current_exec_id: Optional[str] = None
         self._generator_exhausted = False
         self._last_active_context: Optional[ControlContext] = None
+        self._current_request_mode = "idle"
+        self._current_request_summary = "idle"
+        self._last_publish_wall: Optional[float] = None
+        self._last_publish_cmd_time: Optional[float] = None
 
         self.gc = self.create_guard_condition(self._clear_cmd)
 
@@ -80,7 +84,37 @@ class HorizontalCoord(AlertHandlerNode):
         self._exec_seq += 1
         return f"exec-{self._exec_seq}"
 
-    def _transition_to_idle(self) -> None:
+    def _request_mode(self, msg: CoordinateCommand.Request) -> str:
+        target_coord = (msg.lon, msg.lat)
+        offset_coord = (msg.offset_lon, msg.offset_lat)
+        target_scan = all(len(x) == 2 for x in target_coord)
+        offset_scan = all(len(x) == 2 for x in offset_coord)
+        scan = target_scan or offset_scan
+        return "scan" if scan else "point"
+
+    def _request_summary(self, msg: CoordinateCommand.Request) -> str:
+        mode = self._request_mode(msg)
+        frame = getattr(msg, "frame", "")
+        off_frame = getattr(msg, "offset_frame", "")
+        return (
+            f"mode={mode}, name={msg.name!r}, lon={list(msg.lon)}, lat={list(msg.lat)}, "
+            f"frame={frame}, off_lon={list(msg.offset_lon)}, off_lat={list(msg.offset_lat)}, "
+            f"off_frame={off_frame}, speed={getattr(msg, 'speed', None)}, margin={getattr(msg, 'margin', None)}"
+        )
+
+    def _transition_to_idle(self, *, reason: str = "unknown") -> None:
+        old_exec = self._current_exec_id or self._idle_exec_id
+        old_mode = self._current_request_mode
+        old_summary = self._current_request_summary
+        with self._rq_lock:
+            qlen = len(self.result_queue)
+            tail_lead = (self.result_queue[-1][4] - time.time()) if self.result_queue else None
+        self.logger.warning(
+            "Transitioning to idle: "
+            f"reason={reason}, old_exec={old_exec}, old_mode={old_mode}, "
+            f"queue_len={qlen}, tail_lead={tail_lead if tail_lead is not None else 'None'}, "
+            f"now={time.time():.6f}, req=({old_summary})"
+        )
         with self._gen_lock:
             self.executing_generator.clear()
             self._current_exec_id = None
@@ -88,66 +122,27 @@ class HorizontalCoord(AlertHandlerNode):
             self._last_active_context = None
             self._idle_exec_id = self._next_exec_id()
         self.cmd = None
+        self._current_request_mode = "idle"
+        self._current_request_summary = "idle"
 
     def _clear_cmd(self) -> None:
-        self._transition_to_idle()
+        self._transition_to_idle(reason="guard_or_clear_cmd")
         with self._rq_lock:
             self.result_queue.clear()
-
-
-    def _describe_request(self, msg: CoordinateCommand.Request) -> str:
-        try:
-            lon = list(getattr(msg, 'lon', []) or [])
-        except Exception:
-            lon = []
-        try:
-            lat = list(getattr(msg, 'lat', []) or [])
-        except Exception:
-            lat = []
-        try:
-            off_lon = list(getattr(msg, 'offset_lon', []) or [])
-        except Exception:
-            off_lon = []
-        try:
-            off_lat = list(getattr(msg, 'offset_lat', []) or [])
-        except Exception:
-            off_lat = []
-        name = getattr(msg, 'name', '')
-        direct_mode = getattr(msg, 'direct_mode', None)
-        speed = getattr(msg, 'speed', None)
-        frame = getattr(msg, 'frame', None)
-        off_frame = getattr(msg, 'offset_frame', None)
-
-        absolute = (len(lon) > 0) and (len(lat) > 0)
-        relative = (len(off_lon) > 0) and (len(off_lat) > 0)
-        named = (name != '')
-        scan = (len(lon) == 2) or (len(off_lon) == 2)
-        if scan:
-            mode = 'scan'
-        else:
-            mode = 'point'
-        return (
-            f"mode={mode}, name={name!r}, lon={lon}, lat={lat}, frame={frame}, "
-            f"off_lon={off_lon}, off_lat={off_lat}, off_frame={off_frame}, "
-            f"absolute={absolute}, relative={relative}, named={named}, "
-            f"speed={speed}, direct_mode={direct_mode}"
-        )
 
     def _update_cmd(
         self, request: CoordinateCommand.Request, response: CoordinateCommand.Response
     ) -> CoordinateCommand.Response:
+        mode = self._request_mode(request)
+        summary = self._request_summary(request)
         with self._gen_lock:
             self.cmd = request
             self._generator_exhausted = False
             self._last_active_context = None
             self._current_exec_id = self._next_exec_id()
+            self._current_request_mode = mode
+            self._current_request_summary = summary
             self._parse_cmd(request)
-
-        now = time.time()
-        self.logger.warning(
-            f"raw_coord accepted: exec_id={self._current_exec_id}, "
-            f"{self._describe_request(request)}, now={now:.6f}"
-        )
 
         with self._rq_lock:
             if self.result_queue:
@@ -156,10 +151,15 @@ class HorizontalCoord(AlertHandlerNode):
                 tail = self.result_queue[-1][4] - now
                 self.logger.warning(
                     "Clearing buffered commands due to new raw_coord request: "
-                    f"n={len(self.result_queue)}, head={head:.3f}s, tail={tail:.3f}s"
+                    f"exec_id={self._current_exec_id}, n={len(self.result_queue)}, "
+                    f"head={head:.3f}s, tail={tail:.3f}s, now={now:.6f}"
                 )
             self.result_queue.clear()
 
+        self.logger.warning(
+            "raw_coord accepted: "
+            f"exec_id={self._current_exec_id}, {summary}, now={time.time():.6f}"
+        )
         response.id = self._current_exec_id or self._idle_exec_id
         return response
 
@@ -173,7 +173,11 @@ class HorizontalCoord(AlertHandlerNode):
 
     def command_realtime(self) -> None:
         if self.status.critical():
-            self.logger.warning("Guard condition activated", throttle_duration_sec=1)
+            self.logger.warning(
+                f"Guard condition activated: now={time.time():.6f}, "
+                f"last_publish_wall={self._last_publish_wall}, last_publish_cmd_time={self._last_publish_cmd_time}",
+                throttle_duration_sec=1,
+            )
             return self.gc.trigger()
 
         now = time.time()
@@ -222,6 +226,17 @@ class HorizontalCoord(AlertHandlerNode):
                 frame="altaz",
             )
             self.publisher.publish(msg)
+            self._last_publish_wall = now
+            self._last_publish_cmd_time = float(cmd[4])
+
+        if (self.cmd is not None) and (len(cmds) == 0):
+            gap = None if self._last_publish_wall is None else (now - self._last_publish_wall)
+            if (gap is not None) and (gap > 0.7):
+                self.logger.warning(
+                    "Command publish gap detected: "
+                    f"gap={gap:.3f}s, queue_len={queue_len}, head_lead={head_lead}, "
+                    f"exec_id={self._current_exec_id}, mode={self._current_request_mode}, now={now:.6f}"
+                )
 
     def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
         target_coord = (msg.lon, msg.lat)
@@ -317,7 +332,7 @@ class HorizontalCoord(AlertHandlerNode):
                 "Lost the communication with the encoder. Command to drive to "
                 f"{self.cmd} has been discarded."
             )
-            self._transition_to_idle()
+            self._transition_to_idle(reason="encoder_lost")
             with self._rq_lock:
                 self.result_queue.clear()
             return self.telemetry(None)
@@ -336,8 +351,11 @@ class HorizontalCoord(AlertHandlerNode):
                     return self.telemetry(self._last_active_context)
                 return
 
-            self.logger.info("Buffered tail drained; finishing current execution")
-            self._transition_to_idle()
+            self.logger.info(
+                f"Buffered tail drained; finishing current execution: exec_id={self._current_exec_id}, "
+                f"mode={self._current_request_mode}, now={time.time():.6f}"
+            )
+            self._transition_to_idle(reason="drained")
             return self.telemetry(None)
 
         if self.cmd is None:
@@ -380,7 +398,7 @@ class HorizontalCoord(AlertHandlerNode):
                         return self.telemetry(self._last_active_context)
                     return
 
-                self._transition_to_idle()
+                self._transition_to_idle(reason="exhausted_without_buffer")
                 return self.telemetry(None)
 
             try:
