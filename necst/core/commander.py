@@ -439,10 +439,14 @@ class Commander(PrivilegedNode):
             req = CoordinateCommand.Request(**scan_kwargs)
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}")
-            self.wait_scan_transition_ready(id=res.id)
+            fast_ready = self.wait_scan_transition_ready(id=res.id)
+            if not fast_ready:
+                self.wait("antenna")
             ts = pytime.time()
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
-            self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={ts:.6f}")
+            self.logger.warning(
+                f"cmd_trans sent for scan id={res.id}, now={ts:.6f}, mode={'fast' if fast_ready else 'legacy_fallback'}"
+            )
             if wait:
                 self.wait("antenna", mode="control", id=res.id)
             return res.id
@@ -726,75 +730,6 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
-    def wait_scan_transition_ready(
-        self,
-        /,
-        *,
-        id: str,
-        timeout_sec: Optional[Union[int, float]] = None,
-        stable_count: int = 3,
-    ) -> None:
-        """Wait until scan can safely leave standby without adding a fixed offset sleep.
-
-        This method is intentionally different from ``wait("antenna")`` for the
-        pre-transition phase of scan. The original logic always slept for
-        ``antenna_command_offset_sec`` before even checking the telescope state.
-        When the antenna had already been pre-positioned to the standby point,
-        that created a redundant pause with Az/El speed staying near zero.
-
-        The fast path is enabled only when the current controller is already in an
-        interruptible tracking mode (typically POINT), the tracking error is OK,
-        and both Az/El speed commands are essentially zero. Otherwise, this
-        method waits until the newly requested scan becomes active and converged.
-        """
-        start = pytime.monotonic()
-        checker = ConditionChecker(stable_count, reset_on_failure=True)
-
-        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            now = pytime.time()
-            try:
-                ctrl = self.get_message("antenna_control", timeout_sec=0.01)
-                error = self.antenna("error")
-                speed = self.get_message("speed", time=now, timeout_sec=0.01)
-
-                tracking_ok = bool(error.ok)
-                speed_stop = (abs(speed.az) < 1e-5) and (abs(speed.el) < 1e-5)
-                current_interruptible = bool(getattr(ctrl, "controlled", False)) and bool(
-                    getattr(ctrl, "interrupt_ok", False)
-                )
-                requested_scan_active = ctrl.id == id
-
-                ready = tracking_ok and speed_stop and (
-                    current_interruptible or requested_scan_active
-                )
-
-                self.logger.debug(
-                    "scan pre-transition: "
-                    f"requested_id={id}, ctrl_id={ctrl.id}, tracking_ok={tracking_ok}, "
-                    f"speed_stop={speed_stop}, current_interruptible={current_interruptible}, "
-                    f"requested_scan_active={requested_scan_active}",
-                    throttle_duration_sec=0.3,
-                )
-
-                if checker.check(ready):
-                    mode = (
-                        "prepositioned_interruptible_track"
-                        if current_interruptible and (not requested_scan_active)
-                        else "requested_scan_active"
-                    )
-                    self.logger.warning(
-                        "wait(scan_transition_ready) return: "
-                        f"requested_id={id}, ctrl_id={ctrl.id}, mode={mode}, "
-                        f"ctrl_time={getattr(ctrl, 'time', float('nan')):.6f}, "
-                        f"now={now:.6f}, elapsed={pytime.monotonic() - start:.3f}"
-                    )
-                    return
-            except NECSTTimeoutError:
-                pass
-            pytime.sleep(0.05)
-
-        raise NECSTTimeoutError("Couldn't confirm scan transition readiness")
-
     def wait(
         self,
         target: Literal["antenna", "dome"],
@@ -871,6 +806,76 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown mode: {mode!r}")
 
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
+
+    def wait_scan_transition_ready(
+        self,
+        /,
+        *,
+        id: str,
+        timeout_sec: Optional[Union[int, float]] = None,
+        stable_count: int = 3,
+    ) -> bool:
+        """Try a short fast-path before scan transition, then fall back to legacy wait.
+
+        The goal is to avoid redundant standby dwell when the requested scan standby
+        has already become active and tracking is already converged.
+
+        Safety rule:
+        - Only fast-path when the *requested* scan context is active (same id), the
+          controller is in a non-interruptible state (scan standby / non-waypoint
+          tracking should report ``interrupt_ok=False``), and tracking error is OK.
+        - Otherwise do not block indefinitely here. Return ``False`` quickly so the
+          caller can fall back to the original ``wait("antenna")`` behavior.
+        """
+        if timeout_sec is None:
+            try:
+                timeout_sec = min(float(config.antenna_command_offset_sec), 0.5)
+            except Exception:
+                timeout_sec = 0.5
+
+        start = pytime.monotonic()
+        checker = ConditionChecker(stable_count, reset_on_failure=True)
+
+        while pytime.monotonic() - start < timeout_sec:
+            now = pytime.time()
+            try:
+                ctrl = self.get_message("antenna_control", timeout_sec=0.01)
+                error = self.antenna("error")
+
+                requested_scan_active = (
+                    bool(getattr(ctrl, "controlled", False))
+                    and (getattr(ctrl, "id", None) == id)
+                    and (not bool(getattr(ctrl, "interrupt_ok", True)))
+                )
+                tracking_ok = bool(getattr(error, "ok", False))
+                ready = requested_scan_active and tracking_ok
+
+                self.logger.debug(
+                    "scan pre-transition fast-check: "
+                    f"requested_id={id}, ctrl_id={getattr(ctrl, 'id', None)}, "
+                    f"controlled={bool(getattr(ctrl, 'controlled', False))}, "
+                    f"interrupt_ok={bool(getattr(ctrl, 'interrupt_ok', True))}, "
+                    f"tracking_ok={tracking_ok}, ready={ready}",
+                    throttle_duration_sec=0.3,
+                )
+
+                if checker.check(ready):
+                    self.logger.warning(
+                        "wait(scan_transition_ready) fast return: "
+                        f"requested_id={id}, ctrl_id={getattr(ctrl, 'id', None)}, "
+                        f"ctrl_time={getattr(ctrl, 'time', float('nan')):.6f}, "
+                        f"now={now:.6f}, elapsed={pytime.monotonic() - start:.3f}"
+                    )
+                    return True
+            except NECSTTimeoutError:
+                pass
+            pytime.sleep(0.05)
+
+        self.logger.warning(
+            "wait(scan_transition_ready) fallback to legacy wait: "
+            f"requested_id={id}, elapsed={pytime.monotonic() - start:.3f}, timeout={timeout_sec:.3f}"
+        )
+        return False
 
     def wait_oc(
         self,
