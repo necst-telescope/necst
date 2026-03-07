@@ -126,10 +126,7 @@ class FileBasedObservation(Observation):
                 if waypoint.is_scan:
                     if self.observation_type == "OTF":
                         start = kwargs["start"]
-                        if ("reference" in kwargs) and (kwargs["reference"] is not None):
-                            reference = kwargs["reference"]
-                        else:
-                            reference = (0, 0)
+                        reference = kwargs.get("reference") or (0, 0)
                         start_position = (
                             start[0] + reference[0],
                             start[1] + reference[1],
@@ -154,9 +151,7 @@ class FileBasedObservation(Observation):
                         )
 
                     self.logger.info("Starting ON...")
-                    self.com.metadata(
-                        "set", position="ON", id=waypoint.id, intercept=False
-                    )
+                    self.com.metadata("set", position="ON", id=waypoint.id)
                     self.com.antenna("scan", **kwargs)
                     self.com.metadata("set", position="", id="")
                 else:

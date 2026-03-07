@@ -438,14 +438,11 @@ class Commander(PrivilegedNode):
 
             req = CoordinateCommand.Request(**scan_kwargs)
             res = self._send_request(req, self.client["raw_coord"])
-            self.logger.warning(
-                f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}, "
-                f"start={start}, stop={stop}, scan_frame={scan_frame}, speed={speed}, margin={margin}"
-            )
+            self.logger.warning(f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}")
             self.wait("antenna")
-            trans_now = pytime.time()
-            self.publisher["cmd_trans"].publish(Boolean(data=True, time=trans_now))
-            self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={trans_now:.6f}")
+            ts = pytime.time()
+            self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
+            self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={ts:.6f}")
             if wait:
                 self.wait("antenna", mode="control", id=res.id)
             return res.id
@@ -788,16 +785,12 @@ class Commander(PrivilegedNode):
                     finished = experienced and (ctrl.id != id)
                     appendix = ctrl.interrupt_ok and (ctrl.id == id)
                     if checker.check(finished or appendix):
-                        if finished:
-                            reason = "finished(id_changed)"
-                        elif appendix:
-                            reason = "appendix(interrupt_ok_same_id)"
-                        else:
-                            reason = "checker_true(unknown)"
+                        reason = (
+                            "finished(id_changed)" if finished else "appendix(interrupt_ok_same_id)"
+                        )
                         self.logger.warning(
-                            "wait(control) return: "
-                            f"requested_id={id}, ctrl_id={ctrl.id}, experienced={experienced}, "
-                            f"reason={reason}, ctrl_time={ctrl.time}, now={now}, dt={ctrl.time-now:.6f}"
+                            f"wait(control) return: requested_id={id}, ctrl_id={ctrl.id}, experienced={experienced}, "
+                            f"reason={reason}, ctrl_time={ctrl.time:.6f}, now={now:.6f}, dt={ctrl.time - now:.6f}"
                         )
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)
@@ -923,10 +916,12 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "SET":
-            if not intercept:
-                self.antenna("stop")
+            if not intercept and time is None:
+                t0 = pytime.time()
                 while self.get_message("antenna_control").tight:
-                    pytime.sleep(0.05)
+                    if pytime.time() - t0 > 10.0:
+                        raise NECSTTimeoutError("metadata(set): antenna_control.tight did not clear")
+                    pytime.sleep(0.01)
             time = pytime.time() if time is None else time
             msg = Spectral(data=optical_data, position=position, id=str(id), time=time)
             return self.publisher["spectra_meta"].publish(msg)
