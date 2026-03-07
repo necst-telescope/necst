@@ -144,6 +144,11 @@ class HorizontalCoord(AlertHandlerNode):
                 )
             self.result_queue.clear()
 
+        self.logger.warning(
+            f"raw_coord accepted: exec_id={self._current_exec_id}, "
+            f"mode={'scan' if scan else 'point'}, name={msg.name}, "
+            f"lon={msg.lon}, lat={msg.lat}, off_lon={msg.offset_lon}, off_lat={msg.offset_lat}"
+        )
         response.id = self._current_exec_id or self._idle_exec_id
         return response
 

@@ -388,6 +388,7 @@ class Commander(PrivilegedNode):
                 pass
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
+            self.logger.warning(f"POINT raw_coord id={res.id}")
             if wait:
                 self.wait("antenna")
             return res.id
@@ -437,6 +438,7 @@ class Commander(PrivilegedNode):
 
             req = CoordinateCommand.Request(**scan_kwargs)
             res = self._send_request(req, self.client["raw_coord"])
+            self.logger.warning(f"SCAN raw_coord id={res.id}")
             self.wait("antenna")
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
             if wait:
