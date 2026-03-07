@@ -59,6 +59,18 @@ class HorizontalCoord(AlertHandlerNode):
         self._max_buffer_sec = 3.0
         self._max_groups_per_convert = 10
 
+        # While a scan is waiting at Standby (before cmd_transition), do not
+        # pre-buffer several seconds of waypoint commands. Otherwise, once
+        # cmd_transition is sent, the telescope still has to consume the already
+        # buffered Standby tail before Accelerate/Linear can start.
+        #
+        # Keep only a short tail during the pre-transition Standby state; after
+        # cmd_transition, immediately return to the normal buffer policy.
+        self._scan_transition_pending = False
+        self._standby_pending_min_buffer_sec = 0.20
+        self._standby_pending_max_buffer_sec = 0.50
+        self._standby_pending_max_groups = 2
+
         self.tracking_ok = False
         self.executing_generator = CoordinateGeneratorManager()
         self.last_status = None
@@ -107,6 +119,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.executing_generator.clear()
             self._current_exec_id = None
             self._generator_exhausted = False
+            self._scan_transition_pending = False
             self._last_active_context = None
             self._last_published_context = None
             self._last_published_cmd_time = 0.0
@@ -143,8 +156,15 @@ class HorizontalCoord(AlertHandlerNode):
             self._last_published_cmd_time = 0.0
             self._current_exec_id = self._next_exec_id()
             self._current_mode = mode
+            self._scan_transition_pending = (mode == "scan")
             self._parse_cmd(request)
-            new_queue = self._prefill_current_execution(now=now, min_extra_sec=self._min_buffer_sec, max_extra_sec=self._max_buffer_sec, max_groups=max(self._max_groups_per_convert, 20))
+            min_extra_sec, max_extra_sec, max_groups = self._get_prefill_policy()
+            new_queue = self._prefill_current_execution(
+                now=now,
+                min_extra_sec=min_extra_sec,
+                max_extra_sec=max_extra_sec,
+                max_groups=max(max_groups, 2),
+            )
 
         with self._rq_lock:
             if self.result_queue:
@@ -170,7 +190,8 @@ class HorizontalCoord(AlertHandlerNode):
         )
         self.logger.warning(
             f"prefill_on_accept: exec_id={self._current_exec_id}, mode={mode}, queue_len={qlen}, "
-            f"head_lead={head if head is not None else 'None'}, tail_lead={tail if tail is not None else 'None'}, now={now:.6f}"
+            f"head_lead={head if head is not None else 'None'}, tail_lead={tail if tail is not None else 'None'}, "
+            f"transition_pending={self._scan_transition_pending}, now={now:.6f}"
         )
 
         response.id = self._current_exec_id or self._idle_exec_id
@@ -204,6 +225,7 @@ class HorizontalCoord(AlertHandlerNode):
             except (StopIteration, TypeError):
                 self.cmd = None
                 self._generator_exhausted = True
+                self._scan_transition_pending = False
                 with self._gen_lock:
                     self.executing_generator.clear()
                 break
@@ -244,6 +266,18 @@ class HorizontalCoord(AlertHandlerNode):
                 break
 
         return new_queue
+
+    def _is_waiting_scan_transition(self) -> bool:
+        return (self._current_mode == "scan") and self._scan_transition_pending
+
+    def _get_prefill_policy(self):
+        if self._is_waiting_scan_transition():
+            return (
+                self._standby_pending_min_buffer_sec,
+                self._standby_pending_max_buffer_sec,
+                self._standby_pending_max_groups,
+            )
+        return self._min_buffer_sec, self._max_buffer_sec, self._max_groups_per_convert
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
@@ -475,12 +509,20 @@ class HorizontalCoord(AlertHandlerNode):
 
         eps_dup = 1e-9
 
-        for _ in range(self._max_groups_per_convert):
+        min_extra_sec, max_extra_sec, max_groups = self._get_prefill_policy()
+        for _ in range(max_groups):
             now = time.time()
             offset = float(config.antenna_command_offset_sec)
-            min_horizon = now + offset + self._min_buffer_sec
-            max_horizon = now + offset + self._max_buffer_sec
+            min_horizon = now + offset + min_extra_sec
+            max_horizon = now + offset + max_extra_sec
             min_accept_t = now + offset
+
+            if self._is_waiting_scan_transition():
+                self.logger.debug(
+                    f"Standby limited-buffer mode: exec_id={self._current_exec_id or self._idle_exec_id}, "
+                    f"min_extra={min_extra_sec:.3f}, max_extra={max_extra_sec:.3f}, now={now:.6f}",
+                    throttle_duration_sec=1.0,
+                )
 
             with self._rq_lock:
                 while self.result_queue and self.result_queue[-1][4] > max_horizon:
@@ -497,6 +539,7 @@ class HorizontalCoord(AlertHandlerNode):
             except (StopIteration, TypeError):
                 self.cmd = None
                 self._generator_exhausted = True
+                self._scan_transition_pending = False
                 with self._gen_lock:
                     self.executing_generator.clear()
                 with self._rq_lock:
@@ -613,5 +656,16 @@ class HorizontalCoord(AlertHandlerNode):
         self.status_publisher.publish(msg)
 
     def next(self, msg: Boolean) -> None:
+        now = time.time()
         with self._gen_lock:
+            was_pending = self._scan_transition_pending
+            self._scan_transition_pending = False
             self.executing_generator.will_send(True)
+        if was_pending:
+            with self._rq_lock:
+                qlen = len(self.result_queue)
+                tail_lead = (self.result_queue[-1][4] - now) if self.result_queue else None
+            self.logger.warning(
+                f"cmd_transition accepted: exec_id={self._current_exec_id or self._idle_exec_id}, "
+                f"queue_len={qlen}, tail_lead={tail_lead if tail_lead is not None else 'None'}, now={now:.6f}"
+            )
