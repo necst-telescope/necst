@@ -80,29 +80,6 @@ class HorizontalCoord(AlertHandlerNode):
         self._exec_seq += 1
         return f"exec-{self._exec_seq}"
 
-
-    def _request_summary(self, request: CoordinateCommand.Request) -> str:
-        try:
-            target_scan = all(len(x) == 2 for x in (request.lon, request.lat))
-            offset_scan = all(len(x) == 2 for x in (request.offset_lon, request.offset_lat))
-            named = request.name != ""
-            with_offset = any(len(x) != 0 for x in (request.offset_lon, request.offset_lat))
-            if target_scan and (not named):
-                return f"scan(abs,{request.frame},speed={request.speed})"
-            if offset_scan and named:
-                return f"scan(named+offset,{request.offset_frame},speed={request.speed},name={request.name})"
-            if offset_scan and (not named):
-                return f"scan(offset,{request.offset_frame},speed={request.speed})"
-            if (not target_scan) and named and with_offset:
-                return f"point(named+offset,{request.offset_frame},name={request.name})"
-            if (not target_scan) and named:
-                return f"point(named,{request.frame},name={request.name})"
-            if (not target_scan) and with_offset:
-                return f"point(offset,{request.offset_frame})"
-            return f"point({request.frame})"
-        except Exception:
-            return "request(?)"
-
     def _transition_to_idle(self) -> None:
         with self._gen_lock:
             self.executing_generator.clear()
@@ -117,16 +94,60 @@ class HorizontalCoord(AlertHandlerNode):
         with self._rq_lock:
             self.result_queue.clear()
 
+
+    def _describe_request(self, msg: CoordinateCommand.Request) -> str:
+        try:
+            lon = list(getattr(msg, 'lon', []) or [])
+        except Exception:
+            lon = []
+        try:
+            lat = list(getattr(msg, 'lat', []) or [])
+        except Exception:
+            lat = []
+        try:
+            off_lon = list(getattr(msg, 'offset_lon', []) or [])
+        except Exception:
+            off_lon = []
+        try:
+            off_lat = list(getattr(msg, 'offset_lat', []) or [])
+        except Exception:
+            off_lat = []
+        name = getattr(msg, 'name', '')
+        direct_mode = getattr(msg, 'direct_mode', None)
+        speed = getattr(msg, 'speed', None)
+        frame = getattr(msg, 'frame', None)
+        off_frame = getattr(msg, 'offset_frame', None)
+
+        absolute = (len(lon) > 0) and (len(lat) > 0)
+        relative = (len(off_lon) > 0) and (len(off_lat) > 0)
+        named = (name != '')
+        scan = (len(lon) == 2) or (len(off_lon) == 2)
+        if scan:
+            mode = 'scan'
+        else:
+            mode = 'point'
+        return (
+            f"mode={mode}, name={name!r}, lon={lon}, lat={lat}, frame={frame}, "
+            f"off_lon={off_lon}, off_lat={off_lat}, off_frame={off_frame}, "
+            f"absolute={absolute}, relative={relative}, named={named}, "
+            f"speed={speed}, direct_mode={direct_mode}"
+        )
+
     def _update_cmd(
         self, request: CoordinateCommand.Request, response: CoordinateCommand.Response
     ) -> CoordinateCommand.Response:
-        req_summary = self._request_summary(request)
         with self._gen_lock:
             self.cmd = request
             self._generator_exhausted = False
             self._last_active_context = None
             self._current_exec_id = self._next_exec_id()
             self._parse_cmd(request)
+
+        now = time.time()
+        self.logger.warning(
+            f"raw_coord accepted: exec_id={self._current_exec_id}, "
+            f"{self._describe_request(request)}, now={now:.6f}"
+        )
 
         with self._rq_lock:
             if self.result_queue:
@@ -135,20 +156,10 @@ class HorizontalCoord(AlertHandlerNode):
                 tail = self.result_queue[-1][4] - now
                 self.logger.warning(
                     "Clearing buffered commands due to new raw_coord request: "
-                    f"req={req_summary}, new_id={self._current_exec_id}, n={len(self.result_queue)}, "
-                    f"head={head:.3f}s, tail={tail:.3f}s, generator_exhausted={self._generator_exhausted}"
-                )
-            else:
-                self.logger.info(
-                    f"Accepted raw_coord request immediately: req={req_summary}, new_id={self._current_exec_id}"
+                    f"n={len(self.result_queue)}, head={head:.3f}s, tail={tail:.3f}s"
                 )
             self.result_queue.clear()
 
-        self.logger.warning(
-            f"raw_coord accepted: exec_id={self._current_exec_id}, "
-            f"mode={'scan' if scan else 'point'}, name={msg.name}, "
-            f"lon={msg.lon}, lat={msg.lat}, off_lon={msg.offset_lon}, off_lat={msg.offset_lat}"
-        )
         response.id = self._current_exec_id or self._idle_exec_id
         return response
 

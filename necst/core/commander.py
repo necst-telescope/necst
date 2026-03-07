@@ -388,7 +388,7 @@ class Commander(PrivilegedNode):
                 pass
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
-            self.logger.warning(f"POINT raw_coord id={res.id}")
+            self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
                 self.wait("antenna")
             return res.id
@@ -438,7 +438,7 @@ class Commander(PrivilegedNode):
 
             req = CoordinateCommand.Request(**scan_kwargs)
             res = self._send_request(req, self.client["raw_coord"])
-            self.logger.warning(f"SCAN raw_coord id={res.id}")
+            self.logger.warning(f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}")
             self.wait("antenna")
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
             if wait:
@@ -786,7 +786,8 @@ class Commander(PrivilegedNode):
                         reason = "finished(id_changed)" if finished else "appendix(interrupt_ok_same_id)"
                         self.logger.warning(
                             f"wait(control) return: requested_id={id}, ctrl_id={ctrl.id}, "
-                            f"experienced={experienced}, reason={reason}, ctrl_time={ctrl.time:.6f}, now={now:.6f}"
+                            f"experienced={experienced}, reason={reason}, "
+                            f"ctrl_time={ctrl.time:.6f}, now={now:.6f}"
                         )
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)
