@@ -1,6 +1,7 @@
 import time as pytime
 from collections import deque
 from copy import deepcopy
+from dataclasses import dataclass
 import threading
 from typing import Deque, List, Optional
 
@@ -11,6 +12,12 @@ from necst_msgs.msg import CoordMsg, PIDMsg, TimedAzElFloat64
 
 from ... import config, namespace, topic
 from ...core import AlertHandlerNode
+
+
+@dataclass
+class _QueuedCommand:
+    seq: int
+    msg: CoordMsg
 
 
 class AntennaPIDController(AlertHandlerNode):
@@ -50,27 +57,34 @@ class AntennaPIDController(AlertHandlerNode):
         topic.antenna_encoder.subscription(self, self.update_encoder_reading)
         topic.pid_param.subscription(self, self.change_pid_param)
 
-        # Optional: reset command buffer / PID states on mode changes (epoch changes).
+        # Optional: follow control-epoch changes, but cut over lazily only after the
+        # first new altaz_cmd has actually reached this node.
         if hasattr(topic, "antenna_control_status"):
             topic.antenna_control_status.subscription(self, self.update_control_status)
 
         self._control_id: Optional[str] = None
         self._epoch_reset_requested = False
 
+        # Pending epoch cutover state.
+        #
+        # Why this is needed:
+        #   update_control_status() and update_command() are concurrent callbacks.
+        #   When the control ID changes, clearing the command buffer immediately can
+        #   create an artificial empty-buffer stop if the corresponding new altaz_cmd
+        #   messages have not arrived yet. To avoid that, we remember the current
+        #   local append sequence, and perform the cutover only after at least one
+        #   command appended AFTER the status change has been observed.
+        self._pending_control_id: Optional[str] = None
+        self._pending_cut_seq: Optional[int] = None
+        self._cmd_append_seq: int = 0
+
         self.enc = ParameterList.new(5, CoordMsg)
 
         # ---------------------------------------------------------------------
         # Command buffer (thread-safe)
-        #
-        # - MultiThreadedExecutor can run callbacks concurrently.
-        # - `update_command()` appends commands; `update_encoder_reading()` triggers
-        #   `speed_command()` which consumes commands.
-        # - Use deque for O(1) popleft.
-        # - Avoid sorting on every append; only sort when out-of-order is detected.
-        # - Cap buffer size to prevent unbounded growth if something goes wrong.
         # ---------------------------------------------------------------------
         self._cmd_lock = threading.Lock()
-        self.command_list: Deque[CoordMsg] = deque()
+        self.command_list: Deque[_QueuedCommand] = deque()
         self._cmd_unsorted = False
         self._last_cmd_time: Optional[float] = None
         self._max_cmd_buffer = 2000  # ~40 s at 50 Hz (very conservative)
@@ -88,6 +102,8 @@ class AntennaPIDController(AlertHandlerNode):
           or network jitter may occasionally reorder messages.
         - We avoid sorting on every callback; if out-of-order is detected, we mark
           the buffer "unsorted" and sort once on the next consumption.
+        - Each enqueued command carries a local append sequence number. This is used
+          to detect the arrival of the first command of a new control epoch.
         """
         t = getattr(msg, "time", None)
         if not isinstance(t, float):
@@ -102,7 +118,8 @@ class AntennaPIDController(AlertHandlerNode):
                     return
                 self._cmd_unsorted = True
 
-            self.command_list.append(msg)
+            self._cmd_append_seq += 1
+            self.command_list.append(_QueuedCommand(seq=self._cmd_append_seq, msg=msg))
             self._last_cmd_time = t
 
             # Hard cap to avoid unbounded growth.
@@ -116,10 +133,12 @@ class AntennaPIDController(AlertHandlerNode):
         self.speed_command()
 
     def update_control_status(self, msg) -> None:
-        """Reset command buffer / PID states when control epoch changes.
+        """Request epoch cutover when control ID changes.
 
-        This is the "smart" fix for small unintended jerks at mode-switch boundaries:
-        cut the history *only* when the generator/trajectory changes.
+        We DO NOT clear `command_list` here. The new altaz_cmd messages may still be
+        in flight. Instead, we record the local append-sequence boundary and perform
+        the actual buffer cutover later, inside `speed_command()`, once at least one
+        post-status-change command is confirmed to have arrived.
         """
         new_id = getattr(msg, "id", None)
         if not isinstance(new_id, str):
@@ -130,20 +149,23 @@ class AntennaPIDController(AlertHandlerNode):
             self._control_id = new_id
             return
 
-        if new_id == self._control_id:
+        # No change.
+        if (new_id == self._control_id) and (self._pending_control_id is None):
             return
 
-        self._control_id = new_id
+        # Already waiting for this exact epoch.
+        if new_id == self._pending_control_id:
+            return
 
-        # Drop queued commands from the previous epoch.
         with self._cmd_lock:
-            self.command_list.clear()
-            self._cmd_unsorted = False
-            self._last_cmd_time = None
+            self._pending_control_id = new_id
+            self._pending_cut_seq = self._cmd_append_seq
+            pending_cut_seq = self._pending_cut_seq
 
-        # Request PID state reset at the next speed_command() tick.
-        self._epoch_reset_requested = True
-
+        self.logger.info(
+            f"Epoch change requested: current_id={self._control_id} -> pending_id={new_id}, "
+            f"cut_seq={pending_cut_seq}"
+        )
 
     def immediate_stop_no_resume(self) -> None:
         with self._cmd_lock:
@@ -172,21 +194,61 @@ class AntennaPIDController(AlertHandlerNode):
         if len(self.command_list) <= 1:
             self._cmd_unsorted = False
             return
-        lst: List[CoordMsg] = list(self.command_list)
-        lst.sort(key=lambda x: x.time)
+        lst: List[_QueuedCommand] = list(self.command_list)
+        lst.sort(key=lambda x: x.msg.time)
         self.command_list = deque(lst)
         self._cmd_unsorted = False
-        # Reset last time hint
-        self._last_cmd_time = self.command_list[-1].time if self.command_list else None
+        self._last_cmd_time = self.command_list[-1].msg.time if self.command_list else None
 
     def _discard_outdated_commands_locked(self, now: float) -> None:
         """Drop commands that are already in the past (must hold _cmd_lock)."""
         # Keep at least one command to allow graceful stop handling.
         while len(self.command_list) > 1:
-            if self.command_list[0].time < now:
+            if self.command_list[0].msg.time < now:
                 self.command_list.popleft()
             else:
                 break
+
+    def _apply_pending_epoch_cutover_locked(self) -> bool:
+        """Cut buffer to the new epoch once its first command has arrived.
+
+        Returns
+        -------
+        bool
+            True if cutover was applied and PID state should be reset once.
+
+        Rationale
+        ---------
+        We use the local append sequence, not command timestamps, because old and new
+        epochs can overlap in time for point/track-like trajectories. Timestamps alone
+        cannot distinguish "stale old future commands" from "fresh new commands".
+        The local append sequence *can* distinguish them relative to the moment when
+        the control-status change was observed in this node.
+        """
+        if (self._pending_control_id is None) or (self._pending_cut_seq is None):
+            return False
+
+        has_new_epoch_command = any(q.seq > self._pending_cut_seq for q in self.command_list)
+        if not has_new_epoch_command:
+            return False
+
+        old_len = len(self.command_list)
+        self.command_list = deque(
+            q for q in self.command_list if q.seq > self._pending_cut_seq
+        )
+        self._cmd_unsorted = False
+        self._last_cmd_time = self.command_list[-1].msg.time if self.command_list else None
+
+        old_id = self._control_id
+        self._control_id = self._pending_control_id
+        self._pending_control_id = None
+        self._pending_cut_seq = None
+
+        self.logger.info(
+            f"Epoch cutover applied: {old_id} -> {self._control_id}, "
+            f"buffer {old_len} -> {len(self.command_list)}"
+        )
+        return True
 
     def speed_command(self) -> None:
         if self.status.critical():
@@ -197,31 +259,33 @@ class AntennaPIDController(AlertHandlerNode):
         now = pytime.time()
         dt = 1 / config.antenna_command_frequency
 
-        # Fetch one command to execute (thread-safe) without holding the lock
-        # during PID computations.
+        # Fetch one command to execute (thread-safe) without holding the lock during
+        # PID computations.
         cmd: Optional[CoordMsg] = None
         need_stop = False
+        apply_epoch_reset = False
 
         with self._cmd_lock:
             self._sort_commands_locked()
             self._discard_outdated_commands_locked(now)
+            apply_epoch_reset = self._apply_pending_epoch_cutover_locked()
 
             if len(self.command_list) == 0:
                 need_stop = True
             else:
                 # If the earliest command is still in the future (beyond immediate next tick), do nothing.
-                if self.command_list[0].time > now + dt:
+                if self.command_list[0].msg.time > now + dt:
                     return
 
-                if (len(self.command_list) == 1) and (self.command_list[0].time > now - dt):
-                    cmd = deepcopy(self.command_list[0])
+                if (len(self.command_list) == 1) and (self.command_list[0].msg.time > now - dt):
+                    cmd = deepcopy(self.command_list[0].msg)
                     if now - cmd.time > dt:
                         cmd.time = now  # Not a real-time command.
                 elif len(self.command_list) == 1:
-                    cmd = self.command_list.popleft()
+                    cmd = self.command_list.popleft().msg
                     cmd.time = now
                 else:
-                    cmd = self.command_list.popleft()
+                    cmd = self.command_list.popleft().msg
 
         if need_stop:
             self.immediate_stop_no_resume()
@@ -233,11 +297,14 @@ class AntennaPIDController(AlertHandlerNode):
         if cmd is None:
             return
 
-        # Encoder: keep original behavior (oldest after sorting), to minimize side-effects.
+        # Encoder: keep original behavior (latest after sorting), to minimize side-effects.
         enc = self.enc[-1]
 
         if not isinstance(enc.time, float):
             return
+
+        if apply_epoch_reset:
+            self._epoch_reset_requested = True
 
         # If mode/trajectory epoch changed, reset PID internal states to current encoder
         # position to avoid a brief unintended jerk due to stale speed / integral history.
