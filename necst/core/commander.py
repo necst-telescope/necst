@@ -390,7 +390,7 @@ class Commander(PrivilegedNode):
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
-                self.wait("antenna")
+                self.wait_point_ready_conservative(id=res.id)
             return res.id
 
         elif CMD == "SCAN":
@@ -439,14 +439,10 @@ class Commander(PrivilegedNode):
             req = CoordinateCommand.Request(**scan_kwargs)
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}")
-            fast_ready = self.wait_scan_transition_ready(id=res.id)
-            if not fast_ready:
-                self.wait("antenna")
+            self.wait("antenna")
             ts = pytime.time()
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
-            self.logger.warning(
-                f"cmd_trans sent for scan id={res.id}, now={ts:.6f}, mode={'fast' if fast_ready else 'legacy_fallback'}"
-            )
+            self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={ts:.6f}")
             if wait:
                 self.wait("antenna", mode="control", id=res.id)
             return res.id
@@ -730,6 +726,108 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
+
+    def wait_point_ready_conservative(
+        self,
+        /,
+        *,
+        id: Optional[str] = None,
+        timeout_sec: Optional[Union[int, float]] = None,
+        stable_count: int = 10,
+    ) -> None:
+        """Wait for pointing convergence with a conservative early-return path.
+
+        This method is intentionally narrower than a generic fast-path:
+        it is used only for POINT commands and preserves the legacy behavior
+        when early return is not justified.
+
+        Safety logic:
+        - Do *not* return early merely because tracking is already OK after
+          raw_coord acceptance. For a new point request, control status id may
+          switch before the new future commands are actually due.
+        - Instead, allow early return only after all of the following:
+            1) the requested point id has been observed on antenna_control,
+            2) tracking has become NOT-OK at least once after that, and
+            3) tracking has returned to OK for ``stable_count`` consecutive checks.
+        - If that does not happen within the normal offset window, fall back to
+          the original legacy wait logic *without adding extra delay*.
+
+        Effect:
+        - Large / normal point moves can return earlier than the legacy
+          ``sleep(offset) + 10xOK`` path.
+        - Tiny/no-op moves keep legacy behavior, which is safer than risking a
+          false-positive early return.
+        """
+        WAIT_DURATION = float(config.antenna_command_offset_sec)
+        start = pytime.monotonic()
+        early_checker = ConditionChecker(stable_count, reset_on_failure=True)
+        requested_id_seen = False
+        seen_not_ok_after_new_id = False
+
+        # Phase 1: During the normal offset window, poll instead of dead-sleeping.
+        # Return early only if we have actually seen the new point depart from OK
+        # and then converge again.
+        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+            elapsed = pytime.monotonic() - start
+            if elapsed >= WAIT_DURATION:
+                break
+            try:
+                ctrl = self.get_message("antenna_control", timeout_sec=0.01)
+                error = self.antenna("error")
+
+                if (id is not None) and (getattr(ctrl, "id", None) == id):
+                    requested_id_seen = True
+
+                if requested_id_seen and (not bool(getattr(error, "ok", False))):
+                    seen_not_ok_after_new_id = True
+
+                ready = (
+                    requested_id_seen
+                    and bool(getattr(ctrl, "controlled", False))
+                    and bool(getattr(ctrl, "interrupt_ok", True))
+                    and seen_not_ok_after_new_id
+                    and bool(getattr(error, "ok", False))
+                )
+
+                self.logger.debug(
+                    "point early-check: "
+                    f"requested_id={id}, ctrl_id={getattr(ctrl, 'id', None)}, "
+                    f"controlled={bool(getattr(ctrl, 'controlled', False))}, "
+                    f"interrupt_ok={bool(getattr(ctrl, 'interrupt_ok', True))}, "
+                    f"tracking_ok={bool(getattr(error, 'ok', False))}, "
+                    f"requested_id_seen={requested_id_seen}, "
+                    f"seen_not_ok_after_new_id={seen_not_ok_after_new_id}, ready={ready}",
+                    throttle_duration_sec=0.3,
+                )
+
+                if early_checker.check(ready):
+                    self.logger.warning(
+                        "wait(point_ready) early return: "
+                        f"requested_id={id}, ctrl_id={getattr(ctrl, 'id', None)}, "
+                        f"elapsed={pytime.monotonic() - start:.3f}"
+                    )
+                    return
+            except NECSTTimeoutError:
+                pass
+            pytime.sleep(0.05)
+
+        # Phase 2: legacy behavior, but without an additional unconditional sleep.
+        # We have already spent up to WAIT_DURATION polling in phase 1.
+        legacy_checker = ConditionChecker(stable_count, reset_on_failure=True)
+        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+            try:
+                error = self.antenna("error")
+                self.logger.debug(
+                    f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
+                    throttle_duration_sec=0.3,
+                )
+                if legacy_checker.check(error.ok):
+                    self.logger.debug("Tracking OK (point conservative path)")
+                    return
+            except NECSTTimeoutError:
+                pass
+            pytime.sleep(0.05)
+
     def wait(
         self,
         target: Literal["antenna", "dome"],
@@ -806,76 +904,6 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown mode: {mode!r}")
 
         raise NECSTTimeoutError("Couldn't confirm drive convergence")
-
-    def wait_scan_transition_ready(
-        self,
-        /,
-        *,
-        id: str,
-        timeout_sec: Optional[Union[int, float]] = None,
-        stable_count: int = 3,
-    ) -> bool:
-        """Try a short fast-path before scan transition, then fall back to legacy wait.
-
-        The goal is to avoid redundant standby dwell when the requested scan standby
-        has already become active and tracking is already converged.
-
-        Safety rule:
-        - Only fast-path when the *requested* scan context is active (same id), the
-          controller is in a non-interruptible state (scan standby / non-waypoint
-          tracking should report ``interrupt_ok=False``), and tracking error is OK.
-        - Otherwise do not block indefinitely here. Return ``False`` quickly so the
-          caller can fall back to the original ``wait("antenna")`` behavior.
-        """
-        if timeout_sec is None:
-            try:
-                timeout_sec = min(float(config.antenna_command_offset_sec), 0.5)
-            except Exception:
-                timeout_sec = 0.5
-
-        start = pytime.monotonic()
-        checker = ConditionChecker(stable_count, reset_on_failure=True)
-
-        while pytime.monotonic() - start < timeout_sec:
-            now = pytime.time()
-            try:
-                ctrl = self.get_message("antenna_control", timeout_sec=0.01)
-                error = self.antenna("error")
-
-                requested_scan_active = (
-                    bool(getattr(ctrl, "controlled", False))
-                    and (getattr(ctrl, "id", None) == id)
-                    and (not bool(getattr(ctrl, "interrupt_ok", True)))
-                )
-                tracking_ok = bool(getattr(error, "ok", False))
-                ready = requested_scan_active and tracking_ok
-
-                self.logger.debug(
-                    "scan pre-transition fast-check: "
-                    f"requested_id={id}, ctrl_id={getattr(ctrl, 'id', None)}, "
-                    f"controlled={bool(getattr(ctrl, 'controlled', False))}, "
-                    f"interrupt_ok={bool(getattr(ctrl, 'interrupt_ok', True))}, "
-                    f"tracking_ok={tracking_ok}, ready={ready}",
-                    throttle_duration_sec=0.3,
-                )
-
-                if checker.check(ready):
-                    self.logger.warning(
-                        "wait(scan_transition_ready) fast return: "
-                        f"requested_id={id}, ctrl_id={getattr(ctrl, 'id', None)}, "
-                        f"ctrl_time={getattr(ctrl, 'time', float('nan')):.6f}, "
-                        f"now={now:.6f}, elapsed={pytime.monotonic() - start:.3f}"
-                    )
-                    return True
-            except NECSTTimeoutError:
-                pass
-            pytime.sleep(0.05)
-
-        self.logger.warning(
-            "wait(scan_transition_ready) fallback to legacy wait: "
-            f"requested_id={id}, elapsed={pytime.monotonic() - start:.3f}, timeout={timeout_sec:.3f}"
-        )
-        return False
 
     def wait_oc(
         self,
