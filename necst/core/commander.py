@@ -769,9 +769,16 @@ class Commander(PrivilegedNode):
             # Give the fast path at most roughly the legacy offset window to prove itself.
             if elapsed >= (WAIT_DURATION + 0.3):
                 self.logger.warning(
-                    f"wait(point_ready_active) fallback to legacy wait: requested_id={id}, elapsed={elapsed:.3f}"
+                    f"wait(point_ready_active) fallback to no-delay error wait: requested_id={id}, elapsed={elapsed:.3f}"
                 )
-                return self.wait("antenna", timeout_sec=timeout_sec)
+                remaining_timeout = None
+                if timeout_sec is not None:
+                    remaining_timeout = max(0.0, float(timeout_sec) - elapsed)
+                return self.wait_antenna_error_only(
+                    timeout_sec=remaining_timeout,
+                    stable_count=stable_count,
+                    log_prefix="point_active_fallback",
+                )
             try:
                 ctrl = self.get_message("antenna_control", timeout_sec=0.02)
                 err = self.antenna("error")
@@ -812,6 +819,39 @@ class Commander(PrivilegedNode):
                 pass
             pytime.sleep(0.05)
 
+
+    def wait_antenna_error_only(
+        self,
+        /,
+        *,
+        timeout_sec: Optional[Union[int, float]] = None,
+        stable_count: int = 10,
+        log_prefix: str = "antenna_error_only",
+    ) -> None:
+        """Wait for antenna tracking convergence without the initial fixed offset sleep.
+
+        This is intended for code paths that have already spent time waiting for the
+        requested command to become active. Re-applying the full
+        ``antenna_command_offset_sec`` sleep would stack an additional fixed delay.
+        """
+        start = pytime.monotonic()
+        checker = ConditionChecker(stable_count, reset_on_failure=True)
+        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+            try:
+                error = self.antenna("error")
+                self.logger.debug(
+                    f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
+                    throttle_duration_sec=0.3,
+                )
+                if checker.check(error.ok):
+                    self.logger.warning(
+                        f"wait({log_prefix}) return: elapsed={pytime.monotonic() - start:.3f}"
+                    )
+                    return
+            except NECSTTimeoutError:
+                pass
+            pytime.sleep(0.05)
+        raise NECSTTimeoutError("Couldn't confirm drive convergence")
     def wait(
         self,
         target: Literal["antenna", "dome"],
