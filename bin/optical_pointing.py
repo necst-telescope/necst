@@ -64,7 +64,7 @@ if __name__ == "__main__":
     )
     p.add_argument(
         "-save_spec",
-        action='store_true', 
+        action="store_true",
         help="Spectral data will not be saved.",
     )
 
@@ -80,6 +80,6 @@ if __name__ == "__main__":
         magnitude=(args.lower_mag, args.upper_mag),
         drive_test=args.drive_test,
         obstime=obstime,
-        save=args.save_spec
+        save=args.save_spec,
     )
     obs.execute()
