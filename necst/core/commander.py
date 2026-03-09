@@ -390,7 +390,7 @@ class Commander(PrivilegedNode):
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
-                self.wait_point_ready_conservative(id=res.id)
+                self.wait_point_ready_active(id=res.id)
             return res.id
 
         elif CMD == "SCAN":
@@ -727,102 +727,86 @@ class Commander(PrivilegedNode):
             raise ValueError(f"Unknown command: {cmd!r}")
 
 
-    def wait_point_ready_conservative(
+    def wait_point_ready_active(
         self,
         /,
         *,
         id: Optional[str] = None,
         timeout_sec: Optional[Union[int, float]] = None,
         stable_count: int = 10,
+        active_time_margin_sec: float = 0.05,
     ) -> None:
-        """Wait for pointing convergence with a conservative early-return path.
+        """Wait for POINT completion without unconditional offset sleep.
 
-        This method is intentionally narrower than a generic fast-path:
-        it is used only for POINT commands and preserves the legacy behavior
-        when early return is not justified.
+        The legacy wait() sleeps for the full antenna_command_offset_sec before
+        checking tracking convergence. That guarantees safety, but it also adds a
+        nearly fixed delay even when the requested point has already become active.
 
-        Safety logic:
-        - Do *not* return early merely because tracking is already OK after
-          raw_coord acceptance. For a new point request, control status id may
-          switch before the new future commands are actually due.
-        - Instead, allow early return only after all of the following:
-            1) the requested point id has been observed on antenna_control,
-            2) tracking has become NOT-OK at least once after that, and
-            3) tracking has returned to OK for ``stable_count`` consecutive checks.
-        - If that does not happen within the normal offset window, fall back to
-          the original legacy wait logic *without adding extra delay*.
+        This method uses antenna_control to detect when the requested POINT has
+        actually become active on the control side, then requires the same
+        ``stable_count`` consecutive OK checks as the legacy path. If that does
+        not happen quickly, it falls back to the original wait() implementation.
 
-        Effect:
-        - Large / normal point moves can return earlier than the legacy
-          ``sleep(offset) + 10xOK`` path.
-        - Tiny/no-op moves keep legacy behavior, which is safer than risking a
-          false-positive early return.
+        Safety conditions for the fast path:
+        - control_status.id matches the requested id
+        - control_status.controlled is True
+        - control_status.interrupt_ok is True (track-like POINT path, not scan standby)
+        - control_status.time is no longer in the future by more than
+          ``active_time_margin_sec``
+        - tracking error is OK for ``stable_count`` consecutive checks
         """
         WAIT_DURATION = float(config.antenna_command_offset_sec)
         start = pytime.monotonic()
-        early_checker = ConditionChecker(stable_count, reset_on_failure=True)
-        requested_id_seen = False
-        seen_not_ok_after_new_id = False
+        checker = ConditionChecker(stable_count, reset_on_failure=True)
+        active_seen = False
 
-        # Phase 1: During the normal offset window, poll instead of dead-sleeping.
-        # Return early only if we have actually seen the new point depart from OK
-        # and then converge again.
+        self.logger.warning(
+            f"wait(point_ready_active) start: requested_id={id}, offset={WAIT_DURATION:.3f}"
+        )
+
         while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
             elapsed = pytime.monotonic() - start
-            if elapsed >= WAIT_DURATION:
-                break
+            # Give the fast path at most roughly the legacy offset window to prove itself.
+            if elapsed >= (WAIT_DURATION + 0.3):
+                self.logger.warning(
+                    f"wait(point_ready_active) fallback to legacy wait: requested_id={id}, elapsed={elapsed:.3f}"
+                )
+                return self.wait("antenna", timeout_sec=timeout_sec)
             try:
-                ctrl = self.get_message("antenna_control", timeout_sec=0.01)
-                error = self.antenna("error")
+                ctrl = self.get_message("antenna_control", timeout_sec=0.02)
+                err = self.antenna("error")
+                now = pytime.time()
 
-                if (id is not None) and (getattr(ctrl, "id", None) == id):
-                    requested_id_seen = True
-
-                if requested_id_seen and (not bool(getattr(error, "ok", False))):
-                    seen_not_ok_after_new_id = True
-
-                ready = (
-                    requested_id_seen
-                    and bool(getattr(ctrl, "controlled", False))
-                    and bool(getattr(ctrl, "interrupt_ok", True))
-                    and seen_not_ok_after_new_id
-                    and bool(getattr(error, "ok", False))
+                ctrl_id = getattr(ctrl, "id", None)
+                ctrl_time = float(getattr(ctrl, "time", 0.0))
+                ctrl_controlled = bool(getattr(ctrl, "controlled", False))
+                ctrl_interruptible = bool(getattr(ctrl, "interrupt_ok", False))
+                active = (
+                    ((id is None) or (ctrl_id == id))
+                    and ctrl_controlled
+                    and ctrl_interruptible
+                    and (ctrl_time <= now + active_time_margin_sec)
                 )
 
+                if active:
+                    active_seen = True
+
+                ready = active and bool(getattr(err, "ok", False))
+
                 self.logger.debug(
-                    "point early-check: "
-                    f"requested_id={id}, ctrl_id={getattr(ctrl, 'id', None)}, "
-                    f"controlled={bool(getattr(ctrl, 'controlled', False))}, "
-                    f"interrupt_ok={bool(getattr(ctrl, 'interrupt_ok', True))}, "
-                    f"tracking_ok={bool(getattr(error, 'ok', False))}, "
-                    f"requested_id_seen={requested_id_seen}, "
-                    f"seen_not_ok_after_new_id={seen_not_ok_after_new_id}, ready={ready}",
+                    "point active-check: "
+                    f"requested_id={id}, ctrl_id={ctrl_id}, controlled={ctrl_controlled}, "
+                    f"interrupt_ok={ctrl_interruptible}, ctrl_time={ctrl_time:.6f}, now={now:.6f}, "
+                    f"active={active}, tracking_ok={bool(getattr(err, 'ok', False))}, "
+                    f"active_seen={active_seen}, ready={ready}",
                     throttle_duration_sec=0.3,
                 )
 
-                if early_checker.check(ready):
+                if checker.check(ready):
                     self.logger.warning(
-                        "wait(point_ready) early return: "
-                        f"requested_id={id}, ctrl_id={getattr(ctrl, 'id', None)}, "
-                        f"elapsed={pytime.monotonic() - start:.3f}"
+                        "wait(point_ready_active) early return: "
+                        f"requested_id={id}, ctrl_id={ctrl_id}, elapsed={pytime.monotonic() - start:.3f}"
                     )
-                    return
-            except NECSTTimeoutError:
-                pass
-            pytime.sleep(0.05)
-
-        # Phase 2: legacy behavior, but without an additional unconditional sleep.
-        # We have already spent up to WAIT_DURATION polling in phase 1.
-        legacy_checker = ConditionChecker(stable_count, reset_on_failure=True)
-        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            try:
-                error = self.antenna("error")
-                self.logger.debug(
-                    f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
-                    throttle_duration_sec=0.3,
-                )
-                if legacy_checker.check(error.ok):
-                    self.logger.debug("Tracking OK (point conservative path)")
                     return
             except NECSTTimeoutError:
                 pass
