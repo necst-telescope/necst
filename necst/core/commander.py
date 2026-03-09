@@ -390,7 +390,7 @@ class Commander(PrivilegedNode):
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
-                self.wait_point_ready_active(id=res.id)
+                self.wait("antenna")
             return res.id
 
         elif CMD == "SCAN":
@@ -726,132 +726,6 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
 
-
-    def wait_point_ready_active(
-        self,
-        /,
-        *,
-        id: Optional[str] = None,
-        timeout_sec: Optional[Union[int, float]] = None,
-        stable_count: int = 10,
-        active_time_margin_sec: float = 0.05,
-    ) -> None:
-        """Wait for POINT completion without unconditional offset sleep.
-
-        The legacy wait() sleeps for the full antenna_command_offset_sec before
-        checking tracking convergence. That guarantees safety, but it also adds a
-        nearly fixed delay even when the requested point has already become active.
-
-        This method uses antenna_control to detect when the requested POINT has
-        actually become active on the control side, then requires the same
-        ``stable_count`` consecutive OK checks as the legacy path. If that does
-        not happen quickly, it falls back to the original wait() implementation.
-
-        Safety conditions for the fast path:
-        - control_status.id matches the requested id
-        - control_status.controlled is True
-        - control_status.interrupt_ok is True (track-like POINT path, not scan standby)
-        - control_status.time is no longer in the future by more than
-          ``active_time_margin_sec``
-        - tracking error is OK for ``stable_count`` consecutive checks
-        """
-        WAIT_DURATION = float(config.antenna_command_offset_sec)
-        start = pytime.monotonic()
-        checker = ConditionChecker(stable_count, reset_on_failure=True)
-        active_seen = False
-
-        self.logger.warning(
-            f"wait(point_ready_active) start: requested_id={id}, offset={WAIT_DURATION:.3f}"
-        )
-
-        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            elapsed = pytime.monotonic() - start
-            # Give the fast path at most roughly the legacy offset window to prove itself.
-            if elapsed >= (WAIT_DURATION + 0.3):
-                self.logger.warning(
-                    f"wait(point_ready_active) fallback to no-delay error wait: requested_id={id}, elapsed={elapsed:.3f}"
-                )
-                remaining_timeout = None
-                if timeout_sec is not None:
-                    remaining_timeout = max(0.0, float(timeout_sec) - elapsed)
-                return self.wait_antenna_error_only(
-                    timeout_sec=remaining_timeout,
-                    stable_count=stable_count,
-                    log_prefix="point_active_fallback",
-                )
-            try:
-                ctrl = self.get_message("antenna_control", timeout_sec=0.02)
-                err = self.antenna("error")
-                now = pytime.time()
-
-                ctrl_id = getattr(ctrl, "id", None)
-                ctrl_time = float(getattr(ctrl, "time", 0.0))
-                ctrl_controlled = bool(getattr(ctrl, "controlled", False))
-                ctrl_interruptible = bool(getattr(ctrl, "interrupt_ok", False))
-                active = (
-                    ((id is None) or (ctrl_id == id))
-                    and ctrl_controlled
-                    and ctrl_interruptible
-                    and (ctrl_time <= now + active_time_margin_sec)
-                )
-
-                if active:
-                    active_seen = True
-
-                ready = active and bool(getattr(err, "ok", False))
-
-                self.logger.debug(
-                    "point active-check: "
-                    f"requested_id={id}, ctrl_id={ctrl_id}, controlled={ctrl_controlled}, "
-                    f"interrupt_ok={ctrl_interruptible}, ctrl_time={ctrl_time:.6f}, now={now:.6f}, "
-                    f"active={active}, tracking_ok={bool(getattr(err, 'ok', False))}, "
-                    f"active_seen={active_seen}, ready={ready}",
-                    throttle_duration_sec=0.3,
-                )
-
-                if checker.check(ready):
-                    self.logger.warning(
-                        "wait(point_ready_active) early return: "
-                        f"requested_id={id}, ctrl_id={ctrl_id}, elapsed={pytime.monotonic() - start:.3f}"
-                    )
-                    return
-            except NECSTTimeoutError:
-                pass
-            pytime.sleep(0.05)
-
-
-    def wait_antenna_error_only(
-        self,
-        /,
-        *,
-        timeout_sec: Optional[Union[int, float]] = None,
-        stable_count: int = 10,
-        log_prefix: str = "antenna_error_only",
-    ) -> None:
-        """Wait for antenna tracking convergence without the initial fixed offset sleep.
-
-        This is intended for code paths that have already spent time waiting for the
-        requested command to become active. Re-applying the full
-        ``antenna_command_offset_sec`` sleep would stack an additional fixed delay.
-        """
-        start = pytime.monotonic()
-        checker = ConditionChecker(stable_count, reset_on_failure=True)
-        while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
-            try:
-                error = self.antenna("error")
-                self.logger.debug(
-                    f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
-                    throttle_duration_sec=0.3,
-                )
-                if checker.check(error.ok):
-                    self.logger.warning(
-                        f"wait({log_prefix}) return: elapsed={pytime.monotonic() - start:.3f}"
-                    )
-                    return
-            except NECSTTimeoutError:
-                pass
-            pytime.sleep(0.05)
-        raise NECSTTimeoutError("Couldn't confirm drive convergence")
     def wait(
         self,
         target: Literal["antenna", "dome"],
