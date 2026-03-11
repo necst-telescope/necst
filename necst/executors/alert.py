@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 
-from ..core.alert import AntennaDriveRangeAlert, AntennaSpeedAlert
+from ..core.alert import AntennaDriveRangeAlert, AntennaSpeedAlert, WeatherConditionAlert
 
 
 def get_executor() -> MultiThreadedExecutor:
@@ -10,6 +10,7 @@ def get_executor() -> MultiThreadedExecutor:
     nodes = [
         AntennaDriveRangeAlert(),
         AntennaSpeedAlert(),
+        WeatherConditionAlert(),
     ]
 
     [executor.add_node(node) for node in nodes]
