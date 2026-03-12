@@ -103,9 +103,14 @@ class Observation(ABC):
                     if key == "max_ch":
                         self.binning(val, spec_name)  # set max channel number
                 if hasattr(config, "dome"):
-                    self.com.dome("close")
-                    self.logger.info("Dome closed")
-                    self.com.dome("sync", dome_sync=False)
+                    if "dome_close" in self._kwargs:
+                        dome_close = self._kwargs.pop("dome_close")
+                        if dome_close:
+                            self.com.dome("close")
+                            self.logger.info("Dome closed")
+                            self.com.dome("sync", dome_sync=False)
+                        else:
+                            self.logger.info("Dome keep opened")
                 self.com.quit_privilege()
                 self.com.destroy_node()
                 _observing_duration = (time.time() - self._start) / 60
