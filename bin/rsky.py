@@ -38,7 +38,16 @@ if __name__ == "__main__":
         type=int,
         help="Number of spectral channels.",
     )
+    p.add_argument(
+        "-dc",
+        "--dome_close",
+        type=bool,
+        default=False,
+        help="If ``True``, dome close at the end of the observation.",
+    )
     args = p.parse_args()
 
-    obs = RSky(n=args.n, integ_time=args.integ, ch=args.channel)
+    obs = RSky(
+        n=args.n, integ_time=args.integ, ch=args.channel, dome_close=args.dome_close
+    )
     obs.execute()
