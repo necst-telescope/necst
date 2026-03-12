@@ -58,7 +58,7 @@ class WeatherConditionAlert(Node):
                 actual=self.wind_speed,
                 warning=self.wind_speed not in self.warning_limit_wind_speed,
                 critical=self.wind_speed not in self.critical_limit_wind_speed,
-                target=[namespace.weather],
+                target=[namespace.antenna],
             )
             self.pub_alert_wind_speed.publish(msg)
         
@@ -68,7 +68,7 @@ class WeatherConditionAlert(Node):
                 actual=self.humidity,
                 warning=self.humidity not in self.warning_limit_humidity,
                 critical=self.humidity not in self.critical_limit_humidity,
-                target=[namespace.weather],
+                target=[namespace.antenna],
             )
             self.pub_alert_humidity.publish(msg)
 
@@ -78,6 +78,65 @@ class WeatherConditionAlert(Node):
                 actual=self.rain_rate,
                 warning=self.rain_rate not in self.warning_limit_rain_rate,
                 critical=self.rain_rate not in self.critical_limit_rain_rate,
-                target=[namespace.weather],
+                target=[namespace.antenna],
             )
             self.pub_alert_rain_rate.publish(msg)
+
+        if self.wind_speed is not None:
+            msg = AlertMsg(
+                threshold=list(self.critical_limit_wind_speed),
+                actual=self.wind_speed,
+                warning=self.wind_speed not in self.warning_limit_wind_speed,
+                critical=self.wind_speed not in self.critical_limit_wind_speed,
+                target=[namespace.dome],
+            )
+            self.pub_alert_wind_speed.publish(msg)
+
+            msg = DomeOC(open=False, time=pytime.time())
+            self.publisher["dome_oc"].publish(msg)
+
+            try:
+                msg = MembraneMsg(open=False, time=pytime.time())
+                self.publisher["membrane"].publish(msg)
+            except:
+                pass
+
+        
+        if self.humidity is not None:
+            msg = AlertMsg(
+                threshold=list(self.critical_limit_humidity),
+                actual=self.humidity,
+                warning=self.humidity not in self.warning_limit_humidity,
+                critical=self.humidity not in self.critical_limit_humidity,
+                target=[namespace.dome],
+            )
+            self.pub_alert_humidity.publish(msg)
+
+            msg = DomeOC(open=False, time=pytime.time())
+            self.publisher["dome_oc"].publish(msg)
+
+            try:
+                msg = MembraneMsg(open=False, time=pytime.time())
+                self.publisher["membrane"].publish(msg)
+            except:
+                pass
+
+        if self.rain_rate is not None:
+            msg = AlertMsg(
+                threshold=list(self.critical_limit_rain_rate),
+                actual=self.rain_rate,
+                warning=self.rain_rate not in self.warning_limit_rain_rate,
+                critical=self.rain_rate not in self.critical_limit_rain_rate,
+                target=[namespace.dome],
+            )
+            self.pub_alert_rain_rate.publish(msg)
+
+            msg = DomeOC(open=False, time=pytime.time())
+            self.publisher["dome_oc"].publish(msg)
+
+            try:
+                msg = MembraneMsg(open=False, time=pytime.time())
+                self.publisher["membrane"].publish(msg)
+            except:
+                pass
+
