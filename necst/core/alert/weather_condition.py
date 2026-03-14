@@ -1,4 +1,4 @@
-from necst_msgs.msg import AlertMsg, WeatherMsg
+from necst_msgs.msg import AlertMsg, WeatherMsg, DomeOC, MembraneMsg
 from rclpy.node import Node
 
 from ... import config, namespace, topic
@@ -18,8 +18,8 @@ class WeatherConditionAlert(Node):
         topic.weather.subscription(self, self.update)
 
         self.wind_speed = None
-        self.warning_limit_wind_speed = config.weather_warning_limit_wind_speed.to_value("m/sec").item()
-        self.critical_limit_wind_speed = config.weather_critical_limit_wind_speed.to_value("m/sec").item()
+        self.warning_limit_wind_speed = config.weather_warning_limit_wind_speed.to_value("m/s").item()
+        self.critical_limit_wind_speed = config.weather_critical_limit_wind_speed.to_value("m/s").item()
 
         self.humidity = None
         self.warning_limit_humidity = config.weather_warning_limit_humidity
@@ -96,4 +96,3 @@ class WeatherConditionAlert(Node):
                 self.publisher["membrane"].publish(msg)
             except:
                 pass
-
