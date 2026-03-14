@@ -2,7 +2,7 @@ from necst_msgs.msg import AlertMsg, WeatherMsg, DomeOC, MembraneMsg
 from rclpy.node import Node
 
 from ... import config, namespace, topic
-import time as pytime
+import time
 
 
 class WeatherConditionAlert(Node):
@@ -60,11 +60,11 @@ class WeatherConditionAlert(Node):
             )
             self.pub_alert_wind_speed.publish(msg)
 
-            msg = DomeOC(open=False, time=pytime.time())
+            msg = DomeOC(open=False, time=time.time())
             self.publisher["dome_oc"].publish(msg)
 
             try:
-                msg = MembraneMsg(open=False, time=pytime.time())
+                msg = MembraneMsg(open=False, time=time.time())
                 self.publisher["membrane"].publish(msg)
             except Exception:
                 print("membrane close failed")
@@ -80,11 +80,11 @@ class WeatherConditionAlert(Node):
             )
             self.pub_alert_humidity.publish(msg)
 
-            msg = DomeOC(open=False, time=pytime.time())
+            msg = DomeOC(open=False, time=time.time())
             self.publisher["dome_oc"].publish(msg)
 
             try:
-                msg = MembraneMsg(open=False, time=pytime.time())
+                msg = MembraneMsg(open=False, time=time.time())
                 self.publisher["membrane"].publish(msg)
             except Exception:
                 print("membrane close failed")
@@ -100,11 +100,11 @@ class WeatherConditionAlert(Node):
             )
             self.pub_alert_rain_rate.publish(msg)
 
-            msg = DomeOC(open=False, time=pytime.time())
+            msg = DomeOC(open=False, time=time.time())
             self.publisher["dome_oc"].publish(msg)
 
             try:
-                msg = MembraneMsg(open=False, time=pytime.time())
+                msg = MembraneMsg(open=False, time=time.time())
                 self.publisher["membrane"].publish(msg)
             except Exception:
                 print("membrane close failed")
