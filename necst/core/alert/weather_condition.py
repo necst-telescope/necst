@@ -1,4 +1,4 @@
-from necst_msgs.msg import AlertMsg, WeatherMsg, DomeOC, MembraneMsg
+from necst_msgs.msg import AlertMsg, WeatherMsg, MembraneMsg # DomeOC
 from rclpy.node import Node
 
 from ... import config, namespace, topic
@@ -63,12 +63,12 @@ class WeatherConditionAlert(Node):
 
             # msg = DomeOC(open=False, time=time.time())
             # self.dome_oc.publish(msg)
-            try:
-                msg = MembraneMsg(open=False, time=time.time())
-                self.membrane.publish(msg)
-            except Exception:
-                print("membrane close failed")
-                pass
+            # try:
+                # msg = MembraneMsg(open=False, time=time.time())
+                # self.membrane.publish(msg)
+            # except Exception:
+                # print("membrane close failed")
+                # pass
 
         if self.humidity is not None:
             msg = AlertMsg(
@@ -82,12 +82,12 @@ class WeatherConditionAlert(Node):
 
             # msg = DomeOC(open=False, time=time.time())
             # self.dome_oc.publish(msg)
-            try:
-                msg = MembraneMsg(open=False, time=time.time())
-                self.membrane.publish(msg)
-            except Exception:
-                print("membrane close failed")
-                pass
+            #try:
+                # msg = MembraneMsg(open=False, time=time.time())
+                # self.membrane.publish(msg)
+            # except Exception:
+                # print("membrane close failed")
+                # pass
 
         if self.rain_rate is not None:
             msg = AlertMsg(
@@ -101,9 +101,9 @@ class WeatherConditionAlert(Node):
 
             # msg = DomeOC(open=False, time=time.time())
             # self.dome_oc.publish(msg)
-            try:
-                msg = MembraneMsg(open=False, time=time.time())
-                self.membrane.publish(msg)
-            except Exception:
-                print("membrane close failed")
-                pass
+            # try:
+                # msg = MembraneMsg(open=False, time=time.time())
+                # self.membrane.publish(msg)
+            # except Exception:
+                # print("membrane close failed")
+                # pass
