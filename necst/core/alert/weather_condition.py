@@ -44,11 +44,10 @@ class WeatherConditionAlert(Node):
         self.humidity = msg.humidity
         self.rain_rate = msg.rain_rate
 
-        if (
-            (self.wind_speed > self.critical_limit_wind_speed)
-            or (self.humidity > self.critical_limit_humidity)
-            or (self.rain_rate > self.critical_limit_rain_rate)
-        ):
+        if (self.wind_speed > self.critical_limit_wind_speed) or (
+            self.humidity > self.critical_limit_humidity) or (
+            self.rain_rate > self.critical_limit_rain_rate
+            ):
             self.stream()
 
     def stream(self) -> None:
@@ -58,12 +57,12 @@ class WeatherConditionAlert(Node):
                 actual=self.wind_speed,
                 warning=abs(self.wind_speed) > self.warning_limit_wind_speed,
                 critical=abs(self.wind_speed) > self.critical_limit_wind_speed,
-                target=[namespace.antenna, namespace.dome],
+                target=[]],
             )
             self.pub_alert_wind_speed.publish(msg)
 
-            msg = DomeOC(open=False, time=time.time())
-            self.dome_oc.publish(msg)
+            #msg = DomeOC(open=False, time=time.time())
+            #self.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
                 self.membrane.publish(msg)
@@ -77,12 +76,12 @@ class WeatherConditionAlert(Node):
                 actual=self.humidity,
                 warning=self.humidity > self.warning_limit_humidity,
                 critical=self.humidity > self.critical_limit_humidity,
-                target=[namespace.antenna, namespace.dome],
+                target=[],
             )
             self.pub_alert_humidity.publish(msg)
 
-            msg = DomeOC(open=False, time=time.time())
-            self.dome_oc.publish(msg)
+            #msg = DomeOC(open=False, time=time.time())
+            #self.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
                 self.membrane.publish(msg)
@@ -96,12 +95,12 @@ class WeatherConditionAlert(Node):
                 actual=self.rain_rate,
                 warning=self.rain_rate > self.warning_limit_rain_rate,
                 critical=self.rain_rate > self.critical_limit_rain_rate,
-                target=[namespace.antenna, namespace.dome],
+                target=[],
             )
             self.pub_alert_rain_rate.publish(msg)
 
-            msg = DomeOC(open=False, time=time.time())
-            self.dome_oc.publish(msg)
+            #msg = DomeOC(open=False, time=time.time())
+            #self.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
                 self.membrane.publish(msg)
