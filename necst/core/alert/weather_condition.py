@@ -20,17 +20,11 @@ class WeatherConditionAlert(Node):
 
         self.wind_speed = None
         self.warning_limit_wind_speed = (
-            config
-            .weather_warning_limit_wind_speed
-            .to_value("m/s")
-            .item()
+            config.weather_warning_limit_wind_speed.to_value("m/s").item()
         )
 
         self.critical_limit_wind_speed = (
-            config
-            .weather_critical_limit_wind_speed
-            .to_value("m/s")
-            .item()
+            config.weather_critical_limit_wind_speed.to_value("m/s").item()
         )
 
         self.humidity = None
@@ -49,9 +43,9 @@ class WeatherConditionAlert(Node):
         self.rain_rate = msg.rain_rate
 
         if (
-            (self.wind_speed > self.critical_limit_wind_speed) or
-            (self.humidity > self.critical_limit_humidity) or
-            (self.rain_rate > self.critical_limit_rain_rate)
+            (self.wind_speed > self.critical_limit_wind_speed)
+            or (self.humidity > self.critical_limit_humidity)
+            or (self.rain_rate > self.critical_limit_rain_rate)
         ):
             self.stream()
 

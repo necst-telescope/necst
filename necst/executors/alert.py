@@ -4,7 +4,7 @@ from rclpy.executors import MultiThreadedExecutor
 from ..core.alert import (
     AntennaDriveRangeAlert,
     AntennaSpeedAlert,
-    WeatherConditionAlert
+    WeatherConditionAlert,
 )
 
 
