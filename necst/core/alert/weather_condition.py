@@ -16,6 +16,8 @@ class WeatherConditionAlert(Node):
         self.pub_alert_wind_speed = topic.wind_speed_alert.publisher(self)
         self.pub_alert_humidity = topic.humidity_alert.publisher(self)
         self.pub_alert_rain_rate = topic.rain_rate_alert.publisher(self)
+        self.dome_oc = topic.dome_oc.publisher(self)
+        self.membrane = topic.membrane_cmd.publisher(self)
         topic.weather.subscription(self, self.update)
 
         self.wind_speed = None
@@ -61,10 +63,10 @@ class WeatherConditionAlert(Node):
             self.pub_alert_wind_speed.publish(msg)
 
             msg = DomeOC(open=False, time=time.time())
-            topic.dome_oc.publisher(self).publish(msg)
+            self.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
-                topic.membrane_cmd.publisher(self).publish(msg)
+                self.membrane.publish(msg)
             except Exception:
                 print("membrane close failed")
                 pass
@@ -80,10 +82,10 @@ class WeatherConditionAlert(Node):
             self.pub_alert_humidity.publish(msg)
 
             msg = DomeOC(open=False, time=time.time())
-            topic.dome_oc.publisher(self).publish(msg)
+            self.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
-                topic.membrane_cmd.publisher(self).publish(msg)
+                self.membrane.publish(msg)
             except Exception:
                 print("membrane close failed")
                 pass
@@ -99,10 +101,10 @@ class WeatherConditionAlert(Node):
             self.pub_alert_rain_rate.publish(msg)
 
             msg = DomeOC(open=False, time=time.time())
-            topic.dome_oc.publisher(self).publish(msg)
+            self.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
-                topic.membrane_cmd.publisher(self).publish(msg)
+                self.membrane.publish(msg)
             except Exception:
                 print("membrane close failed")
                 pass
