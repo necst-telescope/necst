@@ -57,7 +57,8 @@ class WeatherConditionAlert(Node):
             try:
                 msg = MembraneMsg(open=False, time=pytime.time())
                 self.publisher["membrane"].publish(msg)
-            except:
+            except Exception:
+                print("membrane close failed")
                 pass
 
         if self.humidity is not None:
@@ -76,7 +77,8 @@ class WeatherConditionAlert(Node):
             try:
                 msg = MembraneMsg(open=False, time=pytime.time())
                 self.publisher["membrane"].publish(msg)
-            except:
+            except Exception:
+                print("membrane close failed")
                 pass
 
         if self.rain_rate is not None:
@@ -95,5 +97,6 @@ class WeatherConditionAlert(Node):
             try:
                 msg = MembraneMsg(open=False, time=pytime.time())
                 self.publisher["membrane"].publish(msg)
-            except:
+            except Exception:
+                print("membrane close failed")
                 pass
