@@ -18,9 +18,20 @@ class WeatherConditionAlert(Node):
         self.pub_alert_rain_rate = topic.rain_rate_alert.publisher(self)
         topic.weather.subscription(self, self.update)
 
-        self.wind_speed = None
-        self.warning_limit_wind_speed = config.weather_warning_limit_wind_speed.to_value("m/s").item()
-        self.critical_limit_wind_speed = config.weather_critical_limit_wind_speed.to_value("m/s").item()
+        self.wind_speed = None 
+        self.warning_limit_wind_speed = (
+            config
+            .weather_warning_limit_wind_speed
+            .to_value("m/s")
+            .item()
+        )
+
+        self.critical_limit_wind_speed = (
+            config
+            .weather_critical_limit_wind_speed
+            .to_value("m/s")
+            .item()
+        )
 
         self.humidity = None
         self.warning_limit_humidity = config.weather_warning_limit_humidity
@@ -37,7 +48,11 @@ class WeatherConditionAlert(Node):
         self.humidity = msg.humidity
         self.rain_rate = msg.rain_rate
 
-        if (self.wind_speed > self.critical_limit_wind_speed) or (self.humidity > self.critical_limit_humidity) or (self.rain_rate > self.critical_limit_rain_rate):
+        if (
+            (self.wind_speed > self.critical_limit_wind_speed) or 
+            (self.humidity > self.critical_limit_humidity) or 
+            (self.rain_rate > self.critical_limit_rain_rate)
+        ):
             self.stream()
 
     def stream(self) -> None:
@@ -45,8 +60,8 @@ class WeatherConditionAlert(Node):
             msg = AlertMsg(
                 threshold=[self.critical_limit_wind_speed],
                 actual=self.wind_speed,
-                warning=self.wind_speed > self.warning_limit_wind_speed,
-                critical=self.wind_speed > self.critical_limit_wind_speed,
+                warning=abs(self.wind_speed) > self.warning_limit_wind_speed,
+                critical=abs(self.wind_speed) > self.critical_limit_wind_speed,
                 target=[namespace.antenna, namespace.dome],
             )
             self.pub_alert_wind_speed.publish(msg)
