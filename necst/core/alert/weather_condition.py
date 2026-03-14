@@ -43,7 +43,7 @@ class WeatherConditionAlert(Node):
     def stream(self) -> None:
         if self.wind_speed is not None:
             msg = AlertMsg(
-                threshold=list(self.critical_limit_wind_speed),
+                threshold=[self.critical_limit_wind_speed],
                 actual=self.wind_speed,
                 warning=self.wind_speed > self.warning_limit_wind_speed,
                 critical=self.wind_speed > self.critical_limit_wind_speed,
@@ -63,7 +63,7 @@ class WeatherConditionAlert(Node):
 
         if self.humidity is not None:
             msg = AlertMsg(
-                threshold=list(self.critical_limit_humidity),
+                threshold=[self.critical_limit_humidity],
                 actual=self.humidity,
                 warning=self.humidity > self.warning_limit_humidity,
                 critical=self.humidity > self.critical_limit_humidity,
@@ -83,7 +83,7 @@ class WeatherConditionAlert(Node):
 
         if self.rain_rate is not None:
             msg = AlertMsg(
-                threshold=list(self.critical_limit_rain_rate),
+                threshold=[self.critical_limit_rain_rate],
                 actual=self.rain_rate,
                 warning=self.rain_rate > self.warning_limit_rain_rate,
                 critical=self.rain_rate > self.critical_limit_rain_rate,
