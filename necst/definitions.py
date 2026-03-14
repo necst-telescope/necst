@@ -269,6 +269,13 @@ class topic:
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
     tp_mode = Topic(TPModeMsg, "tp_mode", qos.realtime, namespace.core)
+    wind_speed_alert = Topic(
+        AlertMsg, "wind_speed", qos.reliable_latched, namespace.alert
+    )
+    humidity_alert = Topic(AlertMsg, "humidity", qos.reliable_latched, namespace.alert)
+    rain_rate_alert = Topic(
+        AlertMsg, "rain_rate", qos.reliable_latched, namespace.alert
+    )
 
 
 class service:
