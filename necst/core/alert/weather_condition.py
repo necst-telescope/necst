@@ -1,8 +1,8 @@
-from necst_msgs.msg import AlertMsg, WeatherMsg, MembraneMsg # DomeOC
+from necst_msgs.msg import AlertMsg, WeatherMsg # MembraneMsg DomeOC
 from rclpy.node import Node
 
 from ... import config, namespace, topic
-import time
+# import time
 
 
 class WeatherConditionAlert(Node):
@@ -60,15 +60,16 @@ class WeatherConditionAlert(Node):
                 target=[namespace.antenna],
             )
             self.pub_alert_wind_speed.publish(msg)
-
-            # msg = DomeOC(open=False, time=time.time())
-            # self.dome_oc.publish(msg)
-            # try:
-                # msg = MembraneMsg(open=False, time=time.time())
-                # self.membrane.publish(msg)
-            # except Exception:
-                # print("membrane close failed")
-                # pass
+            """
+            msg = DomeOC(open=False, time=time.time())
+            self.dome_oc.publish(msg)
+            try:
+                msg = MembraneMsg(open=False, time=time.time())
+                self.membrane.publish(msg)
+            except Exception:
+                print("membrane close failed")
+                pass
+            """
 
         if self.humidity is not None:
             msg = AlertMsg(
@@ -79,16 +80,16 @@ class WeatherConditionAlert(Node):
                 target=[namespace.antenna],
             )
             self.pub_alert_humidity.publish(msg)
-
-            # msg = DomeOC(open=False, time=time.time())
-            # self.dome_oc.publish(msg)
-            #try:
-                # msg = MembraneMsg(open=False, time=time.time())
-                # self.membrane.publish(msg)
-            # except Exception:
-                # print("membrane close failed")
-                # pass
-
+            """
+            msg = DomeOC(open=False, time=time.time())
+            self.dome_oc.publish(msg)
+            try:
+                msg = MembraneMsg(open=False, time=time.time())
+                self.membrane.publish(msg)
+            except Exception:
+                print("membrane close failed")
+                pass
+            """
         if self.rain_rate is not None:
             msg = AlertMsg(
                 threshold=[self.critical_limit_rain_rate],
@@ -98,12 +99,13 @@ class WeatherConditionAlert(Node):
                 target=[namespace.antenna],
             )
             self.pub_alert_rain_rate.publish(msg)
-
-            # msg = DomeOC(open=False, time=time.time())
-            # self.dome_oc.publish(msg)
-            # try:
-                # msg = MembraneMsg(open=False, time=time.time())
-                # self.membrane.publish(msg)
-            # except Exception:
-                # print("membrane close failed")
-                # pass
+            """
+            msg = DomeOC(open=False, time=time.time())
+            self.dome_oc.publish(msg)
+            try:
+                msg = MembraneMsg(open=False, time=time.time())
+                self.membrane.publish(msg)
+            except Exception:
+                print("membrane close failed")
+                pass
+            """
