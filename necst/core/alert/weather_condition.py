@@ -18,28 +18,16 @@ class WeatherConditionAlert(Node):
         topic.weather.subscription(self, self.update)
 
         self.wind_speed = None
-        self.warning_limit_wind_speed = config.warning_limit_wind_speed.map(
-            lambda x: x.to_value("deg")
-        )
-        self.critical_limit_wind_speed = config.critical_limit_wind_speed.map(
-            lambda x: x.to_value("deg")
-        )
+        self.warning_limit_wind_speed = config.weather_warning_limit_wind_speed.to_value("m/sec").item()
+        self.critical_limit_wind_speed = config.weather_critical_limit_wind_speed.to_value("m/sec").item()
 
         self.humidity = None
-        self.warning_limit_humidity = config.warning_limit_humidity.map(
-            lambda x: x.to_value("deg")
-        )
-        self.critical_limit_humidity = config.critical_limit_humidity.map(
-            lambda x: x.to_value("deg")
-        )
+        self.warning_limit_humidity = config.weather_warning_limit_humidity
+        self.critical_limit_humidity = config.weather_critical_limit_humidity
 
         self.rain_rate = None
-        self.warning_limit_rain_rate = config.warning_limit_rain_rate.map(
-            lambda x: x.to_value("deg")
-        )
-        self.critical_limit_rain_rate = config.critical_limit_rain_rate.map(
-            lambda x: x.to_value("deg")
-        )
+        self.warning_limit_rain_rate = config.weather_warning_limit_rain_rate
+        self.critical_limit_rain_rate = config.weather_critical_limit_rain_rate
 
         self.create_timer(config.alert_interval_sec, self.stream)
 
@@ -48,7 +36,7 @@ class WeatherConditionAlert(Node):
         self.humidity = msg.humidity
         self.rain_rate = msg.rain_rate
 
-        if (self.wind_speed not in self.critical_limit_wind_speed) or (self.humidity not in self.critical_limit_humidity) or (self.rain_rate not in self.critical_limit_rain_rate):
+        if (self.wind_speed > self.critical_limit_wind_speed) or (self.humidity > self.critical_limit_humidity) or (self.rain_rate > self.critical_limit_rain_rate):
             self.stream()
 
     def stream(self) -> None:
@@ -56,39 +44,9 @@ class WeatherConditionAlert(Node):
             msg = AlertMsg(
                 threshold=list(self.critical_limit_wind_speed),
                 actual=self.wind_speed,
-                warning=self.wind_speed not in self.warning_limit_wind_speed,
-                critical=self.wind_speed not in self.critical_limit_wind_speed,
-                target=[namespace.antenna],
-            )
-            self.pub_alert_wind_speed.publish(msg)
-        
-        if self.humidity is not None:
-            msg = AlertMsg(
-                threshold=list(self.critical_limit_humidity),
-                actual=self.humidity,
-                warning=self.humidity not in self.warning_limit_humidity,
-                critical=self.humidity not in self.critical_limit_humidity,
-                target=[namespace.antenna],
-            )
-            self.pub_alert_humidity.publish(msg)
-
-        if self.rain_rate is not None:
-            msg = AlertMsg(
-                threshold=list(self.critical_limit_rain_rate),
-                actual=self.rain_rate,
-                warning=self.rain_rate not in self.warning_limit_rain_rate,
-                critical=self.rain_rate not in self.critical_limit_rain_rate,
-                target=[namespace.antenna],
-            )
-            self.pub_alert_rain_rate.publish(msg)
-
-        if self.wind_speed is not None:
-            msg = AlertMsg(
-                threshold=list(self.critical_limit_wind_speed),
-                actual=self.wind_speed,
-                warning=self.wind_speed not in self.warning_limit_wind_speed,
-                critical=self.wind_speed not in self.critical_limit_wind_speed,
-                target=[namespace.dome],
+                warning=self.wind_speed > self.warning_limit_wind_speed,
+                critical=self.wind_speed > self.critical_limit_wind_speed,
+                target=[namespace.antenna,namespace.dome],
             )
             self.pub_alert_wind_speed.publish(msg)
 
@@ -101,14 +59,13 @@ class WeatherConditionAlert(Node):
             except:
                 pass
 
-        
         if self.humidity is not None:
             msg = AlertMsg(
                 threshold=list(self.critical_limit_humidity),
                 actual=self.humidity,
-                warning=self.humidity not in self.warning_limit_humidity,
-                critical=self.humidity not in self.critical_limit_humidity,
-                target=[namespace.dome],
+                warning=self.humidity > self.warning_limit_humidity,
+                critical=self.humidity > self.critical_limit_humidity,
+                target=[namespace.antenna,namespace.dome],
             )
             self.pub_alert_humidity.publish(msg)
 
@@ -125,9 +82,9 @@ class WeatherConditionAlert(Node):
             msg = AlertMsg(
                 threshold=list(self.critical_limit_rain_rate),
                 actual=self.rain_rate,
-                warning=self.rain_rate not in self.warning_limit_rain_rate,
-                critical=self.rain_rate not in self.critical_limit_rain_rate,
-                target=[namespace.dome],
+                warning=self.rain_rate > self.warning_limit_rain_rate,
+                critical=self.rain_rate > self.critical_limit_rain_rate,
+                target=[namespace.antenna,namespace.dome],
             )
             self.pub_alert_rain_rate.publish(msg)
 
