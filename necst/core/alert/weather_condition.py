@@ -61,11 +61,10 @@ class WeatherConditionAlert(Node):
             self.pub_alert_wind_speed.publish(msg)
 
             msg = DomeOC(open=False, time=time.time())
-            self.publisher["dome_oc"].publish(msg)
-
+            topic.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
-                self.publisher["membrane"].publish(msg)
+                topic.membrane_cmd.publish(msg)
             except Exception:
                 print("membrane close failed")
                 pass
@@ -81,11 +80,10 @@ class WeatherConditionAlert(Node):
             self.pub_alert_humidity.publish(msg)
 
             msg = DomeOC(open=False, time=time.time())
-            self.publisher["dome_oc"].publish(msg)
-
+            topic.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
-                self.publisher["membrane"].publish(msg)
+                topic.membrane_cmd.publish(msg)
             except Exception:
                 print("membrane close failed")
                 pass
@@ -101,11 +99,10 @@ class WeatherConditionAlert(Node):
             self.pub_alert_rain_rate.publish(msg)
 
             msg = DomeOC(open=False, time=time.time())
-            self.publisher["dome_oc"].publish(msg)
-
+            topic.dome_oc.publish(msg)
             try:
                 msg = MembraneMsg(open=False, time=time.time())
-                self.publisher["membrane"].publish(msg)
+                topic.membrane_cmd.publish(msg)
             except Exception:
                 print("membrane close failed")
                 pass
