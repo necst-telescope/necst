@@ -21,7 +21,7 @@ class WeatherStationReader(DeviceNode):
 
     def stream(self):
         for key, thermo in self.thermo.items():
-            print(key, thermo)
+            print(key, type(key))
             if key not in self.publisher:
                 self.publisher[key] = topic.weather[key].publisher(self)
             msg = WeatherMsg(
