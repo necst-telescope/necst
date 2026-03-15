@@ -13,13 +13,13 @@ class WeatherConditionAlert(Node):
         super().__init__(self.NodeName, namespace=self.Namespace)
         self.logger = self.get_logger()
 
+        topic.weather.subscription(self, self.update)
         self.pub_alert_wind_speed = topic.wind_speed_alert.publisher(self)
         self.pub_alert_humidity = topic.humidity_alert.publisher(self)
         self.pub_alert_rain_rate = topic.rain_rate_alert.publisher(self)
         self.dome_oc = topic.dome_oc.publisher(self)
         self.membrane = topic.membrane_cmd.publisher(self)
-        topic.weather.subscription(self, self.update)
-
+        
         self.wind_speed = None
         self.warning_limit_wind_speed = (
             config.weather_warning_limit_wind_speed.to_value("m/s").item()
