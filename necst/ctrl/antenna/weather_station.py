@@ -14,13 +14,15 @@ class WeatherStationReader(DeviceNode):
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.publisher = topic.weather.publisher(self)
+        self.publisher: Dict[int, Publisher] = {}
 
         self.thermo = WeatherStation()
         self.create_timer(1, self.stream)
 
     def stream(self):
         for key, thermo in self.thermo.items():
+            if key not in self.publisher:
+                self.publisher[key] = topic.weather[key].publisher(self)
             msg = WeatherMsg(
                 temperature=float(thermo.get_temperature().to_value("K")),
                 in_temperature=float(thermo.get_in_temperature().to_value("K")),
