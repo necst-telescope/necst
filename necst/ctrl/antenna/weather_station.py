@@ -14,14 +14,13 @@ class WeatherStationReader(DeviceNode):
     def __init__(self):
         super().__init__(self.NodeName, namespace=self.Namespace)
 
-        self.publisher: Dict[int, Publisher] = {}
+        self.publisher = {}
 
         self.thermo = WeatherStation()
         self.create_timer(1, self.stream)
 
     def stream(self):
         for key, thermo in self.thermo.items():
-            print(key, type(key))
             if key not in self.publisher:
                 self.publisher[key] = topic.weather[key].publisher(self)
             msg = WeatherMsg(
