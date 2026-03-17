@@ -46,29 +46,30 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
 
         self.subscriptions_list = {}
 
-        # 1. Subscribe to Static (Core) Topics
-        self.static_configs = [
-            (topic.weather, "weather", {"loc": "outdoor"}, ["temperature", "humidity", "pressure"]),
-            (topic.antenna_encoder, "antenna", {"host": "antenna-pc"}, ["lon", "lat"]),
+        # -------------------------------------------------------------
+        # 1. Unified Topic Configuration
+        # -------------------------------------------------------------
+        # Format: (TopicObject, MeasurementName, DefaultTags, FieldListOrNone)
+        # If FieldList is None, all fields except metadata will be extracted.
+        self.configs = [
+            (topic.weather, "weather_station", {"loc": "outdoor"}, ["temperature", "humidity", "pressure"]),
+            (topic.antenna_encoder, "encoder", {"host": "antenna-pc"}, None),
+            (topic.thermometer, "thermometer", {}, None),
+            (topic.attenuator, "attenuator", {}, None),
+            (topic.vacuum_gauge, "vacuum_gauge", {}, None),
         ]
-        for t_obj, measurement, tags, fields in self.static_configs:
-            self._subscribe(
-                t_obj._qualname,
-                t_obj.msg_type,
-                measurement,
-                tags,
-                fields,
-                qos=t_obj.qos_profile,
-            )
 
-        # 2. Dynamic Discovery for Branched Topics (Thermometers, Attenuators, etc.)
-        # Discovery period: 10 seconds
-        self.create_timer(10.0, self.discover_topics)
-        self.discover_topics()
+        self.subscriptions_list = {}
+        
+        # Immediate subscription/discovery
+        self.discover_all()
+        
+        # Rescan for new branches periodically (every 10s)
+        self.create_timer(10.0, self.discover_all)
 
-        self.logger.info("Monitor Node Started with QoS-aware discovery.")
+        self.logger.info(f"Monitor Node Started. Tracking {len(self.configs)} categories.")
 
-    def _subscribe(self, topic_name, msg_type, measurement, tags, fields, qos):
+    def _subscribe(self, topic_name, msg_type, measurement, tags, fields_config, qos):
         """Register a new subscription if not already tracked."""
         if topic_name in self.subscriptions_list:
             return
@@ -77,70 +78,85 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
             self.handle_msg,
             measurement=measurement,
             tags=tags,
-            fields=fields
+            fields_config=fields_config
         )
-        # Use the specific QoS profile (e.g. Best Effort for realtime topics)
         sub = self.create_subscription(msg_type, topic_name, handler, qos)
         self.subscriptions_list[topic_name] = sub
-        self.logger.info(f"New subscription: {topic_name} -> [{measurement}] (QoS: {qos})")
+        self.logger.info(f"Subscribed: {topic_name} -> [{measurement}]")
 
-    def discover_topics(self):
-        """Scan the ROS 2 network and neclib config for branched topics."""
-        import inspect
+    def discover_all(self):
+        """Iterate through configs and either subscribe directly or discover branches."""
+        for t_obj, measurement, tags, fields in self.configs:
+            if not t_obj.support_index:
+                # Core topic: Subscribe directly
+                self._subscribe(
+                    t_obj._qualname,
+                    t_obj.msg_type,
+                    measurement,
+                    tags,
+                    fields,
+                    qos=t_obj.qos_profile,
+                )
+            else:
+                # Branched topic: Discover via ROS 2 scan and neclib config
+                self._discover_branches(t_obj, measurement, tags, fields)
 
-        # Identify all 'branched' (subscriptable) topic definitions in our system
-        for name, topic_obj in inspect.getmembers(topic):
-            if isinstance(topic_obj, Topic) and topic_obj.support_index:
-                
-                # Option A: Discovery via ROS 2 network scan
-                try:
-                    children = topic_obj.get_children(self)
-                    for branch_name, child_topic in children.items():
-                        # Default field handling (DeviceReading has 'value')
-                        fields = ["value"] 
-                        # Use branch name as a tag for differentiation
-                        tags = {"id": branch_name}
-                        self._subscribe(
-                            child_topic._qualname,
-                            child_topic.msg_type,
-                            name,
-                            tags,
-                            fields,
-                            qos=child_topic.qos_profile,
-                        )
-                except Exception as e:
-                    self.logger.debug(f"Discovery failed for {name} via ROS 2 scan: {e}")
+    def _discover_branches(self, t_obj, measurement, base_tags, fields):
+        """Helper to find children for subscriptable topics."""
+        # A: ROS 2 network scan
+        try:
+            children = t_obj.get_children(self)
+            for branch_name, child_topic in children.items():
+                tags = base_tags.copy()
+                tags["id"] = branch_name
+                self._subscribe(
+                    child_topic._qualname,
+                    child_topic.msg_type,
+                    measurement,
+                    tags,
+                    fields,
+                    qos=child_topic.qos_profile,
+                )
+        except Exception as e:
+            self.logger.debug(f"Scan failed for {measurement}: {e}")
 
-                # Option B: Discovery via neclib config (if hardware is defined but node not started)
-                try:
-                    # Generic lookup for 'channel' key in config sections (e.g., config.thermometer.channel)
-                    config_section = getattr(config, name, None)
-                    if config_section and hasattr(config_section, 'channel'):
-                        for sensor_name in config_section.channel.keys():
-                            child_topic = topic_obj[sensor_name]
-                            fields = ["value"]
-                            tags = {"id": sensor_name}
-                            self._subscribe(
-                                child_topic._qualname,
-                                child_topic.msg_type,
-                                name,
-                                tags,
-                                fields,
-                                qos=child_topic.qos_profile,
-                            )
-                except:
-                    pass
+        # B: neclib config lookup
+        try:
+            config_section = getattr(config, measurement, None)
+            if config_section and hasattr(config_section, 'channel'):
+                for sensor_name in config_section.channel.keys():
+                    child_topic = t_obj[sensor_name]
+                    tags = base_tags.copy()
+                    tags["id"] = sensor_name
+                    self._subscribe(
+                        child_topic._qualname,
+                        child_topic.msg_type,
+                        measurement,
+                        tags,
+                        fields,
+                        qos=child_topic.qos_profile,
+                    )
+        except:
+            pass
 
-    def handle_msg(self, msg, measurement: str, tags: dict, fields: list):
-        """Generic message handler to convert ROS 2 messages to InfluxDB points."""
+    def handle_msg(self, msg, measurement: str, tags: dict, fields_config: list):
+        """Generic message handler. If fields_config is None, send all fields."""
         try:
             point = Point(measurement)
             for k, v in tags.items():
                 point.tag(k, v)
 
+            # Automatic field extraction
+            fields = fields_config if fields_config else msg.get_fields_and_field_types().keys()
+
             for f in fields:
+                if f in ["time", "id", "header"]: # Skip metadata/tags
+                    continue
                 val = getattr(msg, f)
-                point.field(f, float(val))
+                try:
+                    point.field(f, float(val))
+                except (TypeError, ValueError):
+                    point.field(f, str(val))
 
             self.write_api.write(bucket=self.bucket, record=point)
         except Exception as e:
