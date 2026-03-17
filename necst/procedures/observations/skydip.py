@@ -9,7 +9,7 @@ from .observation_base import Observation
 class Skydip(Observation):
     observation_type = "Skydip"
 
-    elevations = [80, 50, 40, 30, 25, 22, 20]
+    elevations = [75, 50, 40, 30, 25, 22, 20]
 
     def run(self, integ_time: Union[int, float]) -> None:
         self.com.metadata("set", position="", id="")
