@@ -1,5 +1,6 @@
 import os
 import rclpy
+from pathlib import Path
 from rclpy.node import Node
 from dotenv import load_dotenv
 from functools import partial
@@ -10,18 +11,21 @@ from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 from neclib import config
 from .. import namespace, topic
 from ..utils import Topic
+from ..core.device import DeviceNode
 from necst_msgs.msg import WeatherMsg, CoordMsg, DeviceReading
 
 
-load_dotenv()
+env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 
-class Monitor(Node): # Assuming DeviceNode is a Node, changed to Node for clarity as DeviceNode is not defined in snippet
+class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for clarity as DeviceNode is not defined in snippet
     NodeName = "monitor"
     Namespace = namespace.rx
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
+        self.logger = self.get_logger()
 
         # InfluxDB Configuration
         url = os.getenv("INFLUXDB_URL")
