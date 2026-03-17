@@ -40,8 +40,11 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
         # InfluxDB Client Setup
         self.client = InfluxDBClient(url=url, token=token, org=org)
         # Enable batching to stay within free tier limits.
+        # Added callbacks to track actual cloud transmission status.
         self.write_api = self.client.write_api(
-            write_options=WriteOptions(batch_size=50, flush_interval=1000)
+            write_options=WriteOptions(batch_size=50, flush_interval=1000),
+            success_callback=self._on_write_success,
+            error_callback=self._on_write_error,
         )
 
         self.subscriptions_list = {}
@@ -139,6 +142,14 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
         except:
             pass
 
+    def _on_write_success(self, conf: tuple, data: str):
+        """Callback for successful data transmission to InfluxDB."""
+        self.logger.debug(f"Successfully sent batch to InfluxDB: {conf}")
+
+    def _on_write_error(self, conf: tuple, data: str, exception: Exception):
+        """Callback for failed data transmission to InfluxDB."""
+        self.logger.error(f"Failed to deliver batch to InfluxDB: {exception}")
+
     def handle_msg(self, msg, measurement: str, tags: dict, fields_config: list):
         """Generic message handler. If fields_config is None, send all fields."""
         try:
@@ -159,8 +170,9 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
                     point.field(f, str(val))
 
             self.write_api.write(bucket=self.bucket, record=point)
+            self.logger.debug(f"Point enqueued for [{measurement}]")
         except Exception as e:
-            self.logger.error(f"Failed to send [{measurement}]: {e}", throttle_duration_sec=10)
+            self.logger.error(f"Local error processing [{measurement}]: {e}", throttle_duration_sec=10)
 
     def destroy_node(self):
         self.client.close()
