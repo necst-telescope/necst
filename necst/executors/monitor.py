@@ -52,16 +52,23 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
             (topic.antenna_encoder, "antenna", {"host": "antenna-pc"}, ["lon", "lat"]),
         ]
         for t_obj, measurement, tags, fields in self.static_configs:
-            self._subscribe(t_obj._qualname, t_obj.msg_type, measurement, tags, fields)
+            self._subscribe(
+                t_obj._qualname,
+                t_obj.msg_type,
+                measurement,
+                tags,
+                fields,
+                qos=t_obj.qos_profile,
+            )
 
         # 2. Dynamic Discovery for Branched Topics (Thermometers, Attenuators, etc.)
         # Discovery period: 10 seconds
         self.create_timer(10.0, self.discover_topics)
         self.discover_topics()
 
-        self.logger.info("Monitor Node Started with generic discovery.")
+        self.logger.info("Monitor Node Started with QoS-aware discovery.")
 
-    def _subscribe(self, topic_name, msg_type, measurement, tags, fields):
+    def _subscribe(self, topic_name, msg_type, measurement, tags, fields, qos):
         """Register a new subscription if not already tracked."""
         if topic_name in self.subscriptions_list:
             return
@@ -72,9 +79,10 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
             tags=tags,
             fields=fields
         )
-        sub = self.create_subscription(msg_type, topic_name, handler, 10)
+        # Use the specific QoS profile (e.g. Best Effort for realtime topics)
+        sub = self.create_subscription(msg_type, topic_name, handler, qos)
         self.subscriptions_list[topic_name] = sub
-        self.logger.info(f"New subscription: {topic_name} -> [{measurement}] with tags {tags}")
+        self.logger.info(f"New subscription: {topic_name} -> [{measurement}] (QoS: {qos})")
 
     def discover_topics(self):
         """Scan the ROS 2 network and neclib config for branched topics."""
@@ -92,7 +100,14 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
                         fields = ["value"] 
                         # Use branch name as a tag for differentiation
                         tags = {"id": branch_name}
-                        self._subscribe(child_topic._qualname, child_topic.msg_type, name, tags, fields)
+                        self._subscribe(
+                            child_topic._qualname,
+                            child_topic.msg_type,
+                            name,
+                            tags,
+                            fields,
+                            qos=child_topic.qos_profile,
+                        )
                 except Exception as e:
                     self.logger.debug(f"Discovery failed for {name} via ROS 2 scan: {e}")
 
@@ -105,9 +120,16 @@ class Monitor(DeviceNode): # Assuming DeviceNode is a Node, changed to Node for 
                             child_topic = topic_obj[sensor_name]
                             fields = ["value"]
                             tags = {"id": sensor_name}
-                            self._subscribe(child_topic._qualname, child_topic.msg_type, name, tags, fields)
-                except Exception as e:
-                    self.logger.debug(f"Discovery failed for {name} via neclib config: {e}")
+                            self._subscribe(
+                                child_topic._qualname,
+                                child_topic.msg_type,
+                                name,
+                                tags,
+                                fields,
+                                qos=child_topic.qos_profile,
+                            )
+                except:
+                    pass
 
     def handle_msg(self, msg, measurement: str, tags: dict, fields: list):
         """Generic message handler to convert ROS 2 messages to InfluxDB points."""
