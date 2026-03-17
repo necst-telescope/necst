@@ -32,7 +32,7 @@ class Skydip(Observation):
             self.logger.info(f"Starting integration at El = {el} deg")
             self.com.antenna(
                 "point",
-                target=(current_lon.to_value("deg"), el, "altaz"),
+                target=(current_position_cor, el, "altaz"),
                 unit="deg",
                 wait=True,
             )
