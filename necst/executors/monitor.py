@@ -11,7 +11,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 from neclib import config
 from .. import namespace, topic
 from ..utils import Topic
-from ..core.device import DeviceNode
+from ..core import DeviceNode
 from necst_msgs.msg import WeatherMsg, CoordMsg, DeviceReading
 
 
