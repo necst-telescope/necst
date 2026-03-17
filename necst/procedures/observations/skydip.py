@@ -21,7 +21,7 @@ class Skydip(Observation):
         # )
         self.com.antenna(
             "point",
-            target=(current_position_cor.to_value("deg"), self.elevations[0], "altaz"),
+            target=(current_position_cor, self.elevations[0], "altaz"),
             unit="deg",
             wait=True,
         )
