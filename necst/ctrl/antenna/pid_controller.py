@@ -163,7 +163,8 @@ class AntennaPIDController(AlertHandlerNode):
             pending_cut_seq = self._pending_cut_seq
 
         self.logger.info(
-            f"Epoch change requested: current_id={self._control_id} -> pending_id={new_id}, "
+            f"Epoch change requested:"
+            f"current_id={self._control_id} -> pending_id={new_id}, "
             f"cut_seq={pending_cut_seq}"
         )
 
@@ -279,7 +280,8 @@ class AntennaPIDController(AlertHandlerNode):
             if len(self.command_list) == 0:
                 need_stop = True
             else:
-                # If the earliest command is still in the future (beyond immediate next tick), do nothing.
+                # If the earliest command is still in
+                # the future (beyond immediate next tick), do nothing.
                 if self.command_list[0].msg.time > now + dt:
                     return
 
@@ -305,7 +307,8 @@ class AntennaPIDController(AlertHandlerNode):
         if cmd is None:
             return
 
-        # Encoder: keep original behavior (latest after sorting), to minimize side-effects.
+        # Encoder: keep original behavior (latest after sorting),
+        # to minimize side-effects.
         enc = self.enc[-1]
 
         if not isinstance(enc.time, float):
@@ -315,7 +318,8 @@ class AntennaPIDController(AlertHandlerNode):
             self._epoch_reset_requested = True
 
         # If mode/trajectory epoch changed, reset PID internal states to current encoder
-        # position to avoid a brief unintended jerk due to stale speed / integral history.
+        # position to avoid a brief unintended
+        # jerk due to stale speed / integral history.
         if self._epoch_reset_requested:
             self._epoch_reset_requested = False
             if all(isinstance(p, float) for p in (enc.lon, enc.lat)):
@@ -380,7 +384,7 @@ class AntennaPIDController(AlertHandlerNode):
         axis = msg.axis.lower()
         Kp, Ki, Kd = (getattr(self.controller[axis], k) for k in ("k_p", "k_i", "k_d"))
         self.logger.info(
-            f"PID parameter for {axis=} has been changed from {(Kp, Ki, Kd) = } "
+            f"PID parameter for {axis=} has been changed from {(Kp, Ki, Kd)} "
             f"to ({msg.k_p}, {msg.k_i}, {msg.k_d})"
         )
         self.controller[axis].k_p = msg.k_p

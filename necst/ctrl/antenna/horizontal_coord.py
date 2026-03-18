@@ -97,15 +97,20 @@ class HorizontalCoord(AlertHandlerNode):
             "(idle)"
             if req is None
             else (
-                f"(mode={self._current_mode}, name='{req.name}', lon={list(req.lon)}, lat={list(req.lat)}, "
-                f"frame={req.frame}, off_lon={list(req.offset_lon)}, off_lat={list(req.offset_lat)}, "
-                f"off_frame={req.offset_frame}, speed={req.speed}, margin={req.margin})"
+                f"(mode={self._current_mode}, name='{req.name}',"
+                f"lon={list(req.lon)}, lat={list(req.lat)}, "
+                f"frame={req.frame}, "
+                f"off_lon={list(req.offset_lon)}, off_lat={list(req.offset_lat)}"
+                f"off_frame={req.offset_frame},"
+                f"speed={req.speed}, margin={req.margin})"
             )
         )
         self.logger.warning(
-            f"Transitioning to idle: reason={reason}, old_exec={self._current_exec_id or self._idle_exec_id}, "
+            f"Transitioning to idle: reason={reason},"
+            f"old_exec={self._current_exec_id or self._idle_exec_id}, "
             f"old_mode={self._current_mode}, queue_len={qlen}, "
-            f"tail_lead={tail_lead if tail_lead is not None else 'None'}, now={now:.6f}, req={req_desc}"
+            f"tail_lead={tail_lead if tail_lead is not None else 'None'},"
+            f"now={now:.6f}, req={req_desc}"
         )
         with self._gen_lock:
             self.executing_generator.clear()
@@ -127,7 +132,8 @@ class HorizontalCoord(AlertHandlerNode):
             return
         self.logger.warning(
             f"Guard/clear_cmd invoked: now={time.time():.6f}, queue_len={qlen}, "
-            f"last_published_cmd_time={self._last_published_cmd_time:.6f}, last_publish_wall={self._last_publish_wall_time:.6f}"
+            f"last_published_cmd_time={self._last_published_cmd_time:.6f},"
+            f" last_publish_wall={self._last_publish_wall_time:.6f}"
         )
         self._transition_to_idle(reason="guard_or_clear_cmd")
         with self._rq_lock:
@@ -161,7 +167,8 @@ class HorizontalCoord(AlertHandlerNode):
                 tail = self.result_queue[-1][4] - now
                 self.logger.warning(
                     "Replacing buffered commands due to new raw_coord request: "
-                    f"req={mode}, exec_id={self._current_exec_id}, n={len(self.result_queue)}, "
+                    f"req={mode}, exec_id={self._current_exec_id}, "
+                    f"n={len(self.result_queue)}, "
                     f"head={head:.3f}s, tail={tail:.3f}s, now={now:.6f}"
                 )
             self.result_queue = deque(new_queue)
@@ -170,16 +177,22 @@ class HorizontalCoord(AlertHandlerNode):
             tail = (self.result_queue[-1][4] - now) if self.result_queue else None
 
         self.logger.warning(
-            f"raw_coord accepted: exec_id={self._current_exec_id}, mode={mode}, name='{request.name}', "
+            f"raw_coord accepted: exec_id={self._current_exec_id},"
+            f" mode={mode}, name='{request.name}', "
             f"lon={list(request.lon)}, lat={list(request.lat)}, frame={request.frame}, "
-            f"off_lon={list(request.offset_lon)}, off_lat={list(request.offset_lat)}, off_frame={request.offset_frame}, "
+            f"off_lon={list(request.offset_lon)}, "
+            f"off_lat={list(request.offset_lat)}, off_frame={request.offset_frame}, "
             f"absolute={all(len(x) == 2 for x in (request.lon, request.lat))}, "
-            f"relative={all(len(x) == 2 for x in (request.offset_lon, request.offset_lat))}, named={request.name != ''}, speed={request.speed}, "
+            f"relative={all(len(x) == 2 
+                            for x in (request.offset_lon, request.offset_lat))},"
+            f"named={request.name != ''}, speed={request.speed}, "
             f"direct_mode={request.direct_mode}, now={now:.6f}"
         )
         self.logger.warning(
-            f"prefill_on_accept: exec_id={self._current_exec_id}, mode={mode}, queue_len={qlen}, "
-            f"head_lead={head if head is not None else 'None'}, tail_lead={tail if tail is not None else 'None'}, now={now:.6f}"
+            f"prefill_on_accept: exec_id={self._current_exec_id},"
+            f"mode={mode}, queue_len={qlen}, "
+            f"head_lead={head if head is not None else 'None'},"
+            f"tail_lead={tail if tail is not None else 'None'}, now={now:.6f}"
         )
 
         response.id = self._current_exec_id or self._idle_exec_id
@@ -285,9 +298,13 @@ class HorizontalCoord(AlertHandlerNode):
                         (self.result_queue[-1][4] - now) if self.result_queue else None
                     )
                 self.logger.warning(
-                    f"Guard condition activated: now={now:.6f}, last_publish_wall={self._last_publish_wall_time}, "
-                    f"last_publish_cmd_time={self._last_published_cmd_time}, queue_len={qlen}, "
-                    f"tail_lead={tail_lead if tail_lead is not None else 'None'}, exec_id={self._current_exec_id or self._idle_exec_id}, mode={self._current_mode}",
+                    f"Guard condition activated:"
+                    f"now={now:.6f}, last_publish_wall={self._last_publish_wall_time}, "
+                    f"last_publish_cmd_time={self._last_published_cmd_time},"
+                    f" queue_len={qlen}, "
+                    f"tail_lead={tail_lead if tail_lead is not None else 'None'}, "
+                    f"exec_id={self._current_exec_id or self._idle_exec_id},"
+                    f" mode={self._current_mode}",
                     throttle_duration_sec=1,
                 )
                 self._guard_latched = True
@@ -324,7 +341,8 @@ class HorizontalCoord(AlertHandlerNode):
 
         if head_lead is not None:
             self.logger.debug(
-                f"Queue Info: length={queue_len}, head_lead={head_lead:.3f}s, published={len(cmds)}",
+                f"Queue Info: length={queue_len},"
+                f"head_lead={head_lead:.3f}s, published={len(cmds)}",
                 throttle_duration_sec=1.0,
             )
         else:
@@ -335,9 +353,12 @@ class HorizontalCoord(AlertHandlerNode):
 
         if self._last_publish_wall_time and (now - self._last_publish_wall_time > 0.5):
             self.logger.warning(
-                f"Command publish gap detected: gap={now - self._last_publish_wall_time:.3f}s, "
-                f"queue_len={queue_len}, head_lead={head_lead if head_lead is not None else 'None'}, "
-                f"exec_id={self._current_exec_id or self._idle_exec_id}, mode={self._current_mode}, now={now:.6f}"
+                f"Command publish gap detected: "
+                f"gap={now - self._last_publish_wall_time:.3f}s"
+                f"queue_len={queue_len},"
+                f"head_lead={head_lead if head_lead is not None else 'None'}, "
+                f"exec_id={self._current_exec_id or self._idle_exec_id},"
+                f"mode={self._current_mode}, now={now:.6f}"
             )
 
         for cmd in cmds:
@@ -358,7 +379,8 @@ class HorizontalCoord(AlertHandlerNode):
             )
             self._last_published_context = cmd[5]
 
-        # IMPORTANT: publish control status from the REALTIME side, not convert-side future state.
+        # IMPORTANT: publish control status from the REALTIME side,
+        # not convert-side future state.
         if cmds and (self._last_published_context is not None):
             self.telemetry(self._last_published_context)
 
@@ -477,20 +499,24 @@ class HorizontalCoord(AlertHandlerNode):
             if draining:
                 if tail_lead is not None:
                     self.logger.debug(
-                        f"Generator exhausted; draining buffered tail for {tail_lead:.3f}s",
+                        f"Generator exhausted;"
+                        f"draining buffered tail for {tail_lead:.3f}s",
                         throttle_duration_sec=0.5,
                     )
-                # Keep status tied to the last realtime-published context while future commands are still in flight.
+                # Keep status tied to the last realtime-published context
+                # while future commands are still in flight.
                 if self._last_published_context is not None:
                     return self.telemetry(self._last_published_context)
                 if self._last_active_context is not None:
                     return self.telemetry(self._last_active_context)
                 return
 
-            # Queue may be empty ~offset sec before the last future command is actually due.
+            # Queue may be empty ~offset sec
+            # before the last future command is actually due.
             if self._last_published_cmd_time > now:
                 self.logger.debug(
-                    f"Generator exhausted and queue empty, but waiting for last published command time: "
+                    f"Generator exhausted and queue empty,"
+                    f"but waiting for last published command time: "
                     f"last_cmd_t={self._last_published_cmd_time:.6f}, now={now:.6f}",
                     throttle_duration_sec=0.5,
                 )
@@ -542,7 +568,8 @@ class HorizontalCoord(AlertHandlerNode):
                     )
                 self.logger.warning(
                     "Coordinate generator exhausted; entering drain mode: "
-                    f"queue_len={qlen}, tail_lead={tail_lead if tail_lead is not None else 'None'}"
+                    f"queue_len={qlen},"
+                    f"tail_lead={tail_lead if tail_lead is not None else 'None'}"
                 )
                 if qlen > 0:
                     if self._last_published_context is not None:
