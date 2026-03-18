@@ -14,7 +14,7 @@ class Skydip(Observation):
     def run(self, integ_time: Union[int, float]) -> None:
         self.com.metadata("set", position="", id="")
         current_position = self.com.get_message("encoder")
-        current_position_cor = current_position.lon - current_position.dlon
+        current_position_cor = current_position.lon + current_position.dlon
         # params = PointingError.from_file(config.antenna_pointing_parameter_path)
         # current_lon, *_ = params.apparent_to_refracted(
         #     az=current_position.lon, el=current_position.lat, unit="deg"
