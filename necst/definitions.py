@@ -115,18 +115,23 @@ class qos:
 class topic:
     from necst_msgs.msg import (
         AlertMsg,
-        HEMTBias,
-        Boolean,
         Binning,
+        Boolean,
+        CalcLog,
         ChopperMsg,
-        MembraneMsg,
         Clock,
         ControlStatus,
         CoordMsg,
         DeviceReading,
+        DomeCommand,
+        DomeLimit,
+        DomeOC,
+        DomeStatus,
         DriveMsg,
-        LocalSignal,
+        HEMTBias,
         LocalAttenuatorMsg,
+        LocalSignal,
+        MembraneMsg,
         MirrorMsg,
         ObservingMode,
         PIDMsg,
@@ -136,15 +141,10 @@ class topic:
         Spectral,
         TimedAzElFloat64,
         TimedAzElInt64,
-        TrackingStatus,
-        WeatherMsg,
-        CalcLog,
-        DomeStatus,
-        DomeCommand,
-        DomeOC,
-        DomeLimit,
         TimeOnly,
         TPModeMsg,
+        TrackingStatus,
+        WeatherMsg,
     )
 
     from .utils import Topic
@@ -170,7 +170,7 @@ class topic:
     manual_stop_alert = Topic(
         AlertMsg, "manual_stop", qos.reliable_latched, namespace.alert
     )
-    weather = Topic(WeatherMsg, "ambient", qos.realtime, namespace.weather)
+    weather = Topic(WeatherMsg, "ambient", qos.realtime, namespace.weather, True)
     antenna_motor_speed = Topic(
         TimedAzElFloat64, "actual_speed", qos.realtime, namespace.antenna
     )
@@ -274,12 +274,12 @@ class topic:
 class service:
     from necst_msgs.srv import (
         AuthoritySrv,
+        CCDCommand,
+        ComDelaySrv,
         CoordinateCommand,
+        DomeSync,
         File,
         ObservationMode,
-        ComDelaySrv,
-        CCDCommand,
-        DomeSync,
     )
     from std_srvs.srv import Empty
 
