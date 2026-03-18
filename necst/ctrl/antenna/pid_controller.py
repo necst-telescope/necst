@@ -198,7 +198,9 @@ class AntennaPIDController(AlertHandlerNode):
         lst.sort(key=lambda x: x.msg.time)
         self.command_list = deque(lst)
         self._cmd_unsorted = False
-        self._last_cmd_time = self.command_list[-1].msg.time if self.command_list else None
+        self._last_cmd_time = (
+            self.command_list[-1].msg.time if self.command_list else None
+        )
 
     def _discard_outdated_commands_locked(self, now: float) -> None:
         """Drop commands that are already in the past (must hold _cmd_lock)."""
@@ -228,7 +230,9 @@ class AntennaPIDController(AlertHandlerNode):
         if (self._pending_control_id is None) or (self._pending_cut_seq is None):
             return False
 
-        has_new_epoch_command = any(q.seq > self._pending_cut_seq for q in self.command_list)
+        has_new_epoch_command = any(
+            q.seq > self._pending_cut_seq for q in self.command_list
+        )
         if not has_new_epoch_command:
             return False
 
@@ -237,7 +241,9 @@ class AntennaPIDController(AlertHandlerNode):
             q for q in self.command_list if q.seq > self._pending_cut_seq
         )
         self._cmd_unsorted = False
-        self._last_cmd_time = self.command_list[-1].msg.time if self.command_list else None
+        self._last_cmd_time = (
+            self.command_list[-1].msg.time if self.command_list else None
+        )
 
         old_id = self._control_id
         self._control_id = self._pending_control_id
@@ -277,7 +283,9 @@ class AntennaPIDController(AlertHandlerNode):
                 if self.command_list[0].msg.time > now + dt:
                     return
 
-                if (len(self.command_list) == 1) and (self.command_list[0].msg.time > now - dt):
+                if (len(self.command_list) == 1) and (
+                    self.command_list[0].msg.time > now - dt
+                ):
                     cmd = deepcopy(self.command_list[0].msg)
                     if now - cmd.time > dt:
                         cmd.time = now  # Not a real-time command.

@@ -93,10 +93,14 @@ class HorizontalCoord(AlertHandlerNode):
             qlen = len(self.result_queue)
             tail_lead = (self.result_queue[-1][4] - now) if self.result_queue else None
         req = self.cmd
-        req_desc = "(idle)" if req is None else (
-            f"(mode={self._current_mode}, name='{req.name}', lon={list(req.lon)}, lat={list(req.lat)}, "
-            f"frame={req.frame}, off_lon={list(req.offset_lon)}, off_lat={list(req.offset_lat)}, "
-            f"off_frame={req.offset_frame}, speed={req.speed}, margin={req.margin})"
+        req_desc = (
+            "(idle)"
+            if req is None
+            else (
+                f"(mode={self._current_mode}, name='{req.name}', lon={list(req.lon)}, lat={list(req.lat)}, "
+                f"frame={req.frame}, off_lon={list(req.offset_lon)}, off_lat={list(req.offset_lat)}, "
+                f"off_frame={req.offset_frame}, speed={req.speed}, margin={req.margin})"
+            )
         )
         self.logger.warning(
             f"Transitioning to idle: reason={reason}, old_exec={self._current_exec_id or self._idle_exec_id}, "
@@ -144,7 +148,12 @@ class HorizontalCoord(AlertHandlerNode):
             self._current_exec_id = self._next_exec_id()
             self._current_mode = mode
             self._parse_cmd(request)
-            new_queue = self._prefill_current_execution(now=now, min_extra_sec=self._min_buffer_sec, max_extra_sec=self._max_buffer_sec, max_groups=max(self._max_groups_per_convert, 20))
+            new_queue = self._prefill_current_execution(
+                now=now,
+                min_extra_sec=self._min_buffer_sec,
+                max_extra_sec=self._max_buffer_sec,
+                max_groups=max(self._max_groups_per_convert, 20),
+            )
 
         with self._rq_lock:
             if self.result_queue:
@@ -183,10 +192,21 @@ class HorizontalCoord(AlertHandlerNode):
         offset_scan = all(len(x) == 2 for x in offset_coord)
         return "scan" if (target_scan or offset_scan) else "point"
 
-    def _prefill_current_execution(self, *, now: float, min_extra_sec: Optional[float] = None, max_extra_sec: Optional[float] = None, max_groups: int = 10):
+    def _prefill_current_execution(
+        self,
+        *,
+        now: float,
+        min_extra_sec: Optional[float] = None,
+        max_extra_sec: Optional[float] = None,
+        max_groups: int = 10,
+    ):
         offset = float(config.antenna_command_offset_sec)
-        min_extra_sec = self._min_buffer_sec if min_extra_sec is None else float(min_extra_sec)
-        max_extra_sec = self._max_buffer_sec if max_extra_sec is None else float(max_extra_sec)
+        min_extra_sec = (
+            self._min_buffer_sec if min_extra_sec is None else float(min_extra_sec)
+        )
+        max_extra_sec = (
+            self._max_buffer_sec if max_extra_sec is None else float(max_extra_sec)
+        )
         min_horizon = now + offset + min_extra_sec
         max_horizon = now + offset + max_extra_sec
         min_accept_t = now + offset
@@ -220,7 +240,9 @@ class HorizontalCoord(AlertHandlerNode):
             if len(az) == 0:
                 continue
 
-            for _az, _el, _dAz, _dEl, _t in zip(az, el, coord.dAz, coord.dEl, coord.time):
+            for _az, _el, _dAz, _dEl, _t in zip(
+                az, el, coord.dAz, coord.dEl, coord.time
+            ):
                 if any(x is None for x in (_az, _el, _t)):
                     continue
                 t_val = float(_t)
@@ -259,7 +281,9 @@ class HorizontalCoord(AlertHandlerNode):
                 now = time.time()
                 with self._rq_lock:
                     qlen = len(self.result_queue)
-                    tail_lead = (self.result_queue[-1][4] - now) if self.result_queue else None
+                    tail_lead = (
+                        (self.result_queue[-1][4] - now) if self.result_queue else None
+                    )
                 self.logger.warning(
                     f"Guard condition activated: now={now:.6f}, last_publish_wall={self._last_publish_wall_time}, "
                     f"last_publish_cmd_time={self._last_published_cmd_time}, queue_len={qlen}, "
@@ -329,7 +353,9 @@ class HorizontalCoord(AlertHandlerNode):
             self.publisher.publish(msg)
             self._last_publish_wall_time = now
             self._last_publish_cmd_stamp = float(cmd[4])
-            self._last_published_cmd_time = max(self._last_published_cmd_time, float(cmd[4]))
+            self._last_published_cmd_time = max(
+                self._last_published_cmd_time, float(cmd[4])
+            )
             self._last_published_context = cmd[5]
 
         # IMPORTANT: publish control status from the REALTIME side, not convert-side future state.
@@ -359,7 +385,7 @@ class HorizontalCoord(AlertHandlerNode):
                 msg.lat[0],
                 msg.frame,
                 unit=msg.unit,
-                cos_correction=getattr(msg, 'cos_correction', False),
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif (not scan) and (not named) and with_offset:
             self.logger.debug(f"Got POINT-TO-COORD-WITH-OFFSET command: {msg}")
@@ -369,18 +395,20 @@ class HorizontalCoord(AlertHandlerNode):
                 msg.frame,
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
-                cos_correction=getattr(msg, 'cos_correction', False),
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif (not scan) and named and (not with_offset):
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET command: {msg}")
-            new_generator = self.finder.track(msg.name, cos_correction=getattr(msg, 'cos_correction', False))
+            new_generator = self.finder.track(
+                msg.name, cos_correction=getattr(msg, "cos_correction", False)
+            )
         elif (not scan) and named and with_offset:
             self.logger.debug(f"Got POINT-TO-NAMED-TARGET-WITH-OFFSET command: {msg}")
             new_generator = self.finder.track(
                 msg.name,
                 offset=(msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame),
                 unit=msg.unit,
-                cos_correction=getattr(msg, 'cos_correction', False),
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif target_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-ABSOLUTE-COORD command: {msg}")
@@ -391,7 +419,7 @@ class HorizontalCoord(AlertHandlerNode):
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=msg.margin,
-                cos_correction=getattr(msg, 'cos_correction', False),
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif offset_scan and (not named):
             self.logger.debug(f"Got SCAN-IN-RELATIVE-COORD command: {msg}")
@@ -405,7 +433,7 @@ class HorizontalCoord(AlertHandlerNode):
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=msg.margin,
-                cos_correction=getattr(msg, 'cos_correction', False),
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         elif offset_scan and named:
             self.logger.debug(f"Got SCAN-IN-RELATIVE-TO-NAMED-TARGET command: {msg}")
@@ -417,7 +445,7 @@ class HorizontalCoord(AlertHandlerNode):
                 speed=abs(msg.speed),
                 unit=msg.unit,
                 margin=msg.margin,
-                cos_correction=getattr(msg, 'cos_correction', False),
+                cos_correction=getattr(msg, "cos_correction", False),
             )
         else:
             raise ValueError(f"Cannot determine command type for {msg}")
@@ -426,7 +454,11 @@ class HorizontalCoord(AlertHandlerNode):
 
     def convert(self) -> None:
         now = time.time()
-        if (self.cmd is not None) and (self.enc_time != 0) and (self.enc_time < now - 5):
+        if (
+            (self.cmd is not None)
+            and (self.enc_time != 0)
+            and (self.enc_time < now - 5)
+        ):
             self.logger.error(
                 "Lost the communication with the encoder. Command to drive to "
                 f"{self.cmd} has been discarded."
@@ -439,7 +471,9 @@ class HorizontalCoord(AlertHandlerNode):
         if self._generator_exhausted:
             with self._rq_lock:
                 draining = len(self.result_queue) > 0
-                tail_lead = (self.result_queue[-1][4] - now) if self.result_queue else None
+                tail_lead = (
+                    (self.result_queue[-1][4] - now) if self.result_queue else None
+                )
             if draining:
                 if tail_lead is not None:
                     self.logger.debug(
@@ -501,7 +535,11 @@ class HorizontalCoord(AlertHandlerNode):
                     self.executing_generator.clear()
                 with self._rq_lock:
                     qlen = len(self.result_queue)
-                    tail_lead = (self.result_queue[-1][4] - time.time()) if self.result_queue else None
+                    tail_lead = (
+                        (self.result_queue[-1][4] - time.time())
+                        if self.result_queue
+                        else None
+                    )
                 self.logger.warning(
                     "Coordinate generator exhausted; entering drain mode: "
                     f"queue_len={qlen}, tail_lead={tail_lead if tail_lead is not None else 'None'}"
