@@ -183,8 +183,8 @@ class HorizontalCoord(AlertHandlerNode):
             f"off_lon={list(request.offset_lon)}, "
             f"off_lat={list(request.offset_lat)}, off_frame={request.offset_frame}, "
             f"absolute={all(len(x) == 2 for x in (request.lon, request.lat))}, "
-            f"relative={all(len(x) == 2 
-                            for x in (request.offset_lon, request.offset_lat))},"
+            f"relative="
+            f"{all(len(x) == 2 for x in (request.offset_lon, request.offset_lat))},"
             f"named={request.name != ''}, speed={request.speed}, "
             f"direct_mode={request.direct_mode}, now={now:.6f}"
         )
