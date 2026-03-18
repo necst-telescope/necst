@@ -216,6 +216,7 @@ class Commander(PrivilegedNode):
         speed: Optional[Union[int, float]] = None,
         margin: Optional[float] = None,
         direct_mode: bool = False,
+        cos_correction: bool = False,
     ) -> None:
         """Control antenna direction and motion.
 
@@ -376,14 +377,33 @@ class Commander(PrivilegedNode):
                     unit=unit,
                     direct_mode=direct_mode,
                 )
+
+            # Propagate optional cos correction for longitude offsets.
+            # Backward compatible:
+            # only set if the service definition includes the field.
+            try:
+                _tmp = CoordinateCommand.Request()
+                if hasattr(_tmp, "cos_correction"):
+                    kwargs.update(cos_correction=bool(cos_correction))
+            except Exception:
+                pass
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
+            self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
                 self.wait("antenna")
             return res.id
 
         elif CMD == "SCAN":
             scan_kwargs = dict(speed=float(speed), unit=unit)
+            # Backward compatible:
+            # only set if the service definition includes the field.
+            try:
+                _tmp = CoordinateCommand.Request()
+                if hasattr(_tmp, "cos_correction"):
+                    scan_kwargs.update(cos_correction=bool(cos_correction))
+            except Exception:
+                pass
 
             if margin is None:
                 margin = config.antenna_scan_margin.value
@@ -420,8 +440,11 @@ class Commander(PrivilegedNode):
 
             req = CoordinateCommand.Request(**scan_kwargs)
             res = self._send_request(req, self.client["raw_coord"])
+            self.logger.warning(f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}")
             self.wait("antenna")
-            self.publisher["cmd_trans"].publish(Boolean(data=True, time=pytime.time()))
+            ts = pytime.time()
+            self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
+            self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={ts:.6f}")
             if wait:
                 self.wait("antenna", mode="control", id=res.id)
             return res.id
@@ -764,6 +787,17 @@ class Commander(PrivilegedNode):
                     finished = experienced and (ctrl.id != id)
                     appendix = ctrl.interrupt_ok and (ctrl.id == id)
                     if checker.check(finished or appendix):
+                        reason = (
+                            "finished(id_changed)"
+                            if finished
+                            else "appendix(interrupt_ok_same_id)"
+                        )
+                        self.logger.warning(
+                            f"wait(control) return: requested_id={id},"
+                            f"ctrl_id={ctrl.id}, experienced={experienced},"
+                            f"reason={reason}, ctrl_time={ctrl.time:.6f}, "
+                            f"now={now:.6f}, dt={ctrl.time - now:.6f}"
+                        )
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)
                         return
@@ -888,10 +922,14 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "SET":
-            if not intercept:
-                self.antenna("stop")
+            if not intercept and time is None:
+                t0 = pytime.time()
                 while self.get_message("antenna_control").tight:
-                    pytime.sleep(0.05)
+                    if pytime.time() - t0 > 10.0:
+                        raise NECSTTimeoutError(
+                            "metadata(set): antenna_control.tight did not clear"
+                        )
+                    pytime.sleep(0.01)
             time = pytime.time() if time is None else time
             msg = Spectral(data=optical_data, position=position, id=str(id), time=time)
             return self.publisher["spectra_meta"].publish(msg)
@@ -1020,7 +1058,6 @@ class Commander(PrivilegedNode):
         CMD = cmd.upper()
         if CMD == "START":
             if not self.savespec:
-                # TODO revise following process and L1033
                 self.logger.warning("Spectral data will NOT be saved")
             recording = False
             if self.tp_mode:
@@ -1032,6 +1069,8 @@ class Commander(PrivilegedNode):
                     self.logger.info(
                         "\033[93mTotal power will be saved. Range: All channels"
                     )
+            else:
+                self.logger.info("Spectral data will be saved")
             while not recording:
                 msg = RecordMsg(name=name.lstrip("/"), stop=False)
                 self.publisher["recorder"].publish(msg)
@@ -1075,11 +1114,8 @@ class Commander(PrivilegedNode):
                 self.tp_mode = True
             elif not tp_mode:
                 self.tp_range = []
-            msg = TPModeMsg(
-                tp_mode=self.tp_mode,
-                tp_range=self.tp_range,
-                time=pytime.time(),
-            )
+            now = pytime.time()
+            msg = TPModeMsg(tp_mode=self.tp_mode, tp_range=self.tp_range, time=now)
             return self.publisher["tp_mode"].publish(msg)
         elif CMD == "?":
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")

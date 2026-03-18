@@ -36,6 +36,16 @@ class FileBasedObservation(Observation):
         scan_frag = 1
         margin = config.antenna.scan_margin.value
 
+        # cos(lat) correction option for longitude offsets
+        params = getattr(self.obsspec, "parameters", {}) or {}
+        cos_global = bool(params.get("cos_correction", False))
+        cos_scan = bool(params.get("scan_cos_correction", cos_global))
+        cos_point = bool(params.get("point_cos_correction", cos_global))
+        # params という辞書を介さず、getattr で直接 obsspec から取得（見つからなければ False を返す）
+        # cos_global = bool(getattr(self.obsspec, "cos_correction", False))
+        # cos_scan = bool(getattr(self.obsspec, "scan_cos_correction", cos_global))
+        # cos_point = bool(getattr(self.obsspec, "point_cos_correction", cos_global))
+
         if self.observation_type == "OTF":
             bydirectional = self.obsspec.bydirectional > 0
             reset_scan = self.obsspec.reset_scan > 0
@@ -78,6 +88,8 @@ class FileBasedObservation(Observation):
                 continue
 
             kwargs = dict(unit="deg")
+            # Apply cos correction depending on command type (scan vs point)
+            kwargs.update(cos_correction=cos_scan if waypoint.is_scan else cos_point)
             if waypoint.name_query:
                 kwargs.update(name=waypoint.target or waypoint.reference)
             else:
@@ -118,10 +130,7 @@ class FileBasedObservation(Observation):
                 if waypoint.is_scan:
                     if self.observation_type == "OTF":
                         start = kwargs["start"]
-                        if hasattr(kwargs, "reference"):
-                            reference = kwargs["reference"]
-                        else:
-                            reference = (0, 0)
+                        reference = kwargs.get("reference") or (0, 0)
                         start_position = (
                             start[0] + reference[0],
                             start[1] + reference[1],
@@ -142,12 +151,11 @@ class FileBasedObservation(Observation):
                             target=target,
                             unit="deg",
                             offset=offset_position + (waypoint.scan_frame,),
+                            cos_correction=cos_scan,
                         )
 
                     self.logger.info("Starting ON...")
-                    self.com.metadata(
-                        "set", position="ON", id=waypoint.id, intercept=False
-                    )
+                    self.com.metadata("set", position="ON", id=waypoint.id)
                     self.com.antenna("scan", **kwargs)
                     self.com.metadata("set", position="", id="")
                 else:
