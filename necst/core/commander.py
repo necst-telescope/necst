@@ -379,10 +379,11 @@ class Commander(PrivilegedNode):
                 )
 
             # Propagate optional cos correction for longitude offsets.
-            # Backward compatible: only set if the service definition includes the field.
+            # Backward compatible:
+            # only set if the service definition includes the field.
             try:
                 _tmp = CoordinateCommand.Request()
-                if hasattr(_tmp, 'cos_correction'):
+                if hasattr(_tmp, "cos_correction"):
                     kwargs.update(cos_correction=bool(cos_correction))
             except Exception:
                 pass
@@ -395,10 +396,11 @@ class Commander(PrivilegedNode):
 
         elif CMD == "SCAN":
             scan_kwargs = dict(speed=float(speed), unit=unit)
-            # Backward compatible: only set if the service definition includes the field.
+            # Backward compatible:
+            # only set if the service definition includes the field.
             try:
                 _tmp = CoordinateCommand.Request()
-                if hasattr(_tmp, 'cos_correction'):
+                if hasattr(_tmp, "cos_correction"):
                     scan_kwargs.update(cos_correction=bool(cos_correction))
             except Exception:
                 pass
@@ -786,11 +788,15 @@ class Commander(PrivilegedNode):
                     appendix = ctrl.interrupt_ok and (ctrl.id == id)
                     if checker.check(finished or appendix):
                         reason = (
-                            "finished(id_changed)" if finished else "appendix(interrupt_ok_same_id)"
+                            "finished(id_changed)"
+                            if finished
+                            else "appendix(interrupt_ok_same_id)"
                         )
                         self.logger.warning(
-                            f"wait(control) return: requested_id={id}, ctrl_id={ctrl.id}, experienced={experienced}, "
-                            f"reason={reason}, ctrl_time={ctrl.time:.6f}, now={now:.6f}, dt={ctrl.time - now:.6f}"
+                            f"wait(control) return: requested_id={id},"
+                            f"ctrl_id={ctrl.id}, experienced={experienced},"
+                            f"reason={reason}, ctrl_time={ctrl.time:.6f}, "
+                            f"now={now:.6f}, dt={ctrl.time - now:.6f}"
                         )
                         if ctrl.time > now:
                             pytime.sleep(ctrl.time - now)
@@ -920,7 +926,9 @@ class Commander(PrivilegedNode):
                 t0 = pytime.time()
                 while self.get_message("antenna_control").tight:
                     if pytime.time() - t0 > 10.0:
-                        raise NECSTTimeoutError("metadata(set): antenna_control.tight did not clear")
+                        raise NECSTTimeoutError(
+                            "metadata(set): antenna_control.tight did not clear"
+                        )
                     pytime.sleep(0.01)
             time = pytime.time() if time is None else time
             msg = Spectral(data=optical_data, position=position, id=str(id), time=time)

@@ -41,7 +41,6 @@ class FileBasedObservation(Observation):
         # cos_scan = bool(getattr(self.obsspec, "scan_cos_correction", cos_global))
         # cos_point = bool(getattr(self.obsspec, "point_cos_correction", cos_global))
 
-
         if self.observation_type == "OTF":
             bydirectional = self.obsspec.bydirectional > 0
             reset_scan = self.obsspec.reset_scan > 0
