@@ -96,7 +96,13 @@ class RecorderController(ServerNode):
             self.logger.warning(msg[: min(100, len(msg))], throttle_duration_sec=30)
             return
 
-        chunk = list(utils.serialize(msg))
+        chunk = [
+            field
+            for field in utils.serialize(msg)
+            if field["key"] not in ("lon", "lat")
+        ]
+        if not chunk:
+            return
         try:
             self.recorder.append(topic_name, chunk)
         except RuntimeError:
