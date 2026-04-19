@@ -70,7 +70,9 @@ class DummySection:
 
 
 class TestCommanderScanBlockSequence:
-    def test_scan_block_waits_then_sends_cmd_trans_then_waits_control(self, monkeypatch):
+    def test_scan_block_waits_then_sends_cmd_trans_then_waits_control(
+        self, monkeypatch
+    ):
         com = Commander.__new__(Commander)
         com.logger = FakeLogger()
         publisher = DummyPublisher()

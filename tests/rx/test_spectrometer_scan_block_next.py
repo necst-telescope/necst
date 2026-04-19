@@ -13,6 +13,7 @@ MODULE = load_spectrometer_module(REPO_ROOT)
 class DummyResizer:
     def __init__(self, keep_duration=1.5):
         self.keep_duration = keep_duration
+
     def get(self, qlook_ch_range, n_samples=100):
         return [1.0, 2.0, 3.0]
 
@@ -20,6 +21,7 @@ class DummyResizer:
 class DummyPublisher:
     def __init__(self):
         self.messages = []
+
     def publish(self, msg):
         self.messages.append(msg)
 

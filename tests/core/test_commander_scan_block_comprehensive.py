@@ -13,6 +13,7 @@ MODULE = load_commander_module(REPO_ROOT)
 class DummyPublisher:
     def __init__(self):
         self.messages = []
+
     def publish(self, msg):
         self.messages.append(msg)
 
@@ -21,7 +22,9 @@ class DummySection(SimpleNamespace):
     pass
 
 
-def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_obsfreq_cos(monkeypatch):
+def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_obsfreq_cos(
+    monkeypatch,
+):
     com = MODULE.Commander.__new__(MODULE.Commander)
     com.logger = FakeLogger()
     publisher = DummyPublisher()

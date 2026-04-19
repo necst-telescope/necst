@@ -61,7 +61,9 @@ class FileBasedObservation(Observation):
             line_index=int(line_index),
         )
 
-    def _scan_block_supported_for_waypoint(self, waypoint, *, use_scan_block: bool) -> bool:
+    def _scan_block_supported_for_waypoint(
+        self, waypoint, *, use_scan_block: bool
+    ) -> bool:
         if not use_scan_block:
             return False
         if not waypoint.is_scan:
@@ -135,9 +137,7 @@ class FileBasedObservation(Observation):
         else:
             target = self._coord_to_tuple(waypoint.target) if waypoint.target else None
             reference = (
-                self._coord_to_tuple(waypoint.reference)
-                if waypoint.reference
-                else None
+                self._coord_to_tuple(waypoint.reference) if waypoint.reference else None
             )
             ref_key = ("coord", target, reference)
         offset = (
@@ -151,7 +151,6 @@ class FileBasedObservation(Observation):
             offset,
         )
 
-
     def _preflight_scan_block_kinematics(self, lines) -> None:
         report = plan_scan_block_kinematics(lines)
 
@@ -164,7 +163,7 @@ class FileBasedObservation(Observation):
                     f"duration x{duration_scale:.3f}, "
                     f"peak_acc={item['peak_acceleration'].to_value('deg/s^2'):.6f} deg/s^2"
                 )
-                if 'peak_jerk' in item:
+                if "peak_jerk" in item:
                     msg += f", peak_jerk={item['peak_jerk'].to_value('deg/s^3'):.6f} deg/s^3"
                 self.logger.info(msg)
 
@@ -178,11 +177,13 @@ class FileBasedObservation(Observation):
                     f"peak_speed={item['peak_speed'].to_value('deg/s'):.6f} deg/s, "
                     f"peak_acc={item['peak_acceleration'].to_value('deg/s^2'):.6f} deg/s^2"
                 )
-                if 'peak_jerk' in item:
+                if "peak_jerk" in item:
                     msg += f", peak_jerk={item['peak_jerk'].to_value('deg/s^3'):.6f} deg/s^3"
                 self.logger.info(msg)
 
-    def _move_to_scan_block_entry(self, waypoint, *, line: ScanBlockLine, cos_scan: bool) -> None:
+    def _move_to_scan_block_entry(
+        self, waypoint, *, line: ScanBlockLine, cos_scan: bool
+    ) -> None:
         entry = margin_start_of(line)
         entry_offset = self._combined_entry_offset(entry, waypoint)
         point_kwargs = dict(unit="deg", cos_correction=cos_scan)
@@ -230,9 +231,7 @@ class FileBasedObservation(Observation):
         )
         scan_kwargs = self._scan_context_kwargs(first_waypoint, cos_scan=cos_scan)
         block_id = str(first_waypoint.id)
-        self.logger.info(
-            f"Starting ON (scan_block, n_lines={len(lines)})..."
-        )
+        self.logger.info(f"Starting ON (scan_block, n_lines={len(lines)})...")
         self.com.metadata("set", position="ON", id=block_id)
         self.com.scan_block(
             sections=sections,
@@ -251,9 +250,8 @@ class FileBasedObservation(Observation):
         cos_point = bool(params.get("point_cos_correction", cos_global))
         requested_use_scan_block = bool(params.get("use_scan_block", False))
         scan_block_supported_obstypes = {"OTF", "RadioPointing"}
-        use_scan_block = (
-            requested_use_scan_block
-            and (self.observation_type in scan_block_supported_obstypes)
+        use_scan_block = requested_use_scan_block and (
+            self.observation_type in scan_block_supported_obstypes
         )
         if requested_use_scan_block and not use_scan_block:
             supported = ", ".join(sorted(scan_block_supported_obstypes))
@@ -309,8 +307,13 @@ class FileBasedObservation(Observation):
             waypoint = all_waypoints[i]
 
             if waypoint.mode == ObservationMode.HOT:
-                next_waypoint = all_waypoints[i + 1] if (i + 1) < len(all_waypoints) else None
-                if next_waypoint is not None and next_waypoint.mode == ObservationMode.OFF:
+                next_waypoint = (
+                    all_waypoints[i + 1] if (i + 1) < len(all_waypoints) else None
+                )
+                if (
+                    next_waypoint is not None
+                    and next_waypoint.mode == ObservationMode.OFF
+                ):
                     self._run_hot_off_pair(
                         waypoint,
                         next_waypoint,

@@ -25,7 +25,9 @@ class TestSpectrometerScanBlockMetadata:
         section.set(now - 1.0, kind="initial_standby", label="scan01", line_index=0)
         section.set(now - 0.5, kind="line", label="scan01", line_index=3)
 
-        position, coarse_id, line_index, line_label = _effective_metadata(mode, section, now)
+        position, coarse_id, line_index, line_label = _effective_metadata(
+            mode, section, now
+        )
         assert position == "ON"
         assert coarse_id == "block01"
         assert line_index == 3
@@ -40,7 +42,9 @@ class TestSpectrometerScanBlockMetadata:
         mode.set(now - 1.0, position="ON", id="block01")
         section.set(now - 1.0, kind="turn", label="turn01", line_index=1)
 
-        position, coarse_id, line_index, line_label = _effective_metadata(mode, section, now)
+        position, coarse_id, line_index, line_label = _effective_metadata(
+            mode, section, now
+        )
         assert position == "ON"
         assert coarse_id == "block01"
         assert line_index == -1

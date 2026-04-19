@@ -173,7 +173,9 @@ class Observation(ABC):
         # that case, HOT must not issue any extra antenna command because the
         # following HOT->OFF pair is intended to run on exactly the same tracking
         # solution and sky position.
-        if (not preserve_tracking) and (not self.com.get_message("antenna_control").tight):
+        if (not preserve_tracking) and (
+            not self.com.get_message("antenna_control").tight
+        ):
             enc = self.com.get_message("encoder")
             params = PointingError.from_file(config.antenna_pointing_parameter_path)
             az, el = params.apparent_to_refracted(az=enc.lon, el=enc.lat, unit="deg")

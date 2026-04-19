@@ -60,7 +60,9 @@ class Waypoint:
         self.start = (q(0.0), q(0.0))
         self.stop = (q(1.0), q(0.0))
         self.speed = q(0.5, "deg/s")
-        self.reference = (q(reference[0]), q(reference[1]), reference[2]) if reference else None
+        self.reference = (
+            (q(reference[0]), q(reference[1]), reference[2]) if reference else None
+        )
         self.target = None
         self.name_query = False
         self.integration = SimpleNamespace(to_value=lambda unit: 1.0)
@@ -105,7 +107,11 @@ def test_file_based_scan_block_grouping_merge_bydirectional(monkeypatch):
 
 def test_file_based_scan_block_split_on_signature_change(monkeypatch):
     spec = DummySpec(
-        [Waypoint("L0", reference=(30.0, 45.0, "altaz")), Waypoint("L1", reference=(30.0, 45.0, "altaz")), Waypoint("L2", reference=(31.0, 45.0, "altaz"))],
+        [
+            Waypoint("L0", reference=(30.0, 45.0, "altaz")),
+            Waypoint("L1", reference=(30.0, 45.0, "altaz")),
+            Waypoint("L2", reference=(31.0, 45.0, "altaz")),
+        ],
         use_scan_block=True,
         merge_scan_blocks=True,
         bydirectional=0,
@@ -133,7 +139,9 @@ def test_file_based_scan_block_fallback_on_offset_frame_mismatch(monkeypatch):
     obs = _make_obs(spec)
 
     def fail_if_called(*args, **kwargs):
-        raise AssertionError("scan_block path should not be used on offset frame mismatch")
+        raise AssertionError(
+            "scan_block path should not be used on offset frame mismatch"
+        )
 
     monkeypatch.setattr(MODULE.OTF, "_run_on_scan_block", fail_if_called)
     obs.run("dummy.obs")

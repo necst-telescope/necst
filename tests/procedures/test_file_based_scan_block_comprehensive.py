@@ -47,7 +47,17 @@ class DummySpec(list):
 
 
 class Waypoint:
-    def __init__(self, wid: str, *, name_query=False, target=None, reference=(30.0, 45.0, "altaz"), offset=None, mode=None, is_scan=True):
+    def __init__(
+        self,
+        wid: str,
+        *,
+        name_query=False,
+        target=None,
+        reference=(30.0, 45.0, "altaz"),
+        offset=None,
+        mode=None,
+        is_scan=True,
+    ):
         self.id = wid
         self.mode = ObservationMode.ON if mode is None else mode
         self.is_scan = is_scan
@@ -55,7 +65,9 @@ class Waypoint:
         self.start = (q(0.0), q(0.0))
         self.stop = (q(1.0), q(0.0))
         self.speed = q(0.5, "deg/s")
-        self.reference = (q(reference[0]), q(reference[1]), reference[2]) if reference else None
+        self.reference = (
+            (q(reference[0]), q(reference[1]), reference[2]) if reference else None
+        )
         self.target = target
         self.name_query = name_query
         self.integration = SimpleNamespace(to_value=lambda unit: 1.0)
@@ -80,10 +92,31 @@ def test_run_on_scan_block_order_and_final_standby_forwarding(monkeypatch):
     obs = _make_obs(spec)
     calls = []
 
-    line = SimpleNamespace(start=(q(-0.1), q(0.0)), stop=(q(1.0), q(0.0)), speed=q(0.5, "deg/s"), margin=q(0.1), label="L0", line_index=0)
-    monkeypatch.setattr(MODULE.OTF, "_make_scan_block_line", lambda self, wp, frag, margin_deg, line_index: line)
-    monkeypatch.setattr(MODULE, "build_scan_block_sections", lambda lines, **kwargs: calls.append(("build", kwargs)) or ["SEC"])
-    monkeypatch.setattr(MODULE.OTF, "_move_to_scan_block_entry", lambda self, wp, line, cos_scan: calls.append(("move", wp.id, cos_scan, line.label)))
+    line = SimpleNamespace(
+        start=(q(-0.1), q(0.0)),
+        stop=(q(1.0), q(0.0)),
+        speed=q(0.5, "deg/s"),
+        margin=q(0.1),
+        label="L0",
+        line_index=0,
+    )
+    monkeypatch.setattr(
+        MODULE.OTF,
+        "_make_scan_block_line",
+        lambda self, wp, frag, margin_deg, line_index: line,
+    )
+    monkeypatch.setattr(
+        MODULE,
+        "build_scan_block_sections",
+        lambda lines, **kwargs: calls.append(("build", kwargs)) or ["SEC"],
+    )
+    monkeypatch.setattr(
+        MODULE.OTF,
+        "_move_to_scan_block_entry",
+        lambda self, wp, line, cos_scan: calls.append(
+            ("move", wp.id, cos_scan, line.label)
+        ),
+    )
 
     obs._run_on_scan_block(
         [spec[0]],
@@ -105,10 +138,21 @@ def test_run_on_scan_block_order_and_final_standby_forwarding(monkeypatch):
 
 
 def test_non_merge_scan_blocks_bydirectional_runs_individual_blocks(monkeypatch):
-    spec = DummySpec([Waypoint("L0"), Waypoint("L1"), Waypoint("L2")], use_scan_block=True, merge_scan_blocks=False, bydirectional=1)
+    spec = DummySpec(
+        [Waypoint("L0"), Waypoint("L1"), Waypoint("L2")],
+        use_scan_block=True,
+        merge_scan_blocks=False,
+        bydirectional=1,
+    )
     obs = _make_obs(spec)
     seen = []
-    monkeypatch.setattr(MODULE.OTF, "_run_on_scan_block", lambda self, waypoints, *, scan_frags, **kwargs: seen.append(([wp.id for wp in waypoints], list(scan_frags))))
+    monkeypatch.setattr(
+        MODULE.OTF,
+        "_run_on_scan_block",
+        lambda self, waypoints, *, scan_frags, **kwargs: seen.append(
+            ([wp.id for wp in waypoints], list(scan_frags))
+        ),
+    )
     obs.run("dummy.obs")
     assert seen == [(["L0"], [1]), (["L1"], [-1]), (["L2"], [1])]
 
@@ -118,27 +162,50 @@ def test_scan_block_supported_rejects_non_on_non_scan_and_bad_offset():
     wp_non_scan = Waypoint("P0", is_scan=False)
     wp_off = Waypoint("OFF0", mode=ObservationMode.OFF)
     wp_bad_offset = Waypoint("B0", offset=(q(0.1), q(0.2)))
-    assert obs._scan_block_supported_for_waypoint(wp_non_scan, use_scan_block=True) is False
+    assert (
+        obs._scan_block_supported_for_waypoint(wp_non_scan, use_scan_block=True)
+        is False
+    )
     assert obs._scan_block_supported_for_waypoint(wp_off, use_scan_block=True) is False
-    assert obs._scan_block_supported_for_waypoint(wp_bad_offset, use_scan_block=True) is False
+    assert (
+        obs._scan_block_supported_for_waypoint(wp_bad_offset, use_scan_block=True)
+        is False
+    )
 
 
-def test_move_to_scan_block_entry_named_query_uses_name_and_combined_offset(monkeypatch):
-    wp = Waypoint("LQ", name_query=True, target="Orion", reference=None, offset=(q(0.3), q(-0.2), "altaz"))
+def test_move_to_scan_block_entry_named_query_uses_name_and_combined_offset(
+    monkeypatch,
+):
+    wp = Waypoint(
+        "LQ",
+        name_query=True,
+        target="Orion",
+        reference=None,
+        offset=(q(0.3), q(-0.2), "altaz"),
+    )
     obs = _make_obs(DummySpec([wp]))
-    line = SimpleNamespace(start=(q(0.1), q(0.4)), stop=(q(1.0), q(0.4)), speed=q(0.5, "deg/s"), margin=q(0.1), label="LQ", line_index=0)
+    line = SimpleNamespace(
+        start=(q(0.1), q(0.4)),
+        stop=(q(1.0), q(0.4)),
+        speed=q(0.5, "deg/s"),
+        margin=q(0.1),
+        label="LQ",
+        line_index=0,
+    )
     monkeypatch.setattr(MODULE, "margin_start_of", lambda line: (q(0.1), q(0.4)))
     obs._move_to_scan_block_entry(wp, line=line, cos_scan=False)
-    assert obs.com.calls == [(
-        "antenna",
-        "point",
-        {
-            "unit": "deg",
-            "cos_correction": False,
-            "name": "Orion",
-            "offset": (0.4, 0.2, "altaz"),
-        },
-    )]
+    assert obs.com.calls == [
+        (
+            "antenna",
+            "point",
+            {
+                "unit": "deg",
+                "cos_correction": False,
+                "name": "Orion",
+                "offset": (0.4, 0.2, "altaz"),
+            },
+        )
+    ]
 
 
 def test_hot_off_pair_moves_to_off_once_then_runs_hot_and_off():
@@ -175,7 +242,9 @@ def test_hot_off_pair_execution_is_shared_across_observation_modes(observation_t
     hot_wp = Waypoint("CAL0", mode=ObservationMode.HOT, is_scan=False)
     off_wp = Waypoint("CAL0", mode=ObservationMode.OFF, is_scan=False)
     on_wp = Waypoint("ON0", is_scan=False)
-    obs = _make_obs(DummySpec([hot_wp, off_wp, on_wp]), observation_type=observation_type)
+    obs = _make_obs(
+        DummySpec([hot_wp, off_wp, on_wp]), observation_type=observation_type
+    )
 
     executed = []
     obs.hot = lambda integ, wid, **kwargs: executed.append(("hot", integ, wid, kwargs))
