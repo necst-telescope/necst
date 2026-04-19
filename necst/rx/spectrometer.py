@@ -89,6 +89,53 @@ class ObservingModeManager:
             self._enabled.pop(0)
 
 
+class ControlSectionManager:
+    @dataclass(frozen=True)
+    class ControlSection:
+        time: float
+        kind: str = ""
+        label: str = ""
+        line_index: int = -1
+
+    def __init__(self) -> None:
+        self.section = []
+
+    def set(
+        self,
+        time: float,
+        kind: str = "",
+        label: str = "",
+        line_index: int = -1,
+    ) -> None:
+        self.section.append(
+            self.ControlSection(
+                time=time,
+                kind=kind,
+                label=label,
+                line_index=int(line_index),
+            )
+        )
+        self.section.sort(key=lambda x: x.time)
+
+        now = pytime.time()
+        n_stale = len([entry for entry in self.section if entry.time < now - 30])
+        if n_stale > 1:
+            [self.section.pop(0) for _ in range(n_stale - 1)]
+
+    def get(self, time: float) -> ControlSection:
+        try:
+            return tuple(filter(lambda x: x.time < time, self.section))[-1]
+        except IndexError:
+            new = self.ControlSection(time=time)
+            self.section.append(new)
+            return new
+
+
+def _fit_string(value: str, limit: int) -> str:
+    value = str(value)
+    return value[:limit]
+
+
 class SpectralData(DeviceNode):
     NodeName = "spectrometer"
     Namespace = namespace.rx
@@ -109,6 +156,7 @@ class SpectralData(DeviceNode):
         self.io = Spectrometer()
 
         self.metadata = ObservingModeManager()
+        self.control_section = ControlSectionManager()
 
         self.resizers = {}
         self.data_queue = {}
@@ -176,6 +224,12 @@ class SpectralData(DeviceNode):
             self.metadata.enable(start=msg.time)
         else:
             self.metadata.disable(start=msg.time)
+        self.control_section.set(
+            msg.time,
+            kind=getattr(msg, "section_kind", "") or "",
+            label=getattr(msg, "section_label", "") or "",
+            line_index=getattr(msg, "line_index", -1),
+        )
 
     def update_metadata(self, msg: Spectral) -> None:
         now = pytime.time()
@@ -231,11 +285,19 @@ class SpectralData(DeviceNode):
                 data = resizers[board_id].get(self.qlook_ch_range, n_samples=100)
                 now = pytime.time()
                 metadata = self.metadata.get(now)
+                section = self.control_section.get(now)
+                line_index = -1
+                line_label = ""
+                if (metadata.position == "ON") and (section.kind == "line"):
+                    line_index = int(section.line_index)
+                    line_label = _fit_string(section.label, 64)
                 msg = Spectral(
                     data=data,
                     time=now,
                     position=metadata.position,
-                    id=metadata.id,
+                    id=_fit_string(metadata.id, 16),
+                    line_index=line_index,
+                    line_label=line_label,
                     ch=tuple(map(int, self.qlook_ch_range)),
                     integ=float(self.resizers[key][board_id].keep_duration),
                 )
@@ -266,11 +328,19 @@ class SpectralData(DeviceNode):
                 data = self.io[key].calc_tp(data, self.tp_range)
             for board_id, spectral_data in data.items():
                 metadata = self.metadata.get(time)
+                section = self.control_section.get(time)
+                line_index = -1
+                line_label = ""
+                if (metadata.position == "ON") and (section.kind == "line"):
+                    line_index = int(section.line_index)
+                    line_label = _fit_string(section.label, 64)
                 msg = Spectral(
                     data=spectral_data,
                     time=time,
-                    id=metadata.id,
+                    id=_fit_string(metadata.id, 16),
                     position=metadata.position,
+                    line_index=line_index,
+                    line_label=line_label,
                     time_spectrometer=time_spectrometer,
                 )
                 fields = msg.get_fields_and_field_types()
