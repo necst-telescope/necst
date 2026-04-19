@@ -3,8 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
-
 from tests._helpers.scan_block_stub_runtime import load_spectrometer_module
 
 

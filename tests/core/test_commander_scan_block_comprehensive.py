@@ -22,7 +22,7 @@ class DummySection(SimpleNamespace):
     pass
 
 
-def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_obsfreq_cos(
+def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_obsfreq_cos(  # noqa: E501
     monkeypatch,
 ):
     com = MODULE.Commander.__new__(MODULE.Commander)
