@@ -243,8 +243,10 @@ class HorizontalCoord(AlertHandlerNode):
         int(ScanBlockSectionMsg.ACCELERATE): "accelerate",
         int(ScanBlockSectionMsg.LINE): "line",
         int(ScanBlockSectionMsg.TURN): "turn",
+        int(ScanBlockSectionMsg.HANDOFF_TURN): "handoff_turn",
         int(ScanBlockSectionMsg.DECELERATE): "decelerate",
         int(ScanBlockSectionMsg.FINAL_STANDBY): "final_standby",
+        int(ScanBlockSectionMsg.HANDOFF_STANDBY): "handoff_standby",
     }
 
     def _convert_scan_block_section(
@@ -258,9 +260,7 @@ class HorizontalCoord(AlertHandlerNode):
         try:
             kind = self._SCAN_BLOCK_KIND_MAP[int(msg.kind)]
         except KeyError as exc:
-            raise ValueError(
-                f"Unsupported scan block section kind: {msg.kind!r}"
-            ) from exc
+            raise ValueError(f"Unsupported scan block section kind: {msg.kind!r}") from exc
 
         start = (float(msg.start[0]), float(msg.start[1]))
         stop = (float(msg.stop[0]), float(msg.stop[1]))
@@ -287,17 +287,13 @@ class HorizontalCoord(AlertHandlerNode):
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
 
-        sections = [
-            self._convert_scan_block_section(section) for section in msg.sections
-        ]
+        sections = [self._convert_scan_block_section(section) for section in msg.sections]
         if len(sections) == 0:
             raise ValueError("Scan block request must include at least one section.")
         if float(getattr(msg, "obsfreq", 0.0)) > 0:
             self.finder.obsfreq = float(msg.obsfreq) * u.GHz
 
-        section_frames = {
-            str(section.frame) for section in msg.sections if str(section.frame) != ""
-        }
+        section_frames = {str(section.frame) for section in msg.sections if str(section.frame) != ""}
         if len(section_frames) != 1:
             raise ValueError(
                 "Current control-side scan_block implementation requires exactly one "

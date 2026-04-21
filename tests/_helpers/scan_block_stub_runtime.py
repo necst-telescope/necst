@@ -23,7 +23,7 @@ class FakeUnit:
         return FakeQuantity(value, self.name)
 
     def __truediv__(self, other):
-        other_name = getattr(other, "name", str(other))
+        other_name = getattr(other, 'name', str(other))
         return FakeUnit(f"{self.name}/{other_name}")
 
     def __repr__(self):
@@ -39,7 +39,7 @@ class FakeQuantity(np.ndarray):
         return obj
 
     def __array_finalize__(self, obj):
-        self.unit = getattr(obj, "unit", "")
+        self.unit = getattr(obj, 'unit', '')
 
     def to_value(self, unit=None):
         arr = np.asarray(self)
@@ -153,9 +153,7 @@ def load_file_based_module(repo_root: Path):
     observations_pkg.__path__ = []
     sys.modules["necst.procedures.observations"] = observations_pkg
 
-    observation_base = types.ModuleType(
-        "necst.procedures.observations.observation_base"
-    )
+    observation_base = types.ModuleType("necst.procedures.observations.observation_base")
     observation_base.Observation = DummyObservation
     sys.modules["necst.procedures.observations.observation_base"] = observation_base
 
@@ -197,12 +195,7 @@ def load_file_based_module(repo_root: Path):
 
     return _load_source(
         "necst.procedures.observations.file_based",
-        repo_root
-        / "necst-main"
-        / "necst"
-        / "procedures"
-        / "observations"
-        / "file_based.py",
+        repo_root / "necst-main" / "necst" / "procedures" / "observations" / "file_based.py",
     )
 
 
@@ -223,10 +216,8 @@ def load_horizontal_coord_module(repo_root: Path):
     sys.modules["necst.ctrl.antenna"] = antenna
 
     core = types.ModuleType("necst.core")
-
     class AlertHandlerNode:
         pass
-
     core.AlertHandlerNode = AlertHandlerNode
     sys.modules["necst.core"] = core
 
@@ -251,10 +242,8 @@ def load_horizontal_coord_module(repo_root: Path):
     class DummyEndpoint:
         def publisher(self, *args, **kwargs):
             return SimpleNamespace(publish=lambda *a, **k: None)
-
         def subscription(self, *args, **kwargs):
             return None
-
         def service(self, *args, **kwargs):
             return None
 
@@ -279,26 +268,20 @@ def load_horizontal_coord_module(repo_root: Path):
 
     coords = types.ModuleType("neclib.coordinates")
     coords.__path__ = []
-
     class CoordinateGeneratorManager:
         def clear(self):
             pass
-
         def attach(self, generator):
             self.generator = generator
-
     class DriveLimitChecker:
         def __init__(self, *a, **k):
             pass
-
     class PathFinder:
         def __init__(self, *a, **k):
             pass
-
     class FinderScanBlockSection:
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
-
     coords.CoordinateGeneratorManager = CoordinateGeneratorManager
     coords.DriveLimitChecker = DriveLimitChecker
     coords.PathFinder = PathFinder
@@ -306,11 +289,9 @@ def load_horizontal_coord_module(repo_root: Path):
     sys.modules["neclib.coordinates"] = coords
 
     coords_paths = types.ModuleType("neclib.coordinates.paths")
-
     class ControlContext:
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
-
     coords_paths.ControlContext = ControlContext
     sys.modules["neclib.coordinates.paths"] = coords_paths
 
@@ -319,20 +300,15 @@ def load_horizontal_coord_module(repo_root: Path):
     sys.modules["necst_msgs"] = necst_msgs
 
     msgs = types.ModuleType("necst_msgs.msg")
-
     class Boolean:
         def __init__(self, data=False):
             self.data = data
-
     class ControlStatus:
         pass
-
     class CoordMsg:
         pass
-
     class WeatherMsg:
         pass
-
     class ScanBlockSection:
         MOVE_TO_ENTRY = 0
         FIRST_STANDBY = 1
@@ -341,7 +317,8 @@ def load_horizontal_coord_module(repo_root: Path):
         TURN = 4
         DECELERATE = 5
         FINAL_STANDBY = 6
-
+        HANDOFF_TURN = 7
+        HANDOFF_STANDBY = 8
     msgs.Boolean = Boolean
     msgs.ControlStatus = ControlStatus
     msgs.CoordMsg = CoordMsg
@@ -350,21 +327,16 @@ def load_horizontal_coord_module(repo_root: Path):
     sys.modules["necst_msgs.msg"] = msgs
 
     srv = types.ModuleType("necst_msgs.srv")
-
     class CoordinateCommand:
         class Request:
             pass
-
         class Response:
             pass
-
     class ScanBlockCommand:
         class Request:
             pass
-
         class Response:
             pass
-
     srv.CoordinateCommand = CoordinateCommand
     srv.ScanBlockCommand = ScanBlockCommand
     sys.modules["necst_msgs.srv"] = srv
@@ -379,6 +351,7 @@ def load_horizontal_coord_module(repo_root: Path):
     )
 
 
+
 def load_commander_module(repo_root: Path):
     clear_modules(["necst", "neclib", "necst_msgs", "rclpy"])
 
@@ -391,14 +364,11 @@ def load_commander_module(repo_root: Path):
     sys.modules["neclib.core"] = neclib_core
 
     neclib_utils = types.ModuleType("neclib.utils")
-
     class ConditionChecker:
         def __init__(self, *a, **k):
             pass
-
     class ParameterList(list):
         pass
-
     neclib_utils.ConditionChecker = ConditionChecker
     neclib_utils.ParameterList = ParameterList
     sys.modules["neclib.utils"] = neclib_utils
@@ -422,13 +392,10 @@ def load_commander_module(repo_root: Path):
     class DummyEndpoint:
         def publisher(self, *args, **kwargs):
             return SimpleNamespace(publish=lambda *a, **k: None)
-
         def subscription(self, *args, **kwargs):
             return None
-
         def client(self, *args, **kwargs):
             return None
-
         def service(self, *args, **kwargs):
             return None
 
@@ -446,54 +413,17 @@ def load_commander_module(repo_root: Path):
 
     topic = types.ModuleType("necst.topic")
     names = [
-        "antenna_cmd_transition",
-        "manual_stop_alert",
-        "pid_param",
-        "chopper_cmd",
-        "mirror_m2_cmd",
-        "mirror_m4_cmd",
-        "membrane_cmd",
-        "drive_cmd",
-        "spectra_meta",
-        "qlook_meta",
-        "sis_bias_cmd",
-        "lo_signal_cmd",
-        "attenuator_cmd",
-        "local_attenuator_cmd",
-        "record_cmd",
-        "spectra_rec",
-        "channel_binning",
-        "manual_stop_dome_alert",
-        "dome_oc",
-        "timeonly",
-        "tp_mode",
-        "antenna_tracking",
-        "antenna_encoder",
-        "altaz_cmd",
-        "antenna_speed_cmd",
-        "chopper_status",
-        "mirror_m2_status",
-        "mirror_m4_status",
-        "membrane_status",
-        "drive_status",
-        "antenna_control_status",
-        "sis_bias",
-        "hemt_bias",
-        "analog_logger",
-        "lo_signal",
-        "thermometer",
-        "vacuum_gauge",
-        "powermeter",
-        "local_attenuator",
-        "camera_image",
-        "quick_spectra",
-        "dome_tracking",
-        "dome_encoder",
-        "dome_speed",
-        "dome_status",
-        "dome_limit",
-        "weather",
-        "alert",
+        "antenna_cmd_transition","manual_stop_alert","pid_param","chopper_cmd",
+        "mirror_m2_cmd","mirror_m4_cmd","membrane_cmd","drive_cmd","spectra_meta",
+        "qlook_meta","sis_bias_cmd","lo_signal_cmd","attenuator_cmd",
+        "local_attenuator_cmd","record_cmd","spectra_rec","channel_binning",
+        "manual_stop_dome_alert","dome_oc","timeonly","tp_mode","antenna_tracking",
+        "antenna_encoder","altaz_cmd","antenna_speed_cmd","chopper_status",
+        "mirror_m2_status","mirror_m4_status","membrane_status","drive_status",
+        "antenna_control_status","sis_bias","hemt_bias","analog_logger","lo_signal",
+        "thermometer","vacuum_gauge","powermeter","local_attenuator","camera_image",
+        "quick_spectra","dome_tracking","dome_encoder","dome_speed","dome_status",
+        "dome_limit","weather","alert"
     ]
     for name in names:
         setattr(topic, name, DummyEndpoint())
@@ -501,10 +431,8 @@ def load_commander_module(repo_root: Path):
     necst.topic = topic
 
     utils = types.ModuleType("necst.utils")
-
     class Topic:
         pass
-
     utils.Topic = Topic
     sys.modules["necst.utils"] = utils
 
@@ -513,16 +441,12 @@ def load_commander_module(repo_root: Path):
     sys.modules["necst.core"] = core_pkg
 
     auth = types.ModuleType("necst.core.auth")
-
     class PrivilegedNode:
         pass
-
     def require_privilege(*args, **kwargs):
         def deco(func):
             return func
-
         return deco
-
     auth.PrivilegedNode = PrivilegedNode
     auth.require_privilege = require_privilege
     sys.modules["necst.core.auth"] = auth
@@ -532,37 +456,18 @@ def load_commander_module(repo_root: Path):
     sys.modules["necst_msgs"] = necst_msgs
 
     msgs = types.ModuleType("necst_msgs.msg")
-
     def _simple_msg(name):
         class _M:
             def __init__(self, **kwargs):
                 self.__dict__.update(kwargs)
-
         _M.__name__ = name
         return _M
-
     for cls_name in [
-        "AlertMsg",
-        "Binning",
-        "Boolean",
-        "ChopperMsg",
-        "DeviceReading",
-        "DomeOC",
-        "DriveMsg",
-        "LocalAttenuatorMsg",
-        "LocalSignal",
-        "MembraneMsg",
-        "MirrorMsg",
-        "PIDMsg",
-        "RecordMsg",
-        "Sampling",
-        "SISBias",
-        "Spectral",
-        "TimeOnly",
-        "TPModeMsg",
+        "AlertMsg","Binning","Boolean","ChopperMsg","DeviceReading","DomeOC","DriveMsg",
+        "LocalAttenuatorMsg","LocalSignal","MembraneMsg","MirrorMsg","PIDMsg","RecordMsg",
+        "Sampling","SISBias","Spectral","TimeOnly","TPModeMsg"
     ]:
         setattr(msgs, cls_name, _simple_msg(cls_name))
-
     class ScanBlockSection:
         MOVE_TO_ENTRY = 0
         FIRST_STANDBY = 1
@@ -571,39 +476,27 @@ def load_commander_module(repo_root: Path):
         TURN = 4
         DECELERATE = 5
         FINAL_STANDBY = 6
-
+        HANDOFF_TURN = 7
+        HANDOFF_STANDBY = 8
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
-
     msgs.ScanBlockSection = ScanBlockSection
     sys.modules["necst_msgs.msg"] = msgs
 
     srv = types.ModuleType("necst_msgs.srv")
-
     def _simple_srv(name):
         class _Req:
             def __init__(self, **kwargs):
                 self.__dict__.update(kwargs)
-
         class _Res:
             def __init__(self, **kwargs):
                 self.__dict__.update(kwargs)
-
         class _S:
             Request = _Req
             Response = _Res
-
         _S.__name__ = name
         return _S
-
-    for cls_name in [
-        "CCDCommand",
-        "ComDelaySrv",
-        "CoordinateCommand",
-        "DomeSync",
-        "File",
-        "ScanBlockCommand",
-    ]:
+    for cls_name in ["CCDCommand","ComDelaySrv","CoordinateCommand","DomeSync","File","ScanBlockCommand"]:
         setattr(srv, cls_name, _simple_srv(cls_name))
     sys.modules["necst_msgs.srv"] = srv
 
@@ -611,17 +504,13 @@ def load_commander_module(repo_root: Path):
     rclpy.__path__ = []
     sys.modules["rclpy"] = rclpy
     rclpy_pub = types.ModuleType("rclpy.publisher")
-
     class Publisher:
         pass
-
     rclpy_pub.Publisher = Publisher
     sys.modules["rclpy.publisher"] = rclpy_pub
     rclpy_sub = types.ModuleType("rclpy.subscription")
-
     class Subscription:
         pass
-
     rclpy_sub.Subscription = Subscription
     sys.modules["rclpy.subscription"] = rclpy_sub
 
@@ -629,6 +518,7 @@ def load_commander_module(repo_root: Path):
         "necst.core.commander",
         repo_root / "necst-main" / "necst" / "core" / "commander.py",
     )
+
 
 
 def load_spectrometer_module(repo_root: Path):
@@ -639,46 +529,35 @@ def load_spectrometer_module(repo_root: Path):
     sys.modules["neclib"] = neclib
 
     neclib_data = types.ModuleType("neclib.data")
-
     class Resize:
         def __init__(self, keep_duration=1.0):
             self.keep_duration = keep_duration
-
         def push(self, *a, **k):
             pass
-
         def get(self, *a, **k):
             return []
-
     neclib_data.Resize = Resize
     sys.modules["neclib.data"] = neclib_data
 
     neclib_recorders = types.ModuleType("neclib.recorders")
-
     class NECSTDBWriter:
         pass
-
     class Recorder:
         def __init__(self, *a, **k):
             self.writers = []
             self.is_recording = False
-
         def add_writer(self, writer):
             self.writers.append(writer)
-
     neclib_recorders.NECSTDBWriter = NECSTDBWriter
     neclib_recorders.Recorder = Recorder
     sys.modules["neclib.recorders"] = neclib_recorders
 
     neclib_utils = types.ModuleType("neclib.utils")
-
     class ConditionChecker:
         def __init__(self, *a, **k):
             pass
-
         def check(self, *a, **k):
             return True
-
     neclib_utils.ConditionChecker = ConditionChecker
     sys.modules["neclib.utils"] = neclib_utils
 
@@ -699,7 +578,6 @@ def load_spectrometer_module(repo_root: Path):
     class DummyEndpoint:
         def publisher(self, *args, **kwargs):
             return SimpleNamespace(publish=lambda *a, **k: None)
-
         def subscription(self, *args, **kwargs):
             return None
 
@@ -715,10 +593,8 @@ def load_spectrometer_module(repo_root: Path):
     necst.topic = topic
 
     core = types.ModuleType("necst.core")
-
     class DeviceNode:
         pass
-
     core.DeviceNode = DeviceNode
     sys.modules["necst.core"] = core
 
@@ -726,34 +602,21 @@ def load_spectrometer_module(repo_root: Path):
     necst_msgs.__path__ = []
     sys.modules["necst_msgs"] = necst_msgs
     msgs = types.ModuleType("necst_msgs.msg")
-
     def _simple_msg(name):
         class _M:
             def __init__(self, **kwargs):
                 self.__dict__.update(kwargs)
-
             def get_fields_and_field_types(self):
-                return {
-                    k: "string" if isinstance(v, str) else "float64"
-                    for k, v in self.__dict__.items()
-                }
-
+                return {k: 'string' if isinstance(v, str) else 'float64' for k, v in self.__dict__.items()}
         _M.__name__ = name
         return _M
-
-    for cls_name in ["Binning", "ControlStatus", "Sampling", "TPModeMsg"]:
+    for cls_name in ["Binning","ControlStatus","Sampling","TPModeMsg"]:
         setattr(msgs, cls_name, _simple_msg(cls_name))
-
     class Spectral:
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
-
         def get_fields_and_field_types(self):
-            return {
-                k: "string" if isinstance(v, str) else "float64"
-                for k, v in self.__dict__.items()
-            }
-
+            return {k: 'string' if isinstance(v, str) else 'float64' for k, v in self.__dict__.items()}
     msgs.Spectral = Spectral
     sys.modules["necst_msgs.msg"] = msgs
 
@@ -761,10 +624,8 @@ def load_spectrometer_module(repo_root: Path):
     rclpy.__path__ = []
     sys.modules["rclpy"] = rclpy
     rclpy_pub = types.ModuleType("rclpy.publisher")
-
     class Publisher:
         pass
-
     rclpy_pub.Publisher = Publisher
     sys.modules["rclpy.publisher"] = rclpy_pub
 

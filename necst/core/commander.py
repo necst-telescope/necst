@@ -479,6 +479,7 @@ class Commander(PrivilegedNode):
         unit: Optional[str] = None,
         name: Optional[str] = None,
         wait: bool = True,
+        prewait: bool = True,
         direct_mode: bool = False,
         cos_correction: bool = False,
         obsfreq: Optional[Union[int, float]] = None,
@@ -506,9 +507,11 @@ class Commander(PrivilegedNode):
             "accelerate": ScanBlockSection.ACCELERATE,
             "line": ScanBlockSection.LINE,
             "turn": ScanBlockSection.TURN,
+            "handoff_turn": ScanBlockSection.HANDOFF_TURN,
             "decelerate": ScanBlockSection.DECELERATE,
             "final_decelerate": ScanBlockSection.DECELERATE,
             "final_standby": ScanBlockSection.FINAL_STANDBY,
+            "handoff_standby": ScanBlockSection.HANDOFF_STANDBY,
         }
 
         req_sections = []
@@ -525,21 +528,12 @@ class Commander(PrivilegedNode):
                     label=str(getattr(section, "label", ""))[:64],
                     line_index=int(getattr(section, "line_index", -1)),
                     start=_to_value_pair(getattr(section, "start"), unit_name),
-                    stop=_to_value_pair(
-                        stop if stop is not None else getattr(section, "start"),
-                        unit_name,
-                    ),
+                    stop=_to_value_pair(stop if stop is not None else getattr(section, "start"), unit_name),
                     frame=str(scan_frame),
-                    speed=_to_value_scalar(
-                        getattr(section, "speed", None), f"{unit_name}/s", 0.0
-                    ),
-                    margin=_to_value_scalar(
-                        getattr(section, "margin", None), unit_name, 0.0
-                    ),
+                    speed=_to_value_scalar(getattr(section, "speed", None), f"{unit_name}/s", 0.0),
+                    margin=_to_value_scalar(getattr(section, "margin", None), unit_name, 0.0),
                     duration_hint=_to_value_scalar(duration, "s", 0.0),
-                    turn_radius_hint=_to_value_scalar(
-                        getattr(section, "turn_radius_hint", None), unit_name, 0.0
-                    ),
+                    turn_radius_hint=_to_value_scalar(getattr(section, "turn_radius_hint", None), unit_name, 0.0),
                 )
             )
 
@@ -569,7 +563,8 @@ class Commander(PrivilegedNode):
         req = ScanBlockCommand.Request(**req_kwargs)
         res = self._send_request(req, self.client["scan_block"])
         self.logger.warning(f"SCAN_BLOCK id={res.id}, now={pytime.time():.6f}")
-        self.wait("antenna")
+        if prewait:
+            self.wait("antenna")
         ts = pytime.time()
         self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
         self.logger.warning(f"cmd_trans sent for scan_block id={res.id}, now={ts:.6f}")
