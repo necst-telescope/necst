@@ -82,3 +82,50 @@ def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_
     assert req.lon == [30.0]
     assert req.lat == [45.0]
     assert req.frame == "fk5"
+
+
+def test_commander_scan_block_prewait_false_skips_error_wait_before_cmd_trans(monkeypatch):
+    com = MODULE.Commander.__new__(MODULE.Commander)
+    com.logger = FakeLogger()
+    publisher = DummyPublisher()
+    com.publisher = {"cmd_trans": publisher}
+    com.client = {"scan_block": object()}
+
+    call_order = []
+
+    def fake_send_request(req, client):
+        call_order.append(("scan_block", req))
+        return SimpleNamespace(id="blk-43")
+
+    def fake_wait(target, mode="error", id=None):
+        call_order.append(("wait", target, mode, id))
+
+    monkeypatch.setattr(com, "_send_request", fake_send_request, raising=False)
+    monkeypatch.setattr(com, "wait", fake_wait)
+
+    section = DummySection(
+        kind="line",
+        tight=True,
+        label="SCI",
+        line_index=4,
+        start=(q(0.0), q(0.0)),
+        stop=(q(1.0), q(0.0)),
+        speed=q(0.5, "deg/s"),
+        margin=q(0.1),
+        duration=None,
+        turn_radius_hint=None,
+    )
+
+    out = MODULE.Commander.scan_block(
+        com,
+        sections=[section],
+        scan_frame="altaz",
+        reference=(30.0, 45.0, "fk5"),
+        unit="deg",
+        wait=False,
+        prewait=False,
+    )
+
+    assert out == "blk-43"
+    assert call_order == [("scan_block", call_order[0][1])]
+    assert len(publisher.messages) == 1

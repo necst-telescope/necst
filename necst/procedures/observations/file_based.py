@@ -237,6 +237,7 @@ class FileBasedObservation(Observation):
         self.com.scan_block(
             sections=sections,
             scan_frame=first_waypoint.scan_frame,
+            prewait=False,
             **scan_kwargs,
         )
         self.com.metadata("set", position="", id="")
