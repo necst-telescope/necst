@@ -90,6 +90,8 @@ class HorizontalCoord(AlertHandlerNode):
         # Realtime-executed state (not convert-side future state)
         self._last_published_cmd_time: float = 0.0
         self._last_published_context: Optional[ControlContext] = None
+        self._last_effective_cmd_time: float = 0.0
+        self._last_effective_context: Optional[ControlContext] = None
         self._last_publish_wall_time: float = 0.0
         self._last_publish_cmd_stamp: float = 0.0
         self._current_mode: str = "idle"
@@ -121,7 +123,9 @@ class HorizontalCoord(AlertHandlerNode):
             self._generator_exhausted = False
             self._last_active_context = None
             self._last_published_context = None
+            self._last_effective_context = None
             self._last_published_cmd_time = 0.0
+            self._last_effective_cmd_time = 0.0
             self._idle_exec_id = self._next_exec_id()
         self.cmd = None
         self._current_mode = "idle"
@@ -153,7 +157,9 @@ class HorizontalCoord(AlertHandlerNode):
             self._generator_exhausted = False
             self._last_active_context = None
             self._last_published_context = None
+            self._last_effective_context = None
             self._last_published_cmd_time = 0.0
+            self._last_effective_cmd_time = 0.0
             self._current_exec_id = self._next_exec_id()
             self._current_mode = mode
             self._parse_cmd(request)
@@ -342,7 +348,9 @@ class HorizontalCoord(AlertHandlerNode):
             self._generator_exhausted = False
             self._last_active_context = None
             self._last_published_context = None
+            self._last_effective_context = None
             self._last_published_cmd_time = 0.0
+            self._last_effective_cmd_time = 0.0
             self._current_exec_id = self._next_exec_id()
             self._current_mode = mode
             self._parse_scan_block_cmd(request)
@@ -466,6 +474,17 @@ class HorizontalCoord(AlertHandlerNode):
         self.enc_el = msg.lat
         self.enc_time = msg.time
 
+    def _select_effective_cmd(self, cmds, target_time: float):
+        if not cmds:
+            return None
+        try:
+            eligible = [cmd for cmd in cmds if float(cmd[4]) <= float(target_time) + 1e-9]
+        except Exception:
+            eligible = []
+        if eligible:
+            return eligible[-1]
+        return cmds[0]
+
     def command_realtime(self) -> None:
         if self.status.critical():
             if not self._guard_latched:
@@ -539,6 +558,8 @@ class HorizontalCoord(AlertHandlerNode):
                 f"mode={self._current_mode}, now={now:.6f}"
             )
 
+        effective_cmd = self._select_effective_cmd(cmds, target_time)
+
         for cmd in cmds:
             msg = CoordMsg(
                 lon=float(cmd[0]),
@@ -557,10 +578,16 @@ class HorizontalCoord(AlertHandlerNode):
             )
             self._last_published_context = cmd[5]
 
-        # IMPORTANT: publish control status from the REALTIME side,
-        # not convert-side future state.
-        if cmds and (self._last_published_context is not None):
-            self.telemetry(self._last_published_context)
+        # IMPORTANT: publish control status from the REALTIME side using the
+        # command context that is actually effective at (now + offset), not the
+        # last/furthest context that happened to be published in this cycle.
+        if effective_cmd is not None:
+            self._last_effective_cmd_time = float(effective_cmd[4])
+            self._last_effective_context = effective_cmd[5]
+            return self.telemetry(
+                self._last_effective_context,
+                effective_time=self._last_effective_cmd_time,
+            )
 
     def _parse_cmd(self, msg: CoordinateCommand.Request) -> None:
         target_coord = (msg.lon, msg.lat)
@@ -683,8 +710,11 @@ class HorizontalCoord(AlertHandlerNode):
                     )
                 # Keep status tied to the last realtime-published context
                 # while future commands are still in flight.
-                if self._last_published_context is not None:
-                    return self.telemetry(self._last_published_context)
+                if self._last_effective_context is not None:
+                    return self.telemetry(
+                        self._last_effective_context,
+                        effective_time=self._last_effective_cmd_time,
+                    )
                 if self._last_active_context is not None:
                     return self.telemetry(self._last_active_context)
                 return
@@ -698,8 +728,11 @@ class HorizontalCoord(AlertHandlerNode):
                     f"last_cmd_t={self._last_published_cmd_time:.6f}, now={now:.6f}",
                     throttle_duration_sec=0.5,
                 )
-                if self._last_published_context is not None:
-                    return self.telemetry(self._last_published_context)
+                if self._last_effective_context is not None:
+                    return self.telemetry(
+                        self._last_effective_context,
+                        effective_time=self._last_effective_cmd_time,
+                    )
                 if self._last_active_context is not None:
                     return self.telemetry(self._last_active_context)
                 return
@@ -831,7 +864,7 @@ class HorizontalCoord(AlertHandlerNode):
             self.finder.pressure = msg.pressure
             self.finder.relative_humidity = msg.humidity
 
-    def telemetry(self, status: Optional[ControlContext]) -> None:
+    def telemetry(self, status: Optional[ControlContext], *, effective_time: Optional[float] = None) -> None:
         if status is None:
             exec_id = self._idle_exec_id
             msg = ControlStatus(
@@ -853,7 +886,7 @@ class HorizontalCoord(AlertHandlerNode):
                 remote=True,
                 id=exec_id,
                 interrupt_ok=status.infinite and (not status.waypoint),
-                time=status.start,
+                time=(float(effective_time) if effective_time is not None else time.time() + float(getattr(config, "antenna_command_offset_sec", 0.0))),
                 section_kind=str(getattr(status, "kind", "") or "")[:64],
                 section_label=str(getattr(status, "label", "") or "")[:64],
                 line_index=int(getattr(status, "line_index", -1)),
