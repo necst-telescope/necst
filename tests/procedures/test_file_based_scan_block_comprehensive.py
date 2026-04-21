@@ -98,11 +98,12 @@ def test_run_on_scan_block_order_and_final_standby_forwarding(monkeypatch):
     assert calls[1][0] == "build"
     assert calls[1][1]["include_final_standby"] is True
     assert calls[1][1]["final_standby_duration"] == 2.5
-    assert [c[0] for c in obs.com.calls] == ["metadata", "scan_block", "metadata"]
-    assert obs.com.calls[0][2] == {"position": "ON", "id": "L0"}
-    assert obs.com.calls[1][1]["sections"] == ["SEC"]
-    assert obs.com.calls[1][1]["prewait"] is False
-    assert obs.com.calls[2][2] == {"position": "", "id": ""}
+    assert [c[0] for c in obs.com.calls] == ["scan_block", "metadata"]
+    assert obs.com.calls[0][1]["sections"] == ["SEC"]
+    assert obs.com.calls[0][1]["prewait"] is False
+    assert obs.com.calls[0][1]["metadata_position"] == "ON"
+    assert obs.com.calls[0][1]["metadata_id"] == "L0"
+    assert obs.com.calls[1][2] == {"position": "", "id": ""}
 
 
 def test_non_merge_scan_blocks_bydirectional_runs_individual_blocks(monkeypatch):
