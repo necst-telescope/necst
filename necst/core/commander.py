@@ -479,7 +479,6 @@ class Commander(PrivilegedNode):
         unit: Optional[str] = None,
         name: Optional[str] = None,
         wait: bool = True,
-        prewait: bool = True,
         direct_mode: bool = False,
         cos_correction: bool = False,
         obsfreq: Optional[Union[int, float]] = None,
@@ -507,11 +506,9 @@ class Commander(PrivilegedNode):
             "accelerate": ScanBlockSection.ACCELERATE,
             "line": ScanBlockSection.LINE,
             "turn": ScanBlockSection.TURN,
-            "handoff_turn": ScanBlockSection.HANDOFF_TURN,
             "decelerate": ScanBlockSection.DECELERATE,
             "final_decelerate": ScanBlockSection.DECELERATE,
             "final_standby": ScanBlockSection.FINAL_STANDBY,
-            "handoff_standby": ScanBlockSection.HANDOFF_STANDBY,
         }
 
         req_sections = []
@@ -563,8 +560,7 @@ class Commander(PrivilegedNode):
         req = ScanBlockCommand.Request(**req_kwargs)
         res = self._send_request(req, self.client["scan_block"])
         self.logger.warning(f"SCAN_BLOCK id={res.id}, now={pytime.time():.6f}")
-        if prewait:
-            self.wait("antenna")
+        self.wait("antenna")
         ts = pytime.time()
         self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
         self.logger.warning(f"cmd_trans sent for scan_block id={res.id}, now={ts:.6f}")

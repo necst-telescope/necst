@@ -3,12 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-from tests._helpers.scan_block_stub_runtime import (
-    FakeLogger,
-    FakeUnit,
-    load_file_based_module,
-    q,
-)
+from tests._helpers.scan_block_stub_runtime import FakeLogger, FakeUnit, load_file_based_module, q
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -25,16 +20,12 @@ def qdeg(value: float):
 class DummyCommander:
     def __init__(self):
         self.calls = []
-
     def record(self, *args, **kwargs):
         self.calls.append(("record", args, kwargs))
-
     def antenna(self, mode, **kwargs):
         self.calls.append(("antenna", mode, kwargs))
-
     def metadata(self, action, **kwargs):
         self.calls.append(("metadata", action, kwargs))
-
     def scan_block(self, **kwargs):
         self.calls.append(("scan_block", kwargs))
 
@@ -99,9 +90,7 @@ def _make_obs(spec):
 
 
 def test_radio_pointing_scan_mode_uses_scan_block_when_requested(monkeypatch):
-    spec = DummySpec(
-        [ScanWaypoint("RP0")], use_scan_block=True, merge_scan_blocks=False
-    )
+    spec = DummySpec([ScanWaypoint("RP0")], use_scan_block=True, merge_scan_blocks=False)
     obs = _make_obs(spec)
 
     preflight_lines = []
@@ -109,9 +98,7 @@ def test_radio_pointing_scan_mode_uses_scan_block_when_requested(monkeypatch):
     def fake_preflight(self, lines):
         preflight_lines.extend(lines)
 
-    monkeypatch.setattr(
-        MODULE.RadioPointing, "_preflight_scan_block_kinematics", fake_preflight
-    )
+    monkeypatch.setattr(MODULE.RadioPointing, "_preflight_scan_block_kinematics", fake_preflight)
     obs.run("dummy.obs")
 
     antenna_calls = [call for call in obs.com.calls if call[0] == "antenna"]
@@ -153,12 +140,8 @@ def test_radio_pointing_scan_mode_can_merge_xy_pair(monkeypatch):
             SimpleNamespace(kind="final_standby", line_index=-1),
         ]
 
-    monkeypatch.setattr(
-        MODULE.RadioPointing, "_preflight_scan_block_kinematics", fake_preflight
-    )
-    monkeypatch.setattr(
-        MODULE, "build_scan_block_sections", fake_build_scan_block_sections
-    )
+    monkeypatch.setattr(MODULE.RadioPointing, "_preflight_scan_block_kinematics", fake_preflight)
+    monkeypatch.setattr(MODULE, "build_scan_block_sections", fake_build_scan_block_sections)
     obs.run("dummy.obs")
 
     assert len(captured["lines"]) == 2
@@ -172,16 +155,12 @@ def test_radio_pointing_scan_mode_can_merge_xy_pair(monkeypatch):
     section_kinds = [section.kind for section in sections]
     assert section_kinds[0] == "initial_standby"
     assert section_kinds[-1] == "final_standby"
-    line_indices = [
-        section.line_index for section in sections if section.kind == "line"
-    ]
+    line_indices = [section.line_index for section in sections if section.kind == "line"]
     assert line_indices == [0, 1]
 
 
 def test_radio_pointing_point_mode_stays_on_legacy_point_path(monkeypatch):
-    spec = DummySpec(
-        [PointWaypoint("RP-point")], use_scan_block=True, merge_scan_blocks=True
-    )
+    spec = DummySpec([PointWaypoint("RP-point")], use_scan_block=True, merge_scan_blocks=True)
     obs = _make_obs(spec)
 
     def fail_if_called(*args, **kwargs):
@@ -193,3 +172,5 @@ def test_radio_pointing_point_mode_stays_on_legacy_point_path(monkeypatch):
     antenna_calls = [call for call in obs.com.calls if call[0] == "antenna"]
     assert [call[1] for call in antenna_calls] == ["point"]
     assert not any(call[0] == "scan_block" for call in obs.com.calls)
+
+

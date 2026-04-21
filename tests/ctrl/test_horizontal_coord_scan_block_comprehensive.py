@@ -82,21 +82,6 @@ def test_convert_scan_block_section_maps_all_supported_kinds_and_optional_fields
     assert final.kind == "final_standby"
     assert final.duration == 2.5
 
-    handoff_turn = MODULE.HorizontalCoord._convert_scan_block_section(
-        hc,
-        _sec(MSG.HANDOFF_TURN, start=(1.1, 0.0), stop=(-0.1, 0.2), label="handoff:0->1", line_index=1, turn_radius_hint=0.3),
-    )
-    assert handoff_turn.kind == "handoff_turn"
-    assert handoff_turn.turn_radius_hint == 0.3
-
-    handoff_standby = MODULE.HorizontalCoord._convert_scan_block_section(
-        hc,
-        _sec(MSG.HANDOFF_STANDBY, start=(1.0, 0.2), stop=(0.0, 0.2), speed=0.5, margin=0.1, label="L1:handoff_standby", line_index=1),
-    )
-    assert handoff_standby.kind == "handoff_standby"
-    assert handoff_standby.speed == 0.5
-    assert handoff_standby.margin == 0.1
-
 
 def test_parse_scan_block_cmd_rejects_mixed_section_frames():
     hc = _hc()
@@ -144,23 +129,3 @@ def test_parse_scan_block_cmd_attaches_generator_with_reference_offset_and_obsfr
     assert kwargs["offset"] == (0.1, -0.2, "altaz")
     assert kwargs["cos_correction"] is True
     assert kwargs["sections"][0].kind == "line"
-
-
-def test_horizontal_coord_wire_kind_map_covers_all_decodeable_message_kinds():
-    expected = {
-        int(MSG.FIRST_STANDBY): "initial_standby",
-        int(MSG.ACCELERATE): "accelerate",
-        int(MSG.LINE): "line",
-        int(MSG.TURN): "turn",
-        int(MSG.HANDOFF_TURN): "handoff_turn",
-        int(MSG.DECELERATE): "decelerate",
-        int(MSG.FINAL_STANDBY): "final_standby",
-        int(MSG.HANDOFF_STANDBY): "handoff_standby",
-    }
-    assert MODULE.HorizontalCoord._SCAN_BLOCK_KIND_MAP == expected
-
-
-def test_convert_scan_block_section_rejects_move_to_entry_wire_kind():
-    hc = _hc()
-    with pytest.raises(ValueError, match="MOVE_TO_ENTRY"):
-        MODULE.HorizontalCoord._convert_scan_block_section(hc, _sec(MSG.MOVE_TO_ENTRY))

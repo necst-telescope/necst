@@ -201,7 +201,7 @@ class FileBasedObservation(Observation):
                 point_kwargs.update(
                     target=(entry_offset[0], entry_offset[1], waypoint.scan_frame)
                 )
-        self.logger.info("Move to scan-block entry...")
+        self.logger.info("Move to scan-block entry standby...")
         self.com.antenna("point", **point_kwargs)
 
     def _run_on_scan_block(
@@ -213,8 +213,6 @@ class FileBasedObservation(Observation):
         margin_deg: float,
         include_final_standby: bool,
         final_standby_duration_sec: float,
-        next_entry_line=None,
-        entry_already_ready: bool = False,
     ) -> None:
         lines = [
             self._make_scan_block_line(wp, frag, margin_deg, line_index=i)
@@ -222,15 +220,13 @@ class FileBasedObservation(Observation):
         ]
         self._preflight_scan_block_kinematics(lines)
         first_waypoint = waypoints[0]
-        if not entry_already_ready:
-            self._move_to_scan_block_entry(first_waypoint, line=lines[0], cos_scan=cos_scan)
+        self._move_to_scan_block_entry(first_waypoint, line=lines[0], cos_scan=cos_scan)
         sections = build_scan_block_sections(
             lines,
-            include_initial_standby=False,
+            include_initial_standby=True,
             include_final_decelerate=True,
             include_final_standby=include_final_standby,
             final_standby_duration=final_standby_duration_sec,
-            next_entry_line=next_entry_line,
         )
         scan_kwargs = self._scan_context_kwargs(first_waypoint, cos_scan=cos_scan)
         block_id = str(first_waypoint.id)
@@ -241,7 +237,6 @@ class FileBasedObservation(Observation):
         self.com.scan_block(
             sections=sections,
             scan_frame=first_waypoint.scan_frame,
-            prewait=False,
             **scan_kwargs,
         )
         self.com.metadata("set", position="", id="")
@@ -309,7 +304,6 @@ class FileBasedObservation(Observation):
 
         all_waypoints = list(self.obsspec)
         self.com.record("file", name=file)
-        entry_ready_index = None
         i = 0
         while i < len(all_waypoints):
             waypoint = all_waypoints[i]
@@ -380,23 +374,8 @@ class FileBasedObservation(Observation):
                         continue
 
                     current_scan_frag = scan_frag
-                    next_scan_frag = (-current_scan_frag) if bydirectional else current_scan_frag
                     if bydirectional:
                         scan_frag *= -1
-                    next_entry_line = None
-                    if (i + 1) < len(all_waypoints):
-                        cand = all_waypoints[i + 1]
-                        if (
-                            self._scan_block_supported_for_waypoint(cand, use_scan_block=use_scan_block)
-                            and (self._scan_block_context_signature(cand) == self._scan_block_context_signature(waypoint))
-                        ):
-                            next_entry_line = self._make_scan_block_line(
-                                cand,
-                                next_scan_frag,
-                                margin,
-                                line_index=0,
-                            )
-                    entry_already_ready = (entry_ready_index == i)
                     self._run_on_scan_block(
                         [waypoint],
                         scan_frags=[current_scan_frag],
@@ -404,10 +383,7 @@ class FileBasedObservation(Observation):
                         margin_deg=margin,
                         include_final_standby=scan_block_final_standby,
                         final_standby_duration_sec=scan_block_final_standby_duration_sec,
-                        next_entry_line=next_entry_line,
-                        entry_already_ready=entry_already_ready,
                     )
-                    entry_ready_index = (i + 1) if (next_entry_line is not None) else None
                     i += 1
                     continue
 

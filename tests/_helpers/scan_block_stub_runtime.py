@@ -317,8 +317,6 @@ def load_horizontal_coord_module(repo_root: Path):
         TURN = 4
         DECELERATE = 5
         FINAL_STANDBY = 6
-        HANDOFF_TURN = 7
-        HANDOFF_STANDBY = 8
     msgs.Boolean = Boolean
     msgs.ControlStatus = ControlStatus
     msgs.CoordMsg = CoordMsg
@@ -476,8 +474,6 @@ def load_commander_module(repo_root: Path):
         TURN = 4
         DECELERATE = 5
         FINAL_STANDBY = 6
-        HANDOFF_TURN = 7
-        HANDOFF_STANDBY = 8
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
     msgs.ScanBlockSection = ScanBlockSection
