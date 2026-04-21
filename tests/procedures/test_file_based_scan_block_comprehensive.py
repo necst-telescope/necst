@@ -201,3 +201,34 @@ def test_hot_off_pair_execution_is_shared_across_observation_modes(observation_t
         ("off", 1.0, "CAL0"),
     ]
     assert executed[2] == ("on", 1.0, "ON0")
+
+
+def test_legacy_scan_metadata_is_delayed_until_scan_control_start():
+    spec = DummySpec([Waypoint("L0")], use_scan_block=False)
+    obs = _make_obs(spec)
+
+    obs.run("dummy.obs")
+
+    antenna_calls = [call for call in obs.com.calls if call[0] == "antenna"]
+    metadata_calls = [call for call in obs.com.calls if call[0] == "metadata"]
+
+    assert len(antenna_calls) == 2
+    assert antenna_calls[0][1] == "point"
+    assert antenna_calls[1] == (
+        "antenna",
+        "scan",
+        {
+            "start": (0.0, 0.0),
+            "stop": (1.0, 0.0),
+            "scan_frame": "altaz",
+            "speed": 0.5,
+            "unit": "deg",
+            "cos_correction": False,
+            "reference": (30.0, 45.0, "altaz"),
+            "metadata_position": "ON",
+            "metadata_id": "L0",
+        },
+    )
+    assert metadata_calls == [
+        ("metadata", "set", {"position": "", "id": ""})
+    ]

@@ -190,3 +190,49 @@ def test_commander_scan_block_metadata_is_delayed_until_after_prewait(monkeypatc
     ]
     assert len(meta_publisher.messages) == 1
     assert len(publisher.messages) == 1
+
+
+def test_commander_scan_metadata_is_delayed_until_after_prewait(monkeypatch):
+    com = MODULE.Commander.__new__(MODULE.Commander)
+    com.logger = FakeLogger()
+    publisher = DummyPublisher()
+    meta_publisher = DummyPublisher()
+    com.publisher = {"cmd_trans": publisher, "spectra_meta": meta_publisher}
+    com.client = {"raw_coord": object()}
+
+    call_order = []
+
+    def fake_send_request(req, client):
+        call_order.append(("scan", req))
+        return SimpleNamespace(id="scan-44")
+
+    def fake_wait(target, mode="error", id=None):
+        call_order.append(("wait", target, mode, id))
+
+    monkeypatch.setattr(com, "_send_request", fake_send_request, raising=False)
+    monkeypatch.setattr(com, "wait", fake_wait)
+
+    out = MODULE.Commander.antenna(
+        com,
+        "scan",
+        start=(0.0, 0.0),
+        stop=(1.0, 0.0),
+        reference=(30.0, 45.0, "fk5"),
+        scan_frame="altaz",
+        unit="deg",
+        speed=0.5,
+        margin=0.1,
+        metadata_position="ON",
+        metadata_id="ON-0",
+        wait=False,
+    )
+
+    assert out == "scan-44"
+    assert [step[:3] if step[0] == "wait" else (step[0],) for step in call_order] == [
+        ("scan",),
+        ("wait", "antenna", "error"),
+    ]
+    assert len(meta_publisher.messages) == 1
+    assert meta_publisher.messages[0].position == "ON"
+    assert meta_publisher.messages[0].id == "ON-0"
+    assert len(publisher.messages) == 1

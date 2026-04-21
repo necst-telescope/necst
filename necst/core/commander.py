@@ -224,6 +224,8 @@ class Commander(PrivilegedNode):
         wait: bool = True,
         speed: Optional[Union[int, float]] = None,
         margin: Optional[float] = None,
+        metadata_position: Optional[str] = None,
+        metadata_id: Optional[str] = None,
         direct_mode: bool = False,
         cos_correction: bool = False,
     ) -> None:
@@ -452,6 +454,13 @@ class Commander(PrivilegedNode):
             self.logger.warning(f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}")
             self.wait("antenna")
             ts = pytime.time()
+            if metadata_position is not None or metadata_id is not None:
+                self.metadata(
+                    "set",
+                    position=metadata_position,
+                    id=metadata_id,
+                    time=ts,
+                )
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
             self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={ts:.6f}")
             if wait:

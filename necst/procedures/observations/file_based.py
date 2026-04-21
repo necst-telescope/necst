@@ -434,8 +434,12 @@ class FileBasedObservation(Observation):
                         )
 
                     self.logger.info("Starting ON...")
-                    self.com.metadata("set", position="ON", id=waypoint.id)
-                    self.com.antenna("scan", **kwargs)
+                    self.com.antenna(
+                        "scan",
+                        metadata_position="ON",
+                        metadata_id=waypoint.id,
+                        **kwargs,
+                    )
                     self.com.metadata("set", position="", id="")
                 else:
                     self.com.antenna("point", **kwargs)
