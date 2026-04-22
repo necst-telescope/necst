@@ -220,6 +220,7 @@ class FileBasedObservation(Observation):
         ]
         self._preflight_scan_block_kinematics(lines)
         first_waypoint = waypoints[0]
+        self._move_to_scan_block_entry(first_waypoint, line=lines[0], cos_scan=cos_scan)
         sections = build_scan_block_sections(
             lines,
             include_initial_standby=True,
@@ -232,10 +233,11 @@ class FileBasedObservation(Observation):
         self.logger.info(
             f"Starting ON (scan_block, n_lines={len(lines)})..."
         )
-        self.com.metadata("set", position="ON", id=block_id)
         self.com.scan_block(
             sections=sections,
             scan_frame=first_waypoint.scan_frame,
+            metadata_position="ON",
+            metadata_id=block_id,
             **scan_kwargs,
         )
         self.com.metadata("set", position="", id="")
