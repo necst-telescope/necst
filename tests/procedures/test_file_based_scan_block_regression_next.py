@@ -102,7 +102,7 @@ def test_radio_pointing_scan_mode_uses_scan_block_when_requested(monkeypatch):
     obs.run("dummy.obs")
 
     antenna_calls = [call for call in obs.com.calls if call[0] == "antenna"]
-    assert [call[1] for call in antenna_calls] == ["point"]
+    assert antenna_calls == []
     assert len(preflight_lines) == 1
     assert len([call for call in obs.com.calls if call[0] == "scan_block"]) == 1
     assert not any(call[0] == "antenna" and call[1] == "scan" for call in obs.com.calls)
@@ -145,6 +145,9 @@ def test_radio_pointing_scan_mode_can_merge_xy_pair(monkeypatch):
     obs.run("dummy.obs")
 
     assert len(captured["lines"]) == 2
+    assert captured["build_kwargs"]["include_move_to_entry"] is True
+    assert captured["build_kwargs"]["move_to_entry_point"] == MODULE.margin_start_of(captured["lines"][0])
+    assert captured["build_kwargs"]["include_initial_standby"] is False
     assert captured["build_kwargs"]["include_final_standby"] is True
     assert captured["build_kwargs"]["final_standby_duration"] == 1.5
     scan_block_calls = [call for call in obs.com.calls if call[0] == "scan_block"]

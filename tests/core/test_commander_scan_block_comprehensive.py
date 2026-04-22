@@ -82,3 +82,48 @@ def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_
     assert req.lon == [30.0]
     assert req.lat == [45.0]
     assert req.frame == "fk5"
+
+
+def test_commander_scan_block_encodes_move_to_entry_kind(monkeypatch):
+    com = MODULE.Commander.__new__(MODULE.Commander)
+    com.logger = FakeLogger()
+    publisher = DummyPublisher()
+    com.publisher = {"cmd_trans": publisher}
+    com.client = {"scan_block": object()}
+
+    captured = {}
+
+    def fake_send_request(req, client):
+        captured["req"] = req
+        return SimpleNamespace(id="blk-move")
+
+    monkeypatch.setattr(com, "_send_request", fake_send_request, raising=False)
+    monkeypatch.setattr(com, "wait", lambda *a, **k: None)
+
+    section = DummySection(
+        kind="move_to_entry",
+        tight=False,
+        label="L0:move_to_entry",
+        line_index=0,
+        start=(q(-0.1), q(0.0)),
+        stop=(q(-0.1), q(0.0)),
+        speed=None,
+        margin=None,
+        duration=q(1.0, "s"),
+        turn_radius_hint=None,
+    )
+
+    MODULE.Commander.scan_block(
+        com,
+        sections=[section],
+        scan_frame="altaz",
+        reference=(30.0, 45.0, "fk5"),
+        unit="deg",
+        wait=False,
+    )
+
+    req = captured["req"]
+    assert req.sections[0].kind == MODULE.ScanBlockSection.MOVE_TO_ENTRY
+    assert req.sections[0].duration_hint == 1.0
+    assert req.sections[0].speed == 0.0
+    assert req.sections[0].margin == 0.0

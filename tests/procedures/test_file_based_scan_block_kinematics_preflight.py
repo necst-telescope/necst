@@ -55,7 +55,6 @@ def test_preflight_logs_single_line_edge_slowdown_and_allows_execution(monkeypat
     line = SimpleNamespace(start=(q(0.0), q(0.0)), stop=(q(1.0), q(0.0)), speed=q(0.7, "deg/s"), margin=q(0.1), label="L0", line_index=0)
     monkeypatch.setattr(MODULE.OTF, "_make_scan_block_line", lambda self, wp, frag, margin_deg, line_index: line)
     monkeypatch.setattr(MODULE, "build_scan_block_sections", lambda lines, **kwargs: ["SEC"])
-    monkeypatch.setattr(MODULE.OTF, "_move_to_scan_block_entry", lambda self, wp, line, cos_scan: None)
     monkeypatch.setattr(MODULE, "plan_scan_block_kinematics", lambda lines: {
         "limits": SimpleNamespace(max_acceleration=q(1.6, "deg/s^2")),
         "lines": [{
@@ -76,7 +75,6 @@ def test_preflight_logs_turn_slowdown_and_allows_execution(monkeypatch):
     line1 = SimpleNamespace(start=(q(1.0), q(0.2)), stop=(q(0.0), q(0.2)), speed=q(0.5, "deg/s"), margin=q(0.1), label="L1", line_index=1)
     monkeypatch.setattr(MODULE.OTF, "_make_scan_block_line", lambda self, wp, frag, margin_deg, line_index: [line0, line1][line_index])
     monkeypatch.setattr(MODULE, "build_scan_block_sections", lambda lines, **kwargs: ["SEC"])
-    monkeypatch.setattr(MODULE.OTF, "_move_to_scan_block_entry", lambda self, wp, line, cos_scan: None)
     monkeypatch.setattr(MODULE, "plan_scan_block_kinematics", lambda lines: {
         "limits": SimpleNamespace(max_acceleration=q(1.6, "deg/s^2")),
         "lines": [

@@ -502,6 +502,7 @@ class Commander(PrivilegedNode):
             return float(value)
 
         kind_map = {
+            "move_to_entry": ScanBlockSection.MOVE_TO_ENTRY,
             "initial_standby": ScanBlockSection.FIRST_STANDBY,
             "accelerate": ScanBlockSection.ACCELERATE,
             "line": ScanBlockSection.LINE,

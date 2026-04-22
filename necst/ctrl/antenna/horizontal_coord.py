@@ -70,7 +70,7 @@ class HorizontalCoord(AlertHandlerNode):
         self._gen_lock = threading.RLock()
 
         self._min_buffer_sec = 0.5
-        self._max_buffer_sec = 3.0
+        self._max_buffer_sec = 0.5
         self._max_groups_per_convert = 10
 
         self.tracking_ok = False
@@ -239,6 +239,7 @@ class HorizontalCoord(AlertHandlerNode):
         return "(" + ", ".join(pieces) + ")"
 
     _SCAN_BLOCK_KIND_MAP: Dict[int, str] = {
+        int(ScanBlockSectionMsg.MOVE_TO_ENTRY): "move_to_entry",
         int(ScanBlockSectionMsg.FIRST_STANDBY): "initial_standby",
         int(ScanBlockSectionMsg.ACCELERATE): "accelerate",
         int(ScanBlockSectionMsg.LINE): "line",
@@ -250,11 +251,6 @@ class HorizontalCoord(AlertHandlerNode):
     def _convert_scan_block_section(
         self, msg: ScanBlockSectionMsg
     ) -> FinderScanBlockSection:
-        if int(msg.kind) == int(ScanBlockSectionMsg.MOVE_TO_ENTRY):
-            raise ValueError(
-                "MOVE_TO_ENTRY is not accepted by control-side scan_block. "
-                "Use a separate point/move execution before the ON block."
-            )
         try:
             kind = self._SCAN_BLOCK_KIND_MAP[int(msg.kind)]
         except KeyError as exc:

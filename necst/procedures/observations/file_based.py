@@ -182,27 +182,8 @@ class FileBasedObservation(Observation):
                     msg += f", peak_jerk={item['peak_jerk'].to_value('deg/s^3'):.6f} deg/s^3"
                 self.logger.info(msg)
 
-    def _move_to_scan_block_entry(self, waypoint, *, line: ScanBlockLine, cos_scan: bool) -> None:
-        entry = margin_start_of(line)
-        entry_offset = self._combined_entry_offset(entry, waypoint)
-        point_kwargs = dict(unit="deg", cos_correction=cos_scan)
-        if waypoint.name_query:
-            point_kwargs.update(name=waypoint.target or waypoint.reference)
-            point_kwargs.update(offset=entry_offset)
-        else:
-            _target, _reference = waypoint.target, waypoint.reference
-            target = self._coord_to_tuple(_target) if _target else None
-            reference = self._coord_to_tuple(_reference) if _reference else None
-            if target is not None:
-                point_kwargs.update(target=target, offset=entry_offset)
-            elif reference is not None:
-                point_kwargs.update(target=reference, offset=entry_offset)
-            else:
-                point_kwargs.update(
-                    target=(entry_offset[0], entry_offset[1], waypoint.scan_frame)
-                )
-        self.logger.info("Move to scan-block entry standby...")
-        self.com.antenna("point", **point_kwargs)
+    def _scan_block_move_to_entry_point(self, line: ScanBlockLine):
+        return margin_start_of(line)
 
     def _run_on_scan_block(
         self,
@@ -220,10 +201,12 @@ class FileBasedObservation(Observation):
         ]
         self._preflight_scan_block_kinematics(lines)
         first_waypoint = waypoints[0]
-        self._move_to_scan_block_entry(first_waypoint, line=lines[0], cos_scan=cos_scan)
+        entry_point = self._scan_block_move_to_entry_point(lines[0])
         sections = build_scan_block_sections(
             lines,
-            include_initial_standby=True,
+            include_move_to_entry=True,
+            move_to_entry_point=entry_point,
+            include_initial_standby=False,
             include_final_decelerate=True,
             include_final_standby=include_final_standby,
             final_standby_duration=final_standby_duration_sec,
