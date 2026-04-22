@@ -83,7 +83,6 @@ def test_run_on_scan_block_order_and_final_standby_forwarding(monkeypatch):
     line = SimpleNamespace(start=(q(-0.1), q(0.0)), stop=(q(1.0), q(0.0)), speed=q(0.5, "deg/s"), margin=q(0.1), label="L0", line_index=0)
     monkeypatch.setattr(MODULE.OTF, "_make_scan_block_line", lambda self, wp, frag, margin_deg, line_index: line)
     monkeypatch.setattr(MODULE, "build_scan_block_sections", lambda lines, **kwargs: calls.append(("build", kwargs)) or ["SEC"])
-    monkeypatch.setattr(MODULE.OTF, "_move_to_scan_block_entry", lambda self, wp, line, cos_scan: calls.append(("move", wp.id, cos_scan, line.label)))
 
     obs._run_on_scan_block(
         [spec[0]],
@@ -94,10 +93,10 @@ def test_run_on_scan_block_order_and_final_standby_forwarding(monkeypatch):
         final_standby_duration_sec=2.5,
     )
 
-    assert calls[0] == ("move", "L0", True, "L0")
-    assert calls[1][0] == "build"
-    assert calls[1][1]["include_final_standby"] is True
-    assert calls[1][1]["final_standby_duration"] == 2.5
+    assert calls[0][0] == "build"
+    assert calls[0][1]["include_initial_standby"] is True
+    assert calls[0][1]["include_final_standby"] is True
+    assert calls[0][1]["final_standby_duration"] == 2.5
     assert [c[0] for c in obs.com.calls] == ["metadata", "scan_block", "metadata"]
     assert obs.com.calls[0][2] == {"position": "ON", "id": "L0"}
     assert obs.com.calls[1][1]["sections"] == ["SEC"]

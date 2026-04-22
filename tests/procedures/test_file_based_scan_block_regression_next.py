@@ -102,7 +102,7 @@ def test_radio_pointing_scan_mode_uses_scan_block_when_requested(monkeypatch):
     obs.run("dummy.obs")
 
     antenna_calls = [call for call in obs.com.calls if call[0] == "antenna"]
-    assert [call[1] for call in antenna_calls] == ["point"]
+    assert antenna_calls == []
     assert len(preflight_lines) == 1
     assert len([call for call in obs.com.calls if call[0] == "scan_block"]) == 1
     assert not any(call[0] == "antenna" and call[1] == "scan" for call in obs.com.calls)
