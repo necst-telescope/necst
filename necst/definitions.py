@@ -280,6 +280,7 @@ class service:
         DomeSync,
         File,
         ObservationMode,
+        ScanBlockCommand,
     )
     from std_srvs.srv import Empty
 
@@ -290,6 +291,7 @@ class service:
     record_file = Service(File, "record_file", namespace.core)
     com_delay = Service(ComDelaySrv, "com_delay", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
+    scan_block = Service(ScanBlockCommand, "scan_block", namespace.antenna)
     dome_coord = Service(CoordinateCommand, "dome_coord", namespace.dome)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)

@@ -96,13 +96,11 @@ def test_run_on_scan_block_order_and_final_standby_forwarding(monkeypatch):
 
     assert calls[0] == ("move", "L0", True, "L0")
     assert calls[1][0] == "build"
-    assert calls[1][1]["include_initial_standby"] is False
     assert calls[1][1]["include_final_standby"] is True
     assert calls[1][1]["final_standby_duration"] == 2.5
     assert [c[0] for c in obs.com.calls] == ["metadata", "scan_block", "metadata"]
     assert obs.com.calls[0][2] == {"position": "ON", "id": "L0"}
     assert obs.com.calls[1][1]["sections"] == ["SEC"]
-    assert obs.com.calls[1][1]["prewait"] is False
     assert obs.com.calls[2][2] == {"position": "", "id": ""}
 
 
@@ -110,13 +108,6 @@ def test_non_merge_scan_blocks_bydirectional_runs_individual_blocks(monkeypatch)
     spec = DummySpec([Waypoint("L0"), Waypoint("L1"), Waypoint("L2")], use_scan_block=True, merge_scan_blocks=False, bydirectional=1)
     obs = _make_obs(spec)
     seen = []
-    monkeypatch.setattr(
-        MODULE.OTF,
-        "_make_scan_block_line",
-        lambda self, wp, frag, margin_deg, line_index: SimpleNamespace(
-            start=(q(0.0), q(0.0)), stop=(q(1.0), q(0.0)), speed=q(0.5, "deg/s"), margin=q(0.1), label=wp.id, line_index=line_index
-        ),
-    )
     monkeypatch.setattr(MODULE.OTF, "_run_on_scan_block", lambda self, waypoints, *, scan_frags, **kwargs: seen.append(([wp.id for wp in waypoints], list(scan_frags))))
     obs.run("dummy.obs")
     assert seen == [(["L0"], [1]), (["L1"], [-1]), (["L2"], [1])]
@@ -208,56 +199,3 @@ def test_hot_off_pair_execution_is_shared_across_observation_modes(observation_t
         ("off", 1.0, "CAL0"),
     ]
     assert executed[2] == ("on", 1.0, "ON0")
-
-
-def test_run_on_scan_block_can_skip_move_when_entry_is_already_ready(monkeypatch):
-    spec = DummySpec([Waypoint("L0")])
-    obs = _make_obs(spec)
-    calls = []
-
-    line = SimpleNamespace(start=(q(-0.1), q(0.0)), stop=(q(1.0), q(0.0)), speed=q(0.5, "deg/s"), margin=q(0.1), label="L0", line_index=0)
-    next_line = SimpleNamespace(start=(q(1.0), q(0.2)), stop=(q(0.0), q(0.2)), speed=q(0.5, "deg/s"), margin=q(0.1), label="L1", line_index=0)
-    monkeypatch.setattr(MODULE.OTF, "_make_scan_block_line", lambda self, wp, frag, margin_deg, line_index: line)
-    monkeypatch.setattr(MODULE, "build_scan_block_sections", lambda lines, **kwargs: calls.append(("build", kwargs)) or ["SEC"])
-    monkeypatch.setattr(MODULE.OTF, "_move_to_scan_block_entry", lambda self, wp, line, cos_scan: calls.append(("move", wp.id)))
-
-    obs._run_on_scan_block(
-        [spec[0]],
-        scan_frags=[1],
-        cos_scan=True,
-        margin_deg=0.1,
-        include_final_standby=False,
-        final_standby_duration_sec=1.0,
-        next_entry_line=next_line,
-        entry_already_ready=True,
-    )
-
-    assert calls == [("build", {
-        "include_initial_standby": False,
-        "include_final_decelerate": True,
-        "include_final_standby": False,
-        "final_standby_duration": 1.0,
-        "next_entry_line": next_line,
-    })]
-
-
-def test_non_merge_scan_blocks_prepare_next_entry_and_skip_second_move(monkeypatch):
-    spec = DummySpec([Waypoint("L0"), Waypoint("L1")], use_scan_block=True, merge_scan_blocks=False, bydirectional=0)
-    obs = _make_obs(spec)
-    seen = []
-
-    def _fake_make(self, wp, frag, margin_deg, line_index):
-        y = 0.0 if wp.id == "L0" else 0.2
-        return SimpleNamespace(
-            start=(q(0.0), q(y)), stop=(q(1.0), q(y)), speed=q(0.5, "deg/s"), margin=q(0.1), label=wp.id, line_index=line_index
-        )
-
-    monkeypatch.setattr(MODULE.OTF, "_make_scan_block_line", _fake_make)
-    monkeypatch.setattr(
-        MODULE.OTF,
-        "_run_on_scan_block",
-        lambda self, waypoints, **kwargs: seen.append((waypoints[0].id, kwargs.get("entry_already_ready"), kwargs.get("next_entry_line").label if kwargs.get("next_entry_line") is not None else None)),
-    )
-
-    obs.run("dummy.obs")
-    assert seen == [("L0", False, "L1"), ("L1", True, None)]

@@ -243,10 +243,8 @@ class HorizontalCoord(AlertHandlerNode):
         int(ScanBlockSectionMsg.ACCELERATE): "accelerate",
         int(ScanBlockSectionMsg.LINE): "line",
         int(ScanBlockSectionMsg.TURN): "turn",
-        int(ScanBlockSectionMsg.HANDOFF_TURN): "handoff_turn",
         int(ScanBlockSectionMsg.DECELERATE): "decelerate",
         int(ScanBlockSectionMsg.FINAL_STANDBY): "final_standby",
-        int(ScanBlockSectionMsg.HANDOFF_STANDBY): "handoff_standby",
     }
 
     def _convert_scan_block_section(
