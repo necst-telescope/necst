@@ -25,8 +25,7 @@ def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_
     com = MODULE.Commander.__new__(MODULE.Commander)
     com.logger = FakeLogger()
     publisher = DummyPublisher()
-    meta_publisher = DummyPublisher()
-    com.publisher = {"cmd_trans": publisher, "spectra_meta": meta_publisher}
+    com.publisher = {"cmd_trans": publisher}
     com.client = {"scan_block": object()}
 
     call_order = []
@@ -72,7 +71,6 @@ def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_
         ("scan_block", call_order[0][1]),
         ("wait", "antenna", "error", None),
     ]
-    assert len(meta_publisher.messages) == 0
     assert len(publisher.messages) == 1
     req = call_order[0][1]
     assert req.direct_mode is True
@@ -86,89 +84,32 @@ def test_commander_scan_block_wait_false_skips_control_wait_and_forwards_offset_
     assert req.frame == "fk5"
 
 
-def test_commander_scan_block_prewait_false_skips_error_wait_before_cmd_trans(monkeypatch):
+def test_commander_scan_block_encodes_move_to_entry_kind(monkeypatch):
     com = MODULE.Commander.__new__(MODULE.Commander)
     com.logger = FakeLogger()
     publisher = DummyPublisher()
-    meta_publisher = DummyPublisher()
-    com.publisher = {"cmd_trans": publisher, "spectra_meta": meta_publisher}
+    com.publisher = {"cmd_trans": publisher}
     com.client = {"scan_block": object()}
 
-    call_order = []
+    captured = {}
 
     def fake_send_request(req, client):
-        call_order.append(("scan_block", req))
-        return SimpleNamespace(id="blk-43")
-
-    def fake_wait(target, mode="error", id=None):
-        call_order.append(("wait", target, mode, id))
+        captured["req"] = req
+        return SimpleNamespace(id="blk-move")
 
     monkeypatch.setattr(com, "_send_request", fake_send_request, raising=False)
-    monkeypatch.setattr(com, "wait", fake_wait)
+    monkeypatch.setattr(com, "wait", lambda *a, **k: None)
 
     section = DummySection(
-        kind="line",
-        tight=True,
-        label="SCI",
-        line_index=4,
-        start=(q(0.0), q(0.0)),
-        stop=(q(1.0), q(0.0)),
-        speed=q(0.5, "deg/s"),
-        margin=q(0.1),
-        duration=None,
-        turn_radius_hint=None,
-    )
-
-    out = MODULE.Commander.scan_block(
-        com,
-        sections=[section],
-        scan_frame="altaz",
-        reference=(30.0, 45.0, "fk5"),
-        unit="deg",
-        wait=False,
-        prewait=False,
-        metadata_position="ON",
-        metadata_id="blk-43",
-    )
-
-    assert out == "blk-43"
-    assert call_order == [("scan_block", call_order[0][1])]
-    assert len(meta_publisher.messages) == 1
-    assert meta_publisher.messages[0].position == "ON"
-    assert meta_publisher.messages[0].id == "blk-43"
-    assert len(publisher.messages) == 1
-
-
-def test_commander_scan_block_metadata_is_delayed_until_after_prewait(monkeypatch):
-    com = MODULE.Commander.__new__(MODULE.Commander)
-    com.logger = FakeLogger()
-    publisher = DummyPublisher()
-    meta_publisher = DummyPublisher()
-    com.publisher = {"cmd_trans": publisher, "spectra_meta": meta_publisher}
-    com.client = {"scan_block": object()}
-
-    call_order = []
-
-    def fake_send_request(req, client):
-        call_order.append(("scan_block", req))
-        return SimpleNamespace(id="blk-44")
-
-    def fake_wait(target, mode="error", id=None):
-        call_order.append(("wait", target, mode, id))
-
-    monkeypatch.setattr(com, "_send_request", fake_send_request, raising=False)
-    monkeypatch.setattr(com, "wait", fake_wait)
-
-    section = DummySection(
-        kind="line",
-        tight=True,
-        label="SCI",
-        line_index=4,
-        start=(q(0.0), q(0.0)),
-        stop=(q(1.0), q(0.0)),
-        speed=q(0.5, "deg/s"),
-        margin=q(0.1),
-        duration=None,
+        kind="move_to_entry",
+        tight=False,
+        label="L0:move_to_entry",
+        line_index=0,
+        start=(q(-0.1), q(0.0)),
+        stop=(q(-0.1), q(0.0)),
+        speed=None,
+        margin=None,
+        duration=q(1.0, "s"),
         turn_radius_hint=None,
     )
 
@@ -179,60 +120,10 @@ def test_commander_scan_block_metadata_is_delayed_until_after_prewait(monkeypatc
         reference=(30.0, 45.0, "fk5"),
         unit="deg",
         wait=False,
-        prewait=True,
-        metadata_position="ON",
-        metadata_id="blk-44",
     )
 
-    assert [step[:3] if step[0]=="wait" else (step[0],) for step in call_order] == [
-        ("scan_block",),
-        ("wait", "antenna", "error"),
-    ]
-    assert len(meta_publisher.messages) == 1
-    assert len(publisher.messages) == 1
-
-
-def test_commander_scan_metadata_is_delayed_until_after_prewait(monkeypatch):
-    com = MODULE.Commander.__new__(MODULE.Commander)
-    com.logger = FakeLogger()
-    publisher = DummyPublisher()
-    meta_publisher = DummyPublisher()
-    com.publisher = {"cmd_trans": publisher, "spectra_meta": meta_publisher}
-    com.client = {"raw_coord": object()}
-
-    call_order = []
-
-    def fake_send_request(req, client):
-        call_order.append(("scan", req))
-        return SimpleNamespace(id="scan-44")
-
-    def fake_wait(target, mode="error", id=None):
-        call_order.append(("wait", target, mode, id))
-
-    monkeypatch.setattr(com, "_send_request", fake_send_request, raising=False)
-    monkeypatch.setattr(com, "wait", fake_wait)
-
-    out = MODULE.Commander.antenna(
-        com,
-        "scan",
-        start=(0.0, 0.0),
-        stop=(1.0, 0.0),
-        reference=(30.0, 45.0, "fk5"),
-        scan_frame="altaz",
-        unit="deg",
-        speed=0.5,
-        margin=0.1,
-        metadata_position="ON",
-        metadata_id="ON-0",
-        wait=False,
-    )
-
-    assert out == "scan-44"
-    assert [step[:3] if step[0] == "wait" else (step[0],) for step in call_order] == [
-        ("scan",),
-        ("wait", "antenna", "error"),
-    ]
-    assert len(meta_publisher.messages) == 1
-    assert meta_publisher.messages[0].position == "ON"
-    assert meta_publisher.messages[0].id == "ON-0"
-    assert len(publisher.messages) == 1
+    req = captured["req"]
+    assert req.sections[0].kind == MODULE.ScanBlockSection.MOVE_TO_ENTRY
+    assert req.sections[0].duration_hint == 1.0
+    assert req.sections[0].speed == 0.0
+    assert req.sections[0].margin == 0.0
