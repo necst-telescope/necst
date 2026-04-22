@@ -563,8 +563,8 @@ class Commander(PrivilegedNode):
         res = self._send_request(req, self.client["scan_block"])
         self.logger.warning(f"SCAN_BLOCK id={res.id}, now={pytime.time():.6f}")
         self.wait("antenna")
-        if metadata_position is not None:
-            self.metadata("set", position=metadata_position, id=metadata_id)
+        # if metadata_position is not None:
+        #     self.metadata("set", position=metadata_position, id=metadata_id)
         ts = pytime.time()
         self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
         self.logger.warning(f"cmd_trans sent for scan_block id={res.id}, now={ts:.6f}")
