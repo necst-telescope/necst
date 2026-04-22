@@ -22,13 +22,21 @@ from necst_msgs.msg import (
     MirrorMsg,
     PIDMsg,
     RecordMsg,
+    ScanBlockSection,
     Sampling,
     SISBias,
     Spectral,
     TimeOnly,
     TPModeMsg,
 )
-from necst_msgs.srv import CCDCommand, ComDelaySrv, CoordinateCommand, DomeSync, File
+from necst_msgs.srv import (
+    CCDCommand,
+    ComDelaySrv,
+    CoordinateCommand,
+    DomeSync,
+    File,
+    ScanBlockCommand,
+)
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 
@@ -124,6 +132,7 @@ class Commander(PrivilegedNode):
             "record_file": service.record_file.client(self),
             "com_delay": service.com_delay.client(self),
             "raw_coord": service.raw_coord.client(self),
+            "scan_block": service.scan_block.client(self),
             "dome_coord": service.dome_coord.client(self),
             "ccd_cmd": service.ccd_cmd.client(self),
             "dome_sync": service.dome_sync.client(self),
@@ -457,6 +466,111 @@ class Commander(PrivilegedNode):
             return self.get_message("encoder", timeout_sec=10)
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+    @require_privilege(escape_cmd=["?", "stop", "error"])
+    def scan_block(
+        self,
+        *,
+        sections,
+        scan_frame: str,
+        target: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        reference: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        offset: Optional[Tuple[Union[int, float], Union[int, float], str]] = None,
+        unit: Optional[str] = None,
+        name: Optional[str] = None,
+        wait: bool = True,
+        prewait: bool = True,
+        direct_mode: bool = False,
+        cos_correction: bool = False,
+        obsfreq: Optional[Union[int, float]] = None,
+    ) -> str:
+        unit_name = unit or "deg"
+
+        def _to_value_pair(pair, value_unit: str):
+            out = []
+            for v in pair:
+                if hasattr(v, "to_value"):
+                    out.append(float(v.to_value(value_unit)))
+                else:
+                    out.append(float(v))
+            return out
+
+        def _to_value_scalar(value, value_unit: str, default: float = 0.0) -> float:
+            if value is None:
+                return float(default)
+            if hasattr(value, "to_value"):
+                return float(value.to_value(value_unit))
+            return float(value)
+
+        kind_map = {
+            "initial_standby": ScanBlockSection.FIRST_STANDBY,
+            "accelerate": ScanBlockSection.ACCELERATE,
+            "line": ScanBlockSection.LINE,
+            "turn": ScanBlockSection.TURN,
+            "handoff_turn": ScanBlockSection.HANDOFF_TURN,
+            "decelerate": ScanBlockSection.DECELERATE,
+            "final_decelerate": ScanBlockSection.DECELERATE,
+            "final_standby": ScanBlockSection.FINAL_STANDBY,
+            "handoff_standby": ScanBlockSection.HANDOFF_STANDBY,
+        }
+
+        req_sections = []
+        for section in sections:
+            kind = getattr(section, "kind")
+            if kind not in kind_map:
+                raise ValueError(f"Unsupported scan_block section kind: {kind!r}")
+            stop = getattr(section, "stop", None)
+            duration = getattr(section, "duration", None)
+            req_sections.append(
+                ScanBlockSection(
+                    kind=kind_map[kind],
+                    tight=bool(getattr(section, "tight", False)),
+                    label=str(getattr(section, "label", ""))[:64],
+                    line_index=int(getattr(section, "line_index", -1)),
+                    start=_to_value_pair(getattr(section, "start"), unit_name),
+                    stop=_to_value_pair(stop if stop is not None else getattr(section, "start"), unit_name),
+                    frame=str(scan_frame),
+                    speed=_to_value_scalar(getattr(section, "speed", None), f"{unit_name}/s", 0.0),
+                    margin=_to_value_scalar(getattr(section, "margin", None), unit_name, 0.0),
+                    duration_hint=_to_value_scalar(duration, "s", 0.0),
+                    turn_radius_hint=_to_value_scalar(getattr(section, "turn_radius_hint", None), unit_name, 0.0),
+                )
+            )
+
+        req_kwargs = dict(
+            unit=unit_name,
+            direct_mode=bool(direct_mode),
+            cos_correction=bool(cos_correction),
+            obsfreq=0.0 if obsfreq is None else float(obsfreq),
+            sections=req_sections,
+        )
+        if name is not None:
+            req_kwargs.update(name=name)
+        elif target is not None or reference is not None:
+            given_as = reference if target is None else target
+            req_kwargs.update(
+                lon=[float(given_as[0])],
+                lat=[float(given_as[1])],
+                frame=given_as[2],
+            )
+        if offset is not None:
+            req_kwargs.update(
+                offset_lon=[float(offset[0])],
+                offset_lat=[float(offset[1])],
+                offset_frame=offset[2],
+            )
+
+        req = ScanBlockCommand.Request(**req_kwargs)
+        res = self._send_request(req, self.client["scan_block"])
+        self.logger.warning(f"SCAN_BLOCK id={res.id}, now={pytime.time():.6f}")
+        if prewait:
+            self.wait("antenna")
+        ts = pytime.time()
+        self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
+        self.logger.warning(f"cmd_trans sent for scan_block id={res.id}, now={ts:.6f}")
+        if wait:
+            self.wait("antenna", mode="control", id=res.id)
+        return res.id
 
     @require_privilege(escape_cmd=["?", "stop", "error", "close"])
     def dome(
