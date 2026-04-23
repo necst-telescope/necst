@@ -400,7 +400,7 @@ class Commander(PrivilegedNode):
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
-                self.wait("antenna", mode="error", id=res.id)
+                self.wait("antenna")
             return res.id
 
         elif CMD == "SCAN":
@@ -450,7 +450,7 @@ class Commander(PrivilegedNode):
             req = CoordinateCommand.Request(**scan_kwargs)
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"SCAN raw_coord id={res.id}, now={pytime.time():.6f}")
-            self.wait("antenna", mode="error", id=res.id)
+            self.wait("antenna")
             ts = pytime.time()
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
             self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={ts:.6f}")
@@ -562,7 +562,7 @@ class Commander(PrivilegedNode):
         req = ScanBlockCommand.Request(**req_kwargs)
         res = self._send_request(req, self.client["scan_block"])
         self.logger.warning(f"SCAN_BLOCK id={res.id}, now={pytime.time():.6f}")
-        self.wait("antenna", mode="error", id=res.id)
+        self.wait("antenna")
         if metadata_position is not None:
             self.metadata("set", position=metadata_position, id=metadata_id)
         ts = pytime.time()
@@ -864,38 +864,20 @@ class Commander(PrivilegedNode):
         else:
             raise ValueError(f"Unknown target: {target!r}")
 
-        if not (TARGET == "ANTENNA" and MODE == "ERROR" and id is not None):
-            pytime.sleep(WAIT_DURATION)
+        # Drive should have delay of offset duration
+        pytime.sleep(WAIT_DURATION)
 
         start = pytime.monotonic()
         checker = ConditionChecker(10, reset_on_failure=True)
 
         if MODE == "ERROR":
-            experienced = id is None
-            effective_time = None
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
                 try:
-                    now = pytime.time()
                     error = ERROR_GETTER("error")
                     self.logger.debug(
                         f"Error={error.error:9.5f}deg [{'OK' if error.ok else 'NG'}]",
                         throttle_duration_sec=0.3,
                     )
-                    if TARGET == "ANTENNA" and id is not None:
-                        try:
-                            ctrl = self.get_message(CTRL_TOPIC, timeout_sec=0.01)
-                            if ctrl.id == id:
-                                experienced = True
-                                effective_time = ctrl.time
-                            if not experienced:
-                                pytime.sleep(0.05)
-                                continue
-                            if (effective_time is not None) and (now < effective_time):
-                                pytime.sleep(min(0.05, max(0.0, effective_time - now)))
-                                continue
-                        except NECSTTimeoutError:
-                            pytime.sleep(0.05)
-                            continue
                     if checker.check(error.ok):
                         self.logger.debug("Tracking OK")
                         return
