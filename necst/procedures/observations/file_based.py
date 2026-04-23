@@ -202,7 +202,7 @@ class FileBasedObservation(Observation):
                     target=(entry_offset[0], entry_offset[1], waypoint.scan_frame)
                 )
         self.logger.info("Move to scan-block entry standby...")
-        self.com.antenna("point", **point_kwargs)
+        self.com.antenna("point", wait=False, **point_kwargs)
 
     def _run_on_scan_block(
         self,
