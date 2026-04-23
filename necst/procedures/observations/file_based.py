@@ -220,7 +220,6 @@ class FileBasedObservation(Observation):
         ]
         self._preflight_scan_block_kinematics(lines)
         first_waypoint = waypoints[0]
-        self._move_to_scan_block_entry(first_waypoint, line=lines[0], cos_scan=cos_scan)
         sections = build_scan_block_sections(
             lines,
             include_initial_standby=True,
