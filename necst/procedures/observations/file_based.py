@@ -202,7 +202,7 @@ class FileBasedObservation(Observation):
                     target=(entry_offset[0], entry_offset[1], waypoint.scan_frame)
                 )
         self.logger.info("Move to scan-block entry standby...")
-        self.com.antenna("point", **point_kwargs)
+        self.com.antenna("point", wait=False, **point_kwargs)
 
     def _run_on_scan_block(
         self,
@@ -220,7 +220,6 @@ class FileBasedObservation(Observation):
         ]
         self._preflight_scan_block_kinematics(lines)
         first_waypoint = waypoints[0]
-        self._move_to_scan_block_entry(first_waypoint, line=lines[0], cos_scan=cos_scan)
         sections = build_scan_block_sections(
             lines,
             include_initial_standby=True,
