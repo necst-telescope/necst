@@ -273,6 +273,8 @@ class topic:
 
 class service:
     from necst_msgs.srv import (
+        ApplySpectralRecordingSetup,
+        ClearSpectralRecordingSetup,
         AuthoritySrv,
         CCDCommand,
         ComDelaySrv,
@@ -281,6 +283,7 @@ class service:
         File,
         ObservationMode,
         ScanBlockCommand,
+        SetSpectralRecordingGate,
     )
     from std_srvs.srv import Empty
 
@@ -297,3 +300,12 @@ class service:
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
     dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
     dome_pid_sync = Service(DomeSync, "dome_pid_sync", namespace.dome)
+    apply_spectral_recording_setup = Service(
+        ApplySpectralRecordingSetup, "apply_spectral_recording_setup", namespace.rx
+    )
+    set_spectral_recording_gate = Service(
+        SetSpectralRecordingGate, "set_spectral_recording_gate", namespace.rx
+    )
+    clear_spectral_recording_setup = Service(
+        ClearSpectralRecordingSetup, "clear_spectral_recording_setup", namespace.rx
+    )

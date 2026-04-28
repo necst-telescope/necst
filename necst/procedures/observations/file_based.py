@@ -20,6 +20,15 @@ from neclib.coordinates.paths import (
 
 from .observation_base import Observation
 from ... import config
+from .spectral_recording_sequence import (
+    apply_setup_with_commander,
+    build_spectral_recording_observation_setup,
+    save_sidecars_with_commander,
+    set_gate_with_commander,
+    clear_setup_with_commander,
+    reject_legacy_recording_kwargs_for_setup,
+    SpectralRecordingObservationSetup,
+)
 
 
 class FileBasedObservation(Observation):
@@ -27,9 +36,67 @@ class FileBasedObservation(Observation):
 
     def __init__(self, record_name: Optional[str] = None, /, **kwargs) -> None:
         file = kwargs["file"]
+        self._obs_file = file
         self.obsspec = self.SpecParser.from_file(file)
+        self._spectral_recording_setup: Optional[SpectralRecordingObservationSetup] = None
+        self._spectral_recording_gate_open = False
         _record_name = record_name or f"{self.obsspec.target}"
         super().__init__(_record_name, **kwargs)
+
+    def before_record_controls(self) -> None:
+        params = getattr(self.obsspec, "parameters", {}) or {}
+        setup = build_spectral_recording_observation_setup(
+            params=params,
+            obs_file=self._obs_file,
+            default_setup_id=self.record_name,
+        )
+        if setup is None:
+            return
+        reject_legacy_recording_kwargs_for_setup(self._kwargs, setup)
+        apply_setup_with_commander(self.com, setup)
+        self._spectral_recording_setup = setup
+        self._spectral_recording_gate_open = False
+        self.logger.info(
+            "Applied spectral recording setup before recorder start; "
+            f"setup_id={setup.setup_id!r}, setup_hash={setup.setup_hash}"
+        )
+
+    def after_record_start(self) -> None:
+        setup = self._spectral_recording_setup
+        if setup is None:
+            return
+        save_sidecars_with_commander(self.com, setup)
+        set_gate_with_commander(self.com, setup, allow_save=True)
+        self._spectral_recording_gate_open = True
+        self.logger.info(
+            "Saved spectral recording sidecars and opened setup gate; "
+            f"n_sidecars={len(setup.sidecars)}"
+        )
+
+    def before_record_stop(self) -> None:
+        setup = self._spectral_recording_setup
+        if setup is None:
+            return
+        try:
+            if self._spectral_recording_gate_open:
+                set_gate_with_commander(self.com, setup, allow_save=False)
+                self.logger.info("Closed spectral recording setup gate before recorder stop")
+        finally:
+            self._spectral_recording_gate_open = False
+
+    def after_record_stop(self) -> None:
+        setup = self._spectral_recording_setup
+        if setup is None:
+            return
+        try:
+            clear_setup_with_commander(self.com, setup, strict=True)
+            self.logger.info("Cleared spectral recording setup after recorder stop")
+        finally:
+            self._spectral_recording_setup = None
+            self._spectral_recording_gate_open = False
+
+    def allow_legacy_recording_cleanup_controls(self) -> bool:
+        return self._spectral_recording_setup is None
 
     def _coord_to_tuple(self, coord: tuple):
         if len(coord) == 2:
