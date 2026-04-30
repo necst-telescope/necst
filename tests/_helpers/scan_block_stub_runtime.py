@@ -197,11 +197,7 @@ def load_file_based_module(repo_root: Path):
 
     return _load_source(
         "necst.procedures.observations.file_based",
-        repo_root
-        / "necst"
-        / "procedures"
-        / "observations"
-        / "file_based.py",
+        repo_root / "necst" / "procedures" / "observations" / "file_based.py",
     )
 
 
