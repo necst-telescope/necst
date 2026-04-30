@@ -70,11 +70,12 @@ class Observation(ABC):
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
                 if "ch" in self._kwargs.keys():
-                    specnames = set(
-                        [val.split(".")[0] for val in config.spectrometer.keys()]
-                    )
-                    for spec_name in specnames:
-                        self.binning(self._kwargs.pop("ch"), spec_name)
+                    if hasattr(config, "spectrometer"):
+                        specnames = set(
+                            [val.split(".")[0] for val in config.spectrometer.keys()]
+                        )
+                        for spec_name in specnames:
+                            self.binning(self._kwargs.pop("ch"), spec_name)
                 if "tp_mode" in self._kwargs or "tp_range" in self._kwargs:
                     tp_range = self._kwargs.pop("tp_range", None)
                     tp_mode = self._kwargs.pop("tp_mode", False)
