@@ -504,9 +504,7 @@ class FileBasedObservation(Observation):
                             "point",
                             target=target,
                             unit="deg",
-                            offset=(
-                                offset_position + (waypoint.scan_frame,)
-                            ),
+                            offset=(offset_position + (waypoint.scan_frame,)),
                             cos_correction=cos_scan,
                         )
 
