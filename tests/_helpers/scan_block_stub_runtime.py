@@ -198,7 +198,6 @@ def load_file_based_module(repo_root: Path):
     return _load_source(
         "necst.procedures.observations.file_based",
         repo_root
-        / "necst-main"
         / "necst"
         / "procedures"
         / "observations"
@@ -375,7 +374,7 @@ def load_horizontal_coord_module(repo_root: Path):
 
     return _load_source(
         "necst.ctrl.antenna.horizontal_coord",
-        repo_root / "necst-main" / "necst" / "ctrl" / "antenna" / "horizontal_coord.py",
+        repo_root / "necst" / "ctrl" / "antenna" / "horizontal_coord.py",
     )
 
 
@@ -627,7 +626,7 @@ def load_commander_module(repo_root: Path):
 
     return _load_source(
         "necst.core.commander",
-        repo_root / "necst-main" / "necst" / "core" / "commander.py",
+        repo_root / "necst" / "core" / "commander.py",
     )
 
 
@@ -770,5 +769,5 @@ def load_spectrometer_module(repo_root: Path):
 
     return _load_source(
         "necst.rx.spectrometer",
-        repo_root / "necst-main" / "necst" / "rx" / "spectrometer.py",
+        repo_root / "necst" / "rx" / "spectrometer.py",
     )
