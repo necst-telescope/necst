@@ -145,7 +145,8 @@ class FileBasedObservation(Observation):
                 self.logger.warning(
                     "use_scan_block requested, but falling back to legacy scan because "
                     "point-to-entry cannot combine block offset and scan offset in "
-                    f"different frames: offset_frame={offset[2]!r}, scan_frame={waypoint.scan_frame!r}."
+                    f"different frames: offset_frame={offset[2]!r}, "
+                    f"scan_frame={waypoint.scan_frame!r}."
                 )
                 return False
         return True
@@ -228,7 +229,8 @@ class FileBasedObservation(Observation):
                     "scan_block line-edge slowed for kinematic limits: "
                     f"line_index={item['line_index']} label={item['label']!r}, "
                     f"duration x{duration_scale:.3f}, "
-                    f"peak_acc={item['peak_acceleration'].to_value('deg/s^2'):.6f} deg/s^2"
+                    f"peak_acc={item['peak_acceleration'].to_value('deg/s^2'):.6f} "
+                    "deg/s^2"
                 )
                 if "peak_jerk" in item:
                     msg += f", peak_jerk={item['peak_jerk'].to_value('deg/s^3'):.6f} deg/s^3"
@@ -242,7 +244,8 @@ class FileBasedObservation(Observation):
                     f"{item['from_line_index']}->{item['to_line_index']}, "
                     f"duration x{duration_scale:.3f}, "
                     f"peak_speed={item['peak_speed'].to_value('deg/s'):.6f} deg/s, "
-                    f"peak_acc={item['peak_acceleration'].to_value('deg/s^2'):.6f} deg/s^2"
+                    f"peak_acc={item['peak_acceleration'].to_value('deg/s^2'):.6f} "
+                    "deg/s^2"
                 )
                 if "peak_jerk" in item:
                     msg += f", peak_jerk={item['peak_jerk'].to_value('deg/s^3'):.6f} deg/s^3"
@@ -437,7 +440,9 @@ class FileBasedObservation(Observation):
                             cos_scan=cos_scan,
                             margin_deg=margin,
                             include_final_standby=scan_block_final_standby,
-                            final_standby_duration_sec=scan_block_final_standby_duration_sec,
+                            final_standby_duration_sec=(
+                                scan_block_final_standby_duration_sec
+                            ),
                         )
                         scan_frag = frag
                         i = j
@@ -452,7 +457,9 @@ class FileBasedObservation(Observation):
                         cos_scan=cos_scan,
                         margin_deg=margin,
                         include_final_standby=scan_block_final_standby,
-                        final_standby_duration_sec=scan_block_final_standby_duration_sec,
+                        final_standby_duration_sec=(
+                            scan_block_final_standby_duration_sec
+                        ),
                     )
                     i += 1
                     continue
@@ -497,7 +504,9 @@ class FileBasedObservation(Observation):
                             "point",
                             target=target,
                             unit="deg",
-                            offset=offset_position + (waypoint.scan_frame,),
+                            offset=(
+                                offset_position + (waypoint.scan_frame,)
+                            ),
                             cos_correction=cos_scan,
                         )
 
