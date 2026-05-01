@@ -42,7 +42,7 @@ class HorizontalCoord(AlertHandlerNode):
 
         self.publisher = topic.altaz_cmd.publisher(self)
         topic.antenna_encoder.subscription(self, self._update_enc)
-        topic.weather.subscription(self, self._update_weather)
+        topic.weather["out"].subscription(self, self._update_weather)
         topic.antenna_cmd_transition.subscription(self, self.next)
         service.raw_coord.service(self, self._update_cmd)
 
@@ -55,6 +55,7 @@ class HorizontalCoord(AlertHandlerNode):
         self._rq_lock = threading.Lock()
         self._gen_lock = threading.RLock()
 
+        # TODO: Add the following parameters to the config
         self._min_buffer_sec = 0.5
         self._max_buffer_sec = 3.0
         self._max_groups_per_convert = 10
