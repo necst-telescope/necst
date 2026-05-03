@@ -112,6 +112,9 @@ class FileBasedObservation(Observation):
     def allow_legacy_recording_cleanup_controls(self) -> bool:
         return self._spectral_recording_setup is None
 
+    def allow_legacy_recording_startup_controls(self) -> bool:
+        return self._spectral_recording_setup is None
+
     def _coord_to_tuple(self, coord: tuple):
         if len(coord) == 2:
             return tuple(x.to_value("deg") for x in coord)

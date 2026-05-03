@@ -71,21 +71,35 @@ class Observation(ABC):
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
+                legacy_startup_allowed = self.allow_legacy_recording_startup_controls()
                 if "ch" in self._kwargs.keys():
-                    specnames = set(
-                        [val.split(".")[0] for val in config.spectrometer.keys()]
-                    )
-                    for spec_name in specnames:
-                        self.binning(self._kwargs.pop("ch"), spec_name)
+                    ch = self._kwargs.pop("ch")
+                    if legacy_startup_allowed:
+                        specnames = set(
+                            [val.split(".")[0] for val in config.spectrometer.keys()]
+                        )
+                        for spec_name in specnames:
+                            self.binning(ch, spec_name)
+                    elif ch is not None:
+                        raise ValueError(
+                            "spectral recording setup cannot be combined with legacy "
+                            f"channel binning ch={ch!r}"
+                        )
                 if "tp_mode" in self._kwargs or "tp_range" in self._kwargs:
                     tp_range = self._kwargs.pop("tp_range", None)
                     tp_mode = self._kwargs.pop("tp_mode", False)
-                    if tp_mode or tp_range:
-                        self.com.record(
-                            "tp_mode", tp_mode=True, tp_range=tp_range or []
+                    if legacy_startup_allowed:
+                        if tp_mode or tp_range:
+                            self.com.record(
+                                "tp_mode", tp_mode=True, tp_range=tp_range or []
+                            )
+                        else:
+                            self.com.record("tp_mode", tp_mode=False)
+                    elif tp_mode or tp_range:
+                        raise ValueError(
+                            "spectral recording setup cannot be combined with legacy "
+                            f"tp_mode={tp_mode!r}, tp_range={tp_range!r}"
                         )
-                    else:
-                        self.com.record("tp_mode", tp_mode=False)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
@@ -227,6 +241,15 @@ class Observation(ABC):
         File-based spectral-recording setup observations override this to prevent
         legacy controls from being sent while an active setup remains uncleared
         after an uncertain recorder-stop failure.
+        """
+        return True
+
+    def allow_legacy_recording_startup_controls(self) -> bool:
+        """Whether startup may send legacy recorder-control commands.
+
+        File-based spectral-recording setup mode overrides this after setup
+        application so inactive CLI defaults such as ``ch=None`` or
+        ``tp_mode=False`` are consumed without sending old recorder controls.
         """
         return True
 

@@ -432,9 +432,10 @@ def main_lo_profile(argv: Optional[Iterable[str]] = None) -> int:
         rclpy.init()
 
     commander = None
+    privilege_acquired = False
     try:
         commander = Commander()
-        commander.get_privilege()
+        privilege_acquired = bool(commander.get_privilege())
 
         results = {}
         for sg_id, entry in plan.items():
@@ -461,6 +462,11 @@ def main_lo_profile(argv: Optional[Iterable[str]] = None) -> int:
             print(json.dumps(results, indent=2, sort_keys=True))
         return 0
     finally:
+        if commander is not None and privilege_acquired and hasattr(commander, "quit_privilege"):
+            try:
+                commander.quit_privilege()
+            except Exception:
+                pass
         if commander is not None and hasattr(commander, "destroy_node"):
             commander.destroy_node()
         if should_shutdown:
