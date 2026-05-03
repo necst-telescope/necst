@@ -378,34 +378,46 @@ def main_lo_profile(argv: Optional[Iterable[str]] = None) -> int:
     plan = build_sg_apply_plan(profile, getattr(args, "sg_id", None))
 
     from necst.core import Commander  # imported lazily to keep pure tests ROS-free
+    import rclpy  # imported lazily so summary/pure helper tests do not require ROS
 
-    commander = Commander()
-    commander.get_privilege()
+    should_shutdown = not rclpy.ok()
+    if should_shutdown:
+        rclpy.init()
 
-    results = {}
-    for sg_id, entry in plan.items():
-        started = pytime.time()
-        if args.cmd == "apply":
-            apply_sg_plan_entry(commander, entry)
-            if not args.verify:
-                continue
-        elif args.cmd != "verify":  # pragma: no cover
-            raise SpectralRecordingSGError(f"Unknown command: {args.cmd!r}")
+    commander = None
+    try:
+        commander = Commander()
+        commander.get_privilege()
 
-        result = poll_sg_readback(
-            commander,
-            sg_id=sg_id,
-            entry=entry,
-            verify_started_at=started,
-            timeout_sec=float(args.timeout_sec),
-            strict=True,
-            allow_command_echo=args.allow_command_echo,
-        )
-        results[sg_id] = result
+        results = {}
+        for sg_id, entry in plan.items():
+            started = pytime.time()
+            if args.cmd == "apply":
+                apply_sg_plan_entry(commander, entry)
+                if not args.verify:
+                    continue
+            elif args.cmd != "verify":  # pragma: no cover
+                raise SpectralRecordingSGError(f"Unknown command: {args.cmd!r}")
 
-    if results:
-        print(json.dumps(results, indent=2, sort_keys=True))
-    return 0
+            result = poll_sg_readback(
+                commander,
+                sg_id=sg_id,
+                entry=entry,
+                verify_started_at=started,
+                timeout_sec=float(args.timeout_sec),
+                strict=True,
+                allow_command_echo=args.allow_command_echo,
+            )
+            results[sg_id] = result
+
+        if results:
+            print(json.dumps(results, indent=2, sort_keys=True))
+        return 0
+    finally:
+        if commander is not None and hasattr(commander, "destroy_node"):
+            commander.destroy_node()
+        if should_shutdown:
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":  # pragma: no cover
