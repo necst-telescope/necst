@@ -30,12 +30,15 @@ from necst_msgs.msg import (
     TPModeMsg,
 )
 from necst_msgs.srv import (
+    ApplySpectralRecordingSetup,
+    ClearSpectralRecordingSetup,
     CCDCommand,
     ComDelaySrv,
     CoordinateCommand,
     DomeSync,
     File,
     ScanBlockCommand,
+    SetSpectralRecordingGate,
 )
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
@@ -137,6 +140,9 @@ class Commander(PrivilegedNode):
             "ccd_cmd": service.ccd_cmd.client(self),
             "dome_sync": service.dome_sync.client(self),
             "dome_pid_sync": service.dome_pid_sync.client(self),
+            "apply_spectral_recording_setup": service.apply_spectral_recording_setup.client(self),
+            "set_spectral_recording_gate": service.set_spectral_recording_gate.client(self),
+            "clear_spectral_recording_setup": service.clear_spectral_recording_setup.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
@@ -527,21 +533,12 @@ class Commander(PrivilegedNode):
                     label=str(getattr(section, "label", ""))[:64],
                     line_index=int(getattr(section, "line_index", -1)),
                     start=_to_value_pair(getattr(section, "start"), unit_name),
-                    stop=_to_value_pair(
-                        stop if stop is not None else getattr(section, "start"),
-                        unit_name,
-                    ),
+                    stop=_to_value_pair(stop if stop is not None else getattr(section, "start"), unit_name),
                     frame=str(scan_frame),
-                    speed=_to_value_scalar(
-                        getattr(section, "speed", None), f"{unit_name}/s", 0.0
-                    ),
-                    margin=_to_value_scalar(
-                        getattr(section, "margin", None), unit_name, 0.0
-                    ),
+                    speed=_to_value_scalar(getattr(section, "speed", None), f"{unit_name}/s", 0.0),
+                    margin=_to_value_scalar(getattr(section, "margin", None), unit_name, 0.0),
                     duration_hint=_to_value_scalar(duration, "s", 0.0),
-                    turn_radius_hint=_to_value_scalar(
-                        getattr(section, "turn_radius_hint", None), unit_name, 0.0
-                    ),
+                    turn_radius_hint=_to_value_scalar(getattr(section, "turn_radius_hint", None), unit_name, 0.0),
                 )
             )
 
@@ -1244,6 +1241,58 @@ class Commander(PrivilegedNode):
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+
+    def apply_spectral_recording_setup(
+        self,
+        *,
+        snapshot_toml: str,
+        snapshot_sha256: str,
+        setup_id: str,
+        strict: bool = True,
+    ):
+        """Apply a resolved spectral_recording_snapshot.toml to SpectralData.
+
+        The setup gate remains closed after this call.  The caller should save
+        sidecar files first and then call :meth:`set_spectral_recording_gate`.
+        """
+        req = ApplySpectralRecordingSetup.Request(
+            snapshot_toml=str(snapshot_toml),
+            snapshot_sha256=str(snapshot_sha256),
+            setup_id=str(setup_id),
+            strict=bool(strict),
+        )
+        return self._send_request(req, self.client["apply_spectral_recording_setup"])
+
+    def set_spectral_recording_gate(
+        self,
+        *,
+        setup_id: str,
+        setup_hash: str,
+        allow_save: bool,
+    ):
+        """Open or close the spectral-recording setup gate."""
+        req = SetSpectralRecordingGate.Request(
+            setup_id=str(setup_id),
+            setup_hash=str(setup_hash),
+            allow_save=bool(allow_save),
+        )
+        return self._send_request(req, self.client["set_spectral_recording_gate"])
+
+    def clear_spectral_recording_setup(
+        self,
+        *,
+        setup_id: str = "",
+        setup_hash: str = "",
+        strict: bool = True,
+    ):
+        """Deactivate the active spectral-recording setup after closing the gate."""
+        req = ClearSpectralRecordingSetup.Request(
+            setup_id=str(setup_id),
+            setup_hash=str(setup_hash),
+            strict=bool(strict),
+        )
+        return self._send_request(req, self.client["clear_spectral_recording_setup"])
 
     def com_delay_test(self):
         req = ComDelaySrv.Request(time=pytime.time())

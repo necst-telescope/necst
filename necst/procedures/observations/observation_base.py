@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -63,30 +64,46 @@ class Observation(ABC):
             try:
                 if not privileged:
                     raise NECSTAuthorityError("Couldn't acquire privilege")
+                self.before_record_controls()
                 if "save" in self._kwargs.keys():
                     savespec = self._kwargs.pop("save")
                     self.com.record("savespec", save=savespec)
                 if "rate" in self._kwargs.keys():
                     conv_rate = int(self._kwargs.pop("rate") * 10)
                     self.com.record("reduce", nth=conv_rate)
+                legacy_startup_allowed = self.allow_legacy_recording_startup_controls()
                 if "ch" in self._kwargs.keys():
-                    specnames = set(
-                        [val.split(".")[0] for val in config.spectrometer.keys()]
-                    )
-                    for spec_name in specnames:
-                        self.binning(self._kwargs.pop("ch"), spec_name)
+                    ch = self._kwargs.pop("ch")
+                    if legacy_startup_allowed:
+                        specnames = set(
+                            [val.split(".")[0] for val in config.spectrometer.keys()]
+                        )
+                        for spec_name in specnames:
+                            self.binning(ch, spec_name)
+                    elif ch is not None:
+                        raise ValueError(
+                            "spectral recording setup cannot be combined with legacy "
+                            f"channel binning ch={ch!r}"
+                        )
                 if "tp_mode" in self._kwargs or "tp_range" in self._kwargs:
                     tp_range = self._kwargs.pop("tp_range", None)
                     tp_mode = self._kwargs.pop("tp_mode", False)
-                    if tp_mode or tp_range:
-                        self.com.record(
-                            "tp_mode", tp_mode=True, tp_range=tp_range or []
+                    if legacy_startup_allowed:
+                        if tp_mode or tp_range:
+                            self.com.record(
+                                "tp_mode", tp_mode=True, tp_range=tp_range or []
+                            )
+                        else:
+                            self.com.record("tp_mode", tp_mode=False)
+                    elif tp_mode or tp_range:
+                        raise ValueError(
+                            "spectral recording setup cannot be combined with legacy "
+                            f"tp_mode={tp_mode!r}, tp_range={tp_range!r}"
                         )
-                    else:
-                        self.com.record("tp_mode", tp_mode=False)
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
+                self.after_record_start()
                 rclpy.uninstall_signal_handlers()
                 # if hasattr(config, "dome"):
                 #    self.com.dome("sync", dome_sync=True)
@@ -94,26 +111,81 @@ class Observation(ABC):
                 #    self.logger.info("Dome opened")
                 self.run(**self._kwargs)
             finally:
-                self.com.record("stop")
-                self.com.record("tp_mode", tp_mode=False, tp_range=[])
-                self.com.record("savespec", save=True)
-                self.com.antenna("stop")
-                for _key, val in config.spectrometer.items():
-                    spec_name, key = _key.split(".", 1)
-                    if key == "max_ch":
-                        self.binning(val, spec_name)  # set max channel number
+                cleanup_errors = []
+                original_exc = sys.exc_info()[1]
+
+                def _cleanup_step(label, func):
+                    try:
+                        return func()
+                    except Exception as exc:  # pragma: no cover - hardware/ROS dependent cleanup
+                        cleanup_errors.append((label, exc))
+                        self.logger.exception(f"Cleanup step failed: {label}: {exc}")
+                        return None
+
+                _cleanup_step("before_record_stop", self.before_record_stop)
+
+                record_stop_ok = False
+                try:
+                    self.com.record("stop")
+                    record_stop_ok = True
+                except Exception as exc:  # pragma: no cover - hardware/ROS dependent cleanup
+                    cleanup_errors.append(("record stop", exc))
+                    self.logger.exception(f"Cleanup step failed: record stop: {exc}")
+
+                if record_stop_ok:
+                    _cleanup_step("after_record_stop", self.after_record_stop)
+                else:
+                    self.logger.error(
+                        "Recorder stop failed; active spectral recording setup, if any, "
+                        "is intentionally not cleared to avoid reopening legacy recording "
+                        "while recorder state is uncertain."
+                    )
+
+                legacy_cleanup_allowed = self.allow_legacy_recording_cleanup_controls()
+                if legacy_cleanup_allowed:
+                    _cleanup_step(
+                        "reset legacy tp_mode",
+                        lambda: self.com.record("tp_mode", tp_mode=False, tp_range=[]),
+                    )
+                else:
+                    self.logger.error(
+                        "Skipping legacy tp_mode reset because an active spectral recording setup "
+                        "may still be present. This avoids sending legacy controls while recorder "
+                        "state is uncertain."
+                    )
+
+                _cleanup_step("reset savespec", lambda: self.com.record("savespec", save=True))
+                _cleanup_step("antenna stop", lambda: self.com.antenna("stop"))
+
+                def _reset_binning():
+                    for _key, val in config.spectrometer.items():
+                        spec_name, key = _key.split(".", 1)
+                        if key == "max_ch":
+                            self.binning(val, spec_name)  # set max channel number
+
+                if legacy_cleanup_allowed:
+                    _cleanup_step("reset channel binning", _reset_binning)
+                else:
+                    self.logger.error(
+                        "Skipping legacy channel-binning reset because an active spectral recording "
+                        "setup may still be present. Manual recovery/clear is required after the "
+                        "recorder state is known."
+                    )
                 # if hasattr(config, "dome"):
                 #    self.com.dome("close")
                 #    self.logger.info("Dome closed")
                 #    self.com.dome("sync", dome_sync=False)
-                self.com.quit_privilege()
-                self.com.destroy_node()
+                _cleanup_step("quit privilege", self.com.quit_privilege)
+                _cleanup_step("destroy commander", self.com.destroy_node)
                 _observing_duration = (time.time() - self._start) / 60
                 self.logger.info(
                     f"Observation finished, took {_observing_duration:.2f} min."
                 )
                 self.logger.info(f"Record name: \033[1m{self.record_name!r}\033[0m")
-                rclpy.install_signal_handlers()
+                _cleanup_step("install signal handlers", rclpy.install_signal_handlers)
+                if cleanup_errors and original_exc is None:
+                    labels = ", ".join(label for label, _ in cleanup_errors)
+                    raise RuntimeError(f"Observation cleanup failed in step(s): {labels}") from cleanup_errors[0][1]
 
     @property
     def start_datetime(self) -> Optional[str]:
@@ -145,6 +217,42 @@ class Observation(ABC):
                 self._record_qualname += f"_{self._record_suffix}"
         return self._record_qualname.lower()
 
+    def before_record_controls(self) -> None:
+        """Hook after privilege acquisition and before legacy record controls."""
+
+    def after_record_start(self) -> None:
+        """Hook after recorder start and default parameter-file sidecars."""
+
+    def before_record_stop(self) -> None:
+        """Hook before recorder stop in the cleanup path.
+
+        Implementations must not clear active spectral-recording setup here,
+        because the recorder may still be running until ``record("stop")``
+        returns.  Use :meth:`after_record_stop` for deactivation that is safe
+        only after recorder stop.
+        """
+
+    def after_record_stop(self) -> None:
+        """Hook after recorder stop in the cleanup path."""
+
+    def allow_legacy_recording_cleanup_controls(self) -> bool:
+        """Whether cleanup may send legacy TP/binning reset commands.
+
+        File-based spectral-recording setup observations override this to prevent
+        legacy controls from being sent while an active setup remains uncleared
+        after an uncertain recorder-stop failure.
+        """
+        return True
+
+    def allow_legacy_recording_startup_controls(self) -> bool:
+        """Whether startup may send legacy recorder-control commands.
+
+        File-based spectral-recording setup mode overrides this after setup
+        application so inactive CLI defaults such as ``ch=None`` or
+        ``tp_mode=False`` are consumed without sending old recorder controls.
+        """
+        return True
+
     def record_parameter_files(self) -> None:
         root = os.environ.get("NECST_ROOT", Path.home() / ".necst")
         for filename in self.parameter_files:
@@ -173,9 +281,7 @@ class Observation(ABC):
         # that case, HOT must not issue any extra antenna command because the
         # following HOT->OFF pair is intended to run on exactly the same tracking
         # solution and sky position.
-        if (not preserve_tracking) and (
-            not self.com.get_message("antenna_control").tight
-        ):
+        if (not preserve_tracking) and (not self.com.get_message("antenna_control").tight):
             enc = self.com.get_message("encoder")
             params = PointingError.from_file(config.antenna_pointing_parameter_path)
             az, el = params.apparent_to_refracted(az=enc.lon, el=enc.lat, unit="deg")
