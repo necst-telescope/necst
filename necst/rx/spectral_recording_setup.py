@@ -382,10 +382,44 @@ def _recorded_db_stream_name(source_db_stream_name: str, window_id: str) -> str:
 def _db_table_path_for_recorded_product(stream: Mapping[str, Any], recorded_db_stream_name: str, *, mode: str) -> str:
     kind = "tp" if mode == "tp" else "spectral"
     spectrometer_key = str(stream.get("spectrometer_key", ""))
-    safe = _canonical_table_name(recorded_db_stream_name).strip("/")
+    safe = _canonical_table_name(_recorded_product_table_stem(stream, recorded_db_stream_name)).strip("/")
     if kind == "tp":
         return f"data/tp/{spectrometer_key}/{safe}"
     return f"data/spectral/{spectrometer_key}/{safe}"
+
+
+def _recorded_product_table_stem(stream: Mapping[str, Any], recorded_db_stream_name: str) -> str:
+    """Return the final table name used below ``data/<kind>/<spectrometer>/``.
+
+    ``recorded_db_stream_name`` intentionally preserves the legacy DB stream
+    alias, for example ``xffts-board2__13CO_J2_1``.  If we use that alias as the
+    final table name under ``data/spectral/xffts/``, NECSTDB file names become
+    visually redundant (``...-data-spectral-xffts-xffts-board2__...data``).
+
+    For the actual table path, prefer the canonical source table leaf from
+    ``db_table_path`` (``board2`` for ``data/spectral/xffts/board2``) and append
+    the window suffix.  This keeps the path short while retaining the legacy
+    alias in ``db_stream_name``/``recorded_db_stream_name`` for compatibility and
+    traceability.
+    """
+    recorded = _canonical_table_name(recorded_db_stream_name).strip("/")
+    source_path = str(stream.get("db_table_path", "") or "").strip("/")
+    if source_path:
+        source_leaf = _canonical_table_name(source_path.split("/")[-1]).strip("/")
+    else:
+        source_leaf = _canonical_table_name(str(stream.get("db_stream_name", stream.get("stream_id", "")))).strip("/")
+        prefix = f"{stream.get('spectrometer_key', '')}-"
+        if prefix != "-" and source_leaf.startswith(prefix):
+            source_leaf = source_leaf[len(prefix):]
+    source_alias = _canonical_table_name(str(stream.get("db_stream_name", stream.get("stream_id", "")))).strip("/")
+    suffix = recorded
+    for prefix in (source_alias + "__", source_leaf + "__"):
+        if suffix.startswith(prefix):
+            suffix = suffix[len(prefix):]
+            break
+    if source_leaf and suffix and suffix != recorded:
+        return f"{source_leaf}__{suffix}"
+    return recorded
 
 
 def _canonical_table_name(s: str) -> str:
@@ -1756,6 +1790,21 @@ def _resolve_recording_for_stream(
             "computed_windows_json": json.dumps(computed_windows, sort_keys=True, separators=(",", ":")),
         }
     )
+    # Promote single-window metadata to the stream top level.  This keeps
+    # single-line contiguous_envelope streams such as board1/board3 as explicit
+    # as multi_window products, while leaving true multi-line envelopes
+    # unambiguous.
+    source_windows = [w for w in computed_windows if str(w.get("kind", "")) != "contiguous_envelope"]
+    if len(source_windows) == 1:
+        w0 = source_windows[0]
+        if w0.get("window_id") not in (None, ""):
+            out["window_id"] = str(w0.get("window_id"))
+        if w0.get("line_name") not in (None, ""):
+            out["line_name"] = str(w0.get("line_name"))
+        if w0.get("rest_frequency_hz") is not None:
+            out["rest_frequency_hz"] = float(w0.get("rest_frequency_hz"))
+    elif len(source_windows) > 1:
+        out["source_window_ids"] = [str(w.get("window_id", "")) for w in source_windows]
     if mode == "tp":
         out.setdefault("tp_stat", str(rec.get("tp_stat", "sum_mean")))
         out["tp_nchan_configured"] = int(saved_nchan)
