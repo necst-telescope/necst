@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 import hashlib
 import json
 import math
+from types import MappingProxyType
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
 
 try:
@@ -77,6 +78,28 @@ class ActiveSpectralRecordingSetup:
     warnings: List[str] = field(default_factory=list)
     runtime_errors: List[str] = field(default_factory=list)
     fatal_error: str = ""
+    _streams_cache: Dict[str, Dict[str, Any]] = field(default_factory=dict, init=False, repr=False)
+    _raw_index_cache: Dict[Tuple[str, int], Tuple[Mapping[str, Any], ...]] = field(default_factory=dict, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self._streams_cache = {str(k): dict(v) for k, v in self.snapshot.get("streams", {}).items()}
+        raw_index: Dict[Tuple[str, int], List[Mapping[str, Any]]] = {}
+        for stream in self._streams_cache.values():
+            raw_key = str(stream.get("raw_input_key", stream.get("spectrometer_key")))
+            raw_board = int(stream.get("raw_board_id", stream.get("board_id")))
+
+            # Static spectrum metadata are identical for every row of this
+            # active setup.  Precompute them once at setup-apply time so the
+            # high-rate spectral callback only slices the array and appends the
+            # already validated metadata fields.
+            if str(stream.get("recording_mode", "spectrum")) == "spectrum":
+                stream["_runtime_spectrum_extra_chunk"] = tuple(spectrum_extra_chunk(stream, self))
+
+            # Expose read-only cached stream views to high-rate callbacks.  This
+            # preserves the old no-mutation expectation while avoiding one dict
+            # copy per recorded product per callback.
+            raw_index.setdefault((raw_key, raw_board), []).append(MappingProxyType(stream))
+        self._raw_index_cache = {key: tuple(value) for key, value in raw_index.items()}
 
     @classmethod
     def from_snapshot_toml(
@@ -117,17 +140,21 @@ class ActiveSpectralRecordingSetup:
 
     @property
     def streams(self) -> Dict[str, Dict[str, Any]]:
-        return {str(k): dict(v) for k, v in self.snapshot.get("streams", {}).items()}
+        # Active setup snapshots are immutable for the lifetime of one recording.
+        # Keep a prebuilt stream table so high-rate callbacks do not repeatedly
+        # copy the entire snapshot, especially in multi-window mode where one raw
+        # XFFTS board can fan out to multiple recorded products.
+        return self._streams_cache
 
     @property
     def enabled_stream_ids(self) -> List[str]:
-        return list(self.streams.keys())
+        return list(self._streams_cache.keys())
 
     @property
     def spectrum_stream_ids(self) -> List[str]:
         return [
             sid
-            for sid, stream in self.streams.items()
+            for sid, stream in self._streams_cache.items()
             if str(stream.get("recording_mode", "spectrum")) == "spectrum"
         ]
 
@@ -135,7 +162,7 @@ class ActiveSpectralRecordingSetup:
     def tp_stream_ids(self) -> List[str]:
         return [
             sid
-            for sid, stream in self.streams.items()
+            for sid, stream in self._streams_cache.items()
             if str(stream.get("recording_mode", "spectrum")) == "tp"
         ]
 
@@ -181,14 +208,23 @@ class ActiveSpectralRecordingSetup:
             self.assert_no_fatal_error()
         self.gate_allow_save = bool(allow_save)
 
+    def streams_for_raw(self, spectrometer_key: str, board_id: int) -> Tuple[Mapping[str, Any], ...]:
+        """Return all saved products produced from one raw spectrometer input.
+
+        In normal full/channel/envelope modes this list has length one.  In
+        ``saved_window_policy=multi_window`` it can contain multiple recorded
+        products that share the same raw input key but have different saved
+        channel ranges and DB output paths.
+
+        The stream dictionaries are setup-lifetime cached objects.  Callers must
+        treat them as read-only.  Returning the cached references avoids copying
+        every stream dictionary in the high-rate spectral callback.
+        """
+        return self._raw_index_cache.get((str(spectrometer_key), int(board_id)), ())
+
     def stream_for_raw(self, spectrometer_key: str, board_id: int) -> Optional[Dict[str, Any]]:
-        for stream in self.streams.values():
-            if (
-                str(stream.get("spectrometer_key")) == str(spectrometer_key)
-                and int(stream.get("board_id")) == int(board_id)
-            ):
-                return dict(stream)
-        return None
+        matches = self.streams_for_raw(spectrometer_key, board_id)
+        return matches[0] if matches else None
 
     def check_save_allowed(self) -> bool:
         return self.gate_allow_save
@@ -276,6 +312,11 @@ class SpectralRecordingRuntimeState:
         if self.active_setup is not None:
             self.active_setup.assert_no_fatal_error()
 
+    def streams_for_raw(self, spectrometer_key: str, board_id: int) -> Tuple[Mapping[str, Any], ...]:
+        if self.active_setup is None:
+            return []
+        return self.active_setup.streams_for_raw(spectrometer_key, board_id)
+
     def stream_for_raw(self, spectrometer_key: str, board_id: int) -> Optional[Dict[str, Any]]:
         if self.active_setup is None:
             return None
@@ -315,7 +356,12 @@ def slice_spectrum_for_stream(stream: Mapping[str, Any], spectral_data: Any) -> 
 
     data_len = len(spectral_data)
     if data_len == full_nchan:
-        sliced = spectral_data[start:stop]
+        if start == 0 and stop == full_nchan:
+            # Full-spectrum save: keep the original object.  This avoids a tuple
+            # copy in the legacy path and keeps NumPy spectra as zero-copy views.
+            sliced = spectral_data
+        else:
+            sliced = spectral_data[start:stop]
     elif data_len == saved_nchan and start == 0 and stop == saved_nchan:
         # This is effectively a full saved spectrum with no offset.
         sliced = spectral_data
@@ -355,6 +401,66 @@ def spectrum_extra_chunk(stream: Mapping[str, Any], setup: ActiveSpectralRecordi
         ("saved_window_policy", "string<=32", str(stream.get("saved_window_policy", ""))),
     ]
     return [runtime_chunk_field(key, typ, value) for key, typ, value in fields]
+
+
+def legacy_spectral_string_field(key: str, value: Any, length: int) -> Dict[str, Any]:
+    """Return a string field byte-for-byte compatible with ``Spectral.msg``.
+
+    ``SpectralData._spectral_chunk()`` historically kept ``string<=N`` fields as
+    Python strings padded with spaces before the NECSTDB writer converted them to
+    ``Ns`` columns.  The active-mode fast path must preserve that base-column
+    convention; otherwise existing readers may see NUL-padded values for
+    ``position``, ``id``, ``line_label`` or ``time_spectrometer``.
+    """
+
+    text = str(value)[:length].ljust(length)
+    return {"key": key, "type": f"string<={length}", "value": text}
+
+
+def spectrum_chunk_for_stream(
+    stream: Mapping[str, Any],
+    setup: ActiveSpectralRecordingSetup,
+    *,
+    time: float,
+    time_spectrometer: str,
+    position: str,
+    obs_id: str,
+    line_index: int,
+    line_label: str,
+    spectral_data: Any,
+) -> List[Dict[str, Any]]:
+    """Build the active-mode spectrum chunk without constructing a ROS message.
+
+    This is the high-rate counterpart of the legacy ``Spectral.msg`` path.  The
+    field order and base field names intentionally follow ``necst_msgs/Spectral``
+    so existing NECSTDB readers see the same dynamic columns, followed by the
+    active setup provenance columns from ``spectrum_extra_chunk``.
+
+    The base string columns intentionally use the same space-padded
+    ``string<=N`` representation as ``SpectralData._spectral_chunk()``.  Static
+    active-setup provenance columns keep the fixed-byte runtime helper used by
+    PR8/PR13.
+    """
+
+    chunk: List[Dict[str, Any]] = [
+        {"key": "data", "type": "float32", "value": spectral_data},
+        legacy_spectral_string_field("position", position, 8),
+        legacy_spectral_string_field("id", obs_id, 16),
+        {"key": "line_index", "type": "int32", "value": int(line_index)},
+        legacy_spectral_string_field("line_label", line_label, 64),
+        {"key": "time", "type": "float64", "value": float(time)},
+        legacy_spectral_string_field("time_spectrometer", time_spectrometer, 32),
+        {"key": "ch", "type": "int32", "value": []},
+        {"key": "rfreq", "type": "float64", "value": []},
+        {"key": "ifreq", "type": "float64", "value": []},
+        {"key": "vlsr", "type": "float64", "value": []},
+        {"key": "integ", "type": "float64", "value": 0.0},
+    ]
+    extra_chunk = stream.get("_runtime_spectrum_extra_chunk")
+    if extra_chunk is None:
+        extra_chunk = spectrum_extra_chunk(stream, setup)
+    chunk.extend(extra_chunk)
+    return chunk
 
 
 def namespace_db_path(namespace_root: str, db_table_path: str) -> str:

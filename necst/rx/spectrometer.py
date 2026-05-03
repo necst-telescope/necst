@@ -23,7 +23,9 @@ from .spectral_recording_runtime import (
     is_tp_stream,
     slice_spectrum_for_stream,
     tp_chunk_for_stream,
+    spectrum_chunk_for_stream,
     spectrum_extra_chunk,
+    legacy_spectral_string_field,
 )
 
 
@@ -174,6 +176,9 @@ class SpectralData(DeviceNode):
             self.data_queue[key] = queue.Queue()
             self.resizers[key] = defaultdict(lambda: Resize(1))
 
+        fetch_limit = int(getattr(config, "spectrometer_fetch_max_packets_per_timer", 8) or 8)
+        self._fetch_max_packets_per_timer = fetch_limit if fetch_limit > 0 else 1
+
         self.publisher: Dict[int, Publisher] = {}
         self.create_timer(1, self.stream)
 
@@ -220,6 +225,10 @@ class SpectralData(DeviceNode):
                 setup_id=request.setup_id,
                 strict=bool(request.strict),
             )
+            for stream in setup.streams.values():
+                stream["_runtime_db_append_path"] = namespace_db_path(
+                    namespace.root, str(stream["db_table_path"])
+                )
             lists = response_lists(setup)
             response.success = True
             response.setup_id = setup.setup_id
@@ -371,23 +380,63 @@ class SpectralData(DeviceNode):
                 for r in resizers.values():
                     r.keep_duration = msg.integ
 
+    def _get_spectra_nowait(self, io):
+        """Return one spectrometer packet without blocking the ROS timer.
+
+        XFFTS and AC240 already buffer packets in ``io.data_queue`` from their
+        own driver threads.  Calling ``io.get_spectra()`` on an empty queue would
+        block the spectrometer node timer and can delay reads from other
+        spectrometers.  Queue-backed devices are therefore drained with
+        ``get_nowait()``.  Non queue-backed simulators or future devices keep the
+        old ``get_spectra()`` path.
+        """
+
+        device_queue = getattr(io, "data_queue", None)
+        if device_queue is None:
+            try:
+                return io.get_spectra()
+            except queue.Empty:
+                return None
+
+        try:
+            packet = device_queue.get_nowait()
+        except queue.Empty:
+            return None
+
+        if hasattr(io, "warn"):
+            io.warn = True
+        return packet
+
     def fetch_data(self) -> None:
         for key, io in self.io.items():
-            if io.data_queue.empty():
-                return
-            self.data_queue[key].put(io.get_spectra())
+            device_queue = getattr(io, "data_queue", None)
+            max_packets = self._fetch_max_packets_per_timer if device_queue is not None else 1
+            for _ in range(max_packets):
+                packet = self._get_spectra_nowait(io)
+                if packet is None:
+                    break
+                self.data_queue[key].put(packet)
 
-    def get_data(self) -> Optional[Tuple[float, Dict[int, List[float]]]]:
+    def get_data(self) -> Optional[Dict[str, Tuple[float, str, Dict[int, List[float]]]]]:
+        if not self.data_queue:
+            return None
+        if any(data_queue.empty() for data_queue in self.data_queue.values()):
+            return None
+
+        batch = {}
         for key, data_queue in self.data_queue.items():
-            if data_queue.empty():
-                return
+            try:
+                batch[key] = data_queue.get_nowait()
+            except queue.Empty:
+                return None
 
-            self.last_data[key] = data_queue.get()
-            timestamp, _time_spectrometer, data = self.last_data[key]
+        for key, packet in batch.items():
+            self.last_data[key] = packet
+            timestamp, _time_spectrometer, data = packet
             for board_id, _data in data.items():
                 self.resizers[key][board_id].push(_data, timestamp)
 
-        return self.last_data
+        return batch
 
     def stream(self) -> None:
         for key, resizers in self.resizers.items():
@@ -457,17 +506,49 @@ class SpectralData(DeviceNode):
             time_spectrometer=time_spectrometer,
         )
 
+    def _legacy_spectrum_chunk(
+        self,
+        *,
+        spectral_data,
+        time: float,
+        time_spectrometer: str,
+        metadata,
+        section,
+    ) -> List[Dict[str, object]]:
+        line_index = -1
+        line_label = ""
+        if (metadata.position == "ON") and (section.kind == "line"):
+            line_index = int(section.line_index)
+            line_label = _fit_string(section.label, 64)
+        return [
+            {"key": "data", "type": "float32", "value": spectral_data},
+            legacy_spectral_string_field("position", _fit_string(metadata.position, 8), 8),
+            legacy_spectral_string_field("id", _fit_string(metadata.id, 16), 16),
+            {"key": "line_index", "type": "int32", "value": int(line_index)},
+            legacy_spectral_string_field("line_label", line_label, 64),
+            {"key": "time", "type": "float64", "value": float(time)},
+            legacy_spectral_string_field(
+                "time_spectrometer",
+                _fit_string(time_spectrometer, 32),
+                32,
+            ),
+            {"key": "ch", "type": "int32", "value": []},
+            {"key": "rfreq", "type": "float64", "value": []},
+            {"key": "ifreq", "type": "float64", "value": []},
+            {"key": "vlsr", "type": "float64", "value": []},
+            {"key": "integ", "type": "float64", "value": 0.0},
+        ]
+
     def _record_legacy_stream(self, key: str, board_id: int, spectral_data, time, time_spectrometer) -> None:
         metadata = self.metadata.get(time)
         section = self.control_section.get(time)
-        msg = self._make_spectral_message(
+        chunk = self._legacy_spectrum_chunk(
             spectral_data=spectral_data,
             time=time,
             time_spectrometer=time_spectrometer,
             metadata=metadata,
             section=section,
         )
-        chunk = self._spectral_chunk(msg)
         self.recorder.append(f"{namespace.data}/spectral/{key}/board{board_id}", chunk)
 
     def _record_active_stream(
@@ -484,8 +565,8 @@ class SpectralData(DeviceNode):
             return
         setup.assert_no_fatal_error()
 
-        stream = setup.stream_for_raw(key, board_id)
-        if stream is None:
+        streams = setup.streams_for_raw(key, board_id)
+        if not streams:
             message = (
                 f"No active spectral recording stream for key={key!r}, board_id={board_id}; "
                 "active snapshot mode treats unknown raw streams as fatal"
@@ -502,42 +583,47 @@ class SpectralData(DeviceNode):
             line_index = int(section.line_index)
             line_label = _fit_string(section.label, 64)
 
-        if is_tp_stream(stream):
-            try:
-                chunk = tp_chunk_for_stream(
-                    stream,
-                    setup,
-                    time=time,
-                    time_spectrometer=_fit_string(time_spectrometer, 32),
-                    position=_fit_string(metadata.position, 8),
-                    obs_id=_fit_string(metadata.id, 16),
-                    line_index=line_index,
-                    line_label=line_label,
-                    spectral_data=spectral_data,
-                )
-            except SpectralRecordingRuntimeError as exc:
-                self.logger.error(str(exc))
-                self.spectral_recording_runtime.latch_fatal_error(str(exc))
-                return
-        else:
-            try:
-                saved_data = slice_spectrum_for_stream(stream, spectral_data)
-            except SpectralRecordingRuntimeError as exc:
-                self.logger.error(str(exc))
-                self.spectral_recording_runtime.latch_fatal_error(str(exc))
-                return
-            msg = self._make_spectral_message(
-                spectral_data=saved_data,
-                time=time,
-                time_spectrometer=time_spectrometer,
-                metadata=metadata,
-                section=section,
-            )
-            chunk = self._spectral_chunk(msg)
-            chunk.extend(spectrum_extra_chunk(stream, setup))
+        for stream in streams:
+            if is_tp_stream(stream):
+                try:
+                    chunk = tp_chunk_for_stream(
+                        stream,
+                        setup,
+                        time=time,
+                        time_spectrometer=_fit_string(time_spectrometer, 32),
+                        position=_fit_string(metadata.position, 8),
+                        obs_id=_fit_string(metadata.id, 16),
+                        line_index=line_index,
+                        line_label=line_label,
+                        spectral_data=spectral_data,
+                    )
+                except SpectralRecordingRuntimeError as exc:
+                    self.logger.error(str(exc))
+                    self.spectral_recording_runtime.latch_fatal_error(str(exc))
+                    return
+            else:
+                try:
+                    saved_data = slice_spectrum_for_stream(stream, spectral_data)
+                    chunk = spectrum_chunk_for_stream(
+                        stream,
+                        setup,
+                        time=time,
+                        time_spectrometer=_fit_string(time_spectrometer, 32),
+                        position=_fit_string(metadata.position, 8),
+                        obs_id=_fit_string(metadata.id, 16),
+                        line_index=line_index,
+                        line_label=line_label,
+                        spectral_data=saved_data,
+                    )
+                except SpectralRecordingRuntimeError as exc:
+                    self.logger.error(str(exc))
+                    self.spectral_recording_runtime.latch_fatal_error(str(exc))
+                    return
 
-        append_path = namespace_db_path(namespace.root, str(stream["db_table_path"]))
-        self.recorder.append(append_path, chunk)
+            append_path = stream.get("_runtime_db_append_path")
+            if not append_path:
+                append_path = namespace_db_path(namespace.root, str(stream["db_table_path"]))
+            self.recorder.append(append_path, chunk)
 
     def record(self) -> None:
         _data_dict = self.get_data()

@@ -4,13 +4,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import datetime as _datetime
+import math
 from typing import Any, Dict, Mapping, Optional, Tuple
 
+from ... import config
 from ...rx.spectral_recording_setup import (
     dumps_toml,
     load_and_resolve_spectral_recording_setup,
     read_toml,
+    sha256_text,
     validate_snapshot,
+)
+from .pointing_reference_beam import (
+    attach_pointing_reference_to_snapshot,
+    build_pointing_reference_context,
 )
 
 _CANONICAL_SIDECAR_NAMES = {
@@ -58,6 +66,262 @@ def _resolve_path(path_text: Optional[str], *, base_dir: Path) -> Optional[Path]
     return path.resolve()
 
 
+def _quantity_to_float(value: Any, unit: str) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        if hasattr(value, "to_value"):
+            return float(value.to_value(unit))
+    except Exception:
+        pass
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def _site_from_params_or_config(params: Mapping[str, Any]) -> Dict[str, float]:
+    lat = _quantity_to_float(params.get("velocity_reference_site_lat_deg", params.get("site_lat_deg")), "deg")
+    lon = _quantity_to_float(params.get("velocity_reference_site_lon_deg", params.get("site_lon_deg")), "deg")
+    elev = _quantity_to_float(params.get("velocity_reference_site_elev_m", params.get("site_elev_m")), "m")
+    if lat is None or lon is None:
+        loc = getattr(config, "location", None)
+        lat = lat if lat is not None else _quantity_to_float(getattr(loc, "lat", None), "deg")
+        lon = lon if lon is not None else _quantity_to_float(getattr(loc, "lon", None), "deg")
+        elev = elev if elev is not None else _quantity_to_float(getattr(loc, "height", None), "m")
+    out: Dict[str, float] = {}
+    if lat is not None:
+        out["site_lat_deg"] = float(lat)
+    if lon is not None:
+        out["site_lon_deg"] = float(lon)
+    out["site_elev_m"] = float(0.0 if elev is None else elev)
+    return out
+
+
+
+_SOLAR_SYSTEM_TARGETS = {
+    "sun": "sun",
+    "moon": "moon",
+    "mercury": "mercury",
+    "venus": "venus",
+    "mars": "mars",
+    "jupiter": "jupiter",
+    "saturn": "saturn",
+    "uranus": "uranus",
+    "neptune": "neptune",
+}
+
+
+def _site_to_earth_location(site: Mapping[str, float]) -> Any:
+    """Return an Astropy EarthLocation from a site dict, or None."""
+
+    if not {"site_lat_deg", "site_lon_deg"} <= set(site):
+        return None
+    try:
+        from astropy.coordinates import EarthLocation  # type: ignore
+        from astropy import units as u  # type: ignore
+
+        return EarthLocation(
+            lat=float(site["site_lat_deg"]) * u.deg,
+            lon=float(site["site_lon_deg"]) * u.deg,
+            height=float(site.get("site_elev_m", 0.0)) * u.m,
+        )
+    except Exception:
+        return None
+
+
+def _skycoord_to_icrs_deg(coord: Any) -> Dict[str, float]:
+    try:
+        from astropy import units as u  # type: ignore
+
+        icrs = coord.icrs
+        return {"ra_deg": float(icrs.ra.to_value(u.deg)), "dec_deg": float(icrs.dec.to_value(u.deg))}
+    except Exception:
+        return {}
+
+
+def _icrs_from_lon_lat_frame(
+    lon_deg: float,
+    lat_deg: float,
+    frame: str,
+    *,
+    reference_time_utc: Optional[str] = None,
+    site: Optional[Mapping[str, float]] = None,
+) -> Dict[str, float]:
+    """Convert explicit longitude/latitude in a known frame to ICRS."""
+
+    frame_l = str(frame).strip().lower()
+    try:
+        from astropy.coordinates import AltAz, SkyCoord  # type: ignore
+        from astropy.time import Time  # type: ignore
+        from astropy import units as u  # type: ignore
+
+        if frame_l in {"fk5", "icrs", "j2000", "radec", "equatorial"}:
+            astropy_frame = "icrs" if frame_l in {"icrs", "j2000", "radec", "equatorial"} else "fk5"
+            return _skycoord_to_icrs_deg(SkyCoord(float(lon_deg) * u.deg, float(lat_deg) * u.deg, frame=astropy_frame))
+        if frame_l in {"galactic", "gal"}:
+            return _skycoord_to_icrs_deg(SkyCoord(l=float(lon_deg) * u.deg, b=float(lat_deg) * u.deg, frame="galactic"))
+        if frame_l in {"altaz", "azel", "az_el"}:
+            location = _site_to_earth_location(site or {})
+            if location is None or not reference_time_utc:
+                return {}
+            obstime = Time(str(reference_time_utc).replace("Z", "+00:00"))
+            altaz = AltAz(
+                az=float(lon_deg) * u.deg,
+                alt=float(lat_deg) * u.deg,
+                obstime=obstime,
+                location=location,
+            )
+            return _skycoord_to_icrs_deg(SkyCoord(altaz))
+    except Exception:
+        if frame_l in {"fk5", "icrs", "j2000", "radec", "equatorial"}:
+            return {"ra_deg": float(lon_deg), "dec_deg": float(lat_deg)}
+    return {}
+
+
+def _reference_icrs_from_params_or_obsspec(
+    params: Mapping[str, Any],
+    obsspec: Any,
+    *,
+    reference_time_utc: Optional[str] = None,
+    site: Optional[Mapping[str, float]] = None,
+) -> Dict[str, float]:
+    """Resolve the velocity-reference direction to ICRS degrees.
+
+    This helper is intentionally deterministic:
+
+    - Explicit RA/Dec parameters are used directly.
+    - Explicit lon/lat/frame parameters are converted with Astropy when needed.
+    - Explicit `.obs` reference coordinates are used when available, including
+      Galactic coordinates.
+    - Solar-system body names are resolved with Astropy's built-in ephemeris.
+    - Arbitrary target names are not sent to network/Sesame resolvers.
+    """
+
+    ra = _quantity_to_float(
+        params.get("velocity_reference_ra_deg", params.get("vlsr_reference_ra_deg")),
+        "deg",
+    )
+    dec = _quantity_to_float(
+        params.get("velocity_reference_dec_deg", params.get("vlsr_reference_dec_deg")),
+        "deg",
+    )
+    if ra is not None and dec is not None:
+        return {"ra_deg": float(ra), "dec_deg": float(dec)}
+
+    l_deg = _quantity_to_float(params.get("velocity_reference_l_deg", params.get("vlsr_reference_l_deg")), "deg")
+    b_deg = _quantity_to_float(params.get("velocity_reference_b_deg", params.get("vlsr_reference_b_deg")), "deg")
+    if l_deg is not None and b_deg is not None:
+        converted = _icrs_from_lon_lat_frame(
+            float(l_deg),
+            float(b_deg),
+            "galactic",
+            reference_time_utc=reference_time_utc,
+            site=site,
+        )
+        if converted:
+            return converted
+
+    lon = _quantity_to_float(
+        params.get("velocity_reference_lon_deg", params.get("vlsr_reference_lon_deg")),
+        "deg",
+    )
+    lat = _quantity_to_float(
+        params.get("velocity_reference_lat_deg", params.get("vlsr_reference_lat_deg")),
+        "deg",
+    )
+    frame = params.get("velocity_reference_frame", params.get("vlsr_reference_frame"))
+    if lon is not None and lat is not None and frame:
+        converted = _icrs_from_lon_lat_frame(
+            float(lon),
+            float(lat),
+            str(frame),
+            reference_time_utc=reference_time_utc,
+            site=site,
+        )
+        if converted:
+            return converted
+
+    reference = None
+    try:
+        reference = getattr(obsspec, "_reference")
+    except Exception:
+        reference = None
+    if isinstance(reference, (tuple, list)) and len(reference) >= 3:
+        ref_lon = _quantity_to_float(reference[0], "deg")
+        ref_lat = _quantity_to_float(reference[1], "deg")
+        ref_frame = str(reference[2]).strip().lower()
+        if ref_lon is not None and ref_lat is not None:
+            converted = _icrs_from_lon_lat_frame(
+                float(ref_lon),
+                float(ref_lat),
+                ref_frame,
+                reference_time_utc=reference_time_utc,
+                site=site,
+            )
+            if converted:
+                return converted
+
+    target_name = (
+        params.get("velocity_reference_target")
+        or params.get("vlsr_reference_target")
+        or getattr(obsspec, "target", None)
+    )
+    if target_name is not None:
+        key = str(target_name).strip().lower().replace(" ", "")
+        if key in _SOLAR_SYSTEM_TARGETS and reference_time_utc:
+            try:
+                from astropy.coordinates import get_body, get_sun  # type: ignore
+                from astropy.time import Time  # type: ignore
+
+                obstime = Time(str(reference_time_utc).replace("Z", "+00:00"))
+                if key == "sun":
+                    return _skycoord_to_icrs_deg(get_sun(obstime))
+                location = _site_to_earth_location(site or {})
+                return _skycoord_to_icrs_deg(get_body(_SOLAR_SYSTEM_TARGETS[key], obstime, location))
+            except Exception:
+                return {}
+
+    # Do not silently resolve arbitrary target names here.  Network/Sesame name
+    # resolution is intentionally avoided in the observation-time setup resolver.
+    return {}
+
+
+def _build_velocity_reference_context(params: Mapping[str, Any], obsspec: Any) -> Optional[Dict[str, Any]]:
+    """Build the reference context used by observation-time LSRK window resolution.
+
+    The reference time is the setup resolution time, i.e. the command-time before
+    the recorder starts.  The reference direction is determined in this order:
+
+    1. explicit velocity_reference_ra_deg/velocity_reference_dec_deg,
+    2. explicit velocity_reference_l_deg/velocity_reference_b_deg or
+       velocity_reference_lon_deg/lat_deg/frame,
+    3. explicit `.obs` reference coordinates, including Galactic coordinates,
+    4. deterministic solar-system body names such as Sun or Moon.
+
+    Arbitrary target names are not resolved via network catalogs.
+    """
+
+    now = _datetime.datetime.now(_datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+    reference_time_utc = str(params.get("velocity_reference_time_utc", params.get("vlsr_reference_time_utc", now)))
+    site = _site_from_params_or_config(params)
+    coords = _reference_icrs_from_params_or_obsspec(
+        params,
+        obsspec,
+        reference_time_utc=reference_time_utc,
+        site=site,
+    )
+    if not {"ra_deg", "dec_deg"} <= set(coords) or not {"site_lat_deg", "site_lon_deg"} <= set(site):
+        return None
+    out: Dict[str, Any] = {}
+    out.update(coords)
+    out.update(site)
+    out["reference_time_utc"] = reference_time_utc
+    out["reference_time_policy"] = "setup_resolve_time_utc"
+    out["reference_coordinate_policy"] = "explicit_or_obs_reference_or_solar_system_body"
+    return out
+
+
 def _obs_base_dir(obs_file: Any) -> Path:
     try:
         path = Path(obs_file).expanduser()
@@ -73,6 +337,7 @@ def build_spectral_recording_observation_setup(
     params: Mapping[str, Any],
     obs_file: Any,
     default_setup_id: str,
+    obsspec: Any = None,
 ) -> Optional[SpectralRecordingObservationSetup]:
     """Build a spectral-recording setup from `.obs` parameters.
 
@@ -85,11 +350,17 @@ def build_spectral_recording_observation_setup(
     lo_ref = _optional_str(params, "lo_profile", "lo_profile_path")
     rec_ref = _optional_str(params, "recording_window_setup", "recording_window_setup_path")
     beam_ref = _optional_str(params, "beam_model", "beam_model_path")
+    pointing_ref = _optional_str(params, "pointing_reference_beam_id")
     explicit_enable = _truthy(params.get("spectral_recording", False)) or _truthy(
         params.get("use_spectral_recording_setup", False)
     )
 
-    if not explicit_enable and not any((snapshot_ref, lo_ref, rec_ref, beam_ref)):
+    # ``beam_model`` can be used only for pointing-reference-beam correction or
+    # as optional stream geometry for spectral recording.  By itself it does not
+    # define a spectral setup.  A lo_profile or an existing snapshot is the
+    # actual stream-truth input; when no beam_model is supplied, spectral setup
+    # resolution falls back to B00=(0,0) and rejects non-B00 stream beams.
+    if not explicit_enable and not any((snapshot_ref, lo_ref, rec_ref)):
         return None
 
     base_dir = _obs_base_dir(obs_file)
@@ -100,20 +371,29 @@ def build_spectral_recording_observation_setup(
     if policy == "legacy":
         return None
 
+    pointing_reference_context = build_pointing_reference_context(
+        params,
+        obs_file=obs_file,
+    )
+    velocity_reference_context = _build_velocity_reference_context(params, obsspec)
+
     sidecars: Dict[str, str] = {}
     snapshot_path = _resolve_path(snapshot_ref, base_dir=base_dir)
     if snapshot_path is not None:
         snapshot_toml = snapshot_path.read_text(encoding="utf-8")
         snapshot = read_toml(snapshot_path)
         validate_snapshot(snapshot)
+        beam_path = _resolve_path(beam_ref, base_dir=base_dir)
+        if beam_path is not None:
+            sidecars[_CANONICAL_SIDECAR_NAMES["beam_model"]] = beam_path.read_text(encoding="utf-8")
     else:
         lo_path = _resolve_path(lo_ref, base_dir=base_dir)
         beam_path = _resolve_path(beam_ref, base_dir=base_dir)
         rec_path = _resolve_path(rec_ref, base_dir=base_dir)
-        if lo_path is None or beam_path is None:
+        if lo_path is None:
             raise ValueError(
                 "Spectral recording setup requires either spectral_recording_snapshot "
-                "or both lo_profile and beam_model."
+                "or lo_profile. beam_model is optional only for B00=(0,0) stream geometry."
             )
         snapshot = load_and_resolve_spectral_recording_setup(
             lo_profile_path=lo_path,
@@ -121,13 +401,25 @@ def build_spectral_recording_observation_setup(
             beam_model_path=beam_path,
             setup_id=setup_id,
             setup_override_policy=policy,
+            velocity_reference_context=velocity_reference_context,
         )
         validate_snapshot(snapshot)
         snapshot_toml = dumps_toml(snapshot)
         sidecars[_CANONICAL_SIDECAR_NAMES["lo_profile"]] = lo_path.read_text(encoding="utf-8")
         if rec_path is not None:
             sidecars[_CANONICAL_SIDECAR_NAMES["recording_window_setup"]] = rec_path.read_text(encoding="utf-8")
-        sidecars[_CANONICAL_SIDECAR_NAMES["beam_model"]] = beam_path.read_text(encoding="utf-8")
+        if beam_path is not None:
+            sidecars[_CANONICAL_SIDECAR_NAMES["beam_model"]] = beam_path.read_text(encoding="utf-8")
+
+    if pointing_reference_context is not None:
+        snapshot = attach_pointing_reference_to_snapshot(
+            snapshot,
+            pointing_reference_context,
+            dumps_toml_func=dumps_toml,
+            sha256_text_func=sha256_text,
+        )
+        validate_snapshot(snapshot)
+        snapshot_toml = dumps_toml(snapshot)
 
     sidecars[_CANONICAL_SIDECAR_NAMES["snapshot"]] = snapshot_toml
     ordered_sidecars = tuple((name, sidecars[name]) for name in sorted(sidecars))

@@ -26,6 +26,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
 
@@ -55,30 +56,65 @@ SCHEMA_VERSION = "spectral_recording_snapshot_v1"
 SNAPSHOT_VERSION = "v26-aligned-2026-04-26-pr1"
 
 SETUP_OVERRIDE_POLICIES = {"strict", "warn", "force", "legacy"}
-SAVED_WINDOW_POLICIES = {"full", "contiguous_envelope", "channel"}
+SAVED_WINDOW_POLICIES = {"full", "contiguous_envelope", "channel", "multi_window"}
 RECORDING_MODES = {"spectrum", "tp"}
 VELOCITY_RESOLVER_VERSION = "topocentric_rest_velocity_approx_v1"
 VELOCITY_RESOLVER_FRAME = "TOPOCENTRIC_REST_APPROX"
+VLSRK_RESOLVER_VERSION = "astropy_lsrk_reference_time_v1"
+VLSRK_RESOLVER_FRAME = "LSRK"
 CHANNEL_ORDERS_INCREASING = {"increasing_if", "increasing_if_frequency", "increasing"}
 CHANNEL_ORDERS_DECREASING = {"decreasing_if", "decreasing_if_frequency", "decreasing"}
 
-GROUP_REQUIRED_KEYS = {
+# ``stream_groups`` provide defaults; each stream item may override the
+# instrument-defining fields.  Stream-local LO/frequency/backend settings are
+# first-class because different XFFTS boards/streams can have different
+# spectrometers, LO chains, IF axes, rest frequencies, and DB bindings.
+STREAM_TRUTH_KEYS = {
     "spectrometer_key",
     "frontend",
     "backend",
+    "sampler",
     "lo_chain",
     "polariza",
     "frequency_axis_id",
-}
-GROUP_OPTIONAL_KEYS = {
+    "rest_frequency_hz",
+    "rest_frequency_ghz",
+    "rest_frequency_mhz",
+    "restfreq_hz",
+    "restfreq_ghz",
+    "restfreq_mhz",
     "default_rest_frequency_hz",
+    "default_rest_frequency_ghz",
+    "default_rest_frequency_mhz",
+    "beam_id",
+}
+REST_FREQUENCY_KEYS = {
+    "rest_frequency_hz",
+    "rest_frequency_ghz",
+    "rest_frequency_mhz",
+    "restfreq_hz",
+    "restfreq_ghz",
+    "restfreq_mhz",
+    "default_rest_frequency_hz",
+    "default_rest_frequency_ghz",
+    "default_rest_frequency_mhz",
+}
+
+GROUP_REQUIRED_KEYS: set[str] = set()
+GROUP_OPTIONAL_KEYS = {
+    *STREAM_TRUTH_KEYS,
+    # PR8g: analysis-time stream selection no longer belongs to the
+    # observation-time registry.  The legacy use_for_* keys are still accepted
+    # as backward-compatible analysis-default hints and are canonicalized into
+    # streams.<stream_id>.analysis_defaults, not top-level truth fields.
     "use_for_convert",
     "use_for_sunscan",
     "use_for_fit",
+    "analysis_defaults",
     "recording_default_policy",
     "human_label",
 }
-GROUP_ALLOWED_KEYS = GROUP_REQUIRED_KEYS | GROUP_OPTIONAL_KEYS | {"streams"}
+GROUP_ALLOWED_KEYS = GROUP_OPTIONAL_KEYS | {"streams"}
 ITEM_ALLOWED_KEYS = {
     "stream_id",
     "board_id",
@@ -89,10 +125,20 @@ ITEM_ALLOWED_KEYS = {
     "db_table_path",
     "db_stream_name",
     "db_table_name",  # accepted only as legacy-compatible input alias
-    "sampler",
+    "raw_input_key",
+    "raw_board_id",
     "human_label",
+    *STREAM_TRUTH_KEYS,
 }
-ITEM_REQUIRED_KEYS = {"stream_id", "board_id", "fdnum", "ifnum", "plnum", "beam_id"}
+ITEM_REQUIRED_KEYS = {"stream_id", "board_id", "fdnum", "ifnum", "plnum"}
+RESOLVED_STREAM_REQUIRED_KEYS = {
+    "spectrometer_key",
+    "frontend",
+    "backend",
+    "lo_chain",
+    "polariza",
+    "frequency_axis_id",
+}
 
 
 class SpectralRecordingSetupError(ValueError):
@@ -159,6 +205,85 @@ def _as_float(value: Any, *, field: str) -> float:
         raise SpectralRecordingValidationError(f"{field} must be float, got {value!r}") from exc
 
 
+def _frequency_alias_hz(
+    cfg: Mapping[str, Any],
+    *,
+    field_base: str,
+    canonical: str,
+    aliases: Mapping[str, float],
+    required: bool = False,
+) -> Optional[float]:
+    """Return a frequency-like value in Hz from *_hz/*_ghz/*_mhz aliases.
+
+    ``canonical`` is the preferred *_hz key.  ``aliases`` maps accepted input
+    keys to their multiplier to Hz.  When more than one alias is supplied, all
+    supplied values must agree to tight floating precision.  This keeps short
+    GHz/MHz operator-facing configs safe without allowing silent unit mistakes.
+    """
+    values: List[Tuple[str, float]] = []
+    for key, factor in aliases.items():
+        if key in cfg and cfg.get(key) is not None:
+            value_hz = _as_float(cfg[key], field=f"{field_base}.{key}") * factor
+            values.append((key, value_hz))
+    if not values:
+        if required:
+            keys = ", ".join(sorted(aliases))
+            raise SpectralRecordingValidationError(f"{field_base} must define one of: {keys}")
+        return None
+    ref_key, ref_value = values[0]
+    if not math.isfinite(ref_value) or ref_value <= 0.0:
+        raise SpectralRecordingValidationError(f"{field_base}.{ref_key} must be positive finite")
+    for key, value in values[1:]:
+        if not math.isfinite(value) or value <= 0.0:
+            raise SpectralRecordingValidationError(f"{field_base}.{key} must be positive finite")
+        tol = max(1.0e-6, abs(ref_value) * 1.0e-12)
+        if abs(value - ref_value) > tol:
+            raise SpectralRecordingValidationError(
+                f"{field_base} has inconsistent frequency aliases: "
+                f"{ref_key}={ref_value} Hz but {key}={value} Hz"
+            )
+    return float(ref_value)
+
+
+def _rest_frequency_hz_from_stream(entry: Mapping[str, Any], *, field_base: str) -> Optional[float]:
+    return _frequency_alias_hz(
+        entry,
+        field_base=field_base,
+        canonical="rest_frequency_hz",
+        aliases={
+            "rest_frequency_hz": 1.0,
+            "restfreq_hz": 1.0,
+            "default_rest_frequency_hz": 1.0,
+            "rest_frequency_ghz": 1.0e9,
+            "restfreq_ghz": 1.0e9,
+            "default_rest_frequency_ghz": 1.0e9,
+            "rest_frequency_mhz": 1.0e6,
+            "restfreq_mhz": 1.0e6,
+            "default_rest_frequency_mhz": 1.0e6,
+        },
+        required=False,
+    )
+
+
+def _copy_frequency_alias_canonical(
+    entry: MutableMapping[str, Any],
+    *,
+    field_base: str,
+    canonical: str,
+    aliases: Mapping[str, float],
+    required: bool = False,
+) -> Optional[float]:
+    value = _frequency_alias_hz(entry, field_base=field_base, canonical=canonical, aliases=aliases, required=required)
+    if value is not None:
+        entry[canonical] = value
+        # Remove non-canonical unit aliases from the resolved truth so the
+        # snapshot has exactly one unit convention.
+        for key in aliases:
+            if key != canonical:
+                entry.pop(key, None)
+    return value
+
+
 def _as_str(value: Any, *, field: str) -> str:
     if isinstance(value, str):
         return value
@@ -174,6 +299,93 @@ def _as_str_list(value: Any, *, field: str) -> List[str]:
             raise SpectralRecordingValidationError(f"{field}[{i}] must be string")
         out.append(item)
     return out
+
+
+WINDOW_ID_RE = re.compile(r"^[A-Za-z0-9_+-]+$")
+
+
+def _safe_window_id(value: Any, *, field: str) -> str:
+    window_id = _as_str(value, field=field).strip()
+    if not window_id:
+        raise SpectralRecordingValidationError(f"{field} must not be empty")
+    if not WINDOW_ID_RE.match(window_id):
+        raise SpectralRecordingValidationError(
+            f"{field}={window_id!r} contains invalid characters; allowed: A-Z a-z 0-9 _ + -"
+        )
+    return window_id
+
+
+def _rest_frequency_hz_from_window(entry: Mapping[str, Any], *, field_base: str) -> Optional[float]:
+    return _frequency_alias_hz(
+        entry,
+        field_base=field_base,
+        canonical="rest_frequency_hz",
+        aliases={
+            "rest_frequency_hz": 1.0,
+            "restfreq_hz": 1.0,
+            "default_rest_frequency_hz": 1.0,
+            "rest_frequency_ghz": 1.0e9,
+            "restfreq_ghz": 1.0e9,
+            "default_rest_frequency_ghz": 1.0e9,
+            "rest_frequency_mhz": 1.0e6,
+            "restfreq_mhz": 1.0e6,
+            "default_rest_frequency_mhz": 1.0e6,
+        },
+        required=False,
+    )
+
+
+def _window_list_from_recording_group(rec: Mapping[str, Any], *, group_id: str) -> List[Dict[str, Any]]:
+    """Return explicit window definitions from a recording group.
+
+    ``windows`` is the canonical name.  ``velocity_windows`` is accepted as a
+    backwards-compatible alias used while the multi-line envelope design was
+    being drafted.  The two keys must not be supplied together.
+    """
+    has_windows = "windows" in rec and rec.get("windows") is not None
+    has_velocity_windows = "velocity_windows" in rec and rec.get("velocity_windows") is not None
+    if has_windows and has_velocity_windows:
+        raise SpectralRecordingValidationError(
+            f"recording_groups.{group_id}: use either windows or velocity_windows, not both"
+        )
+    raw = rec.get("windows") if has_windows else rec.get("velocity_windows")
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise SpectralRecordingValidationError(f"recording_groups.{group_id}.windows must be a list of tables")
+    out: List[Dict[str, Any]] = []
+    seen: set[str] = set()
+    for i, item in enumerate(raw):
+        if not isinstance(item, Mapping):
+            raise SpectralRecordingValidationError(f"recording_groups.{group_id}.windows[{i}] must be a table")
+        w = dict(item)
+        window_id = _safe_window_id(
+            w.get("window_id", w.get("line_name", f"window{i}")),
+            field=f"recording_groups.{group_id}.windows[{i}].window_id",
+        )
+        if window_id in seen:
+            raise SpectralRecordingValidationError(f"recording_groups.{group_id}: duplicate window_id {window_id!r}")
+        seen.add(window_id)
+        w["window_id"] = window_id
+        out.append(w)
+    return out
+
+
+def _recorded_stream_id(source_stream_id: str, window_id: str) -> str:
+    return f"{source_stream_id}__{window_id}"
+
+
+def _recorded_db_stream_name(source_db_stream_name: str, window_id: str) -> str:
+    return f"{source_db_stream_name}__{window_id}"
+
+
+def _db_table_path_for_recorded_product(stream: Mapping[str, Any], recorded_db_stream_name: str, *, mode: str) -> str:
+    kind = "tp" if mode == "tp" else "spectral"
+    spectrometer_key = str(stream.get("spectrometer_key", ""))
+    safe = _canonical_table_name(recorded_db_stream_name).strip("/")
+    if kind == "tp":
+        return f"data/tp/{spectrometer_key}/{safe}"
+    return f"data/spectral/{spectrometer_key}/{safe}"
 
 
 def _canonical_table_name(s: str) -> str:
@@ -282,8 +494,11 @@ def _ensure_mapping(value: Any, *, field: str) -> Dict[str, Any]:
 def _resolve_lo_roles(lo_profile: Mapping[str, Any]) -> Dict[str, Dict[str, Any]]:
     sg_devices = _ensure_mapping(lo_profile.get("sg_devices", {}), field="sg_devices")
     lo_roles = _ensure_mapping(lo_profile.get("lo_roles", {}), field="lo_roles")
+    # Role-based profiles define lo_roles + lo_chains.  Legacy-compatible
+    # stream-by-stream LO chains can be self-contained loN_hz/sbN entries and
+    # therefore do not need any lo_roles at all.
     if not lo_roles:
-        raise SpectralRecordingValidationError("lo_roles must not be empty")
+        return {}
 
     resolved: Dict[str, Dict[str, Any]] = {}
     for role_id, raw_role in lo_roles.items():
@@ -297,8 +512,16 @@ def _resolve_lo_roles(lo_profile: Mapping[str, Any]) -> Dict[str, Dict[str, Any]
                     f"lo_roles.{role_id}.sg_id={sg_id!r} is not defined in sg_devices"
                 )
             sg = _ensure_mapping(sg_devices[sg_id], field=f"sg_devices.{sg_id}")
-            sg_set_frequency_hz = _as_float(
-                sg.get("sg_set_frequency_hz"), field=f"sg_devices.{sg_id}.sg_set_frequency_hz"
+            sg_set_frequency_hz = _frequency_alias_hz(
+                sg,
+                field_base=f"sg_devices.{sg_id}",
+                canonical="sg_set_frequency_hz",
+                aliases={
+                    "sg_set_frequency_hz": 1.0,
+                    "sg_set_frequency_ghz": 1.0e9,
+                    "sg_set_frequency_mhz": 1.0e6,
+                },
+                required=True,
             )
             multiplier = _as_float(role.get("multiplier", 1.0), field=f"lo_roles.{role_id}.multiplier")
             physical_lo_frequency_hz = sg_set_frequency_hz * multiplier
@@ -310,10 +533,17 @@ def _resolve_lo_roles(lo_profile: Mapping[str, Any]) -> Dict[str, Dict[str, Any]
                     "physical_lo_frequency_hz": physical_lo_frequency_hz,
                 }
             )
-            if "expected_lo_frequency_hz" in role:
-                expected = _as_float(
-                    role["expected_lo_frequency_hz"],
-                    field=f"lo_roles.{role_id}.expected_lo_frequency_hz",
+            if any(k in role for k in ("expected_lo_frequency_hz", "expected_lo_frequency_ghz", "expected_lo_frequency_mhz")):
+                expected = _frequency_alias_hz(
+                    role,
+                    field_base=f"lo_roles.{role_id}",
+                    canonical="expected_lo_frequency_hz",
+                    aliases={
+                        "expected_lo_frequency_hz": 1.0,
+                        "expected_lo_frequency_ghz": 1.0e9,
+                        "expected_lo_frequency_mhz": 1.0e6,
+                    },
+                    required=True,
                 )
                 entry["expected_lo_frequency_hz"] = expected
                 tol = _as_float(
@@ -326,8 +556,16 @@ def _resolve_lo_roles(lo_profile: Mapping[str, Any]) -> Dict[str, Dict[str, Any]
                         f"does not match expected {expected} Hz within {tol} Hz"
                     )
         elif source == "fixed":
-            fixed = _as_float(
-                role.get("fixed_lo_frequency_hz"), field=f"lo_roles.{role_id}.fixed_lo_frequency_hz"
+            fixed = _frequency_alias_hz(
+                role,
+                field_base=f"lo_roles.{role_id}",
+                canonical="fixed_lo_frequency_hz",
+                aliases={
+                    "fixed_lo_frequency_hz": 1.0,
+                    "fixed_lo_frequency_ghz": 1.0e9,
+                    "fixed_lo_frequency_mhz": 1.0e6,
+                },
+                required=True,
             )
             entry["physical_lo_frequency_hz"] = fixed
         else:
@@ -377,6 +615,85 @@ def _chain_roles_and_signs(chain_id: str, chain: Mapping[str, Any]) -> Tuple[Lis
     return roles, signs
 
 
+def _legacy_local_oscillator_stages(chain_id: str, chain: Mapping[str, Any]) -> Tuple[List[Tuple[float, str]], Dict[str, Any]]:
+    stages: List[Tuple[float, str]] = []
+    local_oscillators: Dict[str, Any] = {}
+    for i in range(1, 5):
+        sb_key = f"sb{i}"
+        aliases = {
+            f"lo{i}_hz": 1.0,
+            f"lo{i}_ghz": 1.0e9,
+            f"lo{i}_mhz": 1.0e6,
+        }
+        lo_present = any(key in chain and chain.get(key) is not None for key in aliases)
+        sb_present = sb_key in chain and chain.get(sb_key) is not None
+        if not lo_present and not sb_present:
+            continue
+        if not lo_present or not sb_present:
+            alias_names = "/".join(aliases)
+            raise SpectralRecordingValidationError(
+                f"lo_chains.{chain_id} legacy LO stage requires one of {alias_names} and {sb_key}"
+            )
+        lo_hz = _frequency_alias_hz(
+            chain,
+            field_base=f"lo_chains.{chain_id}",
+            canonical=f"lo{i}_hz",
+            aliases=aliases,
+            required=True,
+        )
+        assert lo_hz is not None
+        sb = str(_as_str(chain.get(sb_key), field=f"lo_chains.{chain_id}.{sb_key}")).strip().upper()
+        if sb not in {"USB", "LSB"}:
+            raise SpectralRecordingValidationError(f"lo_chains.{chain_id}.{sb_key} must be USB or LSB, got {sb!r}")
+        stages.append((lo_hz, sb))
+        local_oscillators[f"lo{i}_hz"] = lo_hz
+        local_oscillators[sb_key] = sb
+    for optional in ("obsfreq_hz", "imagfreq_hz"):
+        if optional in chain:
+            local_oscillators[optional] = _as_float(chain[optional], field=f"lo_chains.{chain_id}.{optional}")
+    if "store_freq_column" in chain:
+        local_oscillators["store_freq_column"] = chain["store_freq_column"]
+    return stages, local_oscillators
+
+
+def _resolve_legacy_lo_chain(chain_id: str, chain: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
+    """Resolve old converter-style lo1_hz/sb1/lo2_hz/sb2 chains.
+
+    The converter's historical frequency formula applies the conversion stages
+    in reverse order:
+
+        out = IF
+        for stage in reversed(stages):
+            out = lo + sign(sb) * out
+
+    Therefore the final sky frequency is
+
+        sky = signed_lo_sum_hz + if_frequency_sign * IF
+
+    where ``if_frequency_sign`` can be -1 for an odd number of LSB stages.
+    """
+
+    stages, local_oscillators = _legacy_local_oscillator_stages(chain_id, chain)
+    if not stages:
+        return None
+    signed_sum = 0.0
+    if_sign = 1.0
+    for lo_hz, sb in reversed(stages):
+        sign = 1.0 if sb == "USB" else -1.0
+        signed_sum = lo_hz + sign * signed_sum
+        if_sign = sign * if_sign
+    return {
+        "lo_chain_id": str(chain_id),
+        "formula_version": str(chain.get("formula_version", "legacy_local_oscillators_v1")),
+        "legacy_local_oscillators": local_oscillators,
+        "lo_stage_order": [f"lo{i + 1}" for i in range(len(stages))],
+        "lo_frequencies_hz": [float(lo) for lo, _ in stages],
+        "sidebands": [str(sb) for _, sb in stages],
+        "signed_lo_sum_hz": float(signed_sum),
+        "if_frequency_sign": float(if_sign),
+    }
+
+
 def _resolve_lo_chains(lo_profile: Mapping[str, Any], resolved_roles: Mapping[str, Mapping[str, Any]]) -> Dict[str, Dict[str, Any]]:
     lo_chains = _ensure_mapping(lo_profile.get("lo_chains", {}), field="lo_chains")
     if not lo_chains:
@@ -384,6 +701,20 @@ def _resolve_lo_chains(lo_profile: Mapping[str, Any], resolved_roles: Mapping[st
     resolved: Dict[str, Dict[str, Any]] = {}
     for chain_id, raw_chain in lo_chains.items():
         chain = _ensure_mapping(raw_chain, field=f"lo_chains.{chain_id}")
+
+        legacy_chain = _resolve_legacy_lo_chain(str(chain_id), chain)
+        if legacy_chain is not None:
+            # A legacy inline chain is self-contained.  It may coexist with
+            # lo_roles elsewhere in the profile, but this particular chain must
+            # not also define role references because that would make the IF sign
+            # convention ambiguous.
+            if "lo_roles" in chain or any(k in chain for k in ("lo1_role", "lo2_role", "lo3_role", "lo4_role")):
+                raise SpectralRecordingValidationError(
+                    f"lo_chains.{chain_id} must not mix legacy loN_hz/sbN keys with lo_roles/loN_role keys"
+                )
+            resolved[str(chain_id)] = legacy_chain
+            continue
+
         roles, signs = _chain_roles_and_signs(str(chain_id), chain)
         missing = [role for role in roles if role not in resolved_roles]
         if missing:
@@ -399,51 +730,179 @@ def _resolve_lo_chains(lo_profile: Mapping[str, Any], resolved_roles: Mapping[st
             "signs": signs,
             "physical_lo_frequencies_hz": physical,
             "signed_lo_sum_hz": signed_sum,
+            "if_frequency_sign": float(chain.get("if_frequency_sign", 1.0)),
         }
     return resolved
+
+def _normalize_channel_order_from_step(step: float) -> str:
+    return "increasing_if" if float(step) > 0 else "decreasing_if"
+
+
+def _normalize_frequency_axis(axis_id: str, raw_axis: Mapping[str, Any]) -> Dict[str, Any]:
+    axis = _ensure_mapping(raw_axis, field=f"frequency_axes.{axis_id}")
+    mode = str(axis.get("definition_mode", "first_center_and_delta")).strip().lower()
+    mode_aliases = {
+        "first_center_and_delta": "first_center_and_delta",
+        "first_center_delta": "first_center_and_delta",
+        "explicit_wcs": "explicit_wcs",
+        "band_start_stop": "band_start_stop",
+        "band_edges": "band_start_stop",
+    }
+    if mode not in mode_aliases:
+        raise SpectralRecordingValidationError(
+            f"frequency_axes.{axis_id}.definition_mode must be first_center_and_delta, explicit_wcs, or band_start_stop; got {mode!r}"
+        )
+    mode = mode_aliases[mode]
+
+    nchan_raw = axis.get("full_nchan", axis.get("nchan"))
+    full_nchan = _as_int(nchan_raw, field=f"frequency_axes.{axis_id}.full_nchan/nchan")
+    if full_nchan <= 0:
+        raise SpectralRecordingValidationError(f"frequency_axes.{axis_id}.full_nchan/nchan must be positive")
+
+    out: Dict[str, Any] = {
+        "frequency_axis_id": str(axis_id),
+        "definition_mode": mode,
+        "full_nchan": full_nchan,
+        "nchan": full_nchan,
+    }
+
+    if mode == "explicit_wcs":
+        crval1 = _as_float(axis.get("crval1_hz"), field=f"frequency_axes.{axis_id}.crval1_hz")
+        cdelt1 = _as_float(axis.get("cdelt1_hz"), field=f"frequency_axes.{axis_id}.cdelt1_hz")
+        crpix1 = _as_float(axis.get("crpix1", 1.0), field=f"frequency_axes.{axis_id}.crpix1")
+        if cdelt1 == 0.0:
+            raise SpectralRecordingValidationError(f"frequency_axes.{axis_id}.cdelt1_hz must be non-zero")
+        if0 = crval1 + (1.0 - crpix1) * cdelt1
+        step = cdelt1
+        out.update({"crval1_hz": crval1, "cdelt1_hz": cdelt1, "crpix1": crpix1})
+    elif mode == "first_center_and_delta":
+        if "if_freq_at_full_ch0_hz" in axis:
+            if0 = _as_float(axis.get("if_freq_at_full_ch0_hz"), field=f"frequency_axes.{axis_id}.if_freq_at_full_ch0_hz")
+        else:
+            if0 = _as_float(axis.get("first_channel_center_hz"), field=f"frequency_axes.{axis_id}.first_channel_center_hz")
+        if "if_freq_step_hz" in axis:
+            step = _as_float(axis.get("if_freq_step_hz"), field=f"frequency_axes.{axis_id}.if_freq_step_hz")
+        else:
+            step = _as_float(axis.get("channel_spacing_hz"), field=f"frequency_axes.{axis_id}.channel_spacing_hz")
+        if step == 0.0:
+            raise SpectralRecordingValidationError(f"frequency_axes.{axis_id}.if_freq_step_hz/channel_spacing_hz must be non-zero")
+        out.update({
+            "first_channel_center_hz": if0,
+            "channel_spacing_hz": step,
+        })
+    else:
+        band_start = _as_float(axis.get("band_start_hz"), field=f"frequency_axes.{axis_id}.band_start_hz")
+        band_stop = _as_float(axis.get("band_stop_hz"), field=f"frequency_axes.{axis_id}.band_stop_hz")
+        origin = str(axis.get("channel_origin", "center")).strip().lower()
+        if origin not in {"center", "edge"}:
+            raise SpectralRecordingValidationError(
+                f"frequency_axes.{axis_id}.channel_origin must be 'center' or 'edge', got {origin!r}"
+            )
+        if origin == "center":
+            if full_nchan == 1:
+                if abs(band_stop - band_start) > max(1.0e-6, max(abs(band_start), abs(band_stop)) * 1.0e-12):
+                    raise SpectralRecordingValidationError(
+                        f"frequency_axes.{axis_id}: nchan=1 with channel_origin='center' requires band_start_hz == band_stop_hz"
+                    )
+                step0 = 0.0
+            else:
+                step0 = (band_stop - band_start) / float(full_nchan - 1)
+            first_center = band_start
+            center_span_hz = abs(band_stop - band_start)
+            edge_bandwidth_hz = abs(step0) * full_nchan if full_nchan > 1 else 0.0
+        else:
+            step0 = (band_stop - band_start) / float(full_nchan)
+            first_center = band_start + 0.5 * step0
+            center_span_hz = abs(step0) * (full_nchan - 1) if full_nchan > 1 else 0.0
+            edge_bandwidth_hz = abs(band_stop - band_start)
+        reverse = _as_bool(axis.get("reverse", False), field=f"frequency_axes.{axis_id}.reverse")
+        if reverse:
+            if0 = first_center + (full_nchan - 1) * step0
+            step = -step0
+        else:
+            if0 = first_center
+            step = step0
+        if step == 0.0 and full_nchan > 1:
+            raise SpectralRecordingValidationError(f"frequency_axes.{axis_id} has zero channel spacing")
+        out.update({
+            "band_start_hz": band_start,
+            "band_stop_hz": band_stop,
+            "channel_origin": origin,
+            "reverse": bool(reverse),
+            "center_span_hz": float(center_span_hz),
+            "edge_bandwidth_hz": float(edge_bandwidth_hz),
+        })
+
+    if step == 0.0 and full_nchan > 1:
+        raise SpectralRecordingValidationError(f"frequency_axes.{axis_id}.if_freq_step_hz must be non-zero")
+
+    order = str(axis.get("channel_order", _normalize_channel_order_from_step(step))).strip().lower()
+    if order not in CHANNEL_ORDERS_INCREASING and order not in CHANNEL_ORDERS_DECREASING:
+        raise SpectralRecordingValidationError(
+            f"frequency_axes.{axis_id}.channel_order={order!r} is not recognized"
+        )
+    if order in CHANNEL_ORDERS_INCREASING and step < 0:
+        raise SpectralRecordingValidationError(
+            f"frequency_axes.{axis_id}.channel_order={order!r} requires positive frequency step after reverse handling; got {step}"
+        )
+    if order in CHANNEL_ORDERS_DECREASING and step > 0:
+        raise SpectralRecordingValidationError(
+            f"frequency_axes.{axis_id}.channel_order={order!r} requires negative frequency step after reverse handling; got {step}"
+        )
+
+    out.update({
+        "if_freq_at_full_ch0_hz": float(if0),
+        "if_freq_step_hz": float(step),
+        "channel_order": order,
+    })
+
+    # Preserve converter/WCS metadata and rest-frequency conventions.  restfreq_ghz
+    # is accepted as a compatibility alias but canonicalized to restfreq_hz.
+    for optional in ("ctype1", "cunit1", "specsys", "veldef", "store_freq_column"):
+        if optional in axis:
+            out[optional] = axis[optional]
+    rest_hz = axis.get("restfreq_hz", axis.get("rest_frequency_hz"))
+    rest_ghz = axis.get("restfreq_ghz")
+    if rest_hz is not None:
+        rest_hz_f = _as_float(rest_hz, field=f"frequency_axes.{axis_id}.restfreq_hz")
+        if rest_hz_f <= 0.0 or not math.isfinite(rest_hz_f):
+            raise SpectralRecordingValidationError(f"frequency_axes.{axis_id}.restfreq_hz must be positive finite")
+        out["restfreq_hz"] = rest_hz_f
+        out["rest_frequency_hz"] = rest_hz_f
+    if rest_ghz is not None:
+        rest_ghz_f = _as_float(rest_ghz, field=f"frequency_axes.{axis_id}.restfreq_ghz")
+        rest_from_ghz = rest_ghz_f * 1.0e9
+        if "restfreq_hz" in out and abs(float(out["restfreq_hz"]) - rest_from_ghz) > max(1.0e-6, abs(rest_from_ghz) * 1.0e-12):
+            raise SpectralRecordingValidationError(f"frequency_axes.{axis_id} has inconsistent restfreq_hz/restfreq_ghz")
+        out["restfreq_hz"] = rest_from_ghz
+        out["rest_frequency_hz"] = rest_from_ghz
+
+    if "bandwidth_hz" in axis:
+        bandwidth = _as_float(axis["bandwidth_hz"], field=f"frequency_axes.{axis_id}.bandwidth_hz")
+        if bandwidth <= 0.0 or not math.isfinite(bandwidth):
+            raise SpectralRecordingValidationError(f"frequency_axes.{axis_id}.bandwidth_hz must be positive finite")
+        expected = abs(float(step)) * full_nchan
+        if abs(bandwidth - expected) > max(1.0e-6, expected * 1.0e-9):
+            raise SpectralRecordingValidationError(
+                f"frequency_axes.{axis_id}.bandwidth_hz={bandwidth} is inconsistent with "
+                f"full_nchan*abs(if_freq_step_hz)={expected}"
+            )
+        out["bandwidth_hz"] = bandwidth
+    elif out.get("channel_origin") == "edge" and "edge_bandwidth_hz" in out:
+        out["bandwidth_hz"] = float(out["edge_bandwidth_hz"])
+
+    if "sky_freq_at_full_ch0_hz" in axis:
+        out["sky_freq_at_full_ch0_hz"] = _as_float(axis["sky_freq_at_full_ch0_hz"], field=f"frequency_axes.{axis_id}.sky_freq_at_full_ch0_hz")
+    if "sky_freq_step_hz" in axis:
+        out["sky_freq_step_hz"] = _as_float(axis["sky_freq_step_hz"], field=f"frequency_axes.{axis_id}.sky_freq_step_hz")
+    return out
 
 
 def _normalize_frequency_axes(lo_profile: Mapping[str, Any]) -> Dict[str, Dict[str, Any]]:
     axes = _ensure_mapping(lo_profile.get("frequency_axes", {}), field="frequency_axes")
     if not axes:
         raise SpectralRecordingValidationError("frequency_axes must not be empty")
-    out: Dict[str, Dict[str, Any]] = {}
-    for axis_id, raw_axis in axes.items():
-        axis = _ensure_mapping(raw_axis, field=f"frequency_axes.{axis_id}")
-        full_nchan = _as_int(axis.get("full_nchan"), field=f"frequency_axes.{axis_id}.full_nchan")
-        if full_nchan <= 0:
-            raise SpectralRecordingValidationError(f"frequency_axes.{axis_id}.full_nchan must be positive")
-        if0 = _as_float(
-            axis.get("if_freq_at_full_ch0_hz"), field=f"frequency_axes.{axis_id}.if_freq_at_full_ch0_hz"
-        )
-        step = _as_float(axis.get("if_freq_step_hz"), field=f"frequency_axes.{axis_id}.if_freq_step_hz")
-        if step == 0.0:
-            raise SpectralRecordingValidationError(f"frequency_axes.{axis_id}.if_freq_step_hz must be non-zero")
-        order = str(axis.get("channel_order", "increasing_if"))
-        if order not in CHANNEL_ORDERS_INCREASING and order not in CHANNEL_ORDERS_DECREASING:
-            raise SpectralRecordingValidationError(
-                f"frequency_axes.{axis_id}.channel_order={order!r} is not recognized"
-            )
-        if order in CHANNEL_ORDERS_INCREASING and step < 0:
-            raise SpectralRecordingValidationError(
-                f"frequency_axes.{axis_id}.channel_order={order!r} requires if_freq_step_hz > 0, got {step}"
-            )
-        if order in CHANNEL_ORDERS_DECREASING and step > 0:
-            raise SpectralRecordingValidationError(
-                f"frequency_axes.{axis_id}.channel_order={order!r} requires if_freq_step_hz < 0, got {step}"
-            )
-        out[str(axis_id)] = {
-            "frequency_axis_id": str(axis_id),
-            "full_nchan": full_nchan,
-            "if_freq_at_full_ch0_hz": if0,
-            "if_freq_step_hz": step,
-            "channel_order": order,
-        }
-        for optional in ("bandwidth_hz", "sky_freq_at_full_ch0_hz", "sky_freq_step_hz"):
-            if optional in axis:
-                out[str(axis_id)][optional] = _as_float(axis[optional], field=f"frequency_axes.{axis_id}.{optional}")
-    return out
-
+    return {str(axis_id): _normalize_frequency_axis(str(axis_id), raw_axis) for axis_id, raw_axis in axes.items()}
 
 def _expand_stream_groups(
     lo_profile: Mapping[str, Any],
@@ -462,25 +921,31 @@ def _expand_stream_groups(
             raise SpectralRecordingValidationError(
                 f"stream_groups.{group_id} has unknown/disallowed group keys: {sorted(unknown_group_keys)}"
             )
-        missing_group_keys = GROUP_REQUIRED_KEYS - set(group)
-        if missing_group_keys:
-            raise SpectralRecordingValidationError(
-                f"stream_groups.{group_id} is missing required group keys: {sorted(missing_group_keys)}"
-            )
-        lo_chain = _as_str(group["lo_chain"], field=f"stream_groups.{group_id}.lo_chain")
-        if lo_chain not in lo_chains:
-            raise SpectralRecordingValidationError(
-                f"stream_groups.{group_id}.lo_chain={lo_chain!r} is not defined"
-            )
-        axis_id = _as_str(group["frequency_axis_id"], field=f"stream_groups.{group_id}.frequency_axis_id")
-        if axis_id not in frequency_axes:
-            raise SpectralRecordingValidationError(
-                f"stream_groups.{group_id}.frequency_axis_id={axis_id!r} is not defined"
-            )
         raw_streams = group.get("streams")
         if not isinstance(raw_streams, list) or not raw_streams:
             raise SpectralRecordingValidationError(f"stream_groups.{group_id}.streams must be a non-empty array")
-        group_values = {k: group[k] for k in sorted(group) if k != "streams"}
+        analysis_default_raw = _ensure_mapping(group.get("analysis_defaults", {}), field=f"stream_groups.{group_id}.analysis_defaults") if group.get("analysis_defaults") is not None else {}
+        analysis_defaults: Dict[str, Any] = {}
+        for key, value in analysis_default_raw.items():
+            analysis_defaults[str(key)] = _as_bool(value, field=f"stream_groups.{group_id}.analysis_defaults.{key}")
+        legacy_analysis_key_map = {
+            "use_for_convert": "convert",
+            "use_for_sunscan": "sunscan_extract",
+            "use_for_fit": "sunscan_fit",
+        }
+        for legacy_key, canonical_key in legacy_analysis_key_map.items():
+            if legacy_key in group:
+                analysis_defaults.setdefault(
+                    canonical_key,
+                    _as_bool(group[legacy_key], field=f"stream_groups.{group_id}.{legacy_key}"),
+                )
+        group_values = {
+            k: group[k]
+            for k in sorted(group)
+            if k not in {"streams", "analysis_defaults", "use_for_convert", "use_for_sunscan", "use_for_fit"}
+        }
+        if analysis_defaults:
+            group_values["analysis_defaults"] = analysis_defaults
         for i, raw_item in enumerate(raw_streams):
             item = _ensure_mapping(raw_item, field=f"stream_groups.{group_id}.streams[{i}]")
             unknown_item_keys = set(item) - ITEM_ALLOWED_KEYS
@@ -497,18 +962,63 @@ def _expand_stream_groups(
             if stream_id in streams:
                 raise SpectralRecordingValidationError(f"Duplicate stream_id: {stream_id}")
             entry = _deepcopy_dict(group_values)
-            entry.update(_deepcopy_dict(item))
+            item_values = _deepcopy_dict(item)
+            # If a stream item supplies any rest-frequency alias, it replaces the
+            # group-level rest-frequency default as a set.  Otherwise mixed alias
+            # names such as group restfreq_ghz + item rest_frequency_ghz would look
+            # like a conflicting double specification rather than an override.
+            if any(k in item_values for k in REST_FREQUENCY_KEYS):
+                for rest_key in REST_FREQUENCY_KEYS:
+                    entry.pop(rest_key, None)
+            entry.update(item_values)
             entry["stream_id"] = stream_id
             entry["stream_group_id"] = str(group_id)
+            # If no explicit beam is given, default to the boresight/center
+            # beam.  This keeps single-beam observations simple while still
+            # making the resolved stream truth explicit for downstream tools.
+            entry.setdefault("beam_id", "B00")
+
+            missing_resolved = sorted(k for k in RESOLVED_STREAM_REQUIRED_KEYS if k not in entry or entry[k] is None)
+            if missing_resolved:
+                raise SpectralRecordingValidationError(
+                    f"stream {stream_id!r} is missing required resolved stream truth keys: {missing_resolved}. "
+                    "Set them either on the stream group or on the stream item."
+                )
+            lo_chain = _as_str(entry["lo_chain"], field=f"streams.{stream_id}.lo_chain")
+            if lo_chain not in lo_chains:
+                raise SpectralRecordingValidationError(f"streams.{stream_id}.lo_chain={lo_chain!r} is not defined")
+            axis_id = _as_str(entry["frequency_axis_id"], field=f"streams.{stream_id}.frequency_axis_id")
+            if axis_id not in frequency_axes:
+                raise SpectralRecordingValidationError(f"streams.{stream_id}.frequency_axis_id={axis_id!r} is not defined")
+
+            entry["spectrometer_key"] = _as_str(entry["spectrometer_key"], field=f"streams.{stream_id}.spectrometer_key")
+            entry["frontend"] = _as_str(entry["frontend"], field=f"streams.{stream_id}.frontend")
+            entry["backend"] = _as_str(entry["backend"], field=f"streams.{stream_id}.backend")
+            entry["lo_chain"] = lo_chain
+            entry["polariza"] = _as_str(entry["polariza"], field=f"streams.{stream_id}.polariza").upper()
+            entry["frequency_axis_id"] = axis_id
             entry["board_id"] = _as_int(entry["board_id"], field=f"streams.{stream_id}.board_id")
             entry["fdnum"] = _as_int(entry["fdnum"], field=f"streams.{stream_id}.fdnum")
             entry["ifnum"] = _as_int(entry["ifnum"], field=f"streams.{stream_id}.ifnum")
             entry["plnum"] = _as_int(entry["plnum"], field=f"streams.{stream_id}.plnum")
-            for flag in ("use_for_convert", "use_for_sunscan", "use_for_fit"):
-                if flag in entry:
-                    entry[flag] = _as_bool(entry[flag], field=f"streams.{stream_id}.{flag}")
-                else:
-                    entry[flag] = True
+            rest_frequency_hz = _rest_frequency_hz_from_stream(entry, field_base=f"streams.{stream_id}")
+            if rest_frequency_hz is not None:
+                entry["rest_frequency_hz"] = rest_frequency_hz
+                # Keep the old name as a compatibility mirror for older code paths
+                # that still ask for default_rest_frequency_hz.
+                entry["default_rest_frequency_hz"] = rest_frequency_hz
+                for alias in (
+                    "rest_frequency_ghz",
+                    "rest_frequency_mhz",
+                    "restfreq_hz",
+                    "restfreq_ghz",
+                    "restfreq_mhz",
+                    "default_rest_frequency_ghz",
+                    "default_rest_frequency_mhz",
+                ):
+                    entry.pop(alias, None)
+            # PR8g: use_for_* are analysis-time choices, not observation-time
+            # stream-registry facts.  Do not synthesize top-level defaults here.
             if "db_table_name" in entry and "db_stream_name" not in entry:
                 # db_table_name is accepted only as a legacy-compatible alias.
                 entry["db_stream_name"] = str(entry.pop("db_table_name"))
@@ -518,21 +1028,55 @@ def _expand_stream_groups(
             streams[stream_id] = entry
     return streams
 
+def _default_boresight_beam_model() -> Dict[str, Dict[str, Any]]:
+    return {
+        "B00": {
+            "beam_id": "B00",
+            "beam_model_version": "default_boresight_v1",
+            "model": "legacy",
+            "rotation_mode": "none",
+            "az_offset_arcsec": 0.0,
+            "el_offset_arcsec": 0.0,
+            "reference_angle_deg": 0.0,
+            "rotation_sign": 1.0,
+            "rotation_slope_deg_per_deg": None,
+            "dewar_angle_deg": 0.0,
+            "pure_rotation_offset_x_el0_arcsec": None,
+            "pure_rotation_offset_y_el0_arcsec": None,
+            "pure_rotation_sign": None,
+        }
+    }
 
-def _validate_beam_ids(streams: Mapping[str, Mapping[str, Any]], beam_model: Mapping[str, Any]) -> Dict[str, Dict[str, Any]]:
-    beams = _ensure_mapping(beam_model.get("beams", {}), field="beam_model.beams") if beam_model else {}
+
+def _validate_beam_ids(streams: Mapping[str, Mapping[str, Any]], beam_model: Optional[Mapping[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    referenced = {str(s.get("beam_id", "B00")) for s in streams.values()}
+    if not beam_model:
+        missing_non_default = sorted(referenced - {"B00"})
+        if missing_non_default:
+            raise SpectralRecordingValidationError(
+                "beam_model.toml is required when streams reference non-B00 beam_id(s): "
+                f"{missing_non_default}. Without beam_model, only the default boresight beam B00=(0,0) is defined."
+            )
+        return _default_boresight_beam_model()
+
+    beams = _ensure_mapping(beam_model.get("beams", {}), field="beam_model.beams")
     if not beams:
-        raise SpectralRecordingValidationError("beam_model.toml must define [beams.<beam_id>] tables")
+        missing_non_default = sorted(referenced - {"B00"})
+        if missing_non_default:
+            raise SpectralRecordingValidationError(
+                "beam_model.toml must define [beams.<beam_id>] tables for non-B00 stream beam_id(s): "
+                f"{missing_non_default}"
+            )
+        return _default_boresight_beam_model()
     out: Dict[str, Dict[str, Any]] = {}
     for beam_id, raw_beam in beams.items():
         beam = _ensure_mapping(raw_beam, field=f"beam_model.beams.{beam_id}")
         out[str(beam_id)] = _deepcopy_dict(beam)
         out[str(beam_id)].setdefault("beam_id", str(beam_id))
-    missing = sorted({str(s["beam_id"]) for s in streams.values()} - set(out))
+    missing = sorted(referenced - set(out))
     if missing:
         raise SpectralRecordingValidationError(f"beam_id(s) referenced by streams are missing in beam_model: {missing}")
     return out
-
 
 def _recording_groups(recording_setup: Optional[Mapping[str, Any]]) -> Dict[str, Dict[str, Any]]:
     if recording_setup is None:
@@ -540,12 +1084,19 @@ def _recording_groups(recording_setup: Optional[Mapping[str, Any]]) -> Dict[str,
     return _ensure_mapping(recording_setup.get("recording_groups", {}), field="recording_groups")
 
 
-def _frequency_array_for_stream(
+def _linear_sky_axis_for_stream(
     stream: Mapping[str, Any],
     *,
     frequency_axes: Mapping[str, Mapping[str, Any]],
     lo_chains: Mapping[str, Mapping[str, Any]],
-) -> List[float]:
+) -> Tuple[float, float, int]:
+    """Return ``(sky_freq_ch0_hz, sky_freq_step_hz, full_nchan)``.
+
+    Velocity-window resolution only needs the linear WCS, not a materialized
+    list of every channel center.  Keeping this as a small helper avoids
+    rebuilding 32768-element arrays repeatedly for multi-window setups.
+    """
+
     axis = frequency_axes[str(stream["frequency_axis_id"])]
     full_nchan = int(axis["full_nchan"])
     if "sky_freq_at_full_ch0_hz" in axis and "sky_freq_step_hz" in axis:
@@ -556,10 +1107,24 @@ def _frequency_array_for_stream(
         # instrument-specific converter; it gives the resolver a well-defined
         # monotonic axis when a profile supplies only IF axis plus signed LO chain.
         chain = lo_chains[str(stream["lo_chain"])]
-        start = float(chain["signed_lo_sum_hz"]) + float(axis["if_freq_at_full_ch0_hz"])
-        step = float(axis["if_freq_step_hz"])
-    return [start + i * step for i in range(full_nchan)]
+        if_sign = float(chain.get("if_frequency_sign", 1.0))
+        start = float(chain["signed_lo_sum_hz"]) + if_sign * float(axis["if_freq_at_full_ch0_hz"])
+        step = if_sign * float(axis["if_freq_step_hz"])
+    return float(start), float(step), int(full_nchan)
 
+
+def _frequency_array_for_stream(
+    stream: Mapping[str, Any],
+    *,
+    frequency_axes: Mapping[str, Mapping[str, Any]],
+    lo_chains: Mapping[str, Mapping[str, Any]],
+) -> List[float]:
+    start, step, full_nchan = _linear_sky_axis_for_stream(
+        stream,
+        frequency_axes=frequency_axes,
+        lo_chains=lo_chains,
+    )
+    return [start + i * step for i in range(full_nchan)]
 
 def _radio_velocity_to_frequency(rest_frequency_hz: float, velocity_kms: float) -> float:
     return rest_frequency_hz * (1.0 - velocity_kms / C_KM_PER_S)
@@ -589,6 +1154,64 @@ def velocity_to_frequency_hz(rest_frequency_hz: float, velocity_kms: float, defi
     )
 
 
+def _relativistic_doppler_factor_from_kms(v_kms: float) -> float:
+    beta = float(v_kms) / C_KM_PER_S
+    if not math.isfinite(beta) or abs(beta) >= 1.0:
+        raise SpectralRecordingValidationError(f"invalid LSRK correction velocity: {v_kms!r} km/s")
+    return math.sqrt((1.0 + beta) / (1.0 - beta))
+
+
+def _lsrk_correction_kms_from_context(context: Optional[Mapping[str, Any]]) -> Optional[float]:
+    """Return topocentric-to-LSRK correction projected to the reference direction.
+
+    The returned value follows the same convention as the converter:
+    if the topocentric frequency is ``freq_topo``, the LSRK-frame frequency is
+    ``freq_lsrk = freq_topo / doppler_factor(v_corr_kms)``.
+    Therefore, when resolving a desired LSRK velocity window against a
+    topocentric spectrometer axis, the requested LSRK frequency interval is
+    multiplied by ``doppler_factor(v_corr_kms)`` before channel selection.
+    """
+
+    if not context:
+        return None
+    try:
+        ra_deg = float(context["ra_deg"])
+        dec_deg = float(context["dec_deg"])
+        reference_time_utc = str(context["reference_time_utc"])
+        lat_deg = float(context["site_lat_deg"])
+        lon_deg = float(context["site_lon_deg"])
+        elev_m = float(context.get("site_elev_m", 0.0))
+    except Exception:
+        return None
+    try:
+        from astropy.time import Time  # type: ignore
+        from astropy.coordinates import EarthLocation, SkyCoord  # type: ignore
+        import astropy.coordinates as coord  # type: ignore
+        from astropy import units as u  # type: ignore
+    except Exception as exc:
+        raise SpectralRecordingValidationError(
+            "velocity_frame='LSRK' requires astropy to compute the LSRK correction"
+        ) from exc
+
+    try:
+        loc = EarthLocation(lat=lat_deg * u.deg, lon=lon_deg * u.deg, height=elev_m * u.m)
+        tobs = Time(reference_time_utc, scale="utc")
+        target = SkyCoord(ra_deg * u.deg, dec_deg * u.deg, frame="icrs", obstime=tobs, location=loc)
+        vobs = SkyCoord(loc.get_gcrs(tobs)).transform_to(coord.LSRK()).velocity
+        ra_rad = target.icrs.ra.to_value(u.rad)
+        dec_rad = target.icrs.dec.to_value(u.rad)
+        v_proj = (
+            vobs.d_x.to_value(u.km / u.s) * math.cos(dec_rad) * math.cos(ra_rad)
+            + vobs.d_y.to_value(u.km / u.s) * math.cos(dec_rad) * math.sin(ra_rad)
+            + vobs.d_z.to_value(u.km / u.s) * math.sin(dec_rad)
+        )
+        return float(v_proj)
+    except Exception as exc:
+        raise SpectralRecordingValidationError(
+            "failed to compute LSRK correction from velocity_reference_context"
+        ) from exc
+
+
 def resolve_velocity_window_to_channels(
     *,
     rest_frequency_hz: float,
@@ -598,6 +1221,8 @@ def resolve_velocity_window_to_channels(
     margin_kms: float,
     frequency_hz: Sequence[float],
     clip_policy: str = "strict",
+    requested_velocity_frame: str = "LSRK",
+    vlsrk_correction_kms: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Resolve a velocity window to an inclusive/exclusive full-channel range.
 
@@ -618,6 +1243,15 @@ def resolve_velocity_window_to_channels(
     effective_vmax = vmax_kms + margin_kms
     f1 = velocity_to_frequency_hz(rest_frequency_hz, effective_vmin, velocity_definition)
     f2 = velocity_to_frequency_hz(rest_frequency_hz, effective_vmax, velocity_definition)
+    frame_norm = str(requested_velocity_frame or "LSRK").strip().upper()
+    correction_applied = False
+    if frame_norm in {"LSRK", "VLSRK"} and vlsrk_correction_kms is not None:
+        k_corr = _relativistic_doppler_factor_from_kms(float(vlsrk_correction_kms))
+        # Convert the requested LSRK frequency interval back to the topocentric
+        # spectrometer frame before selecting channels.
+        f1 *= k_corr
+        f2 *= k_corr
+        correction_applied = True
     f_low = min(f1, f2)
     f_high = max(f1, f2)
     indices = [i for i, freq in enumerate(frequency_hz) if f_low <= float(freq) <= f_high]
@@ -658,6 +1292,252 @@ def resolve_velocity_window_to_channels(
         "resolver_warnings": warnings,
         "frequency_low_hz": float(f_low),
         "frequency_high_hz": float(f_high),
+        "requested_velocity_frame": str(requested_velocity_frame),
+        "vlsrk_correction_applied": bool(correction_applied),
+        "vlsrk_correction_kms": None if vlsrk_correction_kms is None else float(vlsrk_correction_kms),
+    }
+
+
+def _channel_range_for_linear_frequency_axis(
+    *,
+    f_low: float,
+    f_high: float,
+    start_hz: float,
+    step_hz: float,
+    nchan: int,
+    clip_policy: str = "strict",
+) -> Tuple[int, int, bool, List[str]]:
+    """Return inclusive/exclusive channel range for a linear channel-center axis.
+
+    Channels are selected when their *center* frequency lies within
+    ``[f_low, f_high]``.  The result is sorted by channel index and works for both
+    increasing and decreasing frequency axes without materializing the full
+    frequency array.
+    """
+
+    if nchan <= 0:
+        raise SpectralRecordingValidationError("linear frequency axis nchan must be positive")
+    if nchan == 1:
+        freq = float(start_hz)
+        if min(f_low, f_high) <= freq <= max(f_low, f_high):
+            return 0, 1, False, []
+        axis_low = axis_high = freq
+        outside = max(f_low, f_high) < axis_low or min(f_low, f_high) > axis_high
+        if clip_policy == "strict" or outside:
+            raise SpectralRecordingValidationError(
+                "velocity window does not overlap the available frequency axis "
+                f"({f_low}..{f_high} Hz vs axis {axis_low}..{axis_high} Hz)"
+            )
+        raise SpectralRecordingValidationError("velocity window could not be resolved to channels")
+    if step_hz == 0.0:
+        raise SpectralRecordingValidationError("linear frequency axis step must be non-zero")
+
+    f_low = float(min(f_low, f_high))
+    f_high = float(max(f_low, f_high))
+    start = float(start_hz)
+    step = float(step_hz)
+    eps = 1.0e-12
+
+    if step > 0.0:
+        raw_i_min = (f_low - start) / step
+        raw_i_max = (f_high - start) / step
+    else:
+        raw_i_min = (f_high - start) / step
+        raw_i_max = (f_low - start) / step
+
+    i_min = math.ceil(raw_i_min - eps)
+    i_max = math.floor(raw_i_max + eps)
+
+    axis_end = start + (nchan - 1) * step
+    axis_low = min(start, axis_end)
+    axis_high = max(start, axis_end)
+    outside = f_high < axis_low or f_low > axis_high
+    if i_max < 0 or i_min > nchan - 1 or i_min > i_max:
+        if clip_policy == "strict" or outside:
+            raise SpectralRecordingValidationError(
+                "velocity window does not overlap the available frequency axis "
+                f"({f_low}..{f_high} Hz vs axis {axis_low}..{axis_high} Hz)"
+            )
+        raise SpectralRecordingValidationError("velocity window could not be resolved to channels")
+
+    clipped = False
+    warnings: List[str] = []
+    if f_low < axis_low or f_high > axis_high:
+        if clip_policy == "strict":
+            raise SpectralRecordingValidationError("velocity window extends beyond the available frequency axis")
+        clipped = True
+        warnings.append("velocity window clipped to available frequency axis")
+
+    ch_start = max(0, int(i_min))
+    ch_stop = min(nchan, int(i_max) + 1)
+    if ch_start >= ch_stop:
+        raise SpectralRecordingValidationError("velocity window could not be resolved to channels")
+    return ch_start, ch_stop, clipped, warnings
+
+
+def resolve_velocity_window_to_channels_linear(
+    *,
+    rest_frequency_hz: float,
+    velocity_definition: str,
+    vmin_kms: float,
+    vmax_kms: float,
+    margin_kms: float,
+    start_hz: float,
+    step_hz: float,
+    nchan: int,
+    clip_policy: str = "strict",
+    requested_velocity_frame: str = "LSRK",
+    vlsrk_correction_kms: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Resolve a velocity window on a linear WCS without allocating an array."""
+
+    if vmax_kms < vmin_kms:
+        raise SpectralRecordingValidationError("vmax_kms must be >= vmin_kms")
+    if margin_kms < 0:
+        raise SpectralRecordingValidationError("margin_kms must be >= 0")
+    effective_vmin = vmin_kms - margin_kms
+    effective_vmax = vmax_kms + margin_kms
+    f1 = velocity_to_frequency_hz(rest_frequency_hz, effective_vmin, velocity_definition)
+    f2 = velocity_to_frequency_hz(rest_frequency_hz, effective_vmax, velocity_definition)
+    frame_norm = str(requested_velocity_frame or "LSRK").strip().upper()
+    correction_applied = False
+    if frame_norm in {"LSRK", "VLSRK"} and vlsrk_correction_kms is not None:
+        k_corr = _relativistic_doppler_factor_from_kms(float(vlsrk_correction_kms))
+        f1 *= k_corr
+        f2 *= k_corr
+        correction_applied = True
+    f_low = min(f1, f2)
+    f_high = max(f1, f2)
+    ch_start, ch_stop, clipped, warnings = _channel_range_for_linear_frequency_axis(
+        f_low=f_low,
+        f_high=f_high,
+        start_hz=float(start_hz),
+        step_hz=float(step_hz),
+        nchan=int(nchan),
+        clip_policy=clip_policy,
+    )
+    return {
+        "requested_vmin_kms": float(vmin_kms),
+        "requested_vmax_kms": float(vmax_kms),
+        "effective_vmin_kms": float(effective_vmin),
+        "effective_vmax_kms": float(effective_vmax),
+        "computed_ch_start": int(ch_start),
+        "computed_ch_stop": int(ch_stop),
+        "clipped_to_axis": bool(clipped),
+        "resolver_warnings": warnings,
+        "frequency_low_hz": float(f_low),
+        "frequency_high_hz": float(f_high),
+        "requested_velocity_frame": str(requested_velocity_frame),
+        "vlsrk_correction_applied": bool(correction_applied),
+        "vlsrk_correction_kms": None if vlsrk_correction_kms is None else float(vlsrk_correction_kms),
+    }
+
+
+def _resolve_velocity_window_record(
+    *,
+    stream: Mapping[str, Any],
+    window: Mapping[str, Any],
+    group_id: str,
+    window_index: int,
+    frequency_axes: Mapping[str, Mapping[str, Any]],
+    lo_chains: Mapping[str, Mapping[str, Any]],
+    setup_override_policy: str,
+    default_velocity_definition: str = "radio",
+    default_vmin_kms: Optional[float] = None,
+    default_vmax_kms: Optional[float] = None,
+    default_margin_kms: float = 0.0,
+    default_velocity_frame: str = "LSRK",
+    velocity_reference_context: Optional[Mapping[str, Any]] = None,
+) -> Dict[str, Any]:
+    rest_frequency_hz = _rest_frequency_hz_from_window(
+        window,
+        field_base=f"recording_groups.{group_id}.windows[{window_index}]",
+    )
+    if rest_frequency_hz is None:
+        rest_frequency_hz = _rest_frequency_hz_from_stream(
+            stream,
+            field_base=f"streams.{stream.get('stream_id', '')}",
+        )
+    if rest_frequency_hz is None:
+        raise SpectralRecordingValidationError(
+            f"recording_groups.{group_id}.windows[{window_index}] needs rest_frequency_hz/ghz/mhz "
+            "or the source stream must define rest_frequency_hz"
+        )
+    velocity_definition = str(window.get("velocity_definition", default_velocity_definition))
+    vmin_value = window.get("vmin_kms", default_vmin_kms)
+    vmax_value = window.get("vmax_kms", default_vmax_kms)
+    if vmin_value is None or vmax_value is None:
+        raise SpectralRecordingValidationError(
+            f"recording_groups.{group_id}.windows[{window_index}] needs vmin_kms and vmax_kms"
+        )
+    vmin_kms = _as_float(vmin_value, field=f"recording_groups.{group_id}.windows[{window_index}].vmin_kms")
+    vmax_kms = _as_float(vmax_value, field=f"recording_groups.{group_id}.windows[{window_index}].vmax_kms")
+    margin_kms = _as_float(
+        window.get("margin_kms", default_margin_kms),
+        field=f"recording_groups.{group_id}.windows[{window_index}].margin_kms",
+    )
+    clip_policy = "strict" if setup_override_policy == "strict" else "clip"
+    axis_start_hz, axis_step_hz, axis_nchan = _linear_sky_axis_for_stream(
+        stream,
+        frequency_axes=frequency_axes,
+        lo_chains=lo_chains,
+    )
+    requested_velocity_frame = str(window.get("velocity_frame", default_velocity_frame))
+    frame_norm = requested_velocity_frame.strip().upper()
+    vlsrk_correction_kms = None
+    resolver_frame = VELOCITY_RESOLVER_FRAME
+    resolver_version = VELOCITY_RESOLVER_VERSION
+    if frame_norm in {"LSRK", "VLSRK"}:
+        vlsrk_correction_kms = _lsrk_correction_kms_from_context(velocity_reference_context)
+        if vlsrk_correction_kms is None:
+            raise SpectralRecordingValidationError(
+                "velocity_frame='LSRK' requires a velocity_reference_context with "
+                "ra_deg, dec_deg, reference_time_utc, site_lat_deg, and site_lon_deg. "
+                "Specify velocity_reference_* parameters or use velocity_frame='TOPOCENTRIC' "
+                "for an explicitly topocentric approximate window."
+            )
+        resolver_frame = VLSRK_RESOLVER_FRAME
+        resolver_version = VLSRK_RESOLVER_VERSION
+    resolved = resolve_velocity_window_to_channels_linear(
+        rest_frequency_hz=rest_frequency_hz,
+        velocity_definition=velocity_definition,
+        vmin_kms=vmin_kms,
+        vmax_kms=vmax_kms,
+        margin_kms=margin_kms,
+        start_hz=axis_start_hz,
+        step_hz=axis_step_hz,
+        nchan=axis_nchan,
+        clip_policy=clip_policy,
+        requested_velocity_frame=requested_velocity_frame,
+        vlsrk_correction_kms=vlsrk_correction_kms,
+    )
+    resolver_warnings = list(resolved.get("resolver_warnings", []))
+    out = dict(resolved)
+    out["resolver_warnings"] = resolver_warnings
+    out.update(
+        {
+            "kind": "velocity",
+            "window_id": str(window.get("window_id", "")),
+            "line_name": str(window.get("line_name", window.get("window_id", ""))),
+            "rest_frequency_hz": float(rest_frequency_hz),
+            "requested_velocity_frame": requested_velocity_frame,
+            "velocity_frame": resolver_frame,
+            "velocity_resolver_version": resolver_version,
+            "velocity_definition": velocity_definition,
+            "vlsrk_correction_kms": None if vlsrk_correction_kms is None else float(vlsrk_correction_kms),
+            "velocity_reference_context": {} if velocity_reference_context is None else dict(velocity_reference_context),
+        }
+    )
+    return out
+
+
+def _single_channel_window_record(*, ch_start: int, ch_stop: int, window_id: str = "", line_name: str = "") -> Dict[str, Any]:
+    return {
+        "kind": "channel",
+        "window_id": window_id,
+        "line_name": line_name,
+        "computed_ch_start": int(ch_start),
+        "computed_ch_stop": int(ch_stop),
     }
 
 
@@ -668,6 +1548,7 @@ def _resolve_recording_for_stream(
     frequency_axes: Mapping[str, Mapping[str, Any]],
     lo_chains: Mapping[str, Mapping[str, Any]],
     setup_override_policy: str,
+    velocity_reference_context: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     axis = frequency_axes[str(stream["frequency_axis_id"])]
     full_nchan = int(axis["full_nchan"])
@@ -687,6 +1568,8 @@ def _resolve_recording_for_stream(
         raise SpectralRecordingValidationError(
             f"saved_window_policy must be one of {sorted(SAVED_WINDOW_POLICIES)}, got {policy!r}"
         )
+    if mode == "tp" and policy == "multi_window":
+        raise SpectralRecordingValidationError(f"recording_groups.{group_id}: multi_window is only valid for spectrum mode")
 
     out: Dict[str, Any] = {
         "recording_group_id": group_id,
@@ -694,18 +1577,104 @@ def _resolve_recording_for_stream(
         "saved_window_policy": policy,
         "full_nchan": full_nchan,
         "input_data_nchan": full_nchan,
+        "recording_table_kind": "tp" if mode == "tp" else "spectral",
     }
-    if mode == "tp":
-        out["recording_table_kind"] = "tp"
-    else:
-        out["recording_table_kind"] = "spectral"
 
-    clip_policy = "strict" if setup_override_policy == "strict" else "clip"
+    if policy == "multi_window":
+        windows = _window_list_from_recording_group(rec, group_id=group_id)
+        if not windows:
+            raise SpectralRecordingValidationError(f"recording_groups.{group_id}: multi_window requires windows")
+        default_velocity_definition = str(rec.get("velocity_definition", "radio"))
+        default_vmin = rec.get("vmin_kms")
+        default_vmax = rec.get("vmax_kms")
+        default_margin = _as_float(rec.get("margin_kms", 0.0), field=f"recording_groups.{group_id}.margin_kms")
+        default_velocity_frame = str(rec.get("velocity_frame", "LSRK"))
+        products: List[Dict[str, Any]] = []
+        for i, window in enumerate(windows):
+            w = dict(window)
+            window_id = _safe_window_id(w.get("window_id"), field=f"recording_groups.{group_id}.windows[{i}].window_id")
+            if "saved_ch_start" in w or "saved_ch_stop" in w:
+                ch_start = _as_int(w.get("saved_ch_start"), field=f"recording_groups.{group_id}.windows[{i}].saved_ch_start")
+                ch_stop = _as_int(w.get("saved_ch_stop"), field=f"recording_groups.{group_id}.windows[{i}].saved_ch_stop")
+                if ch_start < 0 or ch_stop > full_nchan or ch_start >= ch_stop:
+                    raise SpectralRecordingValidationError(
+                        f"recording_groups.{group_id}.windows[{i}]: invalid channel slice "
+                        f"[{ch_start}:{ch_stop}] for full_nchan={full_nchan}"
+                    )
+                computed = _single_channel_window_record(
+                    ch_start=ch_start,
+                    ch_stop=ch_stop,
+                    window_id=window_id,
+                    line_name=str(w.get("line_name", window_id)),
+                )
+                rest = _rest_frequency_hz_from_window(w, field_base=f"recording_groups.{group_id}.windows[{i}]")
+                if rest is not None:
+                    computed["rest_frequency_hz"] = float(rest)
+            else:
+                computed = _resolve_velocity_window_record(
+                    stream=stream,
+                    window=w,
+                    group_id=group_id,
+                    window_index=i,
+                    frequency_axes=frequency_axes,
+                    lo_chains=lo_chains,
+                    setup_override_policy=setup_override_policy,
+                    default_velocity_definition=default_velocity_definition,
+                    default_vmin_kms=None if default_vmin is None else _as_float(default_vmin, field=f"recording_groups.{group_id}.vmin_kms"),
+                    default_vmax_kms=None if default_vmax is None else _as_float(default_vmax, field=f"recording_groups.{group_id}.vmax_kms"),
+                    default_margin_kms=default_margin,
+                    default_velocity_frame=default_velocity_frame,
+                    velocity_reference_context=velocity_reference_context,
+                )
+            ch_start = int(computed["computed_ch_start"])
+            ch_stop = int(computed["computed_ch_stop"])
+            if ch_start < 0 or ch_stop > full_nchan or ch_start >= ch_stop:
+                raise SpectralRecordingValidationError(
+                    f"recording_groups.{group_id}.windows[{i}]: invalid computed channel slice "
+                    f"[{ch_start}:{ch_stop}] for full_nchan={full_nchan}"
+                )
+            source_db_stream_name = str(stream.get("db_stream_name", stream.get("stream_id", "")))
+            recorded_stream_id = str(w.get("recorded_stream_id", _recorded_stream_id(str(stream["stream_id"]), window_id)))
+            recorded_db_stream_name = str(w.get("recorded_db_stream_name", _recorded_db_stream_name(source_db_stream_name, window_id)))
+            product = {
+                "window_id": window_id,
+                "line_name": str(w.get("line_name", window_id)),
+                "recorded_stream_id": recorded_stream_id,
+                "recorded_db_stream_name": recorded_db_stream_name,
+                "source_stream_id": str(stream["stream_id"]),
+                "source_db_stream_name": source_db_stream_name,
+                "recording_mode": mode,
+                "recording_table_kind": "spectral",
+                "saved_window_policy": policy,
+                "full_nchan": int(full_nchan),
+                "input_data_nchan": int(full_nchan),
+                "saved_ch_start": ch_start,
+                "saved_ch_stop": ch_stop,
+                "saved_nchan": int(ch_stop - ch_start),
+                "computed_windows": [computed],
+                "computed_windows_json": json.dumps([computed], sort_keys=True, separators=(",", ":")),
+            }
+            product_rest = computed.get("rest_frequency_hz", stream.get("rest_frequency_hz", stream.get("default_rest_frequency_hz")))
+            if product_rest is not None:
+                product["rest_frequency_hz"] = float(product_rest)
+            products.append(product)
+        out["recorded_products"] = products
+        # The source stream itself is not a saved product in multi_window mode.
+        # For callers that still inspect the source recording entry, expose the
+        # minimal envelope as diagnostic metadata only.
+        out["saved_ch_start"] = min(int(p["saved_ch_start"]) for p in products)
+        out["saved_ch_stop"] = max(int(p["saved_ch_stop"]) for p in products)
+        out["saved_nchan"] = int(out["saved_ch_stop"] - out["saved_ch_start"])
+        out["computed_windows"] = [cw for p in products for cw in p["computed_windows"]]
+        out["computed_windows_json"] = json.dumps(out["computed_windows"], sort_keys=True, separators=(",", ":"))
+        return out
+
+    # All non-multi policies produce one saved product per source stream.
     if policy == "full":
         ch_start = 0
         ch_stop = full_nchan
         computed_windows: List[Dict[str, Any]] = [
-            {"kind": "channel", "computed_ch_start": ch_start, "computed_ch_stop": ch_stop}
+            _single_channel_window_record(ch_start=ch_start, ch_stop=ch_stop)
         ]
     elif policy == "channel":
         ch_start = _as_int(rec.get("saved_ch_start"), field=f"recording_groups.{group_id}.saved_ch_start")
@@ -716,49 +1685,67 @@ def _resolve_recording_for_stream(
                 f"for full_nchan={full_nchan}"
             )
         computed_windows = [
-            {"kind": "channel", "computed_ch_start": ch_start, "computed_ch_stop": ch_stop}
+            _single_channel_window_record(ch_start=ch_start, ch_stop=ch_stop)
         ]
     else:  # contiguous_envelope
-        rest_frequency_hz = _as_float(
-            rec.get("rest_frequency_hz", stream.get("default_rest_frequency_hz")),
-            field=f"recording_groups.{group_id}.rest_frequency_hz",
-        )
-        velocity_definition = str(rec.get("velocity_definition", "radio"))
-        vmin_kms = _as_float(rec.get("vmin_kms"), field=f"recording_groups.{group_id}.vmin_kms")
-        vmax_kms = _as_float(rec.get("vmax_kms"), field=f"recording_groups.{group_id}.vmax_kms")
-        margin_kms = _as_float(rec.get("margin_kms", 0.0), field=f"recording_groups.{group_id}.margin_kms")
-        freq = _frequency_array_for_stream(stream, frequency_axes=frequency_axes, lo_chains=lo_chains)
-        resolved = resolve_velocity_window_to_channels(
-            rest_frequency_hz=rest_frequency_hz,
-            velocity_definition=velocity_definition,
-            vmin_kms=vmin_kms,
-            vmax_kms=vmax_kms,
-            margin_kms=margin_kms,
-            frequency_hz=freq,
-            clip_policy=clip_policy,
-        )
-        ch_start = int(resolved["computed_ch_start"])
-        ch_stop = int(resolved["computed_ch_stop"])
-        requested_velocity_frame = str(rec.get("velocity_frame", "LSRK"))
-        resolver_warnings = list(resolved.get("resolver_warnings", []))
-        resolver_warnings.append(
-            "velocity resolver is topocentric_rest_velocity_approx_v1: "
-            "source coordinate, site, reference_time_utc, and LSRK correction are not applied"
-        )
-        resolved = dict(resolved)
-        resolved["resolver_warnings"] = resolver_warnings
-        computed_windows = [
-            {
-                "kind": "velocity",
-                "line_name": str(rec.get("line_name", "")),
-                "rest_frequency_hz": rest_frequency_hz,
-                "requested_velocity_frame": requested_velocity_frame,
-                "velocity_frame": VELOCITY_RESOLVER_FRAME,
-                "velocity_resolver_version": VELOCITY_RESOLVER_VERSION,
-                "velocity_definition": velocity_definition,
-                **resolved,
-            }
-        ]
+        explicit_windows = _window_list_from_recording_group(rec, group_id=group_id)
+        if explicit_windows:
+            resolved_windows: List[Dict[str, Any]] = []
+            default_velocity_definition = str(rec.get("velocity_definition", "radio"))
+            default_vmin = rec.get("vmin_kms")
+            default_vmax = rec.get("vmax_kms")
+            default_margin = _as_float(rec.get("margin_kms", 0.0), field=f"recording_groups.{group_id}.margin_kms")
+            default_velocity_frame = str(rec.get("velocity_frame", "LSRK"))
+            for i, window in enumerate(explicit_windows):
+                resolved_windows.append(
+                    _resolve_velocity_window_record(
+                        stream=stream,
+                        window=window,
+                        group_id=group_id,
+                        window_index=i,
+                        frequency_axes=frequency_axes,
+                        lo_chains=lo_chains,
+                        setup_override_policy=setup_override_policy,
+                        default_velocity_definition=default_velocity_definition,
+                        default_vmin_kms=None if default_vmin is None else _as_float(default_vmin, field=f"recording_groups.{group_id}.vmin_kms"),
+                        default_vmax_kms=None if default_vmax is None else _as_float(default_vmax, field=f"recording_groups.{group_id}.vmax_kms"),
+                        default_margin_kms=default_margin,
+                        default_velocity_frame=default_velocity_frame,
+                        velocity_reference_context=velocity_reference_context,
+                    )
+                )
+            ch_start = min(int(w["computed_ch_start"]) for w in resolved_windows)
+            ch_stop = max(int(w["computed_ch_stop"]) for w in resolved_windows)
+            computed_windows = resolved_windows + [
+                {
+                    "kind": "contiguous_envelope",
+                    "computed_ch_start": int(ch_start),
+                    "computed_ch_stop": int(ch_stop),
+                    "source_window_ids": [str(w.get("window_id", "")) for w in resolved_windows],
+                }
+            ]
+        else:
+            single_window = dict(rec)
+            single_window["window_id"] = str(rec.get("window_id", rec.get("line_name", "velocity_window")))
+            resolved = _resolve_velocity_window_record(
+                stream=stream,
+                window=single_window,
+                group_id=group_id,
+                window_index=0,
+                frequency_axes=frequency_axes,
+                lo_chains=lo_chains,
+                setup_override_policy=setup_override_policy,
+                default_velocity_definition=str(rec.get("velocity_definition", "radio")),
+                default_vmin_kms=_as_float(rec.get("vmin_kms"), field=f"recording_groups.{group_id}.vmin_kms"),
+                default_vmax_kms=_as_float(rec.get("vmax_kms"), field=f"recording_groups.{group_id}.vmax_kms"),
+                default_margin_kms=_as_float(rec.get("margin_kms", 0.0), field=f"recording_groups.{group_id}.margin_kms"),
+                default_velocity_frame=str(rec.get("velocity_frame", "LSRK")),
+                velocity_reference_context=velocity_reference_context,
+            )
+            ch_start = int(resolved["computed_ch_start"])
+            ch_stop = int(resolved["computed_ch_stop"])
+            computed_windows = [resolved]
+
     saved_nchan = ch_stop - ch_start
     out.update(
         {
@@ -774,7 +1761,6 @@ def _resolve_recording_for_stream(
         out["tp_nchan_configured"] = int(saved_nchan)
     return out
 
-
 def _assign_recording_groups(
     streams: Mapping[str, Mapping[str, Any]],
     recording_setup: Optional[Mapping[str, Any]],
@@ -782,11 +1768,18 @@ def _assign_recording_groups(
     frequency_axes: Mapping[str, Mapping[str, Any]],
     lo_chains: Mapping[str, Mapping[str, Any]],
     setup_override_policy: str,
+    velocity_reference_context: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     groups = _recording_groups(recording_setup)
+    defaults = (
+        _ensure_mapping(recording_setup.get("defaults", {}), field="defaults")
+        if recording_setup is not None
+        else {}
+    )
     assignments: Dict[str, Dict[str, Any]] = {}
     for group_id, raw_group in groups.items():
-        group = _ensure_mapping(raw_group, field=f"recording_groups.{group_id}")
+        group = dict(defaults)
+        group.update(_ensure_mapping(raw_group, field=f"recording_groups.{group_id}"))
         group["recording_group_id"] = str(group_id)
         stream_ids = _as_str_list(group.get("streams", []), field=f"recording_groups.{group_id}.streams")
         if not stream_ids:
@@ -810,6 +1803,7 @@ def _assign_recording_groups(
             frequency_axes=frequency_axes,
             lo_chains=lo_chains,
             setup_override_policy=setup_override_policy,
+            velocity_reference_context=velocity_reference_context,
         )
     return resolved
 
@@ -880,11 +1874,12 @@ def _validate_unique_stream_keys(streams: Mapping[str, Mapping[str, Any]]) -> No
     for stream_id, stream in streams.items():
         _validate_db_table_path_kind(str(stream_id), stream)
         raw_key = (str(stream["spectrometer_key"]), int(stream["board_id"]))
-        if raw_key in seen_raw:
+        is_recorded_product = bool(stream.get("source_stream_id")) or bool(stream.get("recorded_stream_id"))
+        if raw_key in seen_raw and not is_recorded_product:
             raise SpectralRecordingValidationError(
                 f"Duplicate raw input key {raw_key}: {seen_raw[raw_key]} and {stream_id}"
             )
-        seen_raw[raw_key] = stream_id
+        seen_raw.setdefault(raw_key, stream_id)
         db_path = str(stream["db_table_path"])
         if db_path in seen_db:
             raise SpectralRecordingValidationError(
@@ -892,22 +1887,23 @@ def _validate_unique_stream_keys(streams: Mapping[str, Mapping[str, Any]]) -> No
             )
         seen_db[db_path] = stream_id
         sdfits_key = (int(stream["fdnum"]), int(stream["ifnum"]), int(stream["plnum"]), str(stream["polariza"]))
-        if sdfits_key in seen_sdfits:
+        if sdfits_key in seen_sdfits and not is_recorded_product:
             raise SpectralRecordingValidationError(
                 f"Duplicate SDFITS key {sdfits_key}: {seen_sdfits[sdfits_key]} and {stream_id}"
             )
-        seen_sdfits[sdfits_key] = stream_id
+        seen_sdfits.setdefault(sdfits_key, stream_id)
 
 
 def resolve_spectral_recording_setup(
     *,
     lo_profile: Mapping[str, Any],
     recording_setup: Optional[Mapping[str, Any]],
-    beam_model: Mapping[str, Any],
+    beam_model: Optional[Mapping[str, Any]],
     setup_id: str,
     input_paths: Optional[Mapping[str, os.PathLike[str] | str]] = None,
     setup_override_policy: str = "strict",
     created_utc: Optional[str] = None,
+    velocity_reference_context: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     if setup_override_policy not in SETUP_OVERRIDE_POLICIES:
         raise SpectralRecordingValidationError(
@@ -928,23 +1924,55 @@ def resolve_spectral_recording_setup(
         frequency_axes=frequency_axes,
         lo_chains=resolved_chains,
         setup_override_policy=setup_override_policy,
+        velocity_reference_context=velocity_reference_context,
     )
 
+    source_streams: Dict[str, Dict[str, Any]] = {}
     normalized_streams: Dict[str, Dict[str, Any]] = {}
+    recorded_streams: Dict[str, Dict[str, Any]] = {}
     for stream_id in sorted(streams):
-        stream = _deepcopy_dict(streams[stream_id])
+        source = _deepcopy_dict(streams[stream_id])
+        if "db_stream_name" not in source:
+            source["db_stream_name"] = str(stream_id)
+        source["raw_input_key"] = str(source.get("raw_input_key", source["spectrometer_key"]))
+        source["raw_board_id"] = int(source.get("raw_board_id", source["board_id"]))
+        source_streams[stream_id] = _sorted_dict(source)
+
         rec = recording[stream_id]
-        stream.update(rec)
-        stream["recording_table_kind"] = "tp" if stream["recording_mode"] == "tp" else "spectral"
-        if "db_table_path" not in stream:
-            stream["db_table_path"] = _default_db_table_path(
-                str(stream["spectrometer_key"]), int(stream["board_id"]), kind=str(stream["recording_table_kind"])
-            )
-        if "db_stream_name" not in stream:
-            stream["db_stream_name"] = str(stream_id)
-        stream["raw_input_key"] = str(stream.get("raw_input_key", stream["spectrometer_key"]))
-        stream["raw_board_id"] = int(stream.get("raw_board_id", stream["board_id"]))
-        normalized_streams[stream_id] = _sorted_dict(stream)
+        if "recorded_products" in rec:
+            for product in rec["recorded_products"]:
+                stream = _deepcopy_dict(source)
+                recorded_stream_id = str(product["recorded_stream_id"])
+                recorded_db_stream_name = str(product["recorded_db_stream_name"])
+                if product.get("rest_frequency_hz") is not None:
+                    for rest_key in REST_FREQUENCY_KEYS:
+                        stream.pop(rest_key, None)
+                stream.update(product)
+                stream["stream_id"] = recorded_stream_id
+                stream["db_stream_name"] = recorded_db_stream_name
+                stream["recorded_db_stream_name"] = recorded_db_stream_name
+                stream["recording_table_kind"] = "spectral"
+                stream["raw_input_key"] = str(source.get("raw_input_key", source["spectrometer_key"]))
+                stream["raw_board_id"] = int(source.get("raw_board_id", source["board_id"]))
+                stream["db_table_path"] = str(
+                    product.get(
+                        "db_table_path",
+                        _db_table_path_for_recorded_product(source, recorded_db_stream_name, mode=str(product.get("recording_mode", "spectrum"))),
+                    )
+                )
+                normalized_streams[recorded_stream_id] = _sorted_dict(stream)
+                recorded_streams[recorded_stream_id] = _sorted_dict(stream)
+        else:
+            stream = _deepcopy_dict(source)
+            stream.update(rec)
+            stream["recording_table_kind"] = "tp" if stream["recording_mode"] == "tp" else "spectral"
+            if "db_table_path" not in stream:
+                stream["db_table_path"] = _default_db_table_path(
+                    str(stream["spectrometer_key"]), int(stream["board_id"]), kind=str(stream["recording_table_kind"])
+                )
+            stream["raw_input_key"] = str(stream.get("raw_input_key", stream["spectrometer_key"]))
+            stream["raw_board_id"] = int(stream.get("raw_board_id", stream["board_id"]))
+            normalized_streams[stream_id] = _sorted_dict(stream)
 
     _validate_unique_stream_keys(normalized_streams)
 
@@ -972,8 +2000,11 @@ def resolve_spectral_recording_setup(
         "lo_chains": _sorted_dict(resolved_chains),
         "frequency_axes": _sorted_dict(frequency_axes),
         "beams": _sorted_dict(beams),
+        "source_streams": source_streams,
         "streams": normalized_streams,
     }
+    if recorded_streams:
+        snapshot["recorded_streams"] = recorded_streams
     _validate_snapshot_fixed_schema(snapshot)
     canonical_without_hash = copy.deepcopy(snapshot)
     canonical_without_hash["canonical_snapshot_sha256"] = ""
@@ -986,17 +2017,20 @@ def load_and_resolve_spectral_recording_setup(
     *,
     lo_profile_path: os.PathLike[str] | str,
     recording_window_setup_path: Optional[os.PathLike[str] | str],
-    beam_model_path: os.PathLike[str] | str,
+    beam_model_path: Optional[os.PathLike[str] | str],
     setup_id: str,
     setup_override_policy: str = "strict",
+    velocity_reference_context: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     lo_path = Path(lo_profile_path)
     rec_path = Path(recording_window_setup_path) if recording_window_setup_path else None
-    beam_path = Path(beam_model_path)
+    beam_path = Path(beam_model_path) if beam_model_path else None
     lo_profile = read_toml(lo_path)
     recording_setup = read_toml(rec_path) if rec_path else None
-    beam_model = read_toml(beam_path)
-    input_paths: Dict[str, Path] = {"lo_profile": lo_path, "beam_model": beam_path}
+    beam_model = read_toml(beam_path) if beam_path else None
+    input_paths: Dict[str, Path] = {"lo_profile": lo_path}
+    if beam_path:
+        input_paths["beam_model"] = beam_path
     if rec_path:
         input_paths["recording_window_setup"] = rec_path
     return resolve_spectral_recording_setup(
@@ -1006,6 +2040,7 @@ def load_and_resolve_spectral_recording_setup(
         setup_id=setup_id,
         input_paths=input_paths,
         setup_override_policy=setup_override_policy,
+        velocity_reference_context=velocity_reference_context,
     )
 
 
@@ -1088,7 +2123,7 @@ def _build_resolve_parser() -> argparse.ArgumentParser:
         default=None,
         help="Path to recording_window_setup.toml. If omitted, all streams default to full-spectrum recording.",
     )
-    parser.add_argument("--beam-model", required=True, help="Path to beam_model.toml")
+    parser.add_argument("--beam-model", default=None, help="Path to beam_model.toml. If omitted, only B00=(0,0) is available.")
     parser.add_argument("--setup-id", required=True, help="Human-readable setup id stored in the snapshot")
     parser.add_argument("--output", required=True, help="Output spectral_recording_snapshot.toml")
     parser.add_argument(
