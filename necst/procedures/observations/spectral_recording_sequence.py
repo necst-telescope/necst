@@ -436,16 +436,31 @@ def build_spectral_recording_observation_setup(
 
 
 def reject_legacy_recording_kwargs_for_setup(kwargs: Mapping[str, Any], setup: Optional[SpectralRecordingObservationSetup]) -> None:
-    """Reject legacy per-observation spectral controls when a setup is active.
+    """Reject active legacy per-observation spectral controls in setup mode.
 
     In setup mode, stream-local saved channel windows and TP policy are already
     encoded in the resolved snapshot. Accepting legacy ``ch``/``tp_mode``/
-    ``tp_range`` kwargs would be ambiguous and can appear to succeed while being
-    ignored by SpectralData.
+    ``tp_range`` controls would be ambiguous and can appear to succeed while
+    being ignored by SpectralData.
+
+    Command-line wrappers often pass inactive defaults such as ``ch=None`` even
+    when the user did not request legacy binning.  Those inert defaults must not
+    disable spectral-recording setup mode.  This function therefore rejects only
+    values that would actually trigger the legacy controls in
+    :meth:`Observation.execute`.
     """
     if setup is None:
         return
-    conflicts = [key for key in ("ch", "tp_mode", "tp_range") if key in kwargs]
+
+    conflicts = []
+    if kwargs.get("ch") is not None:
+        conflicts.append("ch")
+    if bool(kwargs.get("tp_mode", False)):
+        conflicts.append("tp_mode")
+    tp_range = kwargs.get("tp_range", None)
+    if tp_range is not None and len(tp_range) > 0:
+        conflicts.append("tp_range")
+
     if conflicts:
         raise ValueError(
             "spectral recording setup cannot be combined with legacy observation kwargs: "
