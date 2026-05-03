@@ -71,6 +71,43 @@ def _readback_frequency_hz(readback: Any) -> float:
     return freq
 
 
+def _frequency_alias_hz(
+    table: Mapping[str, Any],
+    *,
+    field_base: str,
+    canonical: str,
+    aliases: Mapping[str, float],
+    required: bool = False,
+    default: Optional[float] = None,
+) -> float:
+    """Resolve one frequency value from explicit unit-suffixed TOML keys.
+
+    The returned value is always Hz.  More than one alias is rejected because
+    accepting conflicting unit keys silently would be unsafe for SG control.
+    """
+
+    found = [(name, table[name]) for name in aliases if name in table]
+    if not found:
+        if required:
+            names = ", ".join(aliases)
+            raise SpectralRecordingSGValidationError(
+                f"{field_base}: missing {canonical}; expected one of {names}"
+            )
+        if default is None:
+            raise SpectralRecordingSGValidationError(
+                f"{field_base}: no default supplied for optional frequency {canonical}"
+            )
+        return float(default)
+    if len(found) > 1:
+        names = ", ".join(name for name, _ in found)
+        raise SpectralRecordingSGValidationError(
+            f"{field_base}: multiple frequency aliases for {canonical}: {names}. "
+            "Specify exactly one unit-suffixed key."
+        )
+    name, value = found[0]
+    return float(value) * float(aliases[name])
+
+
 def _readback_power_dbm(readback: Any) -> Optional[float]:
     value = _get_value(readback, "power_dbm", "sg_readback_power_dbm", "power", default=None)
     return None if value is None else float(value)
@@ -121,7 +158,17 @@ def build_sg_apply_plan(lo_profile: Mapping[str, Any], sg_id: Optional[str] = No
             "control_adapter": str(
                 dev.get("control_adapter", "necst_commander_signal_generator_set_v1")
             ),
-            "sg_set_frequency_hz": float(dev.get("sg_set_frequency_hz", 0.0)),
+            "sg_set_frequency_hz": _frequency_alias_hz(
+                dev,
+                field_base=f"sg_devices.{key}",
+                canonical="sg_set_frequency_hz",
+                aliases={
+                    "sg_set_frequency_hz": 1.0,
+                    "sg_set_frequency_ghz": 1.0e9,
+                    "sg_set_frequency_mhz": 1.0e6,
+                },
+                required=True,
+            ),
             "sg_set_power_dbm": float(dev.get("sg_set_power_dbm", 0.0)),
             "frequency_tolerance_hz": float(dev.get("frequency_tolerance_hz", 0.0)),
             "power_tolerance_db": float(dev.get("power_tolerance_db", 0.0)),
