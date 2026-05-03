@@ -159,11 +159,25 @@ class Observation(ABC):
     @abstractmethod
     def run(self, *args, **kwargs) -> None: ...
 
-    def hot(self, integ_time: Union[int, float], id: Any) -> None:
+    def hot(
+        self,
+        integ_time: Union[int, float],
+        id: Any,
+        *,
+        preserve_tracking: bool = False,
+    ) -> None:
         # TODO: Remove this workaround, by attaching control section ID to spectra
         # metadata command; if it's "", don't require tight control
         # This will use SpectralMetadata.srv
-        if not self.com.get_message("antenna_control").tight:
+        #
+        # When preserve_tracking=True, the caller guarantees that the antenna has
+        # already arrived at the desired calibration point and settled there. In
+        # that case, HOT must not issue any extra antenna command because the
+        # following HOT->OFF pair is intended to run on exactly the same tracking
+        # solution and sky position.
+        if (not preserve_tracking) and (
+            not self.com.get_message("antenna_control").tight
+        ):
             enc = self.com.get_message("encoder")
             params = PointingError.from_file(config.antenna_pointing_parameter_path)
             az, el = params.apparent_to_refracted(az=enc.lon, el=enc.lat, unit="deg")

@@ -1,14 +1,27 @@
 __all__ = ["HorizontalCoord"]
 
 import time
+
+import astropy.units as u
 from collections import deque
 import threading
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
-from neclib.coordinates import CoordinateGeneratorManager, DriveLimitChecker, PathFinder
+from neclib.coordinates import (
+    CoordinateGeneratorManager,
+    DriveLimitChecker,
+    PathFinder,
+    ScanBlockSection as FinderScanBlockSection,
+)
 from neclib.coordinates.paths import ControlContext
-from necst_msgs.msg import Boolean, ControlStatus, CoordMsg, WeatherMsg
-from necst_msgs.srv import CoordinateCommand
+from necst_msgs.msg import (
+    Boolean,
+    ControlStatus,
+    CoordMsg,
+    ScanBlockSection as ScanBlockSectionMsg,
+    WeatherMsg,
+)
+from necst_msgs.srv import CoordinateCommand, ScanBlockCommand
 
 from ... import config, namespace, service, topic
 from ...core import AlertHandlerNode
@@ -42,9 +55,10 @@ class HorizontalCoord(AlertHandlerNode):
 
         self.publisher = topic.altaz_cmd.publisher(self)
         topic.antenna_encoder.subscription(self, self._update_enc)
-        topic.weather.subscription(self, self._update_weather)
+        topic.weather["out"].subscription(self, self._update_weather)
         topic.antenna_cmd_transition.subscription(self, self.next)
         service.raw_coord.service(self, self._update_cmd)
+        service.scan_block.service(self, self._update_scan_block_cmd)
 
         self.status_publisher = topic.antenna_control_status.publisher(self)
 
@@ -55,6 +69,7 @@ class HorizontalCoord(AlertHandlerNode):
         self._rq_lock = threading.Lock()
         self._gen_lock = threading.RLock()
 
+        # TODO: Add the following parameters to the config
         self._min_buffer_sec = 0.5
         self._max_buffer_sec = 3.0
         self._max_groups_per_convert = 10
@@ -93,18 +108,7 @@ class HorizontalCoord(AlertHandlerNode):
             qlen = len(self.result_queue)
             tail_lead = (self.result_queue[-1][4] - now) if self.result_queue else None
         req = self.cmd
-        req_desc = (
-            "(idle)"
-            if req is None
-            else (
-                f"(mode={self._current_mode}, name='{req.name}',"
-                f"lon={list(req.lon)}, lat={list(req.lat)}, "
-                f"frame={req.frame}, "
-                f"off_lon={list(req.offset_lon)}, off_lat={list(req.offset_lat)}"
-                f"off_frame={req.offset_frame},"
-                f"speed={req.speed}, margin={req.margin})"
-            )
-        )
+        req_desc = self._describe_request(req)
         self.logger.warning(
             f"Transitioning to idle: reason={reason},"
             f"old_exec={self._current_exec_id or self._idle_exec_id}, "
@@ -204,6 +208,187 @@ class HorizontalCoord(AlertHandlerNode):
         target_scan = all(len(x) == 2 for x in target_coord)
         offset_scan = all(len(x) == 2 for x in offset_coord)
         return "scan" if (target_scan or offset_scan) else "point"
+
+    def _describe_request(self, req: Any) -> str:
+        if req is None:
+            return "(idle)"
+
+        def _safe_list(obj: Any, name: str):
+            value = getattr(obj, name, None)
+            if value is None:
+                return []
+            try:
+                return list(value)
+            except Exception:
+                return value
+
+        pieces = [f"mode={self._current_mode}"]
+        for attr in ("name", "frame", "offset_frame"):
+            if hasattr(req, attr):
+                pieces.append(f"{attr}={getattr(req, attr)!r}")
+        for attr in ("lon", "lat", "offset_lon", "offset_lat"):
+            if hasattr(req, attr):
+                pieces.append(f"{attr}={_safe_list(req, attr)!r}")
+        for attr in ("speed", "margin", "direct_mode", "obsfreq"):
+            if hasattr(req, attr):
+                pieces.append(f"{attr}={getattr(req, attr)!r}")
+        if hasattr(req, "sections"):
+            try:
+                pieces.append(f"n_sections={len(req.sections)}")
+            except Exception:
+                pieces.append("n_sections=?")
+        return "(" + ", ".join(pieces) + ")"
+
+    _SCAN_BLOCK_KIND_MAP: Dict[int, str] = {
+        int(ScanBlockSectionMsg.FIRST_STANDBY): "initial_standby",
+        int(ScanBlockSectionMsg.ACCELERATE): "accelerate",
+        int(ScanBlockSectionMsg.LINE): "line",
+        int(ScanBlockSectionMsg.TURN): "turn",
+        int(ScanBlockSectionMsg.DECELERATE): "decelerate",
+        int(ScanBlockSectionMsg.FINAL_STANDBY): "final_standby",
+    }
+
+    def _convert_scan_block_section(
+        self, msg: ScanBlockSectionMsg
+    ) -> FinderScanBlockSection:
+        if int(msg.kind) == int(ScanBlockSectionMsg.MOVE_TO_ENTRY):
+            raise ValueError(
+                "MOVE_TO_ENTRY is not accepted by control-side scan_block. "
+                "Use a separate point/move execution before the ON block."
+            )
+        try:
+            kind = self._SCAN_BLOCK_KIND_MAP[int(msg.kind)]
+        except KeyError as exc:
+            raise ValueError(
+                f"Unsupported scan block section kind: {msg.kind!r}"
+            ) from exc
+
+        start = (float(msg.start[0]), float(msg.start[1]))
+        stop = (float(msg.stop[0]), float(msg.stop[1]))
+        kwargs: Dict[str, Any] = dict(
+            kind=kind,
+            start=start,
+            stop=stop,
+            speed=float(msg.speed),
+            margin=float(msg.margin),
+            label=msg.label,
+            line_index=int(msg.line_index),
+            tight=bool(msg.tight),
+        )
+        if float(msg.duration_hint) > 0:
+            kwargs["duration"] = float(msg.duration_hint)
+        if float(getattr(msg, "turn_radius_hint", 0.0)) > 0:
+            kwargs["turn_radius_hint"] = float(msg.turn_radius_hint)
+        return FinderScanBlockSection(**kwargs)
+
+    def _parse_scan_block_cmd(self, msg: ScanBlockCommand.Request) -> None:
+        if msg.direct_mode:
+            self.direct_mode = True
+        else:
+            self.direct_mode = False
+        self.finder.direct_mode = self.direct_mode
+
+        sections = [
+            self._convert_scan_block_section(section) for section in msg.sections
+        ]
+        if len(sections) == 0:
+            raise ValueError("Scan block request must include at least one section.")
+        if float(getattr(msg, "obsfreq", 0.0)) > 0:
+            self.finder.obsfreq = float(msg.obsfreq) * u.GHz
+
+        section_frames = {
+            str(section.frame) for section in msg.sections if str(section.frame) != ""
+        }
+        if len(section_frames) != 1:
+            raise ValueError(
+                "Current control-side scan_block implementation requires exactly one "
+                f"shared section frame, got: {sorted(section_frames)!r}"
+            )
+        scan_frame = next(iter(section_frames))
+
+        with_offset = any(len(x) != 0 for x in (msg.offset_lon, msg.offset_lat))
+        if with_offset and ((len(msg.offset_lon) != 1) or (len(msg.offset_lat) != 1)):
+            raise ValueError(
+                "Block-wide offset must be specified as exactly one (lon, lat) pair."
+            )
+        offset = None
+        if with_offset:
+            offset = (msg.offset_lon[0], msg.offset_lat[0], msg.offset_frame)
+
+        args = []
+        named = msg.name != ""
+        has_reference = (len(msg.lon) == 1) and (len(msg.lat) == 1)
+        if named:
+            args = [msg.name]
+        elif has_reference:
+            args = [msg.lon[0], msg.lat[0], msg.frame]
+        elif (len(msg.lon) != 0) or (len(msg.lat) != 0):
+            raise ValueError(
+                "Reference coordinate must be specified as exactly one (lon, lat) pair."
+            )
+
+        new_generator = self.finder.scan_block(
+            *args,
+            unit=msg.unit,
+            scan_frame=scan_frame,
+            sections=sections,
+            offset=offset,
+            cos_correction=getattr(msg, "cos_correction", False),
+        )
+        with self._gen_lock:
+            self.executing_generator.attach(new_generator)
+
+    def _update_scan_block_cmd(
+        self, request: ScanBlockCommand.Request, response: ScanBlockCommand.Response
+    ) -> ScanBlockCommand.Response:
+        mode = "scan_block"
+        now = time.time()
+
+        with self._gen_lock:
+            self.cmd = request
+            self._generator_exhausted = False
+            self._last_active_context = None
+            self._last_published_context = None
+            self._last_published_cmd_time = 0.0
+            self._current_exec_id = self._next_exec_id()
+            self._current_mode = mode
+            self._parse_scan_block_cmd(request)
+            new_queue = self._prefill_current_execution(
+                now=now,
+                min_extra_sec=self._min_buffer_sec,
+                max_extra_sec=self._max_buffer_sec,
+                max_groups=max(self._max_groups_per_convert, 20),
+            )
+
+        with self._rq_lock:
+            if self.result_queue:
+                head = self.result_queue[0][4] - now
+                tail = self.result_queue[-1][4] - now
+                self.logger.warning(
+                    "Replacing buffered commands due to new scan_block request: "
+                    f"exec_id={self._current_exec_id}, n={len(self.result_queue)}, "
+                    f"head={head:.3f}s, tail={tail:.3f}s, now={now:.6f}"
+                )
+            self.result_queue = deque(new_queue)
+            qlen = len(self.result_queue)
+            head = (self.result_queue[0][4] - now) if self.result_queue else None
+            tail = (self.result_queue[-1][4] - now) if self.result_queue else None
+
+        self.logger.warning(
+            f"scan_block accepted: exec_id={self._current_exec_id}, "
+            f"name='{request.name}', frame={request.frame}, unit={request.unit}, "
+            f"n_sections={len(request.sections)}, direct_mode={request.direct_mode}, "
+            f"now={now:.6f}"
+        )
+        self.logger.warning(
+            f"prefill_on_accept: exec_id={self._current_exec_id}, "
+            f"mode={mode}, queue_len={qlen}, "
+            f"head_lead={head if head is not None else 'None'}, "
+            f"tail_lead={tail if tail is not None else 'None'}, now={now:.6f}"
+        )
+
+        response.id = self._current_exec_id or self._idle_exec_id
+        return response
 
     def _prefill_current_execution(
         self,
@@ -663,6 +848,9 @@ class HorizontalCoord(AlertHandlerNode):
                 id=exec_id,
                 interrupt_ok=True,
                 time=time.time() + config.antenna_command_offset_sec,
+                section_kind="",
+                section_label="",
+                line_index=-1,
             )
         else:
             exec_id = self._current_exec_id or self._idle_exec_id
@@ -673,6 +861,9 @@ class HorizontalCoord(AlertHandlerNode):
                 id=exec_id,
                 interrupt_ok=status.infinite and (not status.waypoint),
                 time=status.start,
+                section_kind=str(getattr(status, "kind", "") or "")[:64],
+                section_label=str(getattr(status, "label", "") or "")[:64],
+                line_index=int(getattr(status, "line_index", -1)),
             )
         self.last_status = msg
         self.status_publisher.publish(msg)
