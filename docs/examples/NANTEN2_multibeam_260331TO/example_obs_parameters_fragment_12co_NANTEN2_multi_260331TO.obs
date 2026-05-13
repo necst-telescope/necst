@@ -1,0 +1,23 @@
+# Add these keys to the [parameters] section of the .obs file.
+# Paths are normally resolved relative to the .obs file directory.
+[parameters]
+cos_correction = true
+lo_profile = "lo_profile_12co_NANTEN2_multi_260331TO.toml"
+recording_window_setup = "recording_window_12co_NANTEN2_multi_260331TO.toml"
+beam_model = "beam_model_12co_NANTEN2_multi_260331TO.toml"
+setup_id = "orikl_NANTEN2_multi_260331TO_update11_windows"
+# velocity_reference_time_utc = "2026-04-29T12:34:56Z"
+# pointing_reference_beam_id = "B01"
+# pointing_reference_beam_policy = "exact"
+
+# VLSRK recording windows require a deterministic reference direction and site.
+# If your .obs parser provides the [coordinate] reference as obsspec._reference,
+# these explicit fields may be omitted.  Otherwise set them explicitly.
+# Example for Galactic Center:
+# velocity_reference_l_deg = 0.0
+# velocity_reference_b_deg = 0.0
+# velocity_reference_site_lat_deg = -22.969956
+# velocity_reference_site_lon_deg = -67.703081
+# velocity_reference_site_elev_m = 4865.0
+# velocity_reference_time_utc = "2026-04-29T12:34:56Z"
+

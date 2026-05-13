@@ -1,0 +1,327 @@
+{
+  "created_utc": "2026-05-04T22:30:31Z",
+  "base": "original uploaded zip group",
+  "patches_applied_in_order": [
+    "u14(2).zip",
+    "update14_time_consistency_testfix_simulation_changed_files_2026-05-01.zip",
+    "update14_example_timing_config_cleanup_changed_files_2026-05-01.zip",
+    "update14_sunscan_analysis_base_cleanup_changed_files_2026-05-01.zip",
+    "update14_lo_profile_rclpy_init_fix_changed_files_2026-05-03.zip",
+    "update14_lo_profile_sg_frequency_alias_fix_changed_files_2026-05-03.zip",
+    "update14_bin_execution_permission_fix_changed_files_2026-05-03.zip",
+    "update14_otf_setup_ch_none_fix_changed_files_2026-05-03.zip",
+    "update14_real_observation_preflight_followup_fix_changed_files_2026-05-03.zip",
+    "update14_recording_metadata_path_cleanup_2026-05-03.zip",
+    "update14_necstdb_boolean_alias_warning_fix_2026-05-03.zip",
+    "update14_converter_sunscan_db_table_path_followup_2026-05-03.zip",
+    "update14_sdfits_frequency_velocity_writer_fix_2026-05-04.zip",
+    "update14_frequency_velocity_exactness_recheck_fix_2026-05-04.zip"
+  ],
+  "additional_inputs": [
+    "lo_profile_completed_from_legacy_converter_2026-05-03.zip"
+  ],
+  "added": [
+    "docs/examples/legacy_converter_20260503/lo_profile_legacy_converter_4board_12co_13co_c18o.toml",
+    "docs/examples/legacy_converter_20260503/lo_profile_legacy_converter_notes_2026-05-03.md",
+    "docs/examples/legacy_converter_20260503/lo_profile_legacy_converter_validation_2026-05-03.json",
+    "docs/examples/legacy_converter_20260503/recording_window_legacy_converter_4board_12co_13co_c18o.toml",
+    "docs/examples/old_config_260331TO_update11/README_mapping.md",
+    "docs/examples/old_config_260331TO_update11/analysis_stream_selection_12co_NANTEN2_multi_260331TO.toml",
+    "docs/examples/old_config_260331TO_update11/beam_model_12co_NANTEN2_multi_260331TO.toml",
+    "docs/examples/old_config_260331TO_update11/converter_analysis_12co_NANTEN2_multi_260331TO.toml",
+    "docs/examples/old_config_260331TO_update11/example_obs_parameters_fragment_12co_NANTEN2_multi_260331TO.obs",
+    "docs/examples/old_config_260331TO_update11/lo_profile_12co_NANTEN2_multi_260331TO.toml",
+    "docs/examples/old_config_260331TO_update11/recording_window_12co_NANTEN2_multi_260331TO.toml",
+    "docs/examples/old_config_260331TO_update11/recording_window_topo.toml",
+    "docs/examples/old_config_260331TO_update11/sunscan_analysis_12co_NANTEN2_multi_260331TO.toml",
+    "docs/examples/old_config_260331TO_update11/validation_summary.json",
+    "docs/manual_full_update12_ja.md",
+    "docs/manual_full_update13_ja.md",
+    "docs/manual_full_update14_ja.md",
+    "docs/manual_quick_update12_ja.md",
+    "docs/manual_quick_update13_ja.md",
+    "docs/manual_quick_update14_ja.md",
+    "docs/manual_update12_report.md",
+    "docs/manual_update13_report.md",
+    "docs/manual_update14_report.md",
+    "docs/preflight/pr8g_update12_preflight_realtime_review_report_2026-04-29.md",
+    "docs/preflight/update13_snapshot_autodiscovery_report.md",
+    "docs/preflight/update13_snapshot_autodiscovery_review_2026-04-30.md",
+    "docs/preflight/update14_bin_execution_permission_validation_2026-05-03.md",
+    "docs/preflight/update14_converter_sunscan_db_table_path_followup_2026-05-03.md",
+    "docs/preflight/update14_frequency_velocity_exactness_recheck_2026-05-04.md",
+    "docs/preflight/update14_necstdb_boolean_alias_warning_fix_2026-05-03.md",
+    "docs/preflight/update14_otf_setup_ch_none_fix_validation_2026-05-03.md",
+    "docs/preflight/update14_real_observation_preflight_followup_2026-05-03.md",
+    "docs/preflight/update14_realistic_time_and_writer_simulation_2026-05-01.json",
+    "docs/preflight/update14_realistic_time_and_writer_simulation_2026-05-01.md",
+    "docs/preflight/update14_realistic_time_and_writer_simulation_2026-05-01.py",
+    "docs/preflight/update14_recording_metadata_path_cleanup_2026-05-03.md",
+    "docs/preflight/update14_sdfits_frequency_velocity_validation_2026-05-04.md",
+    "docs/preflight/update14_sg_frequency_alias_fix_validation_2026-05-03.md",
+    "docs/u13_report.md",
+    "docs/update13_deep_review_report_2026-04-30.md",
+    "docs/update13_p16g_spectral_time_diagnostics_report_2026-04-30.md",
+    "docs/update13_p17ag_integrated_time_and_numpy_report_2026-04-30.md",
+    "docs/update13_priority1_5_implementation_report_2026-04-30.md",
+    "docs/update13_realtime_hotpath_p16_deep_verification_2026-04-30.md",
+    "docs/update13_realtime_hotpath_performance_report_2026-04-30.md",
+    "docs/update14_changed_files_manifest.json",
+    "docs/update14_time_consistency_report_2026-05-01.md",
+    "necst-msgs-second_OTF_msg/srv/ApplySpectralRecordingSetup.srv",
+    "necst-msgs-second_OTF_msg/srv/ClearSpectralRecordingSetup.srv",
+    "necst-msgs-second_OTF_msg/srv/SetSpectralRecordingGate.srv",
+    "necst-second_OTF_branch/bin/lo_profile.py",
+    "necst-second_OTF_branch/bin/necst-lo-profile",
+    "necst-second_OTF_branch/bin/necst-spectral-resolve",
+    "necst-second_OTF_branch/bin/necst-spectral-validate",
+    "necst-second_OTF_branch/bin/spectral_resolve.py",
+    "necst-second_OTF_branch/bin/spectral_validate.py",
+    "necst-second_OTF_branch/docs/preflight/update14_lo_profile_rclpy_init_validation_2026-05-03.md",
+    "necst-second_OTF_branch/necst/procedures/observations/pointing_reference_beam.py",
+    "necst-second_OTF_branch/necst/procedures/observations/spectral_recording_sequence.py",
+    "necst-second_OTF_branch/necst/rx/spectral_recording_runtime.py",
+    "necst-second_OTF_branch/necst/rx/spectral_recording_setup.py",
+    "necst-second_OTF_branch/necst/rx/spectral_recording_sg.py",
+    "necst-second_OTF_branch/tests/test_pointing_reference_beam.py",
+    "necst-second_OTF_branch/tests/test_spectral_recording_hotpath_performance.py",
+    "necst-second_OTF_branch/tests/test_spectral_recording_runtime_pr4_pr5.py",
+    "necst-second_OTF_branch/tests/test_spectral_recording_runtime_pr6.py",
+    "necst-second_OTF_branch/tests/test_spectral_recording_sequence_pr7.py",
+    "necst-second_OTF_branch/tests/test_spectral_recording_setup.py",
+    "necst-second_OTF_branch/tests/test_spectral_recording_sg_pr3.py",
+    "necst-second_OTF_branch/tests/test_spectral_recording_stream_truth_frequency.py",
+    "necst-second_OTF_branch/tests/test_spectral_recording_writer_pr8a.py",
+    "necstdb-master/tests/test_append_packed.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/analysis_stream_selection.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/beam_model.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/config_separation_model.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/spectral_recording_snapshot.py",
+    "sd-radio-spectral-fits-main/tests/test_converter_spectral_time_controls_p16g.py",
+    "sd-radio-spectral-fits-main/tests/test_necst_config_separation_snapshot_bundle.py",
+    "sd-radio-spectral-fits-main/tests/test_necst_snapshot_stream_truth_beam_override.py",
+    "sd-radio-spectral-fits-main/tests/test_necst_update13_priority1_5.py",
+    "sd-radio-spectral-fits-main/tests/test_sdfits_writer_multiline_restfreq_columns.py",
+    "sd-radio-spectral-fits-main/tests/test_sunscan_analysis_base_config.py",
+    "sd-radio-spectral-fits-main/tests/test_sunscan_db_table_path_resolution.py",
+    "sd-radio-spectral-fits-main/tests/test_update14_snapshot_frequency_wcs_exactness.py",
+    "xfftspy-master/tests/test_data_consumer_numpy.py"
+  ],
+  "modified": [
+    "neclib-second_OTF_neclib/neclib/devices/spectrometer/xffts.py",
+    "neclib-second_OTF_neclib/neclib/recorders/necstdb_writer.py",
+    "neclib-second_OTF_neclib/tests/recorders/test_necstdb_writer.py",
+    "necst-msgs-second_OTF_msg/CMakeLists.txt",
+    "necst-second_OTF_branch/necst/core/commander.py",
+    "necst-second_OTF_branch/necst/definitions.py",
+    "necst-second_OTF_branch/necst/procedures/observations/file_based.py",
+    "necst-second_OTF_branch/necst/procedures/observations/observation_base.py",
+    "necst-second_OTF_branch/necst/rx/spectrometer.py",
+    "necst-second_OTF_branch/setup.py",
+    "necstdb-master/necstdb/necstdb.py",
+    "sd-radio-spectral-fits-main/src/sd_radio_spectral_fits/sdfits_writer.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/config_io.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/public_api.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/sunscan_config.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/sunscan_extract_multibeam.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/sunscan_fit_multibeam.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/sunscan_io.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/sunscan_legacy_compat.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/sunscan_multibeam.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/sunscan_singlebeam.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/multibeam_beam_measurement/synthetic_multibeam.py",
+    "sd-radio-spectral-fits-main/src/tools/necst/necst_v4_sdfits_converter.py",
+    "xfftspy-master/xfftspy/data_consumer.py"
+  ],
+  "mode_only": [],
+  "deleted": [],
+  "counts": {
+    "added": 85,
+    "modified": 24,
+    "mode_only": 0,
+    "deleted": 0
+  },
+  "updated_utc": "2026-05-05T02:31:48Z",
+  "post_20260504_fixes": [
+    "veldef_test_expectation_radi_obs",
+    "converter_chopper_keys_removed_sunscan_specific",
+    "examples_reorganized_by_telescope_use_case",
+    "spectral_time_source_auto_comments_values"
+  ],
+  "veldef_note": {
+    "input_meaning": {
+      "veldef": "RADIO",
+      "specsys": "TOPOCENT"
+    },
+    "sdfits_output_veldef": "RADI-OBS",
+    "updated_file": "sd-radio-spectral-fits-main/tests/test_sdfits_writer_multiline_restfreq_columns.py"
+  },
+  "chopper_note": {
+    "converter_uses_chopper_keys": false,
+    "sunscan_uses_chopper_keys": true,
+    "chopper_win_sec": "legacy compatibility option; normally commented out",
+    "updated_files": [
+      "docs/examples/old_config_260331TO_update11/converter_analysis_12co_NANTEN2_multi_260331TO.toml",
+      "docs/examples/old_config_260331TO_update11/sunscan_analysis_12co_NANTEN2_multi_260331TO.toml",
+      "docs/manual_full_update14_ja.md",
+      "docs/manual_quick_update14_ja.md",
+      "docs/manual_update14_report.md"
+    ]
+  },
+  "examples_note": {
+    "recommended_directories": [
+      "docs/examples/NANTEN2_multibeam_260331TO/",
+      "docs/examples/OMU1P85M_single115_xx/"
+    ],
+    "historical_directories": [
+      "docs/examples/old_config_260331TO_update11/",
+      "docs/examples/legacy_converter_20260503/"
+    ]
+  },
+  "spectral_time_note": {
+    "default": "auto",
+    "spectral_time_source_choices": [
+      "auto",
+      "xffts-timestamp",
+      "host-time"
+    ],
+    "xffts_timestamp_scale_choices": [
+      "auto",
+      "utc",
+      "gps",
+      "tai"
+    ],
+    "xffts_gps_suffix_means_choices": [
+      "utc",
+      "gps"
+    ],
+    "spectrometer_time_offset_sec_applies_only_when": "selected spectral time is host-time"
+  },
+  "post_20260512_fixes": [
+    "omu1p85m_4board_current_fdnum_ifnum_mapping",
+    "multi_window_per_window_fdnum_ifnum_plnum_overrides",
+    "fd_local_ifnum_0_1_2_per_fdnum",
+    "single_line_groups_use_multi_window_for_window_id_in_filename",
+    "adopted_rest_frequencies_updated_20260512",
+    "omu_examples_consolidated_single115_removed",
+    "omu_analysis_files_moved_to_4board_current",
+    "nanten2_recording_window_ifnum_override_examples",
+    "nanten2_all_groups_multi_window_for_window_id_names",
+    "sunscan_tp_recording_examples_added",
+    "tp_only_snapshot_materialized_for_sunscan",
+    "sunscan_tp_mean_tp_sum_reader",
+    "focused_window_metadata_override_test_function_name_fixed",
+    "focused_window_metadata_override_test_fixture_frontend_added",
+    "nanten2_converter_base_planet_orikl_commented",
+    "nanten2_converter_base_spectral_name_commented",
+    "sun_tp_sunscan_planet_sun_explicit"
+  ],
+  "omu1p85m_4board_current_note": {
+    "directory": "docs/examples/OMU1P85M_4board_12co_13co_c18o_current/",
+    "fdnum_policy": {
+      "200GHz_path": 1,
+      "100GHz_path": 2
+    },
+    "ifnum_policy": {
+      "xffts_board1": 0,
+      "xffts_board2": 1,
+      "xffts_board3": 2,
+      "xffts_board4": 3
+    },
+    "plnum_policy": 0,
+    "band6_1st": {
+      "source": "fixed",
+      "fixed_lo_frequency_ghz": 225.0
+    }
+  },
+  "multi_window_metadata_override_note": {
+    "window_keys": [
+      "fdnum",
+      "ifnum",
+      "plnum",
+      "polariza",
+      "beam_id"
+    ],
+    "scope": "saved product only",
+    "omu1p85m_current_ifnum_policy": {
+      "12CO_J2_1": 0,
+      "13CO_J2_1": 1,
+      "C18O_J2_1": 2,
+      "12CO_J1_0": 3,
+      "13CO_J1_0": 4,
+      "C18O_J1_0": 5
+    }
+  },
+  "omu1p85m_current_product_numbering": {
+    "12CO_J2_1": {
+      "fdnum": 1,
+      "ifnum": 0,
+      "plnum": 0,
+      "rest_frequency_ghz": 230.538
+    },
+    "13CO_J2_1": {
+      "fdnum": 1,
+      "ifnum": 1,
+      "plnum": 0,
+      "rest_frequency_ghz": 220.3986842
+    },
+    "C18O_J2_1": {
+      "fdnum": 1,
+      "ifnum": 2,
+      "plnum": 0,
+      "rest_frequency_ghz": 219.5603541
+    },
+    "12CO_J1_0": {
+      "fdnum": 2,
+      "ifnum": 0,
+      "plnum": 0,
+      "rest_frequency_ghz": 115.2712018
+    },
+    "13CO_J1_0": {
+      "fdnum": 2,
+      "ifnum": 1,
+      "plnum": 0,
+      "rest_frequency_ghz": 110.2013543
+    },
+    "C18O_J1_0": {
+      "fdnum": 2,
+      "ifnum": 2,
+      "plnum": 0,
+      "rest_frequency_ghz": 109.7821734
+    }
+  },
+  "omu1p85m_current_saved_window_policy": "multi_window for all products",
+  "obsolete_paths_to_remove": [
+    "docs/examples/OMU1P85M_single115_xx/"
+  ],
+  "omu_examples_consolidation": {
+    "current_directory": "docs/examples/OMU1P85M_4board_12co_13co_c18o_current/",
+    "moved_analysis_files": [
+      "converter_analysis_OMU1P85M_4board_12co_13co_c18o_current.toml",
+      "sunscan_analysis_OMU1P85M_4board_12co_13co_c18o_current.toml"
+    ]
+  },
+  "nanten2_recording_override_note": {
+    "ifnum_override_only": true,
+    "fdnum_plnum": "inherited from source stream",
+    "saved_window_policy": "multi_window"
+  },
+  "sunscan_tp_note": {
+    "mode": "tp",
+    "saved_window_policy": "channel",
+    "default_saved_ch_start": 8192,
+    "default_saved_ch_stop": 24576,
+    "tp_signal_preference": [
+      "tp_mean",
+      "tp_sum"
+    ],
+    "examples": [
+      "docs/examples/OMU1P85M_4board_12co_13co_c18o_current/recording_window_setup_sun_tp_OMU1P85M_4board_current.toml",
+      "docs/examples/NANTEN2_multibeam_260331TO/recording_window_sun_tp_NANTEN2_multi_260331TO.toml"
+    ]
+  },
+  "nanten2_converter_base_cleanup": {
+    "planet": "commented out in converter base; Sun TP sunscan config sets planet='sun'",
+    "spectral_name": "commented out; use --recorded-stream-id or [analysis_selection]"
+  }
+}

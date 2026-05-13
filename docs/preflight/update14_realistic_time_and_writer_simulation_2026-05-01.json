@@ -1,0 +1,67 @@
+{
+  "definitions": {
+    "nboard": "number of XFFTS boards per packet",
+    "nchan": "channels per board",
+    "packet": "one XFFTS TCP payload containing all boards",
+    "row": "one NECSTDB spectral table row for one board"
+  },
+  "receive_numpy": {
+    "median_ms_per_packet": 5.9360550000064904,
+    "n_iter": 30,
+    "nboard": 8,
+    "nchan": 32768,
+    "p84_ms_per_packet": 77.59870463996549,
+    "packet_MB": 1.048704,
+    "received_time_header_present": true,
+    "return_numpy": true,
+    "sample_type": "ndarray",
+    "throughput_MB_s_median": 176.66682670542195
+  },
+  "receive_tuple_fallback": {
+    "median_ms_per_packet": 91.06216899999708,
+    "n_iter": 3,
+    "nboard": 8,
+    "nchan": 32768,
+    "p84_ms_per_packet": 92.17291296000894,
+    "packet_MB": 1.048704,
+    "received_time_header_present": true,
+    "return_numpy": false,
+    "sample_type": "tuple",
+    "throughput_MB_s_median": 11.51635208689169
+  },
+  "writer_direct_numpy": {
+    "data_MB_written": 31.4928,
+    "elapsed_sec": 1.1873676360000331,
+    "n_packet": 30,
+    "nboard": 8,
+    "nchan": 32768,
+    "nrow": 240,
+    "rows_per_sec": 202.1277932153385,
+    "use_numpy": true,
+    "used_append_packed": true,
+    "write_MB_s": 26.523209025716717
+  },
+  "writer_direct_tuple_fallback": {
+    "data_MB_written": 2.09952,
+    "elapsed_sec": 0.08118831299998419,
+    "n_packet": 2,
+    "nboard": 8,
+    "nchan": 32768,
+    "nrow": 16,
+    "rows_per_sec": 197.07269936749537,
+    "use_numpy": false,
+    "used_append_packed": true,
+    "write_MB_s": 25.859879611002743
+  },
+  "writer_queue_numpy": {
+    "data_MB_written": 31.4928,
+    "enqueue_elapsed_sec": 0.002443929999969896,
+    "n_packet": 30,
+    "nboard": 8,
+    "nchan": 32768,
+    "nrow": 240,
+    "total_elapsed_sec": 0.3242583469999545,
+    "total_rows_per_sec": 740.1505688920128,
+    "total_write_MB_s": 97.12255765000991
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "source_config": "/mnt/data/12co-NANTEN2-multi_260331TO.conf3(3).txt",
+  "generated_at": "2026-04-29T10:02:42",
+  "source_stream_count": 16,
+  "groups": {
+    "nanten2_xffts_12co115": [
+      "2LU",
+      "2RU",
+      "3LU",
+      "3RU",
+      "4LU",
+      "4RU",
+      "5LU",
+      "5RU"
+    ],
+    "nanten2_xffts_110ghz": [
+      "2LL",
+      "2RL",
+      "3RL",
+      "4LL",
+      "4RL",
+      "5LL",
+      "5RL"
+    ],
+    "nanten2_xffts_12co230": [
+      "1LU"
+    ]
+  },
+  "beam_ids": [
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05"
+  ],
+  "lo_chain_ids": [
+    "rx115_110_usb_usb",
+    "rx115_12co_usb_usb",
+    "rx230_12co_usb_usb"
+  ],
+  "recording": {
+    "co230": {
+      "streams": [
+        "1LU"
+      ],
+      "vmin_kms": -150.0,
+      "vmax_kms": 150.0,
+      "margin_kms": 10.0,
+      "rest_frequency_ghz": 230.538
+    },
+    "co115": {
+      "streams": [
+        "2LU",
+        "2RU",
+        "3LU",
+        "3RU",
+        "4LU",
+        "4RU",
+        "5LU",
+        "5RU"
+      ],
+      "vmin_kms": -150.0,
+      "vmax_kms": 150.0,
+      "margin_kms": 10.0,
+      "rest_frequency_ghz": 115.271
+    },
+    "co110_multi_window": {
+      "streams": [
+        "2LL",
+        "2RL",
+        "3RL",
+        "4LL",
+        "4RL",
+        "5LL",
+        "5RL"
+      ],
+      "vmin_kms": -100.0,
+      "vmax_kms": 100.0,
+      "margin_kms": 10.0,
+      "windows": [
+        {
+          "window_id": "13CO_J1_0",
+          "rest_frequency_ghz": 110.201353
+        },
+        {
+          "window_id": "C18O_J1_0",
+          "rest_frequency_ghz": 109.7821734
+        }
+      ]
+    }
+  },
+  "expected_recorded_products": 23,
+  "frequency_axis": {
+    "definition_mode": "band_start_stop",
+    "nchan": 32768,
+    "band_start_hz": 0.0,
+    "band_stop_hz": 2000000000.0,
+    "channel_origin": "center",
+    "reverse": false,
+    "if_freq_step_hz": 61037.01895199438
+  },
+  "toml_parse_results": {
+    "lo_profile_12co_NANTEN2_multi_260331TO.toml": "OK",
+    "beam_model_12co_NANTEN2_multi_260331TO.toml": "OK",
+    "recording_window_12co_NANTEN2_multi_260331TO.toml": "OK",
+    "analysis_stream_selection_12co_NANTEN2_multi_260331TO.toml": "OK",
+    "converter_analysis_12co_NANTEN2_multi_260331TO.toml": "OK",
+    "sunscan_analysis_12co_NANTEN2_multi_260331TO.toml": "OK"
+  },
+  "update10_notes": {
+    "vlsrk_fail_closed": true,
+    "requires_velocity_reference_context_for_lsrk": true,
+    "explicit_obs_fragment_fields_added_as_comments": true
+  }
+}

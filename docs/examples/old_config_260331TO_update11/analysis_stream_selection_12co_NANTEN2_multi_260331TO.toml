@@ -1,0 +1,114 @@
+schema_version = "analysis_stream_selection_v1"
+selection_id = "12co_NANTEN2_multi_260331TO_legacy_selection"
+
+[streams."2LU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+beam_fit_use = true
+
+[streams."2LL"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."2RU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+beam_fit_use = true
+
+[streams."2RL"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."3LU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."1LU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+beam_fit_use = true
+
+[streams."3RU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."3RL"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."4LU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."4LL"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."4RU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+beam_fit_use = true
+
+[streams."4RL"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."5LU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."5LL"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+beam_fit_use = true
+
+[streams."5RU"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false
+
+[streams."5RL"]
+enabled = true
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = false
+beam_fit_use = false

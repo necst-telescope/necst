@@ -1,0 +1,56 @@
+schema_version = "sunscan_analysis_v1"
+kind = "sunscan_analysis"
+analysis_id = "OMU1P85M_4board_sun_tp_current_sunscan"
+
+# Inherit db/telescope/table/weather/timing settings from the converter analysis file.
+# Chopper-wheel settings are sunscan-specific and are defined below.
+# Do not redefine [spectral_time] or [encoder_time] here unless
+# [analysis_base].allow_timing_override = true is intentionally set.
+[analysis_base]
+path = "converter_analysis_OMU1P85M_4board_12co_13co_c18o_current.toml"
+
+[sunscan_analysis]
+# Explicit target body for Sun TP reductions.  This avoids relying on
+# converter-analysis base settings for a moving-body target.
+planet = "sun"
+# TP sunscan normally uses the Sun as the body; the runtime default is "sun".
+# Use this with a TP-only spectral_recording_snapshot generated from
+# recording_window_setup_sun_tp_OMU1P85M_4board_current.toml.
+# planet = "sun"
+
+# Sunscan-only chopper-wheel calibration for the vertical-axis signal.
+# The converter does not use these keys.
+chopper_wheel = true
+chopper_stat = "median"
+
+# Legacy compatibility option.  The current 1-load implementation groups HOT/OFF
+# rows by scan id or contiguous block and does not use a time-window smoother.
+# chopper_win_sec = 5.0
+
+profile_xlim_deg = 1.0
+
+ripple_preset = "auto"
+ripple_model = "auto"
+ripple_target_hz = 1.2
+ripple_search_hz = 0.3
+
+edge_fit_win_deg = 0.15
+edge_fit_threshold = 0.2
+# Derived from hpbw_factor * c / restfreq / D * 206265
+# with restfreq = 115.2712018 GHz, D = 1.85 m, hpbw_factor = 1.2.
+hpbw_init_arcsec = 347.965110744874
+edge_fit_plot_max_scans = 3
+
+trim_vfrac = 0.2
+trim_vmin = 0.0001
+trim_gap = 10
+trim_min_samples = 100
+trim_axis_ratio_min = 3.0
+trim_vpercentile = 95.0
+trim_scan_speed_min_arcsec = 20.0
+trim_xwin_factor = 1.2
+trim_cross_offset_max_deg = 0.5
+trim_steady_cv_max = 0.8
+
+dish_diameter_m = 1.85
+hpbw_factor = 1.2
