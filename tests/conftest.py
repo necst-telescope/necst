@@ -12,6 +12,17 @@ from necst import utils
 from necst.core import AlertHandlerNode
 
 
+collect_ignore = [
+    "__init__.py",
+    "_helpers/__init__.py",
+    "core/__init__.py",
+    "core/alert/__init__.py",
+    "ctrl/__init__.py",
+    "docs/__init__.py",
+    "procedures/__init__.py",
+]
+
+
 class TesterNode:
     """Test class with rclpy configuration.
 

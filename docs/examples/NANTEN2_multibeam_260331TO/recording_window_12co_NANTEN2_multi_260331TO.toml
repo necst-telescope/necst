@@ -1,0 +1,37 @@
+# Recording windows for 12co-NANTEN2-multi_260331TO equivalent setup.
+# 230/115 GHz: VLSRK -150..+150 km/s with 10 km/s margin.
+# 110 GHz: multi_window products for 13CO and C18O, each -100..+100 km/s with 10 km/s margin.
+# Window-level ifnum overrides are shown below.  fdnum/plnum are inherited from source streams.
+schema_version = "recording_window_setup_v2"
+setup_id = "12co_NANTEN2_multi_260331TO_windows_update11"
+
+[defaults]
+mode = "spectrum"
+velocity_frame = "LSRK"
+velocity_definition = "radio"
+reference_time_policy = "setup_resolve_time"
+
+[recording_groups.co230_12CO_J2_1]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["1LU"]
+windows = [
+  { window_id = "12CO_J2_1", line_name = "12CO J=2-1", rest_frequency_ghz = 230.5380000, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0, ifnum = 0 },
+]
+
+[recording_groups.co115_12CO_J1_0]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["2LU", "2RU", "3LU", "3RU", "4LU", "4RU", "5LU", "5RU"]
+windows = [
+  { window_id = "12CO_J1_0", line_name = "12CO J=1-0", rest_frequency_ghz = 115.2712018, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0, ifnum = 0 },
+]
+
+[recording_groups.co110_13CO_C18O_multi_window]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["2LL", "2RL", "3RL", "4LL", "4RL", "5LL", "5RL"]
+windows = [
+  { window_id = "13CO_J1_0", line_name = "13CO J=1-0", rest_frequency_ghz = 110.2013543, vmin_kms = -100.0, vmax_kms = 100.0, margin_kms = 10.0, ifnum = 1 },
+  { window_id = "C18O_J1_0", line_name = "C18O J=1-0", rest_frequency_ghz = 109.7821734, vmin_kms = -100.0, vmax_kms = 100.0, margin_kms = 10.0, ifnum = 2 },
+]

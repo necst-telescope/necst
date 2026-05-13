@@ -1,0 +1,87 @@
+schema_version = "converter_analysis_v1"
+analysis_id = "12co_NANTEN2_multi_260331TO_converter"
+
+# Common timing policy for this RawData/setup family.
+# Converter uses this file directly.  Sunscan may inherit these common values via
+# [analysis_base] in sunscan_analysis_12co_NANTEN2_multi_260331TO.toml.
+#
+# For modern XFFTS data, XFFTS timestamps are treated as integration-center
+# times.  In the OMU/XFFTS IRIG-B configuration, the literal suffix may be GPS,
+# but the timestamp body is UTC unless xffts_gps_suffix_means = "gps" is
+# explicitly selected.
+[spectral_time]
+# How to choose the spectral-row timestamp.
+# Choices:
+#   "auto"            : prefer a reliable XFFTS timestamp (time_spectrometer);
+#                       fall back to host-time only when the timestamp is unavailable/unusable.
+#   "xffts-timestamp" : require the XFFTS timestamp; fail instead of falling back.
+#   "host-time"       : use the host-side received_time attached just after the XFFTS header read.
+spectral_time_source = "auto"
+
+# How to interpret the literal timestamp scale suffix in XFFTS headers.
+# Choices: "auto", "utc", "gps", "tai".
+xffts_timestamp_scale = "auto"
+
+# OMU/XFFTS convention: a literal "GPS" suffix is normally UTC-like.
+# Choices:
+#   "utc" : treat literal GPS suffix as UTC-like (recommended here).
+#   "gps" : treat literal GPS suffix as true GPS time; currently differs from UTC by leap seconds.
+xffts_gps_suffix_means = "utc"
+
+# Legacy host-time correction [s].
+# This is applied only when the selected spectral time is host-time:
+#   - spectral_time_source = "host-time"
+#   - or spectral_time_source = "auto" and auto falls back to host-time
+# It is NOT applied when auto selects "xffts-timestamp".
+spectrometer_time_offset_sec = -0.145
+[encoder_time]
+# Encoder timestamp offsets [s].
+# These are independent of spectral_time_source.
+# encoder_shift_sec applies to both Az and El.
+# encoder_az_time_offset_sec and encoder_el_time_offset_sec are axis-specific
+# additional offsets.
+encoder_shift_sec = 0.000
+encoder_az_time_offset_sec = 0.000
+encoder_el_time_offset_sec = 0.000
+[converter_analysis]
+db_namespace = "necst"
+telescope = "NANTEN2"
+# Moving-body target for Sun/sunscan style reductions only.
+# Leave unset for fixed celestial sources such as Ori-KL.
+# planet = "sun"
+# Legacy single-stream selector.  Do not use this for snapshot-based
+# update14 conversion; use --recorded-stream-id or [analysis_selection].
+# spectral_name = "xffts-board1"
+boresight_source = "encoder"
+boresight_correction_apply = "add"
+skycoord_method = "azel"
+output_azel_source = "beam"
+encoder_time_col = "time"
+altaz_time_col = "time"
+encoder_table_suffix = "ctrl-antenna-encoder"
+altaz_table_suffix = "ctrl-antenna-altaz"
+weather_inside_table_suffix = "weather-ambient-in"
+weather_outside_table_suffix = "weather-ambient-out"
+weather_inside_time_col = "time"
+weather_outside_time_col = "time"
+met_source = "auto"
+thot_default_k = 273.15
+thot_min_k = 250.0
+thot_max_k = 330.0
+tamb_default_k = 270.0
+tamb_min_k = 230.0
+tamb_max_k = 330.0
+outside_default_temperature_c = 0.0
+outside_default_pressure_hpa = 520.0
+outside_default_humidity_pct = 30.0
+outside_temperature_min_c = -50.0
+outside_temperature_max_c = 50.0
+outside_pressure_min_hpa = 400.0
+outside_pressure_max_hpa = 1100.0
+outside_humidity_min_pct = 0.0
+outside_humidity_max_pct = 100.0
+
+# Chopper-wheel calibration is not used by the converter.
+# Put chopper_wheel/chopper_stat in sunscan_analysis.toml when sunscan needs Ta*.
+output_layout = "merged"
+time_sort = true

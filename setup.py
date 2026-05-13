@@ -47,7 +47,9 @@ setup(
     entry_points={
         "console_scripts": executor_entrypoints
         + [
-            # Custom paths will be added here
+            "necst-spectral-resolve=necst.rx.spectral_recording_setup:main_resolve",
+            "necst-spectral-validate=necst.rx.spectral_recording_setup:main_validate",
+            "necst-lo-profile=necst.rx.spectral_recording_sg:main_lo_profile",
         ],
     },
 )

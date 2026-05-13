@@ -1,0 +1,96 @@
+schema_version = "converter_analysis_v1"
+kind = "converter_analysis"
+analysis_id = "OMU1P85M_4board_12co_13co_c18o_current_converter"
+
+# Analysis-time settings for the current OMU 1.85 m 4-board 12CO/13CO/C18O setup.
+# This file intentionally contains analysis-time settings only.
+# Stream truth such as frequency axes, LO chains, FDNUM/IFNUM/PLNUM,
+# and recording windows comes from the sibling lo_profile and
+# recording_window_setup files or from spectral_recording_snapshot.toml.
+
+# Spectral timing policy.  The default is "auto"; legacy host-time offsets below
+# are applied only when host-time is actually selected.
+[spectral_time]
+# How to choose the spectral-row timestamp.
+# Choices:
+#   "auto"            : prefer a reliable XFFTS timestamp (time_spectrometer);
+#                       fall back to host-time only when the timestamp is unavailable/unusable.
+#   "xffts-timestamp" : require the XFFTS timestamp; fail instead of falling back.
+#   "host-time"       : use the host-side received_time attached just after the XFFTS header read.
+spectral_time_source = "auto"
+
+# How to interpret the literal timestamp scale suffix in XFFTS headers.
+# Choices: "auto", "utc", "gps", "tai".
+xffts_timestamp_scale = "auto"
+
+# OMU/XFFTS convention: a literal "GPS" suffix is normally UTC-like.
+# Choices:
+#   "utc" : treat literal GPS suffix as UTC-like (recommended here).
+#   "gps" : treat literal GPS suffix as true GPS time; currently differs from UTC by leap seconds.
+xffts_gps_suffix_means = "utc"
+
+# Legacy host-time correction [s].
+# This preserves the old 1.85 m host-time behavior only when host-time is selected.
+# It is applied for spectral_time_source = "host-time", or when "auto" falls back
+# to host-time.  It is NOT applied when auto selects "xffts-timestamp".
+spectrometer_time_offset_sec = -0.070
+[encoder_time]
+# Encoder timestamp offsets [s].
+# These are independent of spectral_time_source.
+# encoder_shift_sec applies to both Az and El.
+# encoder_az_time_offset_sec and encoder_el_time_offset_sec are axis-specific
+# additional offsets.
+encoder_shift_sec = 0.000
+encoder_az_time_offset_sec = 0.000
+encoder_el_time_offset_sec = 0.040
+[converter_analysis]
+# Stream selection for snapshot-based update14 conversion is not done by spectral_name.
+# Use CLI --recorded-stream-id, or [analysis_selection] convert_stream_ids if needed.
+db_namespace = "necst"
+telescope = "OMU1P85M"
+# planet = "sun"  # enable only for Sun/sunscan style reductions
+
+boresight_source = "encoder"
+boresight_correction_apply = "subtract"
+skycoord_method = "azel"
+output_azel_source = "beam"
+# output_azel_source = "corrected_cmd"  # for PSW-like reductions
+
+encoder_time_col = "time"
+altaz_time_col = "time"
+encoder_table_suffix = "ctrl-antenna-encoder"
+altaz_table_suffix = "ctrl-antenna-altaz"
+
+# weather: inside = Tamb/THOT source, outside = refraction/PRESSURE/HUMIDITY source
+weather_inside_table_suffix = "weather-ambient"
+weather_outside_table_suffix = "weather-ambient"
+weather_inside_time_col = "time"
+weather_outside_time_col = "time"
+met_source = "auto"
+
+# HOT load temperature [K]
+thot_default_k = 283.15
+thot_min_k = 250.0
+thot_max_k = 330.0
+# thot_k = 295.0  # fixed value, only if needed
+
+# Ambient temperature [K]
+tamb_default_k = 275.0
+tamb_min_k = 230.0
+tamb_max_k = 330.0
+# tamb_k = 275.0  # fixed value, only if needed
+
+# Outside meteorology defaults for refraction / PRESSURE / HUMIDITY
+# temperature [degC], pressure [hPa], humidity [%]
+outside_default_temperature_c = 0.0
+outside_default_pressure_hpa = 860.0
+outside_default_humidity_pct = 30.0
+outside_temperature_min_c = -50.0
+outside_temperature_max_c = 50.0
+outside_pressure_min_hpa = 400.0
+outside_pressure_max_hpa = 1100.0
+outside_humidity_min_pct = 0.0
+outside_humidity_max_pct = 100.0
+
+output_layout = "merged"
+time_sort = true
