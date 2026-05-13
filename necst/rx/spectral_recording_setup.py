@@ -379,6 +379,36 @@ def _recorded_db_stream_name(source_db_stream_name: str, window_id: str) -> str:
     return f"{source_db_stream_name}__{window_id}"
 
 
+def _apply_recorded_window_metadata_overrides(
+    product: Dict[str, Any],
+    window: Mapping[str, Any],
+    *,
+    group_id: str,
+    window_index: int,
+) -> None:
+    """Apply optional per-window SDFITS metadata overrides to a saved product.
+
+    Multi-window recording splits one source stream into multiple saved products.
+    The source stream has only one FDNUM/IFNUM/PLNUM, but the saved products may
+    need distinct SDFITS numbering, for example 13CO and C18O windows cut from the
+    same XFFTS board.  The override is intentionally product-local and does not
+    modify the source stream.
+    """
+
+    for key in ("fdnum", "ifnum", "plnum"):
+        if key in window:
+            value = _as_int(window.get(key), field=f"recording_groups.{group_id}.windows[{window_index}].{key}")
+            if value < 0:
+                raise SpectralRecordingValidationError(
+                    f"recording_groups.{group_id}.windows[{window_index}].{key} must be non-negative"
+                )
+            product[key] = value
+
+    for key in ("polariza", "beam_id"):
+        if key in window:
+            product[key] = str(window[key])
+
+
 def _db_table_path_for_recorded_product(stream: Mapping[str, Any], recorded_db_stream_name: str, *, mode: str) -> str:
     kind = "tp" if mode == "tp" else "spectral"
     spectrometer_key = str(stream.get("spectrometer_key", ""))
@@ -1688,6 +1718,12 @@ def _resolve_recording_for_stream(
                 "computed_windows": [computed],
                 "computed_windows_json": json.dumps([computed], sort_keys=True, separators=(",", ":")),
             }
+            _apply_recorded_window_metadata_overrides(
+                product,
+                w,
+                group_id=group_id,
+                window_index=i,
+            )
             product_rest = computed.get("rest_frequency_hz", stream.get("rest_frequency_hz", stream.get("default_rest_frequency_hz")))
             if product_rest is not None:
                 product["rest_frequency_hz"] = float(product_rest)
