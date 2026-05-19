@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import time as pytime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
@@ -109,7 +108,9 @@ def _frequency_alias_hz(
 
 
 def _readback_power_dbm(readback: Any) -> Optional[float]:
-    value = _get_value(readback, "power_dbm", "sg_readback_power_dbm", "power", default=None)
+    value = _get_value(
+        readback, "power_dbm", "sg_readback_power_dbm", "power", default=None
+    )
     return None if value is None else float(value)
 
 
@@ -138,11 +139,15 @@ def _readback_output(readback: Any) -> Optional[bool]:
 def sg_devices_from_profile(lo_profile: Mapping[str, Any]) -> Dict[str, Dict[str, Any]]:
     devices = lo_profile.get("sg_devices", {})
     if not isinstance(devices, Mapping):
-        raise SpectralRecordingSGValidationError("lo_profile.sg_devices must be a table.")
+        raise SpectralRecordingSGValidationError(
+            "lo_profile.sg_devices must be a table."
+        )
     return {str(k): dict(v) for k, v in devices.items()}
 
 
-def build_sg_apply_plan(lo_profile: Mapping[str, Any], sg_id: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
+def build_sg_apply_plan(
+    lo_profile: Mapping[str, Any], sg_id: Optional[str] = None
+) -> Dict[str, Dict[str, Any]]:
     devices = sg_devices_from_profile(lo_profile)
     if sg_id is not None:
         if sg_id not in devices:
@@ -232,11 +237,17 @@ def verify_sg_readback(
             f"stale readback: readback_time={rb_time:.6f} < verify_started_at={verify_started_at:.6f}"
         )
 
-    rb_source = str(_get_value(readback, "readback_source", "source", default="device_readback"))
+    rb_source = str(
+        _get_value(readback, "readback_source", "source", default="device_readback")
+    )
     if strict and rb_source == "command_echo_detected" and not allow_command_echo:
-        errors.append("strict verify requires device_readback; command_echo_detected was returned")
+        errors.append(
+            "strict verify requires device_readback; command_echo_detected was returned"
+        )
     elif rb_source == "command_echo_detected":
-        warnings.append("readback_source=command_echo_detected accepted by explicit override")
+        warnings.append(
+            "readback_source=command_echo_detected accepted by explicit override"
+        )
 
     expected_freq = float(entry["sg_set_frequency_hz"])
     freq_tol = float(entry.get("frequency_tolerance_hz", 0.0))
@@ -266,7 +277,9 @@ def verify_sg_readback(
     if output_required and rb_output is False:
         errors.append("output_required=true but readback output is off")
     if (not output_required) and output_policy == "require_off" and rb_output is True:
-        errors.append("output_required=false/output_policy=require_off but readback output is on")
+        errors.append(
+            "output_required=false/output_policy=require_off but readback output is on"
+        )
 
     result = {
         "sg_id": sg_id,
@@ -284,7 +297,6 @@ def verify_sg_readback(
     if errors and strict:
         raise SpectralRecordingSGValidationError("; ".join(errors))
     return result
-
 
 
 def _candidate_readbacks(readback: Any, sg_id: str) -> List[Any]:
@@ -371,6 +383,7 @@ def poll_sg_readback(
             }
         pytime.sleep(max(0.0, min(float(poll_interval_sec), deadline - now)))
 
+
 def summarize_lo_profile(path: Path) -> str:
     profile = read_toml(path)
     plan = build_sg_apply_plan(profile)
@@ -387,7 +400,15 @@ def _readback_to_dict(readback: Any) -> Dict[str, Any]:
     if isinstance(readback, Mapping):
         return dict(readback)
     fields = {}
-    for name in ("id", "freq", "frequency_hz", "power", "power_dbm", "time", "output_status"):
+    for name in (
+        "id",
+        "freq",
+        "frequency_hz",
+        "power",
+        "power_dbm",
+        "time",
+        "output_status",
+    ):
         if hasattr(readback, name):
             fields[name] = getattr(readback, name)
     return fields
@@ -462,7 +483,11 @@ def main_lo_profile(argv: Optional[Iterable[str]] = None) -> int:
             print(json.dumps(results, indent=2, sort_keys=True))
         return 0
     finally:
-        if commander is not None and privilege_acquired and hasattr(commander, "quit_privilege"):
+        if (
+            commander is not None
+            and privilege_acquired
+            and hasattr(commander, "quit_privilege")
+        ):
             try:
                 commander.quit_privilege()
             except Exception:

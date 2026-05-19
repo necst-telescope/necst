@@ -31,7 +31,12 @@ ROOT = Path(__file__).resolve().parents[2]
 XFFTSPY_ROOT = ROOT / "xfftspy-master"
 NECLIB_ROOT = ROOT / "neclib-second_OTF_neclib"
 NECSTDB_ROOT = ROOT / "necstdb-master"
-OUT_JSON = ROOT / "docs" / "preflight" / "update14_realistic_time_and_writer_simulation_2026-05-01.json"
+OUT_JSON = (
+    ROOT
+    / "docs"
+    / "preflight"
+    / "update14_realistic_time_and_writer_simulation_2026-05-01.json"
+)
 
 
 def _load_xfftspy_data_consumer():
@@ -85,7 +90,9 @@ def _xffts_packet(nboard: int = 8, nchan: int = 32768) -> bytes:
     return header + raw
 
 
-def _measure_receive_path(return_numpy: bool, n_iter: int, nboard: int = 8, nchan: int = 32768):
+def _measure_receive_path(
+    return_numpy: bool, n_iter: int, nboard: int = 8, nchan: int = 32768
+):
     data_consumer = _load_xfftspy_data_consumer()
     packet = _xffts_packet(nboard=nboard, nchan=nchan)
     consumer = data_consumer.__new__(data_consumer)
@@ -207,7 +214,11 @@ def _chunk(spectral_data, *, time_value: float, timestamp_text: str):
         {"key": "line_index", "type": "int32", "value": 7},
         {"key": "line_label", "type": "string<=64", "value": "line".ljust(64)},
         {"key": "time", "type": "float64", "value": float(time_value)},
-        {"key": "time_spectrometer", "type": "string<=32", "value": timestamp_text[:32].ljust(32)},
+        {
+            "key": "time_spectrometer",
+            "type": "string<=32",
+            "value": timestamp_text[:32].ljust(32),
+        },
         {"key": "ch", "type": "int32", "value": []},
         {"key": "rfreq", "type": "float64", "value": []},
         {"key": "ifreq", "type": "float64", "value": []},
@@ -224,7 +235,9 @@ def _close_writer(writer):
     writer.db = None
 
 
-def _measure_writer_direct(use_numpy: bool, n_packet: int, nboard: int = 8, nchan: int = 32768):
+def _measure_writer_direct(
+    use_numpy: bool, n_packet: int, nboard: int = 8, nchan: int = 32768
+):
     NECSTDBWriter = _load_necstdb_writer_class()
     # Reset singleton state for repeatable diagnostics in one process.
     NECSTDBWriter._instance.pop(NECSTDBWriter, None)
@@ -245,14 +258,20 @@ def _measure_writer_direct(use_numpy: bool, n_packet: int, nboard: int = 8, ncha
             topic = f"/necst/data/spectral/xffts/board{board}"
             writer._write(
                 topic,
-                _chunk(spec_value, time_value=1777593600.0 + ipacket * 0.1, timestamp_text=timestamp_text),
+                _chunk(
+                    spec_value,
+                    time_value=1777593600.0 + ipacket * 0.1,
+                    timestamp_text=timestamp_text,
+                ),
             )
             nrow += 1
     elapsed = time.perf_counter() - t0
     total_bytes = 0
     for path in db_dir.glob("*.data"):
         total_bytes += path.stat().st_size
-    used_append_packed = all(hasattr(table, "append_packed") for table in writer.tables.values())
+    used_append_packed = all(
+        hasattr(table, "append_packed") for table in writer.tables.values()
+    )
     _close_writer(writer)
     shutil.rmtree(tmp, ignore_errors=True)
     return {
@@ -287,7 +306,11 @@ def _measure_writer_queue(n_packet: int, nboard: int = 8, nchan: int = 32768):
             topic = f"/necst/data/spectral/xffts/board{board}"
             writer.append(
                 topic,
-                _chunk(spec_np, time_value=1777593600.0 + ipacket * 0.1, timestamp_text=timestamp_text),
+                _chunk(
+                    spec_np,
+                    time_value=1777593600.0 + ipacket * 0.1,
+                    timestamp_text=timestamp_text,
+                ),
             )
             nrow += 1
     enqueue_elapsed = time.perf_counter() - t0

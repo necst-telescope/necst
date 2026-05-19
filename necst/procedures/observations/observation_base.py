@@ -117,7 +117,9 @@ class Observation(ABC):
                 def _cleanup_step(label, func):
                     try:
                         return func()
-                    except Exception as exc:  # pragma: no cover - hardware/ROS dependent cleanup
+                    except (
+                        Exception
+                    ) as exc:  # pragma: no cover - hardware/ROS dependent cleanup
                         cleanup_errors.append((label, exc))
                         self.logger.exception(f"Cleanup step failed: {label}: {exc}")
                         return None
@@ -128,7 +130,9 @@ class Observation(ABC):
                 try:
                     self.com.record("stop")
                     record_stop_ok = True
-                except Exception as exc:  # pragma: no cover - hardware/ROS dependent cleanup
+                except (
+                    Exception
+                ) as exc:  # pragma: no cover - hardware/ROS dependent cleanup
                     cleanup_errors.append(("record stop", exc))
                     self.logger.exception(f"Cleanup step failed: record stop: {exc}")
 
@@ -154,7 +158,9 @@ class Observation(ABC):
                         "state is uncertain."
                     )
 
-                _cleanup_step("reset savespec", lambda: self.com.record("savespec", save=True))
+                _cleanup_step(
+                    "reset savespec", lambda: self.com.record("savespec", save=True)
+                )
                 _cleanup_step("antenna stop", lambda: self.com.antenna("stop"))
 
                 def _reset_binning():
@@ -185,7 +191,9 @@ class Observation(ABC):
                 _cleanup_step("install signal handlers", rclpy.install_signal_handlers)
                 if cleanup_errors and original_exc is None:
                     labels = ", ".join(label for label, _ in cleanup_errors)
-                    raise RuntimeError(f"Observation cleanup failed in step(s): {labels}") from cleanup_errors[0][1]
+                    raise RuntimeError(
+                        f"Observation cleanup failed in step(s): {labels}"
+                    ) from cleanup_errors[0][1]
 
     @property
     def start_datetime(self) -> Optional[str]:
@@ -281,7 +289,9 @@ class Observation(ABC):
         # that case, HOT must not issue any extra antenna command because the
         # following HOT->OFF pair is intended to run on exactly the same tracking
         # solution and sky position.
-        if (not preserve_tracking) and (not self.com.get_message("antenna_control").tight):
+        if (not preserve_tracking) and (
+            not self.com.get_message("antenna_control").tight
+        ):
             enc = self.com.get_message("encoder")
             params = PointingError.from_file(config.antenna_pointing_parameter_path)
             az, el = params.apparent_to_refracted(az=enc.lon, el=enc.lat, unit="deg")

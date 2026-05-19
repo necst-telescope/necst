@@ -24,7 +24,6 @@ from .spectral_recording_runtime import (
     slice_spectrum_for_stream,
     tp_chunk_for_stream,
     spectrum_chunk_for_stream,
-    spectrum_extra_chunk,
     legacy_spectral_string_field,
 )
 
@@ -176,7 +175,9 @@ class SpectralData(DeviceNode):
             self.data_queue[key] = queue.Queue()
             self.resizers[key] = defaultdict(lambda: Resize(1))
 
-        fetch_limit = int(getattr(config, "spectrometer_fetch_max_packets_per_timer", 8) or 8)
+        fetch_limit = int(
+            getattr(config, "spectrometer_fetch_max_packets_per_timer", 8) or 8
+        )
         self._fetch_max_packets_per_timer = fetch_limit if fetch_limit > 0 else 1
 
         self.publisher: Dict[int, Publisher] = {}
@@ -199,14 +200,18 @@ class SpectralData(DeviceNode):
         self.tp_range = None
 
         self.spectral_recording_runtime = SpectralRecordingRuntimeState()
-        self._spectral_recording_apply_srv = service.apply_spectral_recording_setup.service(
-            self, self.apply_spectral_recording_setup
+        self._spectral_recording_apply_srv = (
+            service.apply_spectral_recording_setup.service(
+                self, self.apply_spectral_recording_setup
+            )
         )
         self._spectral_recording_gate_srv = service.set_spectral_recording_gate.service(
             self, self.set_spectral_recording_gate
         )
-        self._spectral_recording_clear_srv = service.clear_spectral_recording_setup.service(
-            self, self.clear_spectral_recording_setup
+        self._spectral_recording_clear_srv = (
+            service.clear_spectral_recording_setup.service(
+                self, self.clear_spectral_recording_setup
+            )
         )
 
         topic.spectra_meta.subscription(self, self.update_metadata)
@@ -215,7 +220,6 @@ class SpectralData(DeviceNode):
         topic.spectra_rec.subscription(self, self.change_record_frequency)
         topic.tp_mode.subscription(self, self.tp_mode_func)
         topic.channel_binning.subscription(self, self.change_spec_chan)
-
 
     def apply_spectral_recording_setup(self, request, response):
         try:
@@ -410,14 +414,18 @@ class SpectralData(DeviceNode):
     def fetch_data(self) -> None:
         for key, io in self.io.items():
             device_queue = getattr(io, "data_queue", None)
-            max_packets = self._fetch_max_packets_per_timer if device_queue is not None else 1
+            max_packets = (
+                self._fetch_max_packets_per_timer if device_queue is not None else 1
+            )
             for _ in range(max_packets):
                 packet = self._get_spectra_nowait(io)
                 if packet is None:
                     break
                 self.data_queue[key].put(packet)
 
-    def get_data(self) -> Optional[Dict[str, Tuple[float, str, Dict[int, List[float]]]]]:
+    def get_data(
+        self,
+    ) -> Optional[Dict[str, Tuple[float, str, Dict[int, List[float]]]]]:
         if not self.data_queue:
             return None
         if any(data_queue.empty() for data_queue in self.data_queue.values()):
@@ -477,9 +485,7 @@ class SpectralData(DeviceNode):
                 _chunk["value"] = _fit_string(
                     _chunk["value"],
                     int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"])),
-                ).ljust(
-                    int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"]))
-                )
+                ).ljust(int(re.sub(r"\D", "", _chunk["type"]) or len(_chunk["value"])))
         return chunk
 
     def _make_spectral_message(
@@ -522,7 +528,9 @@ class SpectralData(DeviceNode):
             line_label = _fit_string(section.label, 64)
         return [
             {"key": "data", "type": "float32", "value": spectral_data},
-            legacy_spectral_string_field("position", _fit_string(metadata.position, 8), 8),
+            legacy_spectral_string_field(
+                "position", _fit_string(metadata.position, 8), 8
+            ),
             legacy_spectral_string_field("id", _fit_string(metadata.id, 16), 16),
             {"key": "line_index", "type": "int32", "value": int(line_index)},
             legacy_spectral_string_field("line_label", line_label, 64),
@@ -539,7 +547,9 @@ class SpectralData(DeviceNode):
             {"key": "integ", "type": "float64", "value": 0.0},
         ]
 
-    def _record_legacy_stream(self, key: str, board_id: int, spectral_data, time, time_spectrometer) -> None:
+    def _record_legacy_stream(
+        self, key: str, board_id: int, spectral_data, time, time_spectrometer
+    ) -> None:
         metadata = self.metadata.get(time)
         section = self.control_section.get(time)
         chunk = self._legacy_spectrum_chunk(
@@ -622,7 +632,9 @@ class SpectralData(DeviceNode):
 
             append_path = stream.get("_runtime_db_append_path")
             if not append_path:
-                append_path = namespace_db_path(namespace.root, str(stream["db_table_path"]))
+                append_path = namespace_db_path(
+                    namespace.root, str(stream["db_table_path"])
+                )
             self.recorder.append(append_path, chunk)
 
     def record(self) -> None:
@@ -690,4 +702,3 @@ class SpectralData(DeviceNode):
                         self.spectral_recording_runtime.latch_fatal_error(message)
                         return
                     pass
-

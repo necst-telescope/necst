@@ -30,7 +30,15 @@ import hashlib
 import json
 import math
 from types import MappingProxyType
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
+from typing import (
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 try:
     from .spectral_recording_setup import _toml_loads, validate_snapshot
@@ -54,12 +62,16 @@ def canonical_snapshot_sha256_from_text(snapshot_toml: str) -> str:
 
 
 def normalize_snapshot_hash(snapshot: Mapping[str, Any], raw_text: str = "") -> str:
-    value = str(snapshot.get("canonical_snapshot_sha256") or snapshot.get("setup_hash") or "")
+    value = str(
+        snapshot.get("canonical_snapshot_sha256") or snapshot.get("setup_hash") or ""
+    )
     if value:
         return value
     if raw_text:
         return canonical_snapshot_sha256_from_text(raw_text)
-    raise SpectralRecordingRuntimeError("Snapshot does not contain canonical_snapshot_sha256.")
+    raise SpectralRecordingRuntimeError(
+        "Snapshot does not contain canonical_snapshot_sha256."
+    )
 
 
 def load_snapshot_from_toml_text(snapshot_toml: str) -> Dict[str, Any]:
@@ -78,11 +90,17 @@ class ActiveSpectralRecordingSetup:
     warnings: List[str] = field(default_factory=list)
     runtime_errors: List[str] = field(default_factory=list)
     fatal_error: str = ""
-    _streams_cache: Dict[str, Dict[str, Any]] = field(default_factory=dict, init=False, repr=False)
-    _raw_index_cache: Dict[Tuple[str, int], Tuple[Mapping[str, Any], ...]] = field(default_factory=dict, init=False, repr=False)
+    _streams_cache: Dict[str, Dict[str, Any]] = field(
+        default_factory=dict, init=False, repr=False
+    )
+    _raw_index_cache: Dict[Tuple[str, int], Tuple[Mapping[str, Any], ...]] = field(
+        default_factory=dict, init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
-        self._streams_cache = {str(k): dict(v) for k, v in self.snapshot.get("streams", {}).items()}
+        self._streams_cache = {
+            str(k): dict(v) for k, v in self.snapshot.get("streams", {}).items()
+        }
         raw_index: Dict[Tuple[str, int], List[Mapping[str, Any]]] = {}
         for stream in self._streams_cache.values():
             raw_key = str(stream.get("raw_input_key", stream.get("spectrometer_key")))
@@ -93,12 +111,16 @@ class ActiveSpectralRecordingSetup:
             # high-rate spectral callback only slices the array and appends the
             # already validated metadata fields.
             if str(stream.get("recording_mode", "spectrum")) == "spectrum":
-                stream["_runtime_spectrum_extra_chunk"] = tuple(spectrum_extra_chunk(stream, self))
+                stream["_runtime_spectrum_extra_chunk"] = tuple(
+                    spectrum_extra_chunk(stream, self)
+                )
 
             # Expose read-only cached stream views to high-rate callbacks.  This
             # preserves the old no-mutation expectation while avoiding one dict
             # copy per recorded product per callback.
-            raw_index.setdefault((raw_key, raw_board), []).append(MappingProxyType(stream))
+            raw_index.setdefault((raw_key, raw_board), []).append(
+                MappingProxyType(stream)
+            )
         self._raw_index_cache = {key: tuple(value) for key, value in raw_index.items()}
 
     @classmethod
@@ -174,7 +196,6 @@ class ActiveSpectralRecordingSetup:
             f"gate={'open' if self.gate_allow_save else 'closed'}"
         )
 
-
     def latch_fatal_error(self, message: str) -> None:
         """Record a fatal active-mode error and close the setup gate.
 
@@ -208,7 +229,9 @@ class ActiveSpectralRecordingSetup:
             self.assert_no_fatal_error()
         self.gate_allow_save = bool(allow_save)
 
-    def streams_for_raw(self, spectrometer_key: str, board_id: int) -> Tuple[Mapping[str, Any], ...]:
+    def streams_for_raw(
+        self, spectrometer_key: str, board_id: int
+    ) -> Tuple[Mapping[str, Any], ...]:
         """Return all saved products produced from one raw spectrometer input.
 
         In normal full/channel/envelope modes this list has length one.  In
@@ -222,7 +245,9 @@ class ActiveSpectralRecordingSetup:
         """
         return self._raw_index_cache.get((str(spectrometer_key), int(board_id)), ())
 
-    def stream_for_raw(self, spectrometer_key: str, board_id: int) -> Optional[Dict[str, Any]]:
+    def stream_for_raw(
+        self, spectrometer_key: str, board_id: int
+    ) -> Optional[Dict[str, Any]]:
         matches = self.streams_for_raw(spectrometer_key, board_id)
         return matches[0] if matches else None
 
@@ -252,7 +277,14 @@ class SpectralRecordingRuntimeState:
     def active(self) -> bool:
         return self.active_setup is not None
 
-    def apply(self, *, snapshot_toml: str, snapshot_sha256: str, setup_id: str, strict: bool = True) -> ActiveSpectralRecordingSetup:
+    def apply(
+        self,
+        *,
+        snapshot_toml: str,
+        snapshot_sha256: str,
+        setup_id: str,
+        strict: bool = True,
+    ) -> ActiveSpectralRecordingSetup:
         if self.active_setup is not None:
             raise SpectralRecordingRuntimeError(
                 "A spectral recording setup is already active; clear it before applying another setup."
@@ -274,7 +306,9 @@ class SpectralRecordingRuntimeState:
             allow_save=allow_save,
         )
 
-    def clear(self, *, setup_id: str = "", setup_hash: str = "", strict: bool = True) -> List[str]:
+    def clear(
+        self, *, setup_id: str = "", setup_hash: str = "", strict: bool = True
+    ) -> List[str]:
         warnings: List[str] = []
         setup = self.active_setup
         if setup is None:
@@ -291,7 +325,9 @@ class SpectralRecordingRuntimeState:
                 f"setup_hash mismatch: active={setup.setup_hash!r}, requested={setup_hash!r}"
             )
         if setup.gate_allow_save:
-            warnings.append("setup gate was open during clear; closing it before deactivation")
+            warnings.append(
+                "setup gate was open during clear; closing it before deactivation"
+            )
             setup.gate_allow_save = False
         self.active_setup = None
         return warnings
@@ -312,12 +348,16 @@ class SpectralRecordingRuntimeState:
         if self.active_setup is not None:
             self.active_setup.assert_no_fatal_error()
 
-    def streams_for_raw(self, spectrometer_key: str, board_id: int) -> Tuple[Mapping[str, Any], ...]:
+    def streams_for_raw(
+        self, spectrometer_key: str, board_id: int
+    ) -> Tuple[Mapping[str, Any], ...]:
         if self.active_setup is None:
             return []
         return self.active_setup.streams_for_raw(spectrometer_key, board_id)
 
-    def stream_for_raw(self, spectrometer_key: str, board_id: int) -> Optional[Dict[str, Any]]:
+    def stream_for_raw(
+        self, spectrometer_key: str, board_id: int
+    ) -> Optional[Dict[str, Any]]:
         if self.active_setup is None:
             return None
         return self.active_setup.stream_for_raw(spectrometer_key, board_id)
@@ -380,7 +420,9 @@ def slice_spectrum_for_stream(stream: Mapping[str, Any], spectral_data: Any) -> 
     return sliced
 
 
-def spectrum_extra_chunk(stream: Mapping[str, Any], setup: ActiveSpectralRecordingSetup) -> List[Dict[str, Any]]:
+def spectrum_extra_chunk(
+    stream: Mapping[str, Any], setup: ActiveSpectralRecordingSetup
+) -> List[Dict[str, Any]]:
     """Extra metadata fields appended to the normal Spectral.msg chunk."""
 
     fields: List[Tuple[str, str, Any]] = [
@@ -398,7 +440,11 @@ def spectrum_extra_chunk(stream: Mapping[str, Any], setup: ActiveSpectralRecordi
         ("saved_ch_start", "int32", int(stream.get("saved_ch_start", -1))),
         ("saved_ch_stop", "int32", int(stream.get("saved_ch_stop", -1))),
         ("saved_nchan", "int32", int(stream.get("saved_nchan", -1))),
-        ("saved_window_policy", "string<=32", str(stream.get("saved_window_policy", ""))),
+        (
+            "saved_window_policy",
+            "string<=32",
+            str(stream.get("saved_window_policy", "")),
+        ),
     ]
     return [runtime_chunk_field(key, typ, value) for key, typ, value in fields]
 
@@ -474,6 +520,7 @@ def namespace_db_path(namespace_root: str, db_table_path: str) -> str:
         return f"{root}/{path}"
     return f"{root}/data/{path.lstrip('/')}"
 
+
 def _is_nan(value: Any) -> bool:
     try:
         return math.isnan(float(value))
@@ -500,9 +547,13 @@ def _parse_fixed_string_length(type_name: str) -> Optional[int]:
     try:
         length = int(str(type_name)[len(prefix) :])
     except ValueError as exc:
-        raise SpectralRecordingRuntimeError(f"Invalid fixed string type: {type_name!r}") from exc
+        raise SpectralRecordingRuntimeError(
+            f"Invalid fixed string type: {type_name!r}"
+        ) from exc
     if length <= 0:
-        raise SpectralRecordingRuntimeError(f"Fixed string length must be positive: {type_name!r}")
+        raise SpectralRecordingRuntimeError(
+            f"Fixed string length must be positive: {type_name!r}"
+        )
     return length
 
 
@@ -529,7 +580,11 @@ def runtime_chunk_field(key: str, type_name: str, value: Any) -> Dict[str, Any]:
 
     fixed_len = _parse_fixed_string_length(type_name)
     if fixed_len is not None:
-        return {"key": key, "type": "string", "value": fixed_string_bytes(value, fixed_len, key=key)}
+        return {
+            "key": key,
+            "type": "string",
+            "value": fixed_string_bytes(value, fixed_len, key=key),
+        }
     return {"key": key, "type": type_name, "value": value}
 
 
@@ -560,7 +615,9 @@ def tp_window_for_stream(stream: Mapping[str, Any]) -> Tuple[int, int]:
     return start, stop
 
 
-def compute_tp_statistics_for_stream(stream: Mapping[str, Any], spectral_data: Any) -> Dict[str, Any]:
+def compute_tp_statistics_for_stream(
+    stream: Mapping[str, Any], spectral_data: Any
+) -> Dict[str, Any]:
     """Compute TP sum/mean with explicit all-NaN/zero-valid semantics."""
 
     full_nchan = int(stream.get("full_nchan"))
@@ -661,10 +718,18 @@ def validate_setup_chunk_schema(setup: ActiveSpectralRecordingSetup) -> None:
                 ("setup_id", "string<=64", setup.setup_id),
                 ("setup_hash", "string<=64", setup.setup_hash),
                 ("stream_id", "string<=64", str(stream.get("stream_id", ""))),
-                ("spectrometer_key", "string<=32", str(stream.get("spectrometer_key", ""))),
+                (
+                    "spectrometer_key",
+                    "string<=32",
+                    str(stream.get("spectrometer_key", "")),
+                ),
                 ("polariza", "string<=8", str(stream.get("polariza", ""))),
                 ("beam_id", "string<=32", str(stream.get("beam_id", ""))),
-                ("tp_windows_json", "string<=2048", _json_string_for_tp_windows(stream)),
+                (
+                    "tp_windows_json",
+                    "string<=2048",
+                    _json_string_for_tp_windows(stream),
+                ),
                 ("tp_stat", "string<=16", str(stream.get("tp_stat", "sum_mean"))),
             ]
             for key, typ, value in fields:

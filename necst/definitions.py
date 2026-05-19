@@ -96,9 +96,9 @@ class qos:
         ).liveliness_lease_duration
 
         logger.debug(
-            f"QoS profile for topic {topicname!r}:\n\t{reliability = }\n"
-            f"\t{durability = }\n\t{deadline = }\n\t{liveliness = }\n"
-            f"\t{lease_duration = }\n\thistory = KEEP_LAST (default)\n\tdepth = 10"
+            f"QoS profile for topic {topicname!r}:\n\t{reliability = }\n"  # noqa: E251,E202
+            f"\t{durability = }\n\t{deadline = }\n\t{liveliness = }\n"  # noqa: E251,E202
+            f"\t{lease_duration = }\n\thistory = KEEP_LAST (default)\n\tdepth = 10"  # noqa: E251,E202
         )
 
         return QoSProfile(

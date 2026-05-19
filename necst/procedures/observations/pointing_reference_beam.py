@@ -23,7 +23,7 @@ import copy
 import hashlib
 import math
 from pathlib import Path
-from typing import Any, Dict, Mapping, MutableMapping, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple
 
 try:  # Python >= 3.11
     import tomllib as _toml_reader
@@ -67,7 +67,10 @@ class PointingReferenceBeamContext:
 
     @property
     def active(self) -> bool:
-        return bool(self.pointing_reference_beam_id) and self.pointing_reference_beam_id != DEFAULT_REFERENCE_BEAM_ID
+        return (
+            bool(self.pointing_reference_beam_id)
+            and self.pointing_reference_beam_id != DEFAULT_REFERENCE_BEAM_ID
+        )
 
 
 def _optional_str(params: Mapping[str, Any], *keys: str) -> Optional[str]:
@@ -98,15 +101,21 @@ def _resolve_path(path_text: Optional[str], *, base_dir: Path) -> Optional[Path]
 
 def _read_toml(path: Path) -> Dict[str, Any]:
     if _toml_reader is None:  # pragma: no cover
-        raise PointingReferenceBeamError("No TOML reader is available. Use Python >= 3.11, or install tomli.")
+        raise PointingReferenceBeamError(
+            "No TOML reader is available. Use Python >= 3.11, or install tomli."
+        )
     try:
         raw = path.read_bytes()
     except OSError as exc:
-        raise PointingReferenceBeamError(f"Cannot read beam_model TOML file: {path}") from exc
+        raise PointingReferenceBeamError(
+            f"Cannot read beam_model TOML file: {path}"
+        ) from exc
     try:
         return _toml_reader.loads(raw.decode("utf-8"))  # type: ignore[no-any-return]
     except Exception as exc:
-        raise PointingReferenceBeamError(f"Cannot parse beam_model TOML file: {path}: {exc}") from exc
+        raise PointingReferenceBeamError(
+            f"Cannot parse beam_model TOML file: {path}: {exc}"
+        ) from exc
 
 
 def _sha256_file(path: Path) -> str:
@@ -121,9 +130,13 @@ def _as_float(value: Any, *, key: str, default: Optional[float] = None) -> float
     try:
         out = float(value)
     except Exception as exc:
-        raise PointingReferenceBeamError(f"beam field {key!r} must be numeric, got {value!r}") from exc
+        raise PointingReferenceBeamError(
+            f"beam field {key!r} must be numeric, got {value!r}"
+        ) from exc
     if not math.isfinite(out):
-        raise PointingReferenceBeamError(f"beam field {key!r} must be finite, got {value!r}")
+        raise PointingReferenceBeamError(
+            f"beam field {key!r} must be finite, got {value!r}"
+        )
     return out
 
 
@@ -200,11 +213,31 @@ def _normalize_beam_block(beam_id: str, raw_block: Mapping[str, Any]) -> Dict[st
         )
         # Do not silently accept legacy non-zero offsets mixed into pure_rotation_v1.
         conflicts = []
-        for key in ("az_offset_arcsec", "el_offset_arcsec", "reference_angle_deg", "reference_el_deg"):
-            if key in block and block.get(key) is not None and abs(_as_float(block.get(key), key=key)) > 0.0:
+        for key in (
+            "az_offset_arcsec",
+            "el_offset_arcsec",
+            "reference_angle_deg",
+            "reference_el_deg",
+        ):
+            if (
+                key in block
+                and block.get(key) is not None
+                and abs(_as_float(block.get(key), key=key)) > 0.0
+            ):
                 conflicts.append(key)
-        if "rotation_slope_deg_per_deg" in block and block.get("rotation_slope_deg_per_deg") is not None:
-            if abs(_as_float(block.get("rotation_slope_deg_per_deg"), key="rotation_slope_deg_per_deg")) > 0.0:
+        if (
+            "rotation_slope_deg_per_deg" in block
+            and block.get("rotation_slope_deg_per_deg") is not None
+        ):
+            if (
+                abs(
+                    _as_float(
+                        block.get("rotation_slope_deg_per_deg"),
+                        key="rotation_slope_deg_per_deg",
+                    )
+                )
+                > 0.0
+            ):
                 conflicts.append("rotation_slope_deg_per_deg")
         if conflicts:
             raise PointingReferenceBeamError(
@@ -219,12 +252,22 @@ def _normalize_beam_block(beam_id: str, raw_block: Mapping[str, Any]) -> Dict[st
             "az_offset_arcsec": 0.0,
             "el_offset_arcsec": 0.0,
             "reference_angle_deg": 0.0,
-            "rotation_sign": _normalize_sign(sign, key="pure_rotation_sign/rotation_sign"),
+            "rotation_sign": _normalize_sign(
+                sign, key="pure_rotation_sign/rotation_sign"
+            ),
             "rotation_slope_deg_per_deg": None,
-            "dewar_angle_deg": _as_float(block.get("dewar_angle_deg", 0.0), key="dewar_angle_deg", default=0.0),
-            "pure_rotation_offset_x_el0_arcsec": _as_float(x0, key="pure_rotation_offset_x_el0_arcsec"),
-            "pure_rotation_offset_y_el0_arcsec": _as_float(y0, key="pure_rotation_offset_y_el0_arcsec"),
-            "pure_rotation_sign": _normalize_sign(sign, key="pure_rotation_sign/rotation_sign"),
+            "dewar_angle_deg": _as_float(
+                block.get("dewar_angle_deg", 0.0), key="dewar_angle_deg", default=0.0
+            ),
+            "pure_rotation_offset_x_el0_arcsec": _as_float(
+                x0, key="pure_rotation_offset_x_el0_arcsec"
+            ),
+            "pure_rotation_offset_y_el0_arcsec": _as_float(
+                y0, key="pure_rotation_offset_y_el0_arcsec"
+            ),
+            "pure_rotation_sign": _normalize_sign(
+                sign, key="pure_rotation_sign/rotation_sign"
+            ),
         }
 
     return {
@@ -232,37 +275,63 @@ def _normalize_beam_block(beam_id: str, raw_block: Mapping[str, Any]) -> Dict[st
         "model": model,
         "rotation_mode": rotation_mode,
         "beam_model_version": version_s,
-        "az_offset_arcsec": _as_float(block.get("az_offset_arcsec", 0.0), key="az_offset_arcsec", default=0.0),
-        "el_offset_arcsec": _as_float(block.get("el_offset_arcsec", 0.0), key="el_offset_arcsec", default=0.0),
+        "az_offset_arcsec": _as_float(
+            block.get("az_offset_arcsec", 0.0), key="az_offset_arcsec", default=0.0
+        ),
+        "el_offset_arcsec": _as_float(
+            block.get("el_offset_arcsec", 0.0), key="el_offset_arcsec", default=0.0
+        ),
         "reference_angle_deg": _as_float(
             block.get("reference_angle_deg", block.get("reference_el_deg", 0.0)),
             key="reference_angle_deg",
             default=0.0,
         ),
-        "rotation_sign": _as_float(block.get("rotation_sign", 1.0), key="rotation_sign", default=1.0),
+        "rotation_sign": _as_float(
+            block.get("rotation_sign", 1.0), key="rotation_sign", default=1.0
+        ),
         "rotation_slope_deg_per_deg": (
-            _as_float(block.get("rotation_slope_deg_per_deg"), key="rotation_slope_deg_per_deg")
+            _as_float(
+                block.get("rotation_slope_deg_per_deg"),
+                key="rotation_slope_deg_per_deg",
+            )
             if block.get("rotation_slope_deg_per_deg") is not None
             else None
         ),
-        "dewar_angle_deg": _as_float(block.get("dewar_angle_deg", 0.0), key="dewar_angle_deg", default=0.0),
+        "dewar_angle_deg": _as_float(
+            block.get("dewar_angle_deg", 0.0), key="dewar_angle_deg", default=0.0
+        ),
         "pure_rotation_offset_x_el0_arcsec": None,
         "pure_rotation_offset_y_el0_arcsec": None,
         "pure_rotation_sign": None,
     }
 
 
-def normalize_beam_model(raw: Mapping[str, Any], *, source_path: Optional[Path] = None, input_file_sha256: Optional[str] = None) -> BeamModelDocument:
+def normalize_beam_model(
+    raw: Mapping[str, Any],
+    *,
+    source_path: Optional[Path] = None,
+    input_file_sha256: Optional[str] = None,
+) -> BeamModelDocument:
     raw = dict(raw or {})
     beams_raw = raw.get("beams", {})
     if not isinstance(beams_raw, Mapping) or not beams_raw:
-        raise PointingReferenceBeamError("beam model contains no [beams.<beam_id>] entries")
+        raise PointingReferenceBeamError(
+            "beam model contains no [beams.<beam_id>] entries"
+        )
     beams = {
         str(beam_id): _normalize_beam_block(str(beam_id), block)
         for beam_id, block in dict(beams_raw).items()
     }
-    versions = sorted({str(b.get("beam_model_version")) for b in beams.values() if b.get("beam_model_version")})
-    version = str(raw.get("beam_model_version", raw.get("version", ""))).strip() or (versions[0] if len(versions) == 1 else None)
+    versions = sorted(
+        {
+            str(b.get("beam_model_version"))
+            for b in beams.values()
+            if b.get("beam_model_version")
+        }
+    )
+    version = str(raw.get("beam_model_version", raw.get("version", ""))).strip() or (
+        versions[0] if len(versions) == 1 else None
+    )
     return BeamModelDocument(
         beams=beams,
         source_path=source_path,
@@ -275,7 +344,9 @@ def load_beam_model(path: Path) -> BeamModelDocument:
     path = path.expanduser().resolve()
     if not path.exists():
         raise PointingReferenceBeamError(f"beam_model file does not exist: {path}")
-    return normalize_beam_model(_read_toml(path), source_path=path, input_file_sha256=_sha256_file(path))
+    return normalize_beam_model(
+        _read_toml(path), source_path=path, input_file_sha256=_sha256_file(path)
+    )
 
 
 def build_pointing_reference_context(
@@ -298,7 +369,10 @@ def build_pointing_reference_context(
     ref_id = _optional_str(params, "pointing_reference_beam_id")
     if ref_id is None or ref_id == "":
         return None
-    policy = _optional_str(params, "pointing_reference_beam_policy") or DEFAULT_POINTING_REFERENCE_BEAM_POLICY
+    policy = (
+        _optional_str(params, "pointing_reference_beam_policy")
+        or DEFAULT_POINTING_REFERENCE_BEAM_POLICY
+    )
     if policy not in SUPPORTED_POLICIES:
         raise PointingReferenceBeamError(
             f"Unsupported pointing_reference_beam_policy={policy!r}; "
@@ -327,7 +401,9 @@ def build_pointing_reference_context(
     )
 
 
-def _rotate_offset_arcsec(x0_arcsec: float, y0_arcsec: float, theta_deg: float) -> Tuple[float, float]:
+def _rotate_offset_arcsec(
+    x0_arcsec: float, y0_arcsec: float, theta_deg: float
+) -> Tuple[float, float]:
     theta = math.radians(float(theta_deg))
     x = float(x0_arcsec) * math.cos(theta) - float(y0_arcsec) * math.sin(theta)
     y = float(x0_arcsec) * math.sin(theta) + float(y0_arcsec) * math.cos(theta)
@@ -363,10 +439,16 @@ def evaluate_beam_offset_arcsec(
     if not math.isfinite(el):
         raise PointingReferenceBeamError(f"el_deg must be finite, got {el_deg!r}")
 
-    bm = beam_model if isinstance(beam_model, BeamModelDocument) else normalize_beam_model(beam_model)
+    bm = (
+        beam_model
+        if isinstance(beam_model, BeamModelDocument)
+        else normalize_beam_model(beam_model)
+    )
     beam_id = str(beam_id)
     if beam_id not in bm.beams:
-        raise PointingReferenceBeamError(f"beam_id={beam_id!r} is not present in beam_model")
+        raise PointingReferenceBeamError(
+            f"beam_id={beam_id!r} is not present in beam_model"
+        )
     beam = bm.beams[beam_id]
     model = str(beam.get("model", "legacy") or "legacy").strip().lower()
     rotation_mode = str(beam.get("rotation_mode", "none") or "none").strip().lower()
@@ -381,10 +463,18 @@ def evaluate_beam_offset_arcsec(
             theta = float(beam.get("dewar_angle_deg", 0.0))
         elif rotation_mode == "elevation":
             slope_raw = beam.get("rotation_slope_deg_per_deg")
-            slope = float(slope_raw) if slope_raw is not None else float(beam.get("rotation_sign", 1.0))
-            theta = slope * (el - float(beam.get("reference_angle_deg", 0.0))) + float(beam.get("dewar_angle_deg", 0.0))
+            slope = (
+                float(slope_raw)
+                if slope_raw is not None
+                else float(beam.get("rotation_sign", 1.0))
+            )
+            theta = slope * (el - float(beam.get("reference_angle_deg", 0.0))) + float(
+                beam.get("dewar_angle_deg", 0.0)
+            )
         else:
-            raise PointingReferenceBeamError(f"Unsupported rotation_mode={rotation_mode!r}")
+            raise PointingReferenceBeamError(
+                f"Unsupported rotation_mode={rotation_mode!r}"
+            )
         x, y = _rotate_offset_arcsec(
             float(beam.get("az_offset_arcsec", 0.0)),
             float(beam.get("el_offset_arcsec", 0.0)),
@@ -426,7 +516,9 @@ def _solve_exact_boresight_el_deg(
     """
 
     if context.beam_model is None:
-        raise PointingReferenceBeamError("Active pointing_reference_beam_id requires a beam model")
+        raise PointingReferenceBeamError(
+            "Active pointing_reference_beam_id requires a beam model"
+        )
 
     c_el = float(target_el_deg)
     for _ in range(max_iter):
@@ -479,14 +571,20 @@ def apply_pointing_reference_beam(
 
     if context is None or not context.active:
         return float(target_az_deg), float(target_el_deg)
-    effective_policy = policy or context.pointing_reference_beam_policy or DEFAULT_POINTING_REFERENCE_BEAM_POLICY
+    effective_policy = (
+        policy
+        or context.pointing_reference_beam_policy
+        or DEFAULT_POINTING_REFERENCE_BEAM_POLICY
+    )
     if effective_policy not in SUPPORTED_POLICIES:
         raise PointingReferenceBeamError(
             f"Unsupported pointing_reference_beam_policy={effective_policy!r}; "
             f"supported={sorted(SUPPORTED_POLICIES)!r}."
         )
     if context.beam_model is None:
-        raise PointingReferenceBeamError("Active pointing_reference_beam_id requires a beam model")
+        raise PointingReferenceBeamError(
+            "Active pointing_reference_beam_id requires a beam model"
+        )
 
     target_az = float(target_az_deg)
     target_el = float(target_el_deg)
@@ -508,7 +606,9 @@ def apply_pointing_reference_beam(
     elif effective_policy == POLICY_EXACT:
         eval_el = _solve_exact_boresight_el_deg(target_az, target_el, context)
     else:  # pragma: no cover - guarded above
-        raise PointingReferenceBeamError(f"Internal unsupported policy: {effective_policy!r}")
+        raise PointingReferenceBeamError(
+            f"Internal unsupported policy: {effective_policy!r}"
+        )
 
     x_arcsec, y_arcsec = evaluate_beam_offset_arcsec(
         context.beam_model,
@@ -521,7 +621,10 @@ def apply_pointing_reference_beam(
     else:
         boresight_el = target_el - y_arcsec / 3600.0
 
-    cos_el = _check_cos_el(boresight_el if effective_policy == POLICY_EXACT else eval_el, label="boresight_el")
+    cos_el = _check_cos_el(
+        boresight_el if effective_policy == POLICY_EXACT else eval_el,
+        label="boresight_el",
+    )
     boresight_az = target_az - x_arcsec / (3600.0 * cos_el)
     if not (math.isfinite(boresight_az) and math.isfinite(boresight_el)):
         raise PointingReferenceBeamError(
@@ -575,9 +678,13 @@ def apply_pointing_reference_to_point_kwargs(
     if "target" in out and out["target"] is not None:
         out["target"] = _shift_altaz_tuple(out["target"], context, label="target")
     elif "reference" in out and out["reference"] is not None:
-        out["reference"] = _shift_altaz_tuple(out["reference"], context, label="reference")
+        out["reference"] = _shift_altaz_tuple(
+            out["reference"], context, label="reference"
+        )
     else:
-        raise PointingReferenceBeamError("pointing_reference_beam_id point command requires target/reference")
+        raise PointingReferenceBeamError(
+            "pointing_reference_beam_id point command requires target/reference"
+        )
     return out
 
 
@@ -599,7 +706,9 @@ def apply_pointing_reference_to_scan_kwargs(
         out["target"] = _shift_altaz_tuple(out["target"], context, label="target")
         return out
     if "reference" in out and out["reference"] is not None:
-        out["reference"] = _shift_altaz_tuple(out["reference"], context, label="reference")
+        out["reference"] = _shift_altaz_tuple(
+            out["reference"], context, label="reference"
+        )
         return out
 
     scan_frame = out.get("scan_frame")
@@ -644,21 +753,26 @@ def apply_pointing_reference_to_scan_block_kwargs(
         out["target"] = _shift_altaz_tuple(out["target"], context, label="target")
         return out
     if "reference" in out and out["reference"] is not None:
-        out["reference"] = _shift_altaz_tuple(out["reference"], context, label="reference")
+        out["reference"] = _shift_altaz_tuple(
+            out["reference"], context, label="reference"
+        )
         return out
     raise PointingReferenceBeamError(
         "pointing_reference_beam_id scan_block requires an explicit altaz/azel target/reference."
     )
 
 
-def pointing_reference_snapshot_record(context: Optional[PointingReferenceBeamContext]) -> Dict[str, Any]:
+def pointing_reference_snapshot_record(
+    context: Optional[PointingReferenceBeamContext],
+) -> Dict[str, Any]:
     if context is None:
         return {
             "pointing_reference_beam_id": DEFAULT_REFERENCE_BEAM_ID,
             "pointing_reference_beam_policy": DEFAULT_POINTING_REFERENCE_BEAM_POLICY,
         }
     record: Dict[str, Any] = {
-        "pointing_reference_beam_id": context.pointing_reference_beam_id or DEFAULT_REFERENCE_BEAM_ID,
+        "pointing_reference_beam_id": context.pointing_reference_beam_id
+        or DEFAULT_REFERENCE_BEAM_ID,
         "pointing_reference_beam_policy": context.pointing_reference_beam_policy,
     }
     if context.beam_model is not None:
