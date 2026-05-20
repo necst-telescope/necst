@@ -1285,7 +1285,16 @@ _HTML_TEMPLATE = """<!doctype html>
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .55rem; line-height: 1.22; font-size:13px; background:var(--bg); color:var(--fg); }
 header { display:flex; gap:1rem; align-items:baseline; justify-content:space-between; flex-wrap:wrap; }
 h1 { font-size:1.05rem; margin:0 0 .3rem; }
-.grid { display:grid; grid-template-columns: repeat(3, minmax(205px, .9fr)) minmax(560px, 2.8fr); gap: .55rem; align-items:stretch; }
+.grid {
+  display:grid;
+  grid-template-columns: repeat(3, minmax(190px, .9fr)) repeat(3, minmax(210px, 1.45fr));
+  grid-template-areas:
+    "obs plan activity planview planview planview"
+    "position position geometry planview planview planview"
+    "env terminal files event event event";
+  gap: .55rem;
+  align-items:stretch;
+}
 .card { border:1px solid var(--border); border-radius:10px; padding:.55rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:10.5rem; }
 .card h2 { font-size:.92rem; margin:.03rem 0 .35rem; }
 .kv { display:grid; grid-template-columns: 6.9rem minmax(0,1fr); gap:.12rem .38rem; align-items:baseline; }
@@ -1311,18 +1320,34 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 .legend { display:flex; gap:.65rem; flex-wrap:wrap; margin:.2rem 0 .35rem; font-size:.78rem; color:var(--muted); }
 .dot { display:inline-block; width:.72rem; height:.72rem; border-radius:999px; vertical-align:-.08rem; margin-right:.22rem; }
 .small { font-size:.74rem; color:var(--muted); }
-.planview { grid-column: 4 / 7; grid-row: 1 / span 2; min-height: 37rem; }
-.positionview { grid-column: 1 / span 2; grid-row: 2 / span 1; }
-.eventview { grid-column: 4 / 7; grid-row: 3 / span 1; min-height: 10rem; }
+.obsview { grid-area: obs; }
+.planinfoview { grid-area: plan; }
+.activityview { grid-area: activity; }
+.positionview { grid-area: position; }
+.geometryview { grid-area: geometry; }
+.envview { grid-area: env; min-height: 9.5rem; }
+.terminalview { grid-area: terminal; min-height: 9.5rem; }
+.filesview { grid-area: files; min-height: 9.5rem; }
+.eventview { grid-area: event; min-height: 9.5rem; }
+.planview { grid-area: planview; min-height: 37rem; }
 .planview .plotbox { min-height: 560px; }
 .planview svg { max-height: 78vh; }
 #terminal { max-height: 12rem; }
 .axis-label { font-size:11px; fill:currentColor; }
 .plot-note { font-size:11px; fill:currentColor; }
-.important { font-weight:700; }
+.important { font-weight:700; color:var(--warn); }
+.critical { color:var(--err); font-weight:800; }
+.warning { margin:.25rem 0 .5rem; padding:.5rem .65rem; border:2px solid var(--err); border-radius:9px; background:#c1121f22; color:var(--fg); font-size:.98rem; font-weight:750; }
 .notice { margin:.25rem 0 .5rem; padding:.42rem .55rem; border:1px solid var(--border); border-radius:9px; background:#9991; }
-@media (max-width: 1100px) { .grid { grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); } .planview, .eventview, .positionview { grid-column: span 2; grid-row: auto; } }
-@media (max-width: 760px) { .planview, .eventview, .positionview { grid-column: span 1; grid-row: span 1; min-height: auto; } .plotbox { min-height: 360px; } }
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); grid-template-areas: none; }
+  .obsview, .planinfoview, .activityview, .positionview, .geometryview, .envview, .terminalview, .filesview, .eventview, .planview { grid-area: auto; }
+  .planview, .eventview, .positionview { grid-column: span 2; grid-row: auto; }
+}
+@media (max-width: 760px) {
+  .planview, .eventview, .positionview { grid-column: span 1; grid-row: span 1; min-height: auto; }
+  .plotbox { min-height: 360px; }
+}
 .err { color:var(--err); font-weight:700; }
 </style>
 </head>
@@ -1330,16 +1355,16 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 <header><h1>NECST Observation Progress</h1><div class=\"small\">Auto refresh: __REFRESH_MS__ ms | <a href=\"/api/state\">JSON</a></div></header>
 <div id=\"message\" class=\"small\">Loading...</div>
 <div class=\"grid\">
-<section class=\"card\"><h2>Observation</h2><div class=\"kv\" id=\"observation\"></div></section>
-<section class=\"card\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
-<section class=\"card\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
+<section class=\"card obsview\"><h2>Observation</h2><div class=\"kv\" id=\"observation\"></div></section>
+<section class=\"card planinfoview\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
+<section class=\"card activityview\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
 <section class="card positionview"><h2>Live Position</h2><div class="kv bigpos" id="position"></div></section>
 <section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span>OTF=line map; Grid/PSW=ON-basis map visits; Skydip=elevation sequence. OFF/reference points are labels, not progress denominator.</span></div><div id="plotview" class="plotbox small">-</div></section>
+<section class="card geometryview"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
+<section class="card envview"><h2>Environment</h2><div class="kv" id="environment"></div></section>
+<section class="card terminalview"><h2>Terminal View</h2><pre id=\"terminal\"></pre></section>
+<section class="card filesview"><h2>Files</h2><div class=\"kv\" id=\"paths\"></div></section>
 <section class="card eventview"><h2>Recent Events</h2><div id="events"></div></section>
-<section class="card"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
-<section class="card"><h2>Data</h2><div class="kv" id="data"></div></section>
-<section class=\"card\"><h2>Terminal View</h2><pre id=\"terminal\"></pre></section>
-<section class=\"card\"><h2>Files</h2><div class=\"kv\" id=\"paths\"></div></section>
 </div>
 <script>
 const refreshMs = __REFRESH_MS__;
@@ -1725,6 +1750,26 @@ function optionalWeatherRows(snapshot) {
   if (pres !== null) rows.push(['pressure', `${pres.toFixed(1)} hPa`, '']);
   return rows;
 }
+function trackingExpected(snapshot) {
+  const act = snapshot?.activity || {};
+  const stage = String(act.motion_stage || act.control_section_kind || '').toLowerCase();
+  const phase = String(act.phase || snapshot?.plan?.mode || '').toUpperCase();
+  const dataState = String(act.data_state || '').toLowerCase();
+  return phase === 'ON' && (stage === 'tracking' || stage === 'line' || stage === 'scanning' || dataState === 'integrating');
+}
+function trackingProblem(snapshot) {
+  const a = snapshot?.antenna || {};
+  if (!trackingExpected(snapshot)) return null;
+  if (!a.tracking_status_available) return 'Tracking status is unavailable while ON tracking/integration is expected.';
+  if (!a.tracking_ok) {
+    const err = degToArcsec(a.tracking_error_deg);
+    const age = Number(a.tracking_status_age_sec);
+    const errText = Number.isFinite(err) ? `${err.toFixed(1)} arcsec` : 'unknown error';
+    const ageText = Number.isFinite(age) ? `, age ${age.toFixed(1)} s` : '';
+    return `Tracking is NOT OK during ON ${String(snapshot?.activity?.motion_stage || 'tracking')}: ${errText}${ageText}.`;
+  }
+  return null;
+}
 function officialTrackingRows(a) {
   if (!a || !a.tracking_status_available) {
     return [
@@ -1737,8 +1782,8 @@ function officialTrackingRows(a) {
   const ok = !!a.tracking_ok;
   const ageText = Number.isFinite(age) ? `, age ${age.toFixed(1)} s` : '';
   return [
-    ['Tracking status', ok ? `OK${ageText}` : `not OK${ageText}`, ok ? 'ok' : 'important'],
-    ['Tracking error', arcsecText(err), ok ? 'ok' : 'important']
+    ['Tracking status', ok ? `OK${ageText}` : `not OK${ageText}`, ok ? 'ok' : 'critical'],
+    ['Tracking error', arcsecText(err), ok ? 'ok' : 'critical']
   ];
 }
 function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
@@ -1762,14 +1807,44 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
     ['target RA,Dec J2000', radec ? radecText(radec, 'J2000') : '-', ''],
     ['target Galactic l,b', gal ? galText(gal, 'galactic') : '-', '']
   ];
-  return rows.concat(optionalWeatherRows(snapshot));
+  return rows;
 }
-function dataRows(snapshot) {
+function activityRows(snapshot) {
+  const a = snapshot?.activity || {};
   const d = snapshot?.data || {};
-  return [
-    ['expected', d.expected_metadata_position], ['expected id', d.expected_metadata_id], ['expected line', d.expected_metadata_line_index],
-    ['latest', d.latest_spectrum_position], ['latest id', d.latest_spectrum_id], ['latest age [s]', d.latest_spectrum_age_sec]
+  const g = snapshot?.geometry || {};
+  const rows = [
+    ['phase', a.phase],
+    ['drive', a.drive_kind],
+    ['motion', a.motion_stage || a.control_section_kind],
+    ['data', a.data_state]
   ];
+  if (!isBlank(a.control_id)) rows.push(['control id', a.control_id]);
+  if (!isBlank(g.current_line_index0) && !isBlank(g.line_total)) rows.push(['control line', `${Number(g.current_line_index0)+1}/${g.line_total}`]);
+  if (!isBlank(a.location_context)) rows.push(['location', a.location_context]);
+  if (!isBlank(a.description)) rows.push(['description', a.description]);
+  const hasExpected = !isBlank(d.expected_metadata_position) || !isBlank(d.expected_metadata_id) || !isBlank(d.expected_metadata_line_index);
+  if (hasExpected) {
+    if (!isBlank(d.expected_metadata_position)) rows.push(['expected metadata', d.expected_metadata_position, 'important']);
+    if (!isBlank(d.expected_metadata_id)) rows.push(['expected id', d.expected_metadata_id]);
+    if (!isBlank(d.expected_metadata_line_index)) rows.push(['expected line', d.expected_metadata_line_index]);
+  }
+  return rows.filter(r => !isBlank(r[1]));
+}
+function weatherTemperatureRow(base, label) {
+  const temp = temperatureCFromAny(base?.temperature_c ?? base?.temperature_degC ?? base?.temperature_k ?? base?.temperature);
+  return temp !== null ? [[`${label} temp.`, `${temp.toFixed(1)} °C`, label === 'in' ? 'important' : '']] : [];
+}
+function environmentRows(snapshot) {
+  const rows = [];
+  const w = snapshot?.weather || {};
+  rows.push(...weatherRowsForKey(snapshot, 'out', 'out'));
+  rows.push(...weatherTemperatureRow(w.in || {}, 'in'));
+  if (!rows.length) {
+    rows.push(...optionalWeatherRows(snapshot));
+  }
+  if (!rows.length) rows.push(['status', 'weather not reported']);
+  return rows;
 }
 function geomOf(item) { return item && typeof item.geometry === 'object' && item.geometry ? item.geometry : {}; }
 function geomContext(g) {
@@ -2241,9 +2316,9 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   let countText = '', note = '';
   if (ls.total) {
     countText = `OTF lines: ${ls.done} done + ${ls.current} current + ${ls.remaining} remaining = ${ls.total}`;
-    if (nowPoint && telescopeCanOverlay) note = 'Orange marker is live antenna position projected onto the current line.';
-    else if (nowPoint) note = 'Orange marker is a browser-side line-section timer; it starts only when motion_stage=line, not during standby/accelerate.';
-    else if (lineProgress?.waiting) note = `Line position marker is waiting for actual line motion; current motion_stage=${lineProgress.stage}.`;
+    if (nowPoint && telescopeCanOverlay) note = 'Line marker = live antenna projected on current line.';
+    else if (nowPoint) note = 'Line marker uses motion_stage=line timer only.';
+    else if (lineProgress?.waiting) note = `Line marker waits for line motion: stage=${lineProgress.stage}.`;
     else note = 'No line-position marker: antenna coordinates do not match this map and no reliable line timer is available.';
   } else if (obsType.includes('grid')) {
     const basisRows = onRows.length ? onRows : pointRows;
@@ -2320,18 +2395,20 @@ async function update() {
       const updated = typeof timing.updated_at_unix === 'number' ? new Date(timing.updated_at_unix*1000).toLocaleTimeString() : '-';
       msg += `<div class=\"notice\"><span class=\"important\">This observation is ${esc(life.state)}.</span> Last update: ${esc(updated)}. Waiting for the next observation snapshot.</div>`;
     }
+    const trackingWarn = trackingProblem(snap);
+    if (trackingWarn) msg += `<div class="warning">${esc(trackingWarn)}</div>`;
     document.getElementById('message').innerHTML = msg;
-    kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), target_label: displayTarget(snap), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target_label'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA confidence','remaining_confidence']]);
+    kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), target_label: displayTarget(snap), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence, remaining_samples: timing.remaining_sample_count}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target_label'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA confidence','remaining_confidence'], ['ETA samples','remaining_samples']]);
     document.querySelector('#observation div:nth-child(2)').innerHTML = `<span class=\"status ${stateClass(life.state)}\">${esc(life.state ?? '-')}</span>`;
     const statusEvents = s.status_events || s.events || [];
     const psummary = observerPlanSummary(snap, s.plan || {}, statusEvents);
     kv('plan', psummary, [['progress','progress'], ['basis','basis'], ['current','current'], ['completed','completed'], ['remaining','remaining'], ['total','total'], ['mode','mode'], ['role (plan)','role'], ['target','target'], ['label','label']]);
     document.getElementById('bar').style.width = pct(plan).toFixed(1) + '%';
     renderPlanView(snap, s.plan || {}, statusEvents, s.server_time_unix);
-    kv('activity', activity, [['phase','phase'], ['drive_kind','drive_kind'], ['motion_stage','motion_stage'], ['data_state','data_state'], ['location_context','location_context'], ['description','description']]);
+    kvSmart('activity', activityRows(snap));
     kvSmart('position', positionRows(snap, psummary, s.server_time_unix));
     kvSmart('geometry', geometryRows(snap));
-    kvSmart('data', dataRows(snap));
+    kvSmart('environment', environmentRows(snap));
     kv('paths', s.paths || {}, [['snapshot','snapshot'], ['events','events'], ['plan','plan']]);
     const rows = (s.events || []).slice(-10).map(ev => {
       const t = typeof ev.time_unix === 'number' ? new Date(ev.time_unix*1000).toLocaleTimeString() : String(ev.seq ?? '');

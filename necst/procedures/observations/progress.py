@@ -884,12 +884,16 @@ class ObservationProgressReporter:
                         methods.append("planned_integration_fallback")
                         confidences.append("low")
 
-            gap = _median_recent(list(tables.get("gaps") or []))
+            gap_values = list(tables.get("gaps") or [])
+            gap = _median_recent(gap_values)
             if gap is not None and future_items:
                 # ``gaps`` are measured between a finished item and the next
                 # started item.  Count them at execution granularity rather than
                 # raw plan-line granularity so merged scan blocks do not get one
-                # gap per scan line.
+                # gap per scan line.  A measured gap history with several samples
+                # should not by itself force the whole ETA confidence to remain
+                # low forever; it is a medium-confidence overhead estimate.
+                gap_confidence = "medium" if len(gap_values) >= 3 else "low"
                 gap_units = self._eta_gap_unit_count(future_items)
                 gap_remaining = 0.0
                 if open_start is not None:
@@ -910,7 +914,7 @@ class ObservationProgressReporter:
                 if gap_remaining > 0.0:
                     remaining += gap_remaining
                     methods.append("event_history_inter_item_gap")
-                    confidences.append("low")
+                    confidences.append(gap_confidence)
 
             fraction_remaining = self._eta_progress_fraction_remaining(
                 current_item_open=open_start is not None
