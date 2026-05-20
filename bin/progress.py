@@ -1153,7 +1153,7 @@ _HTML_TEMPLATE = """<!doctype html>
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .55rem; line-height: 1.22; font-size:13px; background:var(--bg); color:var(--fg); }
 header { display:flex; gap:1rem; align-items:baseline; justify-content:space-between; flex-wrap:wrap; }
 h1 { font-size:1.05rem; margin:0 0 .3rem; }
-.grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: .55rem; align-items:stretch; }
+.grid { display:grid; grid-template-columns: repeat(3, minmax(205px, .9fr)) minmax(560px, 2.8fr); gap: .55rem; align-items:stretch; }
 .card { border:1px solid var(--border); border-radius:10px; padding:.55rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:10.5rem; }
 .card h2 { font-size:.92rem; margin:.03rem 0 .35rem; }
 .kv { display:grid; grid-template-columns: 6.9rem minmax(0,1fr); gap:.12rem .38rem; align-items:baseline; }
@@ -1166,24 +1166,27 @@ h1 { font-size:1.05rem; margin:0 0 .3rem; }
 pre { white-space:pre-wrap; overflow:auto; max-height:18rem; margin:.2rem 0 0; font-size:.74rem; }
 table { border-collapse:collapse; width:100%; font-size:.74rem; table-layout:fixed; }
 th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem .18rem; vertical-align:top; overflow:hidden; text-overflow:ellipsis; }
-#events { overflow:auto; max-height:17rem; }
-#events th:nth-child(1), #events td:nth-child(1) { width:3.9rem; }
-#events th:nth-child(3), #events td:nth-child(3) { width:5.6rem; }
+#events { overflow:auto; max-height:12rem; }
+#events table { table-layout:auto; }
+#events th:nth-child(1), #events td:nth-child(1) { width:4.4rem; white-space:nowrap; }
+#events th:nth-child(2), #events td:nth-child(2) { width:8.5rem; }
+#events th:nth-child(3), #events td:nth-child(3) { width:auto; }
 .plotbox { min-height: 500px; display:flex; align-items:center; justify-content:center; }
 .plotbox svg { width:100%; height:auto; max-height:72vh; color:var(--plot-text); }
 .plotbox svg text { fill: currentColor; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
 .legend { display:flex; gap:.65rem; flex-wrap:wrap; margin:.2rem 0 .35rem; font-size:.78rem; color:var(--muted); }
 .dot { display:inline-block; width:.72rem; height:.72rem; border-radius:999px; vertical-align:-.08rem; margin-right:.22rem; }
 .small { font-size:.74rem; color:var(--muted); }
-.planview { grid-column: span 3; grid-row: span 2; min-height: 38rem; }
+.planview { grid-column: 4 / span 1; grid-row: span 2; min-height: 38rem; }
+.eventview { grid-column: 4 / span 1; min-height: 10rem; }
 .planview .plotbox { min-height: 560px; }
 .planview svg { max-height: 78vh; }
 .axis-label { font-size:11px; fill:currentColor; }
 .plot-note { font-size:11px; fill:currentColor; }
 .important { font-weight:700; }
 .notice { margin:.25rem 0 .5rem; padding:.42rem .55rem; border:1px solid var(--border); border-radius:9px; background:#9991; }
-@media (max-width: 1100px) { .planview { grid-column: span 2; } }
-@media (max-width: 760px) { .planview { grid-column: span 1; grid-row: span 1; min-height: auto; } .plotbox { min-height: 360px; } }
+@media (max-width: 1100px) { .grid { grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); } .planview, .eventview { grid-column: span 2; } }
+@media (max-width: 760px) { .planview, .eventview { grid-column: span 1; grid-row: span 1; min-height: auto; } .plotbox { min-height: 360px; } }
 .err { color:var(--err); font-weight:700; }
 </style>
 </head>
@@ -1194,10 +1197,10 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 <section class=\"card\"><h2>Observation</h2><div class=\"kv\" id=\"observation\"></div></section>
 <section class=\"card\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
 <section class=\"card\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
-<section class=\"card planview\"><h2>Plan View</h2><div class=\"legend\"><span><i class=\"dot\" style=\"background:#2ca02c\"></i>done</span><span><i class=\"dot\" style=\"background:#ff7f0e\"></i>current</span><span><i class=\"dot\" style=\"background:#bdbdbd\"></i>pending</span><span>OTF=line map, Grid/PSW=ON-basis point sequence, Skydip=elevation sequence. OFF/reference points are labels, not progress basis.</span></div><div id=\"plotview\" class=\"plotbox small\">-</div></section>
-<section class=\"card\"><h2>Geometry</h2><div class=\"kv\" id=\"geometry\"></div></section>
-<section class=\"card\"><h2>Data</h2><div class=\"kv\" id=\"data\"></div></section>
-<section class=\"card\"><h2>Recent Events</h2><div id=\"events\"></div></section>
+<section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span>OTF=line map, Grid/PSW=ON-basis point sequence, Skydip=elevation sequence. OFF/reference points are labels, not progress basis.</span></div><div id="plotview" class="plotbox small">-</div></section>
+<section class="card eventview"><h2>Recent Events</h2><div id="events"></div></section>
+<section class="card"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
+<section class="card"><h2>Data</h2><div class="kv" id="data"></div></section>
 <section class=\"card\"><h2>Terminal View</h2><pre id=\"terminal\"></pre></section>
 <section class=\"card\"><h2>Files</h2><div class=\"kv\" id=\"paths\"></div></section>
 </div>
@@ -1273,6 +1276,45 @@ function inferTargetFromName(text) {
 function displayTarget(snapshot) {
   const g = snapshot?.geometry || {}; const obs = snapshot?.observation || {};
   return usableText(g.target_name) || usableText(obs.target) || inferTargetFromName(obs.record_name) || inferTargetFromName(obs.obs_file) || '-';
+}
+
+function isBlank(v) {
+  if (v === null || v === undefined || v === '') return true;
+  const s = val(v);
+  return !s || s === '-' || s === 'None' || s === 'null' || s === 'unknown';
+}
+function kvSmart(id, rows) {
+  const el = document.getElementById(id); el.innerHTML = '';
+  const filtered = rows.filter(([label, raw]) => !isBlank(raw));
+  const useRows = filtered.length ? filtered : [['status', 'no mode-specific values yet']];
+  for (const [label, raw] of useRows) {
+    el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v" title="${esc(raw ?? '-')}">${esc(val(raw, label, ''))}</div>`);
+  }
+}
+function geometryRows(snapshot) {
+  const g = snapshot?.geometry || {}; const obsType = String(snapshot?.observation?.type || '').toLowerCase();
+  const rows = [['kind', g.kind], ['frame', g.frame], ['unit', g.unit], ['target name', g.target_name || displayTarget(snapshot)]];
+  if (obsType.includes('grid')) {
+    rows.push(['map offset', g.offset], ['target center', g.target], ['OFF/reference', g.reference]);
+  } else if (obsType.includes('psw')) {
+    rows.push(['target/ON', g.target], ['OFF/reference', g.reference], ['offset', g.offset]);
+  } else if (obsType.includes('sky')) {
+    rows.push(['sky position', g.target], ['elevation', g.el_deg ?? g.elevation_deg ?? (Array.isArray(g.target) ? g.target[1] : null)]);
+  } else {
+    rows.push(['target', g.target], ['reference', g.reference], ['offset', g.offset]);
+  }
+  rows.push(['scan start', g.start], ['scan stop', g.stop]);
+  if (g.current_line_index0 !== undefined && g.line_total !== undefined) {
+    rows.push(['line', `${Number(g.current_line_index0)+1}/${g.line_total}`]);
+  }
+  return rows;
+}
+function dataRows(snapshot) {
+  const d = snapshot?.data || {};
+  return [
+    ['expected', d.expected_metadata_position], ['expected id', d.expected_metadata_id], ['expected line', d.expected_metadata_line_index],
+    ['latest', d.latest_spectrum_position], ['latest id', d.latest_spectrum_id], ['latest age [s]', d.latest_spectrum_age_sec]
+  ];
 }
 function geomOf(item) { return item && typeof item.geometry === 'object' && item.geometry ? item.geometry : {}; }
 function geomContext(g) {
@@ -1385,18 +1427,30 @@ function antennaPoint(snapshot, prefix, requiredFrame) {
   if (requiredFrame && frame && frame !== String(requiredFrame).toLowerCase()) return null;
   return [x, y];
 }
+function pointDisplayLabel(row) {
+  const raw = String(row.pointLabel || row.mode || '').toUpperCase();
+  const repeat = Number(row.visitTotal || 1) > 1 ? `×${row.visitTotal}` : '';
+  if (raw === 'ON' || raw === 'POINT') {
+    if (row.status === 'current') return repeat ? `ON now ${repeat}` : 'ON now';
+    return '';  // Avoid clutter: grid maps can have many ON points.
+  }
+  if (!raw || raw === '-') return '';
+  if (row.status === 'current') return `${raw} now${repeat}`;
+  return `${raw}${repeat}`;
+}
 function renderPoint(row, b) {
   const clipped = clipPoint(row.a, b);
   const x = sx(clipped.p[0], b), y = sy(clipped.p[1], b);
   const r = row.status === 'current' ? 6 : 4;
-  const label = row.pointLabel;
+  const label = pointDisplayLabel(row);
   const shape = row.mode === 'ON' || row.mode === 'POINT'
     ? `<circle cx="${x}" cy="${y}" r="${r}" fill="${colorFor(row.status)}" stroke="${row.status==='current'?'var(--bg)':'none'}" stroke-width="2"/>`
     : `<path d="M ${x} ${y-r-2} L ${x+r+2} ${y} L ${x} ${y+r+2} L ${x-r-2} ${y} Z" fill="${colorFor(row.status)}" stroke="var(--bg)" stroke-width="1.5"/>`;
   const suffix = clipped.clipped ? ' (outside)' : '';
-  const text = label ? `<text x="${Math.min(PLOT.w-100, x+7)}" y="${Math.max(16, y-6)}" font-size="12" font-weight="700">${esc(label + suffix)}</text>` : '';
+  const text = label ? `<text x="${Math.min(PLOT.w-135, x+7)}" y="${Math.max(16, y-6)}" font-size="12" font-weight="700">${esc(label + suffix)}</text>` : '';
   return shape + text;
 }
+
 function pointPlotCoordinate(g, mode, obsType, kind) {
   const upper = String(mode || '').toUpperCase();
   // Grid maps are scientifically understood as offsets around the ON target.
@@ -1456,6 +1510,50 @@ function lineSummary(rows) {
 }
 function pointCounts(rows) {
   return {done: rows.filter(r=>r.status==='done').length, current: rows.filter(r=>r.status==='current').length, remaining: rows.filter(r=>r.status==='pending').length, total: rows.length, currentNo: rows.findIndex(r=>r.status==='current') + 1};
+}
+function pointKey(row) {
+  const x = Number(row.a?.[0]), y = Number(row.a?.[1]);
+  const mode = String(row.mode || row.pointLabel || '').toUpperCase();
+  const src = row.coordSource || '';
+  return `${mode}|${src}|${Number.isFinite(x)?x.toFixed(8):'x'}|${Number.isFinite(y)?y.toFixed(8):'y'}`;
+}
+function aggregatePointRows(pointRows) {
+  const groups = new Map();
+  for (const row of pointRows) {
+    const key = pointKey(row);
+    if (!groups.has(key)) groups.set(key, {...row, visitTotal:0, visitDone:0, visitCurrent:0, visitPending:0});
+    const g = groups.get(key);
+    g.visitTotal += 1;
+    if (row.status === 'current') g.visitCurrent += 1;
+    else if (row.status === 'done') g.visitDone += 1;
+    else g.visitPending += 1;
+    // Aggregate color policy for repeated visits at one physical position:
+    // orange=current now; green=visited at least once; gray=not yet visited.
+    if (g.visitCurrent > 0) g.status = 'current';
+    else if (g.visitDone > 0) g.status = 'done';
+    else g.status = 'pending';
+  }
+  return Array.from(groups.values());
+}
+function uniquePointCount(pointRows) { return aggregatePointRows(pointRows).length; }
+function visitPassText(counts, uniqueCount) {
+  if (!uniqueCount || uniqueCount <= 0 || counts.total <= uniqueCount) return '';
+  const passes = counts.total / uniqueCount;
+  const currentOrdinal = Math.max(1, counts.done + Math.max(1, counts.current));
+  const currentPass = Math.min(Math.ceil(currentOrdinal / uniqueCount), Math.ceil(passes));
+  const passText = Number.isInteger(passes) ? String(passes) : passes.toFixed(1);
+  return `; map points=${uniqueCount}; pass≈${currentPass}/${passText}`;
+}
+function rowsForDrawing(rows) {
+  const lineRows = rows.filter(r => r.b);
+  const pointRows = rows.filter(r => !r.b);
+  return lineRows.concat(aggregatePointRows(pointRows));
+}
+function gridSequencePath(pointRows, b) {
+  const on = pointRows.filter(r => String(r.mode || r.pointLabel || '').toUpperCase()==='ON' || r.kind === 'grid_point');
+  if (on.length < 2) return '';
+  const pts = on.map(r => `${sx(r.a[0],b)},${sy(r.a[1],b)}`).join(' ');
+  return `<polyline points="${pts}" fill="none" stroke="var(--muted)" stroke-width="1.3" opacity="0.45" stroke-dasharray="4 3"/>`;
 }
 function scheduleStep(plan) {
   if (Number.isInteger(plan?.index0) && Number.isInteger(plan?.total) && plan.total > 0) {
@@ -1546,7 +1644,15 @@ function currentIntegrationTiming(snapshot, events, serverTimeUnix) {
   }
   const typical = median(samples);
   const now = Number.isFinite(serverTimeUnix) ? serverTimeUnix : Date.now()/1000;
-  if (currentStart !== null && typical) return {fraction: Math.max(0, Math.min(1, (now-currentStart)/typical)), age: now-currentStart, typical, source:'time'};
+  if (currentStart !== null && typical) {
+    const raw = (now-currentStart)/typical;
+    // Time-derived OTF position is only an estimate.  Do not let it reach 100%
+    // while the current integration has not emitted integration_finished yet;
+    // otherwise the UI can claim that the telescope has reached the line end
+    // although the antenna is still scanning or settling.
+    const capped = Math.max(0, Math.min(0.95, raw));
+    return {fraction: capped, rawFraction: raw, capped: raw > 0.95, age: now-currentStart, typical, source:'time'};
+  }
   return null;
 }
 function pointAtFraction(a, b, t) { return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]; }
@@ -1569,7 +1675,6 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   const obsType = String(snapshot?.observation?.type || '').toLowerCase();
   let b=paddedBounds(boundsPts, allPts);
   const ls = lineSummary(rows);
-  rows.sort((a,b)=>({pending:0,done:1,current:2}[a.status]-{pending:0,done:1,current:2}[b.status]));
   const currentRow = ls.currentRow;
   const rowFrame = currentRow?.frame || rows.find(r=>r.frame)?.frame || '';
   const cmd = antennaPoint(snapshot, 'command', rowFrame);
@@ -1579,36 +1684,44 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   const telescopeCanOverlay = Boolean(proj?.reliable && pointInsideBounds(tel, b, 0.03));
   const timeProgress = currentRow ? currentIntegrationTiming(snapshot, events, serverTimeUnix) : null;
   let nowPoint = null, nowLabel = '';
-  if (currentRow && telescopeCanOverlay) { nowPoint = tel; nowLabel = `Telescope ${(100*proj.t).toFixed(0)}%`; }
-  else if (currentRow && timeProgress) { nowPoint = pointAtFraction(currentRow.a, currentRow.b, timeProgress.fraction); nowLabel = `Now≈${(100*timeProgress.fraction).toFixed(0)}%`; }
+  if (currentRow && telescopeCanOverlay) {
+    nowPoint = tel; nowLabel = `Telescope ${(100*proj.t).toFixed(0)}%`;
+  } else if (currentRow && timeProgress) {
+    nowPoint = pointAtFraction(currentRow.a, currentRow.b, timeProgress.fraction);
+    nowLabel = timeProgress.capped ? 'Time-est. ≥95%' : `Time-est. ${(100*timeProgress.fraction).toFixed(0)}%`;
+  }
   const axes = mapAxisLabels(rows);
-  const lineEls = rows.map(r => {
+  const pointRows = rows.filter(r=>!r.b);
+  const onRows = pointRows.filter(r=>String(r.mode || r.pointLabel || '').toUpperCase()==='ON' || r.kind === 'grid_point');
+  const drawRows = rowsForDrawing(rows).sort((a,b)=>({pending:0,done:1,current:2}[a.status]-{pending:0,done:1,current:2}[b.status]));
+  const sequencePath = obsType.includes('grid') ? gridSequencePath(onRows, b) : '';
+  const lineEls = drawRows.map(r => {
     if (!r.b) return renderPoint(r,b);
     const x1=sx(r.a[0],b), y1=sy(r.a[1],b), x2=sx(r.b[0],b), y2=sy(r.b[1],b);
     const arrow = r.status === 'current' ? ' marker-end="url(#arrowhead)"' : '';
     return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorFor(r.status)}" stroke-width="${r.status==='current'?4:2}" opacity="${r.status==='pending'?0.55:0.95}"${arrow}/>`;
   }).join('');
   const liveEls = nowPoint ? renderNowMarker(currentRow, nowPoint, b, nowLabel) : '';
-  const pointRows = rows.filter(r=>!r.b);
-  const onRows = pointRows.filter(r=>String(r.mode || r.pointLabel || '').toUpperCase()==='ON' || r.kind === 'grid_point');
   let countText = '', note = '';
   if (ls.total) {
     countText = `OTF lines: ${ls.done} done + ${ls.current} current + ${ls.remaining} remaining = ${ls.total}`;
-    note = nowPoint ? 'Orange dot marks telescope/estimated position along the current scan line.' : 'No live telescope marker: live antenna coordinates are absolute while this map may be relative, and no line-time estimate is available.';
+    note = nowPoint ? 'Orange dot marks the telescope position when coordinates match, otherwise a capped time estimate along the current line.' : 'No live line marker: antenna coordinates do not match this relative map and no reliable time estimate is available.';
   } else if (obsType.includes('grid')) {
-    const c = pointCounts(onRows.length ? onRows : pointRows);
-    countText = `Grid ON points: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
-    note = 'Progress is ON-basis. OFF/reference points are shown as labels and clipped if far away.';
+    const basisRows = onRows.length ? onRows : pointRows;
+    const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
+    countText = `Grid ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}${visitPassText(c,u)}`;
+    note = 'Progress is ON-basis. Thin dashed path shows planned ON order; repeated visits are aggregated at each map point. OFF/reference visits are labels only.';
   } else if (obsType.includes('psw')) {
-    const c = pointCounts(onRows.length ? onRows : pointRows);
-    countText = `PSW ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
-    note = 'Progress is ON-basis. OFF/HOT/reference positions are labels, not the progress denominator.';
+    const basisRows = onRows.length ? onRows : pointRows;
+    const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
+    countText = `PSW ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}${visitPassText(c,u)}`;
+    note = 'Progress is ON-basis. OFF/HOT/reference visits are labeled diamonds and are not the progress denominator.';
   } else {
     const c = pointCounts(pointRows);
     countText = `Point sequence: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
-    note = 'Current item is orange; labels identify ON/OFF/HOT/reference points when available.';
+    note = 'Current item is orange; OFF/HOT/reference labels are grouped when repeated.';
   }
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.h-64}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note)}</text></svg>`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.h-64}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note)}</text></svg>`;
 }
 function skydipRowsFrom(snapshot, items, events) {
   const rows=[];
@@ -1663,8 +1776,8 @@ async function update() {
     document.getElementById('bar').style.width = pct(plan).toFixed(1) + '%';
     renderPlanView(snap, s.plan || {}, statusEvents, s.server_time_unix);
     kv('activity', activity, [['phase','phase'], ['drive_kind','drive_kind'], ['motion_stage','motion_stage'], ['data_state','data_state'], ['location_context','location_context'], ['description','description']]);
-    kv('geometry', geom, [['kind','kind'], ['frame','frame'], ['unit','unit'], ['target_name','target_name'], ['target','target'], ['reference','reference'], ['offset','offset'], ['start','start'], ['stop','stop'], ['current_line','current_line_index0'], ['line_total','line_total']]);
-    kv('data', data, [['expected position','expected_metadata_position'], ['expected id','expected_metadata_id'], ['expected line','expected_metadata_line_index'], ['latest position','latest_spectrum_position'], ['latest id','latest_spectrum_id'], ['latest line','latest_spectrum_line_index'], ['latest age [s]','latest_spectrum_age_sec']]);
+    kvSmart('geometry', geometryRows(snap));
+    kvSmart('data', dataRows(snap));
     kv('paths', s.paths || {}, [['snapshot','snapshot'], ['events','events'], ['plan','plan']]);
     const rows = (s.events || []).slice(-10).map(ev => {
       const t = typeof ev.time_unix === 'number' ? new Date(ev.time_unix*1000).toLocaleTimeString() : String(ev.seq ?? '');
