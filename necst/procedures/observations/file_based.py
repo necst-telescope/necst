@@ -169,11 +169,13 @@ class FileBasedObservation(Observation):
         if getattr(waypoint, "with_offset", False):
             offset = self._coord_to_tuple(waypoint.offset)
             fields["offset"] = offset
+            fields["offset_unit"] = "deg"
             if len(offset) >= 3:
+                fields["offset_frame"] = offset[2]
                 fields.setdefault("frame", offset[2])
         return fields
 
-    def _waypoint_geometry(self, waypoint, scan_frag: int = 1):
+    def _waypoint_geometry(self, waypoint, scan_frag: int = 1, cos_correction=None):
         mode = self._mode_name(waypoint.mode)
         if waypoint.is_scan:
             _, _, start, stop = self._scan_start_stop(waypoint, scan_frag)
@@ -186,6 +188,8 @@ class FileBasedObservation(Observation):
                 "speed_deg_per_sec": self._quantity_to_float(waypoint.speed, "deg/s"),
                 "mode": mode,
             }
+            if cos_correction is not None:
+                geometry["cos_correction"] = bool(cos_correction)
             reference_fields = self._waypoint_reference_geometry_fields(waypoint)
             reference_fields.pop("frame", None)
             geometry.update(reference_fields)
@@ -196,12 +200,14 @@ class FileBasedObservation(Observation):
             "unit": "deg",
             "mode": mode,
         }
+        if cos_correction is not None:
+            geometry["cos_correction"] = bool(cos_correction)
         geometry.update(self._waypoint_reference_geometry_fields(waypoint))
         return geometry
 
-    def _waypoint_plan_item(self, waypoint, index0: int, total: int, scan_frag: int = 1):
+    def _waypoint_plan_item(self, waypoint, index0: int, total: int, scan_frag: int = 1, cos_correction=None):
         mode = self._mode_name(waypoint.mode)
-        geometry = self._waypoint_geometry(waypoint, scan_frag=scan_frag)
+        geometry = self._waypoint_geometry(waypoint, scan_frag=scan_frag, cos_correction=cos_correction)
         role = "science" if mode == "ON" else "calibration"
         drive_kind = "scan" if waypoint.is_scan else "point"
         return {
@@ -217,11 +223,14 @@ class FileBasedObservation(Observation):
             "geometry": geometry,
         }
 
-    def _make_progress_plan(self, waypoints):
+    def _make_progress_plan(self, waypoints, *, cos_scan: bool = False, cos_point: bool = False):
         total = len(waypoints)
-        return [self._waypoint_plan_item(wp, i, total) for i, wp in enumerate(waypoints)]
+        return [
+            self._waypoint_plan_item(wp, i, total, cos_correction=(cos_scan if wp.is_scan else cos_point))
+            for i, wp in enumerate(waypoints)
+        ]
 
-    def _scan_block_geometry(self, waypoints, scan_frags, margin_deg: float):
+    def _scan_block_geometry(self, waypoints, scan_frags, margin_deg: float, cos_correction=None):
         lines = []
         for line_index, (wp, frag) in enumerate(zip(waypoints, scan_frags)):
             _, _, start, stop = self._scan_start_stop(wp, frag)
@@ -234,6 +243,8 @@ class FileBasedObservation(Observation):
                 "speed_deg_per_sec": self._quantity_to_float(wp.speed, "deg/s"),
                 "mode": self._mode_name(wp.mode),
             }
+            if cos_correction is not None:
+                line_geom["cos_correction"] = bool(cos_correction)
             reference_fields = self._waypoint_reference_geometry_fields(wp)
             reference_fields.pop("frame", None)
             line_geom.update(reference_fields)
@@ -247,6 +258,8 @@ class FileBasedObservation(Observation):
             "margin_deg": float(margin_deg),
             "lines": lines,
         }
+        if cos_correction is not None:
+            geometry["cos_correction"] = bool(cos_correction)
         reference_fields = self._waypoint_reference_geometry_fields(first)
         reference_fields.pop("frame", None)
         geometry.update(reference_fields)
@@ -363,8 +376,8 @@ class FileBasedObservation(Observation):
         #   (Commander.antenna('point') waits by default), then execute HOT and
         #   OFF without issuing any additional antenna command in between.
         kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
-        off_geometry = self._waypoint_geometry(off_waypoint)
-        hot_item = self._waypoint_plan_item(hot_waypoint, hot_index0, plan_total)
+        off_geometry = self._waypoint_geometry(off_waypoint, cos_correction=cos_point)
+        hot_item = self._waypoint_plan_item(hot_waypoint, hot_index0, plan_total, cos_correction=cos_point)
         hot_item["location_context"] = "OFF_position"
         hot_item["geometry"] = off_geometry
         with self.progress.item(**hot_item):
@@ -390,7 +403,7 @@ class FileBasedObservation(Observation):
                     geometry=off_geometry,
                 )
 
-        off_item = self._waypoint_plan_item(off_waypoint, off_index0, plan_total)
+        off_item = self._waypoint_plan_item(off_waypoint, off_index0, plan_total, cos_correction=cos_point)
         with self.progress.item(**off_item):
             with self.progress.drive(kind="point", stage="tracking", geometry=off_geometry):
                 self.off(off_waypoint.integration.to_value("s"), off_waypoint.id, geometry=off_geometry)
@@ -500,7 +513,7 @@ class FileBasedObservation(Observation):
         scan_kwargs = self._scan_context_kwargs(first_waypoint, cos_scan=cos_scan)
         scan_kwargs = self._apply_pointing_reference_to_scan_block_kwargs(scan_kwargs)
         block_id = str(first_waypoint.id)
-        geometry = self._scan_block_geometry(waypoints, scan_frags, margin_deg)
+        geometry = self._scan_block_geometry(waypoints, scan_frags, margin_deg, cos_correction=cos_scan)
         block_item = {
             "item_uid": f"{self.observation_type}:scan_block:{plan_index0:05d}:{plan_index0_end:05d}:{block_id}",
             "index0": int(plan_index0),
@@ -614,7 +627,7 @@ class FileBasedObservation(Observation):
 
         all_waypoints = list(self.obsspec)
         self.progress.set_plan(
-            self._make_progress_plan(all_waypoints),
+            self._make_progress_plan(all_waypoints, cos_scan=cos_scan, cos_point=cos_point),
             observation_type=self.observation_type,
             obs_file=str(file),
         )
@@ -638,7 +651,7 @@ class FileBasedObservation(Observation):
                         scan_frag = reset
                     i += 2
                     continue
-                item = self._waypoint_plan_item(waypoint, i, len(all_waypoints))
+                item = self._waypoint_plan_item(waypoint, i, len(all_waypoints), cos_correction=cos_point)
                 with self.progress.item(**item):
                     self.hot(
                         waypoint.integration.to_value("s"),
@@ -652,7 +665,7 @@ class FileBasedObservation(Observation):
                 kwargs = self._scan_context_kwargs(waypoint, cos_scan=cos_point)
                 if not waypoint.is_scan:
                     kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
-                    item = self._waypoint_plan_item(waypoint, i, len(all_waypoints))
+                    item = self._waypoint_plan_item(waypoint, i, len(all_waypoints), cos_correction=cos_point)
                     geometry = item.get("geometry")
                     with self.progress.item(**item):
                         with self.progress.drive(kind="point", stage="moving", geometry=geometry):
@@ -738,6 +751,7 @@ class FileBasedObservation(Observation):
                 i,
                 len(all_waypoints),
                 scan_frag=current_scan_frag,
+                cos_correction=(cos_scan if waypoint.is_scan else cos_point),
             )
             geometry = item.get("geometry")
             if waypoint.is_scan:
