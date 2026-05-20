@@ -126,6 +126,112 @@ class FileBasedObservation(Observation):
             return tuple(x.to_value("deg") for x in coord[:2]) + (coord[2],)
         raise ValueError(f"Invalid coordinate: {coord}")
 
+    def _mode_name(self, mode) -> str:
+        return getattr(mode, "name", str(mode))
+
+    def _quantity_to_float(self, value, unit: str = "deg"):
+        if value is None:
+            return None
+        if hasattr(value, "to_value"):
+            try:
+                return float(value.to_value(unit))
+            except Exception:
+                return float(value.to_value(""))
+        return float(value)
+
+    def _waypoint_geometry(self, waypoint, scan_frag: int = 1):
+        mode = self._mode_name(waypoint.mode)
+        if waypoint.is_scan:
+            _, _, start, stop = self._scan_start_stop(waypoint, scan_frag)
+            return {
+                "kind": "scan_line",
+                "frame": waypoint.scan_frame,
+                "unit": "deg",
+                "start": start,
+                "stop": stop,
+                "speed_deg_per_sec": self._quantity_to_float(waypoint.speed, "deg/s"),
+                "mode": mode,
+            }
+
+        geometry = {
+            "kind": "point",
+            "unit": "deg",
+            "mode": mode,
+        }
+        if waypoint.name_query:
+            geometry["target_name"] = waypoint.target or waypoint.reference
+        else:
+            target = self._coord_to_tuple(waypoint.target) if waypoint.target else None
+            reference = (
+                self._coord_to_tuple(waypoint.reference) if waypoint.reference else None
+            )
+            if target is not None:
+                geometry["target"] = target
+                if len(target) >= 3:
+                    geometry["frame"] = target[2]
+            if reference is not None:
+                geometry["reference"] = reference
+                if "frame" not in geometry and len(reference) >= 3:
+                    geometry["frame"] = reference[2]
+        if getattr(waypoint, "with_offset", False):
+            offset = self._coord_to_tuple(waypoint.offset)
+            geometry["offset"] = offset
+            if len(offset) >= 3:
+                geometry.setdefault("frame", offset[2])
+        return geometry
+
+    def _waypoint_plan_item(
+        self, waypoint, index0: int, total: int, scan_frag: int = 1
+    ):
+        mode = self._mode_name(waypoint.mode)
+        geometry = self._waypoint_geometry(waypoint, scan_frag=scan_frag)
+        role = "science" if mode == "ON" else "calibration"
+        drive_kind = "scan" if waypoint.is_scan else "point"
+        return {
+            "item_uid": f"{self.observation_type}:{index0:05d}:{mode}:{waypoint.id}",
+            "index0": int(index0),
+            "total": int(total),
+            "label": f"{mode} {waypoint.id}",
+            "mode": mode,
+            "role": role,
+            "obs_id": str(waypoint.id),
+            "drive_kind": drive_kind,
+            "integration_sec": self._quantity_to_float(
+                getattr(waypoint, "integration", None), "s"
+            ),
+            "geometry": geometry,
+        }
+
+    def _make_progress_plan(self, waypoints):
+        total = len(waypoints)
+        return [
+            self._waypoint_plan_item(wp, i, total) for i, wp in enumerate(waypoints)
+        ]
+
+    def _scan_block_geometry(self, waypoints, scan_frags, margin_deg: float):
+        lines = []
+        for line_index, (wp, frag) in enumerate(zip(waypoints, scan_frags)):
+            _, _, start, stop = self._scan_start_stop(wp, frag)
+            lines.append(
+                {
+                    "line_index0": int(line_index),
+                    "line_label": str(wp.id),
+                    "obs_id": str(wp.id),
+                    "start": start,
+                    "stop": stop,
+                    "speed_deg_per_sec": self._quantity_to_float(wp.speed, "deg/s"),
+                }
+            )
+        first = waypoints[0]
+        return {
+            "kind": "scan_block",
+            "frame": first.scan_frame,
+            "unit": "deg",
+            "line_total": len(lines),
+            "margin_deg": float(margin_deg),
+            "lines": lines,
+        }
+
     def _scan_start_stop(self, waypoint, scan_frag: int):
         if scan_frag > 0:
             start_q, stop_q = waypoint.start, waypoint.stop
@@ -217,7 +323,16 @@ class FileBasedObservation(Observation):
             self._pointing_reference_beam,
         )
 
-    def _run_hot_off_pair(self, hot_waypoint, off_waypoint, *, cos_point: bool) -> None:
+    def _run_hot_off_pair(
+        self,
+        hot_waypoint,
+        off_waypoint,
+        *,
+        cos_point: bool,
+        hot_index0: int,
+        off_index0: int,
+        plan_total: int,
+    ) -> None:
         kwargs = self._scan_context_kwargs(off_waypoint, cos_scan=cos_point)
         if off_waypoint.is_scan:
             raise ValueError("Scan drive is not supported for OFF/SKY mode.")
@@ -230,13 +345,43 @@ class FileBasedObservation(Observation):
         #   (Commander.antenna('point') waits by default), then execute HOT and
         #   OFF without issuing any additional antenna command in between.
         kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
-        self.com.antenna("point", **kwargs)
-        self.hot(
-            hot_waypoint.integration.to_value("s"),
-            hot_waypoint.id,
-            preserve_tracking=True,
-        )
-        self.off(off_waypoint.integration.to_value("s"), off_waypoint.id)
+        off_geometry = self._waypoint_geometry(off_waypoint)
+        hot_item = self._waypoint_plan_item(hot_waypoint, hot_index0, plan_total)
+        hot_item["location_context"] = "OFF_position"
+        hot_item["geometry"] = off_geometry
+        with self.progress.item(**hot_item):
+            with self.progress.drive(
+                kind="point",
+                stage="moving",
+                geometry=off_geometry,
+                target_phase="OFF",
+                location_context="OFF_position",
+            ):
+                self.com.antenna("point", **kwargs)
+            with self.progress.drive(
+                kind="hold",
+                stage="tracking",
+                geometry=off_geometry,
+                location_context="OFF_position",
+            ):
+                self.hot(
+                    hot_waypoint.integration.to_value("s"),
+                    hot_waypoint.id,
+                    preserve_tracking=True,
+                    location_context="OFF_position",
+                    geometry=off_geometry,
+                )
+
+        off_item = self._waypoint_plan_item(off_waypoint, off_index0, plan_total)
+        with self.progress.item(**off_item):
+            with self.progress.drive(
+                kind="point", stage="tracking", geometry=off_geometry
+            ):
+                self.off(
+                    off_waypoint.integration.to_value("s"),
+                    off_waypoint.id,
+                    geometry=off_geometry,
+                )
 
     def _scan_block_context_signature(self, waypoint):
         if waypoint.name_query:
@@ -322,6 +467,9 @@ class FileBasedObservation(Observation):
         margin_deg: float,
         include_final_standby: bool,
         final_standby_duration_sec: float,
+        plan_index0: int,
+        plan_index0_end: int,
+        plan_total: int,
     ) -> None:
         lines = [
             self._make_scan_block_line(wp, frag, margin_deg, line_index=i)
@@ -339,15 +487,54 @@ class FileBasedObservation(Observation):
         scan_kwargs = self._scan_context_kwargs(first_waypoint, cos_scan=cos_scan)
         scan_kwargs = self._apply_pointing_reference_to_scan_block_kwargs(scan_kwargs)
         block_id = str(first_waypoint.id)
+        geometry = self._scan_block_geometry(waypoints, scan_frags, margin_deg)
+        block_item = {
+            "item_uid": f"{self.observation_type}:scan_block:{plan_index0:05d}:{plan_index0_end:05d}:{block_id}",
+            "index0": int(plan_index0),
+            "index0_end": int(plan_index0_end),
+            "total": int(plan_total),
+            "label": f"ON scan_block {block_id}",
+            "mode": "ON",
+            "role": "science",
+            "obs_id": block_id,
+            "drive_kind": "scan_block",
+            "block_metadata_id": block_id,
+            "line_total": len(lines),
+            "integration_sec": sum(
+                float(wp.integration.to_value("s"))
+                for wp in waypoints
+                if getattr(wp, "integration", None) is not None
+            ),
+            "geometry": geometry,
+        }
         self.logger.info(f"Starting ON (scan_block, n_lines={len(lines)})...")
-        self.com.scan_block(
-            sections=sections,
-            scan_frame=first_waypoint.scan_frame,
-            metadata_position="ON",
-            metadata_id=block_id,
-            **scan_kwargs,
-        )
-        self.com.metadata("set", position="", id="")
+        with self.progress.item(**block_item):
+            with self.progress.drive(
+                kind="scan_block",
+                stage="running",
+                geometry=geometry,
+                block_metadata_id=block_id,
+                line_total=len(lines),
+            ):
+                with self.progress.integration(
+                    phase="ON",
+                    metadata_position="ON",
+                    id=block_id,
+                    geometry=geometry,
+                    # Individual scan-block line progress is reported by the
+                    # antenna ControlStatus topic.  Do not pin the whole block
+                    # to line_index=0 in the snapshot.
+                    line_total=len(lines),
+                    drive_kind="scan_block",
+                ):
+                    self.com.scan_block(
+                        sections=sections,
+                        scan_frame=first_waypoint.scan_frame,
+                        metadata_position="ON",
+                        metadata_id=block_id,
+                        **scan_kwargs,
+                    )
+                    self.com.metadata("set", position="", id="")
 
     def run(self, file: Union[os.PathLike, str, IO], **kwargs) -> None:
         scan_frag = 1
@@ -410,6 +597,11 @@ class FileBasedObservation(Observation):
             reset = 1
 
         all_waypoints = list(self.obsspec)
+        self.progress.set_plan(
+            self._make_progress_plan(all_waypoints),
+            observation_type=self.observation_type,
+            obs_file=str(file),
+        )
         self.com.record("file", name=file)
         i = 0
         while i < len(all_waypoints):
@@ -427,12 +619,21 @@ class FileBasedObservation(Observation):
                         waypoint,
                         next_waypoint,
                         cos_point=cos_point,
+                        hot_index0=i,
+                        off_index0=i + 1,
+                        plan_total=len(all_waypoints),
                     )
                     if reset_scan and bydirectional:
                         scan_frag = reset
                     i += 2
                     continue
-                self.hot(waypoint.integration.to_value("s"), waypoint.id)
+                item = self._waypoint_plan_item(waypoint, i, len(all_waypoints))
+                with self.progress.item(**item):
+                    self.hot(
+                        waypoint.integration.to_value("s"),
+                        waypoint.id,
+                        geometry=item.get("geometry"),
+                    )
                 i += 1
                 continue
 
@@ -440,8 +641,22 @@ class FileBasedObservation(Observation):
                 kwargs = self._scan_context_kwargs(waypoint, cos_scan=cos_point)
                 if not waypoint.is_scan:
                     kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
-                    self.com.antenna("point", **kwargs)
-                    self.off(waypoint.integration.to_value("s"), waypoint.id)
+                    item = self._waypoint_plan_item(waypoint, i, len(all_waypoints))
+                    geometry = item.get("geometry")
+                    with self.progress.item(**item):
+                        with self.progress.drive(
+                            kind="point", stage="moving", geometry=geometry
+                        ):
+                            self.com.antenna("point", **kwargs)
+                        with self.progress.drive(
+                            kind="point", stage="tracking", geometry=geometry
+                        ):
+                            self.off(
+                                waypoint.integration.to_value("s"),
+                                waypoint.id,
+                                phase=self._mode_name(waypoint.mode),
+                                geometry=geometry,
+                            )
                     if reset_scan and bydirectional:
                         scan_frag = reset
                 else:
@@ -481,6 +696,9 @@ class FileBasedObservation(Observation):
                             margin_deg=margin,
                             include_final_standby=scan_block_final_standby,
                             final_standby_duration_sec=scan_block_final_standby_duration_sec,
+                            plan_index0=i,
+                            plan_index0_end=j - 1,
+                            plan_total=len(all_waypoints),
                         )
                         scan_frag = frag
                         i = j
@@ -496,6 +714,9 @@ class FileBasedObservation(Observation):
                         margin_deg=margin,
                         include_final_standby=scan_block_final_standby,
                         final_standby_duration_sec=scan_block_final_standby_duration_sec,
+                        plan_index0=i,
+                        plan_index0_end=i,
+                        plan_total=len(all_waypoints),
                     )
                     i += 1
                     continue
@@ -505,6 +726,13 @@ class FileBasedObservation(Observation):
                 cos_scan=cos_scan if waypoint.is_scan else cos_point,
             )
             current_scan_frag = scan_frag
+            item = self._waypoint_plan_item(
+                waypoint,
+                i,
+                len(all_waypoints),
+                scan_frag=current_scan_frag,
+            )
+            geometry = item.get("geometry")
             if waypoint.is_scan:
                 _, _, start, stop = self._scan_start_stop(waypoint, current_scan_frag)
                 kwargs.update(
@@ -517,45 +745,73 @@ class FileBasedObservation(Observation):
                     scan_frag *= -1
 
             if waypoint.mode == ObservationMode.ON:
-                if waypoint.is_scan:
-                    if self.observation_type == "OTF":
-                        start = kwargs["start"]
-                        reference = kwargs.get("reference") or (0, 0)
-                        start_position = (
-                            start[0] + reference[0],
-                            start[1] + reference[1],
-                        )
-                        target = start_position + (waypoint.scan_frame,)
-                        offset_margin = current_scan_frag * margin
+                with self.progress.item(**item):
+                    if waypoint.is_scan:
+                        if self.observation_type == "OTF":
+                            start = kwargs["start"]
+                            reference = kwargs.get("reference") or (0, 0)
+                            start_position = (
+                                start[0] + reference[0],
+                                start[1] + reference[1],
+                            )
+                            target = start_position + (waypoint.scan_frame,)
+                            offset_margin = current_scan_frag * margin
 
-                        if direction == "x":
-                            offset_position = (-offset_margin, 0)
-                        elif direction == "y":
-                            offset_position = (0, -offset_margin)
-                        else:
-                            offset_position = (-offset_margin, -offset_margin)
+                            if direction == "x":
+                                offset_position = (-offset_margin, 0)
+                            elif direction == "y":
+                                offset_position = (0, -offset_margin)
+                            else:
+                                offset_position = (-offset_margin, -offset_margin)
 
-                        point_kwargs = dict(
-                            target=target,
-                            unit="deg",
-                            offset=offset_position + (waypoint.scan_frame,),
-                            cos_correction=cos_scan,
-                        )
-                        point_kwargs = self._apply_pointing_reference_to_point_kwargs(
-                            point_kwargs
-                        )
-                        self.logger.info("Move to ON...")
-                        self.com.antenna("point", **point_kwargs)
+                            point_kwargs = dict(
+                                target=target,
+                                unit="deg",
+                                offset=offset_position + (waypoint.scan_frame,),
+                                cos_correction=cos_scan,
+                            )
+                            point_kwargs = (
+                                self._apply_pointing_reference_to_point_kwargs(
+                                    point_kwargs
+                                )
+                            )
+                            self.logger.info("Move to ON...")
+                            with self.progress.drive(
+                                kind="point",
+                                stage="moving_to_scan_start",
+                                geometry=geometry,
+                            ):
+                                self.com.antenna("point", **point_kwargs)
 
-                    kwargs = self._apply_pointing_reference_to_scan_kwargs(kwargs)
-                    self.logger.info("Starting ON...")
-                    self.com.metadata("set", position="ON", id=waypoint.id)
-                    self.com.antenna("scan", **kwargs)
-                    self.com.metadata("set", position="", id="")
-                else:
-                    kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
-                    self.com.antenna("point", **kwargs)
-                    self.on(waypoint.integration.to_value("s"), waypoint.id)
+                        kwargs = self._apply_pointing_reference_to_scan_kwargs(kwargs)
+                        self.logger.info("Starting ON...")
+                        with self.progress.drive(
+                            kind="scan", stage="scanning", geometry=geometry
+                        ):
+                            with self.progress.integration(
+                                phase="ON",
+                                metadata_position="ON",
+                                id=waypoint.id,
+                                geometry=geometry,
+                                drive_kind="scan",
+                            ):
+                                self.com.metadata("set", position="ON", id=waypoint.id)
+                                self.com.antenna("scan", **kwargs)
+                                self.com.metadata("set", position="", id="")
+                    else:
+                        kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
+                        with self.progress.drive(
+                            kind="point", stage="moving", geometry=geometry
+                        ):
+                            self.com.antenna("point", **kwargs)
+                        with self.progress.drive(
+                            kind="point", stage="tracking", geometry=geometry
+                        ):
+                            self.on(
+                                waypoint.integration.to_value("s"),
+                                waypoint.id,
+                                geometry=geometry,
+                            )
             i += 1
 
 

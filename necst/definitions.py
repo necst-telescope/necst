@@ -113,6 +113,8 @@ class qos:
 
 
 class topic:
+    from std_msgs.msg import String
+
     from necst_msgs.msg import (
         AlertMsg,
         Binning,
@@ -232,6 +234,9 @@ class topic:
     )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
+    observation_progress = Topic(
+        String, "observation_progress", qos.reliable_latched, namespace.core
+    )
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     pid_log = Topic(CalcLog, "pid_log", qos.realtime, namespace.antenna)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)

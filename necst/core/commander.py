@@ -102,6 +102,7 @@ class Commander(PrivilegedNode):
             "dome_oc": topic.dome_oc,
             "timeonly": topic.timeonly,
             "tp_mode": topic.tp_mode,
+            "observation_progress": topic.observation_progress,
         }
         self.publisher: Dict[str, Publisher] = {}
 
