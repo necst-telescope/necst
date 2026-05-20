@@ -382,6 +382,41 @@ def fmt_time(seconds: Optional[float], approx: bool = False) -> str:
     return f"{prefix}{h:02d}:{m:02d}:{s:02d}"
 
 
+def fmt_seconds_short(seconds: Optional[float], approx: bool = False) -> str:
+    if seconds is None:
+        return "--.-s"
+    try:
+        value = max(0.0, float(seconds))
+    except Exception:
+        return "--.-s"
+    prefix = "≈" if approx else ""
+    if value < 3600.0:
+        return f"{prefix}{value:.1f}s"
+    return f"{prefix}{value / 3600.0:.2f}h"
+
+
+def compact_eta_method(value: Any, *, max_len: int = 34) -> str:
+    text = str(value or "-")
+    if text == "-":
+        return text
+    replacements = {
+        "elapsed_plan_fraction_sanity": "sanity",
+        "event_history_inter_item_gap": "gap",
+        "event_history_item_key": "item",
+        "event_history": "hist",
+        "scan_block": "block",
+    }
+    parts = []
+    for part in text.split("+"):
+        part = part.strip()
+        parts.append(replacements.get(part, part))
+    out = "+".join(parts)
+    if len(out) <= max_len:
+        return out
+    keep = max(8, max_len - 2)
+    return out[:keep] + "…"
+
+
 def pct_bar(percent: Optional[float], width: int = 50) -> str:
     try:
         p = max(0.0, min(100.0, float(percent)))
@@ -524,42 +559,48 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         elif current_line is not None:
             compact_line_info = f" line={compact_value(current_line)}"
         state_prefix = state if status_label.lower() == str(lifecycle.get("state") or "").lower() else f"{state} status={status_label}"
-        line = (
-            f"{state_prefix} {obs_type} {index_label} {phase} | "
-            f"drive={drive}:{motion}{compact_line_info} data={data_state} | "
+        eta_method = compact_eta_method(timing.get('remaining_method'), max_len=28)
+        method_part = "" if eta_method == "-" else f" eta={eta_method}"
+        return (
+            f"{state_prefix} {obs_type} item={index_label} {phase} "
+            f"elapsed={fmt_seconds_short(timing.get('elapsed_sec'))} "
+            f"remain={fmt_seconds_short(timing.get('estimated_remaining_sec'), approx=True)} "
+            f"conf={compact_value(timing.get('remaining_confidence'))}\n"
+            f"drive={drive}:{motion}{compact_line_info} data={data_state} "
             f"metadata={compact_value(data.get('expected_metadata_position'))} "
-            f"id={compact_value(data.get('expected_metadata_id'))} | "
-            f"elapsed={fmt_time(timing.get('elapsed_sec'))} "
-            f"remaining={fmt_time(timing.get('estimated_remaining_sec'), approx=True)} "
-            f"conf={compact_value(timing.get('remaining_confidence'))}"
+            f"id={compact_value(data.get('expected_metadata_id'))}{method_part}"
         )
-        return line
 
     lines = []
+
+    def frame_line(content: str = "") -> str:
+        return f"│ {str(content)[:58]:<58}│"
+
     lines.append("┌──────────────── NECST Observation Progress ────────────────┐")
     status_suffix = "" if status_label.lower() == str(lifecycle.get("state") or "").lower() else f" status={status_label}"
-    lines.append(
-        f"│ state={(state + status_suffix)[:21]:<21} type={obs_type:<14} record={record[:20]:<20}│"
-    )
+    lines.append(frame_line(f"state={(state + status_suffix)[:21]}  type={obs_type}"))
+    lines.append(frame_line(f"record={record}"))
     obsfile = compact_value(obs.get("obs_file"))
-    lines.append(
-        f"│ obsfile={obsfile[:30]:<30} elapsed={fmt_time(timing.get('elapsed_sec')):<8} "
-        f"remaining={fmt_time(timing.get('estimated_remaining_sec'), approx=True):<9}│"
-    )
-    method = compact_value(timing.get('remaining_method'))
+    lines.append(frame_line(f"obsfile={obsfile}"))
+    lines.append(frame_line(
+        f"elapsed={fmt_seconds_short(timing.get('elapsed_sec'))} "
+        f"remain={fmt_seconds_short(timing.get('estimated_remaining_sec'), approx=True)} "
+        f"conf={compact_value(timing.get('remaining_confidence'))}"
+    ))
+    method = compact_eta_method(timing.get('remaining_method'), max_len=34)
     confidence = compact_value(timing.get('remaining_confidence'))
     if method != '-' or confidence != '-':
-        lines.append(f"│ ETA method={method[:29]:<29} confidence={confidence:<12}│")
+        lines.append(frame_line(f"eta_source={method} confidence={confidence}"))
     lines.append("├──────────────────── PLAN ──────────────────────────────────┤")
     label = compact_value(plan.get("label"))
     role = compact_value(plan.get("role"))
     obs_id = compact_value(plan.get("obs_id"))
-    lines.append(f"│ item {index_label:<10} phase={phase:<8} id={obs_id:<10} role={role:<12}│")
+    lines.append(frame_line(f"item {index_label}  phase={phase}  id={obs_id}  role={role}"))
     if plan.get("index0_end") is not None:
-        lines.append(
-            f"│ block index={plan.get('index0')}..{plan.get('index0_end')} "
-            f"lines={compact_value(plan.get('line_total')):<5} label={label[:21]:<21}│"
-        )
+        lines.append(frame_line(
+            f"block index={plan.get('index0')}..{plan.get('index0_end')} "
+            f"lines={compact_value(plan.get('line_total'))} label={label}"
+        ))
     lines.append(f"│ {pct_bar(percent):<58}│")
     lines.append("├──────────────────── CURRENT ACTIVITY ──────────────────────┤")
     line_info = ""
@@ -574,22 +615,28 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         line_info = f" line={compact_value(current_line)}"
     elif line_total is not None:
         line_info = f" line_total={line_total}"
-    lines.append(
-        f"│ drive={drive:<12} motion={motion:<18} data={data_state:<14}{line_info[:16]:<16}│"
-    )
+    lines.append(frame_line(f"drive={drive} mot={motion} data={data_state}{line_info}"))
     loc = activity.get("location_context")
     if loc:
-        lines.append(f"│ location_context={compact_value(loc):<44}│")
+        lines.append(frame_line(f"location_context={compact_value(loc)}"))
     lines.append("├──────────────────── COORDINATE ────────────────────────────┤")
     gkind = compact_value(geom.get("kind"))
     frame = compact_value(geom.get("frame"))
     if geom.get("start") is not None or geom.get("stop") is not None:
-        lines.append(f"│ plan : kind={gkind:<12} frame={frame:<8} start={compact_value(geom.get('start'))[:20]:<20}│")
-        lines.append(f"│        stop={compact_value(geom.get('stop'))[:47]:<47}│")
+        lines.append(frame_line(f"plan : kind={gkind} frame={frame} start={compact_value(geom.get('start'))}"))
+        lines.append(frame_line(f"       stop={compact_value(geom.get('stop'))}"))
     elif geom.get("target") is not None:
-        lines.append(f"│ plan : kind={gkind:<12} frame={frame:<8} target={compact_value(geom.get('target'))[:20]:<20}│")
+        lines.append(frame_line(f"plan : kind={gkind} frame={frame} target={compact_value(geom.get('target'))}"))
     elif geom:
-        lines.append(f"│ plan : kind={gkind:<12} frame={frame:<8} {compact_value(geom)[:31]:<31}│")
+        line_text = ""
+        if geom.get("current_line_index0") is not None or geom.get("line_total") is not None:
+            try:
+                line_text = f" line={int(geom.get('current_line_index0')) + 1}/{int(geom.get('line_total'))}"
+            except Exception:
+                line_text = f" line={compact_value(geom.get('current_line_index0'))}/{compact_value(geom.get('line_total'))}"
+        target_name = compact_value(geom.get("target_name"))
+        extra = "" if target_name == "-" else f" target={target_name}"
+        lines.append(frame_line(f"plan : kind={gkind} frame={frame}{line_text}{extra}"))
     else:
         lines.append("│ plan : -                                                     │")
     if antenna:
@@ -598,29 +645,29 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         enc_lon = antenna.get("encoder_lon_deg")
         enc_lat = antenna.get("encoder_lat_deg")
         if cmd_lon is not None or cmd_lat is not None:
-            lines.append(f"│ cmd  : lon={compact_value(cmd_lon):<13} lat={compact_value(cmd_lat):<13} frame={compact_value(antenna.get('command_frame')):<8}│")
+            lines.append(frame_line(f"cmd  : lon={compact_value(cmd_lon)} lat={compact_value(cmd_lat)} frame={compact_value(antenna.get('command_frame'))}"))
         if enc_lon is not None or enc_lat is not None:
-            lines.append(f"│ enc  : lon={compact_value(enc_lon):<13} lat={compact_value(enc_lat):<13} frame={compact_value(antenna.get('encoder_frame')):<8}│")
+            lines.append(frame_line(f"enc  : lon={compact_value(enc_lon)} lat={compact_value(enc_lat)} frame={compact_value(antenna.get('encoder_frame'))}"))
         if antenna.get("tracking_error_deg") is not None:
-            lines.append(f"│ err  : tracking_error={compact_value(antenna.get('tracking_error_deg')):<37} deg│")
+            lines.append(frame_line(f"err  : tracking_error={compact_value(antenna.get('tracking_error_deg'))} deg"))
         if not (cmd_lon is not None or enc_lon is not None):
-            lines.append(f"│ ant  : {compact_value(antenna)[:56]:<56}│")
+            lines.append(frame_line(f"ant  : {compact_value(antenna)}"))
     lines.append("├──────────────────── DATA ──────────────────────────────────┤")
-    lines.append(
-        f"│ expected: {compact_value(data.get('expected_metadata_position')):<5} "
-        f"id={compact_value(data.get('expected_metadata_id')):<12} "
-        f"line={compact_value(data.get('expected_metadata_line_index')):<8}              │"
-    )
+    lines.append(frame_line(
+        f"expected: {compact_value(data.get('expected_metadata_position'))} "
+        f"id={compact_value(data.get('expected_metadata_id'))} "
+        f"line={compact_value(data.get('expected_metadata_line_index'))}"
+    ))
     if data.get("latest_spectrum_position") is not None:
-        lines.append(
-            f"│ latest  : {compact_value(data.get('latest_spectrum_position')):<5} "
-            f"id={compact_value(data.get('latest_spectrum_id')):<12} "
-            f"age={compact_value(data.get('latest_spectrum_age_sec')):<8}              │"
-        )
+        lines.append(frame_line(
+            f"latest  : {compact_value(data.get('latest_spectrum_position'))} "
+            f"id={compact_value(data.get('latest_spectrum_id'))} "
+            f"age={compact_value(data.get('latest_spectrum_age_sec'))}"
+        ))
     lines.append("├──────────────────── RECENT EVENTS ─────────────────────────┤")
     event_lines = list(events)[-8:] or snapshot.get("recent_events", [])[-8:]
     if not event_lines:
-        lines.append("│ -                                                          │")
+        lines.append(frame_line("-"))
     for event in event_lines[-8:]:
         ts = event.get("time_unix")
         try:
@@ -634,7 +681,7 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
             body += f" id={event.get('id')}"
         if event.get("line_index") is not None:
             body += f" line={event.get('line_index')}"
-        lines.append(f"│ {t}  {body[:51]:<51}│")
+        lines.append(frame_line(f"{t}  {body}"))
     lines.append("└─────────────────────────────────────────────────────────────┘")
     lines.append("Press Ctrl-C to quit.  Use --follow for scrolling event log.")
     return "\n".join(lines)
@@ -793,33 +840,43 @@ _HTML_TEMPLATE = """<!doctype html>
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
 <title>NECST Observation Progress</title>
 <style>
-:root { color-scheme: light dark; --ok:#1a7f37; --warn:#b54708; --err:#c1121f; --muted:#666; --border:#9995; }
-body { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif; margin: 0; padding: .75rem; line-height: 1.28; font-size:14px; }
+:root {
+  color-scheme: light dark;
+  --ok:#1a7f37; --warn:#b54708; --err:#c1121f;
+  --bg:#ffffff; --fg:#1f2328; --panel:#ffffff; --muted:#606975; --border:#8c959f55; --plot-text:#1f2328;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#1b1b20; --fg:#eceff4; --panel:#202028; --muted:#aeb6c2; --border:#c8d0dc44; --plot-text:#eceff4; }
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .55rem; line-height: 1.22; font-size:13px; background:var(--bg); color:var(--fg); }
 header { display:flex; gap:1rem; align-items:baseline; justify-content:space-between; flex-wrap:wrap; }
-h1 { font-size:1.12rem; margin:0 0 .35rem; }
-.grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .6rem; }
-.card { border:1px solid var(--border); border-radius:12px; padding:.6rem; box-shadow:0 1px 4px #0001; }
-.card h2 { font-size:.95rem; margin:.05rem 0 .4rem; }
-.kv { display:grid; grid-template-columns: 7.6rem minmax(0,1fr); gap:.15rem .45rem; align-items:baseline; }
+h1 { font-size:1.05rem; margin:0 0 .3rem; }
+.grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: .55rem; align-items:stretch; }
+.card { border:1px solid var(--border); border-radius:10px; padding:.55rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:10.5rem; }
+.card h2 { font-size:.92rem; margin:.03rem 0 .35rem; }
+.kv { display:grid; grid-template-columns: 6.9rem minmax(0,1fr); gap:.12rem .38rem; align-items:baseline; }
 .k { color:var(--muted); }
-.status { font-weight:700; padding:.1rem .45rem; border-radius:999px; border:1px solid var(--border); }
+.v { min-width:0; overflow-wrap:anywhere; }
+.status { font-weight:700; padding:.08rem .38rem; border-radius:999px; border:1px solid var(--border); }
 .status.running, .status.finished { color:var(--ok); } .status.error, .status.aborted { color:var(--err); } .status.cleanup { color:var(--warn); }
-.bar { width:100%; height:1rem; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:#9992; }
+.bar { width:100%; height:.86rem; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:#9992; margin-top:.35rem; }
 .fill { height:100%; width:0%; background:currentColor; color:var(--ok); transition:width .2s; }
-pre { white-space:pre-wrap; overflow:auto; max-height:16rem; margin:.2rem 0 0; font-size:.82rem; }
-table { border-collapse:collapse; width:100%; font-size:.82rem; }
-th, td { border-bottom:1px solid var(--border); text-align:left; padding:.25rem; vertical-align:top; }
-.plotbox { min-height: 340px; display:flex; align-items:center; justify-content:center; }
-.plotbox svg { width:100%; max-height:520px; }
-.legend { display:flex; gap:.75rem; flex-wrap:wrap; margin:.25rem 0 .5rem; font-size:.85rem; color:var(--muted); }
-.dot { display:inline-block; width:.8rem; height:.8rem; border-radius:999px; vertical-align:-.1rem; margin-right:.25rem; }
-.small { font-size:.78rem; color:var(--muted); }
-.planview { grid-column: span 2; }
-.planview .plotbox { min-height: 390px; }
-.planview svg { max-height: 620px; }
+pre { white-space:pre-wrap; overflow:auto; max-height:18rem; margin:.2rem 0 0; font-size:.78rem; }
+table { border-collapse:collapse; width:100%; font-size:.78rem; }
+th, td { border-bottom:1px solid var(--border); text-align:left; padding:.2rem; vertical-align:top; }
+.plotbox { min-height: 500px; display:flex; align-items:center; justify-content:center; }
+.plotbox svg { width:100%; height:auto; max-height:72vh; color:var(--plot-text); }
+.plotbox svg text { fill: currentColor; }
+.legend { display:flex; gap:.65rem; flex-wrap:wrap; margin:.2rem 0 .35rem; font-size:.78rem; color:var(--muted); }
+.dot { display:inline-block; width:.72rem; height:.72rem; border-radius:999px; vertical-align:-.08rem; margin-right:.22rem; }
+.small { font-size:.74rem; color:var(--muted); }
+.planview { grid-column: span 3; grid-row: span 2; min-height: 38rem; }
+.planview .plotbox { min-height: 560px; }
+.planview svg { max-height: 78vh; }
 .important { font-weight:700; }
-.notice { margin:.25rem 0 .55rem; padding:.45rem .6rem; border:1px solid var(--border); border-radius:10px; background:#9991; }
-@media (max-width: 760px) { .planview { grid-column: span 1; } }
+.notice { margin:.25rem 0 .5rem; padding:.42rem .55rem; border:1px solid var(--border); border-radius:9px; background:#9991; }
+@media (max-width: 1100px) { .planview { grid-column: span 2; } }
+@media (max-width: 760px) { .planview { grid-column: span 1; grid-row: span 1; min-height: auto; } .plotbox { min-height: 360px; } }
 .err { color:var(--err); font-weight:700; }
 </style>
 </head>
@@ -830,7 +887,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.25rem;
 <section class=\"card\"><h2>Observation</h2><div class=\"kv\" id=\"observation\"></div></section>
 <section class=\"card\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
 <section class=\"card\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
-<section class=\"card planview\"><h2>Plan View</h2><div class=\"legend\"><span><i class=\"dot\" style=\"background:#2ca02c\"></i>done</span><span><i class=\"dot\" style=\"background:#ff7f0e\"></i>current</span><span><i class=\"dot\" style=\"background:#bdbdbd\"></i>pending</span><span>OFF/ref points are labeled; map scale follows ON scan area when possible.</span></div><div id=\"plotview\" class=\"plotbox small\">-</div></section>
+<section class=\"card planview\"><h2>Plan View</h2><div class=\"legend\"><span><i class=\"dot\" style=\"background:#2ca02c\"></i>done</span><span><i class=\"dot\" style=\"background:#ff7f0e\"></i>current</span><span><i class=\"dot\" style=\"background:#bdbdbd\"></i>pending</span><span>OFF/ref points are labeled; aspect follows observation coordinates; orange line has scan direction.</span></div><div id=\"plotview\" class=\"plotbox small\">-</div></section>
 <section class=\"card\"><h2>Geometry</h2><div class=\"kv\" id=\"geometry\"></div></section>
 <section class=\"card\"><h2>Data</h2><div class=\"kv\" id=\"data\"></div></section>
 <section class=\"card\"><h2>Recent Events</h2><div id=\"events\"></div></section>
@@ -865,12 +922,26 @@ function shortRecordName(v, maxLen=26) {
   const tail = Math.max(5, maxLen-head-1);
   return s.slice(0, head) + '…' + s.slice(-tail);
 }
+function compactMethod(v, maxLen=28) {
+  let s = String(v ?? '-');
+  if (!s || s === '-') return '-';
+  const map = {
+    elapsed_plan_fraction_sanity: 'sanity',
+    event_history_inter_item_gap: 'gap',
+    event_history_item_key: 'item',
+    event_history: 'hist',
+    scan_block: 'block'
+  };
+  s = s.split('+').map(p => map[p.trim()] || p.trim()).join('+');
+  if (s.length <= maxLen) return s;
+  return s.slice(0, Math.max(8, maxLen - 1)) + '…';
+}
 function kv(id, obj, keys) {
   const el = document.getElementById(id); el.innerHTML = '';
   for (const [label, key] of keys) {
     const raw = typeof key === 'function' ? key(obj) : obj?.[key];
     const keyName = typeof key === 'string' ? key : '';
-    el.insertAdjacentHTML('beforeend', `<div class=\"k\">${esc(label)}</div><div>${esc(val(raw, label, keyName))}</div>`);
+    el.insertAdjacentHTML('beforeend', `<div class=\"k\">${esc(label)}</div><div class=\"v\" title=\"${esc(raw ?? '-')}\">${esc(val(raw, label, keyName))}</div>`);
   }
 }
 function stateClass(s) { return ['running','finished','error','aborted','cleanup'].includes(String(s||'').toLowerCase()) ? String(s).toLowerCase() : ''; }
@@ -934,8 +1005,9 @@ function statusFor(item, snapshot, events) {
   if (!finalState && ((cur && (uid === cur || parent === cur)) || inRange(item, cr))) return 'current';
   return 'pending';
 }
-function sx(x, bounds) { return 38 + (x-bounds.xmin) * 520 / Math.max(1e-9, bounds.xmax-bounds.xmin); }
-function sy(y, bounds) { return 320 - (y-bounds.ymin) * 270 / Math.max(1e-9, bounds.ymax-bounds.ymin); }
+const PLOT = {w: 640, h: 430, left: 48, right: 592, top: 42, bottom: 352};
+function sx(x, bounds) { return PLOT.left + (x-bounds.xmin) * (PLOT.right-PLOT.left) / Math.max(1e-9, bounds.xmax-bounds.xmin); }
+function sy(y, bounds) { return PLOT.bottom - (y-bounds.ymin) * (PLOT.bottom-PLOT.top) / Math.max(1e-9, bounds.ymax-bounds.ymin); }
 function colorFor(status) { return status === 'done' ? '#2ca02c' : status === 'current' ? '#ff7f0e' : '#bdbdbd'; }
 function renderPlanView(snapshot, plan, events) {
   const items = flattenItems(plan);
@@ -958,6 +1030,45 @@ function clipPoint(p, b) {
   const y = Math.max(b.ymin, Math.min(b.ymax, p[1]));
   return {p:[x,y], clipped: Math.abs(x-p[0])>1e-9 || Math.abs(y-p[1])>1e-9};
 }
+function equalAspectBounds(xmin, xmax, ymin, ymax) {
+  const innerAspect = (PLOT.right - PLOT.left) / Math.max(1e-9, (PLOT.bottom - PLOT.top));
+  let cx = (xmin + xmax) / 2, cy = (ymin + ymax) / 2;
+  let w = Math.max(1e-6, xmax - xmin), h = Math.max(1e-6, ymax - ymin);
+  const dataAspect = w / h;
+  if (dataAspect > innerAspect) {
+    h = w / innerAspect;
+  } else {
+    w = h * innerAspect;
+  }
+  return {xmin: cx - w/2, xmax: cx + w/2, ymin: cy - h/2, ymax: cy + h/2};
+}
+function projectFraction(a, b, p) {
+  if (!a || !b || !p) return null;
+  const vx = b[0] - a[0], vy = b[1] - a[1];
+  const den = vx*vx + vy*vy;
+  if (den <= 1e-18) return null;
+  const t = ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / den;
+  return Math.max(0, Math.min(1, t));
+}
+function antennaPoint(snapshot, prefix, requiredFrame) {
+  const a = snapshot?.antenna || {};
+  const x = Number(a[`${prefix}_lon_deg`]);
+  const y = Number(a[`${prefix}_lat_deg`]);
+  const frame = String(a[`${prefix}_frame`] || '').toLowerCase();
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  if (requiredFrame && frame && frame !== String(requiredFrame).toLowerCase()) return null;
+  return [x, y];
+}
+function renderAntennaMarker(label, p, b, color, shape) {
+  if (!p) return '';
+  const clipped = clipPoint(p, b);
+  const x = sx(clipped.p[0], b), y = sy(clipped.p[1], b);
+  const suffix = clipped.clipped ? ' outside' : '';
+  if (shape === 'cross') {
+    return `<g><line x1="${x-6}" y1="${y}" x2="${x+6}" y2="${y}" stroke="${color}" stroke-width="2"/><line x1="${x}" y1="${y-6}" x2="${x}" y2="${y+6}" stroke="${color}" stroke-width="2"/><text x="${Math.min(PLOT.w-50, x+8)}" y="${Math.max(16, y-8)}" font-size="11">${esc(label + suffix)}</text></g>`;
+  }
+  return `<g><circle cx="${x}" cy="${y}" r="5" fill="none" stroke="${color}" stroke-width="2"/><text x="${Math.min(PLOT.w-50, x+8)}" y="${Math.max(16, y+13)}" font-size="11">${esc(label + suffix)}</text></g>`;
+}
 function renderPoint(row, b) {
   const clipped = clipPoint(row.a, b);
   const x = sx(clipped.p[0], b), y = sy(clipped.p[1], b);
@@ -967,7 +1078,7 @@ function renderPoint(row, b) {
     ? `<circle cx="${x}" cy="${y}" r="${r}" fill="${colorFor(row.status)}" stroke="${row.status==='current'?'#111':'none'}"/>`
     : `<path d="M ${x} ${y-r-2} L ${x+r+2} ${y} L ${x} ${y+r+2} L ${x-r-2} ${y} Z" fill="${colorFor(row.status)}" stroke="#1118"/>`;
   const suffix = clipped.clipped ? ' (outside)' : '';
-  const text = label ? `<text x="${Math.min(555, x+7)}" y="${Math.max(16, y-6)}" font-size="11">${esc(label + suffix)}</text>` : '';
+  const text = label ? `<text x="${Math.min(PLOT.w-70, x+7)}" y="${Math.max(16, y-6)}" font-size="12" font-weight="700">${esc(label + suffix)}</text>` : '';
   return shape + text;
 }
 function renderMapSvg(snapshot, items, events) {
@@ -978,7 +1089,7 @@ function renderMapSvg(snapshot, items, events) {
     if (k === 'scan_line' || k === 'scan_block_line') {
       const a=pair(g.start), b=pair(g.stop);
       if (a&&b) {
-        rows.push({item,a,b,status,mode:mode || 'ON'});
+        rows.push({item,a,b,status,mode:mode || 'ON',lineIndex:g.line_index0,frame:g.frame});
         allPts.push(a,b);
         if ((mode || 'ON') === 'ON') boundsPts.push(a,b);
       }
@@ -987,7 +1098,7 @@ function renderMapSvg(snapshot, items, events) {
       const xy=pair(g.target)||pair(g.reference)||pair(g.offset);
       if (xy) {
         const pointLabel = pointKind(item);
-        rows.push({item,a:xy,b:null,status,mode:mode || pointLabel,pointLabel});
+        rows.push({item,a:xy,b:null,status,mode:mode || pointLabel,pointLabel,frame:g.frame});
         allPts.push(xy);
         if ((mode || '').toUpperCase() === 'ON' || k === 'grid_point') boundsPts.push(xy);
       }
@@ -996,20 +1107,36 @@ function renderMapSvg(snapshot, items, events) {
   if (!allPts.length) return '<div>No numeric geometry. This is normal for target-name-only observations.</div>';
   const scalePts = boundsPts.length >= 2 ? boundsPts : allPts;
   let xmin=Math.min(...scalePts.map(p=>p[0])), xmax=Math.max(...scalePts.map(p=>p[0])), ymin=Math.min(...scalePts.map(p=>p[1])), ymax=Math.max(...scalePts.map(p=>p[1]));
-  const dx=Math.max(1e-6,(xmax-xmin)*0.08), dy=Math.max(1e-6,(ymax-ymin)*0.08); xmin-=dx; xmax+=dx; ymin-=dy; ymax+=dy; const b={xmin,xmax,ymin,ymax};
+  const dx=Math.max(1e-6,(xmax-xmin)*0.08), dy=Math.max(1e-6,(ymax-ymin)*0.08);
+  let b=equalAspectBounds(xmin-dx, xmax+dx, ymin-dy, ymax+dy);
   rows.sort((a,b)=>({pending:0,done:1,current:2}[a.status]-{pending:0,done:1,current:2}[b.status]));
-  const els = rows.map(r => r.b ? `<line x1="${sx(r.a[0],b)}" y1="${sy(r.a[1],b)}" x2="${sx(r.b[0],b)}" y2="${sy(r.b[1],b)}" stroke="${colorFor(r.status)}" stroke-width="${r.status==='current'?4:2}" opacity="${r.status==='pending'?0.55:0.95}"/>` : renderPoint(r,b)).join('');
+  const currentRow = rows.find(r => r.b && r.status === 'current') || null;
+  const rowFrame = currentRow?.frame || rows.find(r=>r.frame)?.frame || '';
+  const cmd = antennaPoint(snapshot, 'command', rowFrame);
+  const enc = antennaPoint(snapshot, 'encoder', rowFrame);
+  const lineNo = snapshot?.geometry?.current_line_index0;
+  const lineTotal = snapshot?.geometry?.line_total;
+  const lineLabel = Number.isInteger(lineNo) ? `line ${lineNo+1}${Number.isInteger(lineTotal) ? '/' + lineTotal : ''}` : '';
+  const frac = currentRow && cmd ? projectFraction(currentRow.a, currentRow.b, cmd) : null;
+  const scanText = currentRow ? `${lineLabel || 'current line'}  direction: start→stop${frac !== null ? '  cmd: ' + (100*frac).toFixed(1) + '%' : ''}` : 'current scan line is shown in orange when available';
+  const lineEls = rows.map(r => {
+    if (!r.b) return renderPoint(r,b);
+    const x1=sx(r.a[0],b), y1=sy(r.a[1],b), x2=sx(r.b[0],b), y2=sy(r.b[1],b);
+    const arrow = r.status === 'current' ? ' marker-end="url(#arrowhead)"' : '';
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorFor(r.status)}" stroke-width="${r.status==='current'?4:2}" opacity="${r.status==='pending'?0.55:0.95}"${arrow}/>`;
+  }).join('');
+  const liveEls = renderAntennaMarker('CMD', cmd, b, '#58a6ff', 'cross') + renderAntennaMarker('ENC', enc, b, '#d2a8ff', 'circle');
   const counts = {done: rows.filter(r=>r.status==='done').length, current: rows.filter(r=>r.status==='current').length, pending: rows.filter(r=>r.status==='pending').length};
-  return `<svg viewBox="0 0 600 365" role="img"><rect x="1" y="1" width="598" height="363" fill="none" stroke="#9995"/><line x1="38" y1="320" x2="558" y2="320" stroke="#666"/><line x1="38" y1="50" x2="38" y2="320" stroke="#666"/>${els}<text x="38" y="348" font-size="11">x: ${esc(xmin.toFixed(3))} .. ${esc(xmax.toFixed(3))}</text><text x="335" y="348" font-size="11">done ${counts.done} / current ${counts.current} / pending ${counts.pending}</text></svg>`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-54}" font-size="12">${esc(scanText)}</text><text x="${PLOT.left}" y="${PLOT.h-34}" font-size="11">x: ${esc(b.xmin.toFixed(3))} .. ${esc(b.xmax.toFixed(3))}</text><text x="${PLOT.left+285}" y="${PLOT.h-34}" font-size="11">done ${counts.done} / current ${counts.current} / pending ${counts.pending}</text><text x="${PLOT.left+285}" y="${PLOT.h-16}" font-size="11">CMD cross, ENC circle; OFF/ref labels are clipped if outside ON map</text></svg>`;
 }
 function renderSkydipSvg(snapshot, items, events) {
   const rows=[];
   for (let i=0; i<items.length; i++) { const g=geomOf(items[i]); let el = Number(g.el_deg ?? g.target_el_deg ?? g.elevation_deg); const t=pair(g.target); if (!Number.isFinite(el) && t) el=t[1]; if (Number.isFinite(el)) rows.push({x:i+1,y:el,status:statusFor(items[i],snapshot,events)}); }
   if (!rows.length) return '<div>No skydip elevation geometry.</div>';
-  const ymin=Math.min(...rows.map(r=>r.y))-5, ymax=Math.max(...rows.map(r=>r.y))+5; const xmin=1, xmax=Math.max(1, rows.length); const b={xmin,xmax,ymin,ymax};
+  const ymin=Math.min(...rows.map(r=>r.y))-5, ymax=Math.max(...rows.map(r=>r.y))+5; const xmin=1, xmax=Math.max(1, rows.length); const b=equalAspectBounds(xmin,xmax,ymin,ymax);
   const poly = rows.map(r=>`${sx(r.x,b)},${sy(r.y,b)}`).join(' ');
   const pts = rows.map(r=>`<circle cx="${sx(r.x,b)}" cy="${sy(r.y,b)}" r="${r.status==='current'?6:4}" fill="${colorFor(r.status)}" stroke="${r.status==='current'?'#111':'none'}"/>`).join('');
-  return `<svg viewBox="0 0 600 365" role="img"><rect x="1" y="1" width="598" height="363" fill="none" stroke="#9995"/><line x1="38" y1="320" x2="558" y2="320" stroke="#666"/><line x1="38" y1="50" x2="38" y2="320" stroke="#666"/><polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text x="38" y="348" font-size="11">sequence step</text><text x="335" y="348" font-size="11">elevation ${esc(ymin.toFixed(1))}..${esc(ymax.toFixed(1))} deg</text></svg>`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text x="${PLOT.left}" y="${PLOT.h-34}" font-size="11">sequence step</text><text x="${PLOT.left+285}" y="${PLOT.h-34}" font-size="11">elevation ${esc(ymin.toFixed(1))}..${esc(ymax.toFixed(1))} deg</text></svg>`;
 }
 async function update() {
   try {
@@ -1030,7 +1157,7 @@ async function update() {
       msg += `<div class=\"notice\"><span class=\"important\">This observation is ${esc(life.state)}.</span> Last update: ${esc(updated)}. Waiting for the next observation snapshot.</div>`;
     }
     document.getElementById('message').innerHTML = msg;
-    kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method: timing.remaining_method, remaining_confidence: timing.remaining_confidence}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA method','remaining_method'], ['ETA confidence','remaining_confidence']]);
+    kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA confidence','remaining_confidence']]);
     document.querySelector('#observation div:nth-child(2)').innerHTML = `<span class=\"status ${stateClass(life.state)}\">${esc(life.state ?? '-')}</span>`;
     kv('plan', plan, [['item_uid',(p)=>shortRecordName(p?.item_uid, 34)], ['index0','index0'], ['index0_end','index0_end'], ['total','total'], ['mode','mode'], ['role','role'], ['label','label'], ['obs_id','obs_id']]);
     document.getElementById('bar').style.width = pct(plan).toFixed(1) + '%';
