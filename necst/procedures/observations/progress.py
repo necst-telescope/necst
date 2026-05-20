@@ -34,9 +34,7 @@ def _safe_name(value: Any) -> str:
     sanitized = re.sub(r"[^A-Za-z0-9_.-]+", "_", original)
     sanitized = re.sub(r"_+", "_", sanitized).strip("_") or "record"
     if sanitized != original:
-        digest = hashlib.sha1(
-            original.encode("utf-8", errors="surrogatepass")
-        ).hexdigest()[:8]
+        digest = hashlib.sha1(original.encode("utf-8", errors="surrogatepass")).hexdigest()[:8]
         sanitized = f"{sanitized}_{digest}"
     return sanitized
 
@@ -120,6 +118,7 @@ class NullProgressReporter:
         return None
 
 
+
 FINAL_LIFECYCLE_STATES = {"finished", "error", "aborted"}
 RUNNING_LIFECYCLE_STATES = {"recording_starting", "running", "cleanup"}
 
@@ -194,9 +193,7 @@ def _allow_phase_duration_fallback(item: Mapping[str, Any]) -> bool:
 
 
 def _median_recent(values: List[float], limit: int = 5) -> Optional[float]:
-    clean = [
-        float(v) for v in values if _finite_float(v) is not None and float(v) >= 0.0
-    ]
+    clean = [float(v) for v in values if _finite_float(v) is not None and float(v) >= 0.0]
     if not clean:
         return None
     return float(statistics.median(clean[-limit:]))
@@ -250,16 +247,10 @@ class ObservationProgressReporter:
         self._events_all: List[Dict[str, Any]] = []
         self._plan_items: List[Dict[str, Any]] = []
         self._history_events_cache: Optional[List[Dict[str, Any]]] = None
-        self._remaining_min_current_samples = int(
-            os.environ.get("NECST_PROGRESS_REMAINING_MIN_CURRENT_SAMPLES", "2")
-        )
-        self._remaining_history_limit = int(
-            os.environ.get("NECST_PROGRESS_REMAINING_HISTORY_LIMIT", "20")
-        )
+        self._remaining_min_current_samples = int(os.environ.get("NECST_PROGRESS_REMAINING_MIN_CURRENT_SAMPLES", "2"))
+        self._remaining_history_limit = int(os.environ.get("NECST_PROGRESS_REMAINING_HISTORY_LIMIT", "20"))
         self.started_at_unix = float(started_at_unix or time.time())
-        root_path = Path(
-            root or os.environ.get("NECST_PROGRESS_ROOT", "/tmp/necst_progress")
-        )
+        root_path = Path(root or os.environ.get("NECST_PROGRESS_ROOT", "/tmp/necst_progress"))
         self.root = root_path.expanduser()
         self.record_name = str(record_name)
         self.record_dir = self.root / _safe_name(record_name)
@@ -335,14 +326,10 @@ class ObservationProgressReporter:
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             with path.open("a", encoding="utf-8") as fh:
-                fh.write(
-                    json.dumps(json_safe(payload), ensure_ascii=False, sort_keys=True)
-                )
+                fh.write(json.dumps(json_safe(payload), ensure_ascii=False, sort_keys=True))
                 fh.write("\n")
         except Exception as exc:
-            self._log_debug(
-                f"Observation progress event write failed for {path}: {exc}"
-            )
+            self._log_debug(f"Observation progress event write failed for {path}: {exc}")
 
     def _publish_snapshot(self, text: str) -> None:
         commander = self._commander
@@ -370,17 +357,13 @@ class ObservationProgressReporter:
         self.snapshot.setdefault("time", {})["updated_at_unix"] = now
         self.snapshot["time"]["elapsed_sec"] = max(0.0, now - self.started_at_unix)
         self.snapshot["recent_events"] = self._recent_events[-10:]
-        text = json.dumps(
-            json_safe(self.snapshot), ensure_ascii=False, indent=2, sort_keys=True
-        )
+        text = json.dumps(json_safe(self.snapshot), ensure_ascii=False, indent=2, sort_keys=True)
         self._atomic_write_text(self.snapshot_path, text + "\n")
         self._atomic_write_text(self.current_snapshot_path, text + "\n")
         self._atomic_write_text(self.current_record_path, self.record_name + "\n")
         self._publish_snapshot(text)
 
-    def update(
-        self, _replace_sections: Optional[Iterable[str]] = None, **sections: Any
-    ) -> None:
+    def update(self, _replace_sections: Optional[Iterable[str]] = None, **sections: Any) -> None:
         """Best-effort snapshot update.
 
         By default, nested dictionaries are merged so callers can update only a
@@ -437,9 +420,7 @@ class ObservationProgressReporter:
         if not self.enabled:
             return
         items_list = [json_safe(item) for item in items]
-        self._plan_items = [
-            dict(item) for item in items_list if isinstance(item, Mapping)
-        ]
+        self._plan_items = [dict(item) for item in items_list if isinstance(item, Mapping)]
         self._history_events_cache = None
         doc = {
             "schema_version": 1,
@@ -522,10 +503,7 @@ class ObservationProgressReporter:
                 table.setdefault(key, []).append(duration)
 
         def event_source_id(item: Mapping[str, Any]) -> str:
-            return str(
-                item.get("_source_id")
-                or ("history" if item.get("_history") else "current")
-            )
+            return str(item.get("_source_id") or ("history" if item.get("_history") else "current"))
 
         for ev in sorted(
             events,
@@ -546,31 +524,19 @@ class ObservationProgressReporter:
             ts = _finite_float(ev.get("time_unix"))
             source_is_current = not bool(ev.get("_history"))
             if name == "plan_item_started":
-                uid = str(
-                    ev.get("item_uid") or ev.get("seq") or len(pending_item_starts)
-                )
+                uid = str(ev.get("item_uid") or ev.get("seq") or len(pending_item_starts))
                 pending_item_starts[uid] = ev
-                if (
-                    ts is not None
-                    and last_item_finished_time is not None
-                    and ts >= last_item_finished_time
-                ):
+                if ts is not None and last_item_finished_time is not None and ts >= last_item_finished_time:
                     gaps.append(ts - last_item_finished_time)
             elif name in {"plan_item_finished", "plan_item_failed"}:
-                uid = str(
-                    ev.get("item_uid") or ev.get("seq") or len(pending_item_starts)
-                )
+                uid = str(ev.get("item_uid") or ev.get("seq") or len(pending_item_starts))
                 start = pending_item_starts.pop(uid, None)
                 duration = _finite_float(ev.get("duration_sec"))
                 if duration is None and start is not None:
                     start_ts = _finite_float(start.get("time_unix"))
                     if ts is not None and start_ts is not None:
                         duration = ts - start_ts
-                if (
-                    name == "plan_item_finished"
-                    and duration is not None
-                    and duration >= 0.0
-                ):
+                if name == "plan_item_finished" and duration is not None and duration >= 0.0:
                     key = _duration_key_from_event(ev)
                     add(item_by_key, key, duration)
                     add(item_by_phase, _phase_key_from_event(ev), duration)
@@ -589,11 +555,7 @@ class ObservationProgressReporter:
                     start_ts = _finite_float(start.get("time_unix"))
                     if ts is not None and start_ts is not None:
                         duration = ts - start_ts
-                if (
-                    name == "integration_finished"
-                    and duration is not None
-                    and duration >= 0.0
-                ):
+                if name == "integration_finished" and duration is not None and duration >= 0.0:
                     key = _duration_key_from_event(ev)
                     add(integration_by_key, key, duration)
                     add(integration_by_phase, _phase_key_from_event(ev), duration)
@@ -603,29 +565,17 @@ class ObservationProgressReporter:
             elif name in {"drive_finished", "drive_failed"}:
                 # drive events do not carry a persistent id, so pair in FIFO order.
                 start_key = next(iter(pending_drives), None)
-                start = (
-                    pending_drives.pop(start_key, None)
-                    if start_key is not None
-                    else None
-                )
+                start = pending_drives.pop(start_key, None) if start_key is not None else None
                 duration = _finite_float(ev.get("duration_sec"))
                 if duration is None and start is not None:
                     start_ts = _finite_float(start.get("time_unix"))
                     if ts is not None and start_ts is not None:
                         duration = ts - start_ts
-                if (
-                    name == "drive_finished"
-                    and duration is not None
-                    and duration >= 0.0
-                ):
+                if name == "drive_finished" and duration is not None and duration >= 0.0:
                     drive = str(ev.get("drive_kind") or "unknown")
                     stage = str(ev.get("motion_stage") or "unknown")
                     geom = str(ev.get("geometry_kind") or _geometry_kind_from_event(ev))
-                    add(
-                        drive_by_key,
-                        f"drive={drive}|stage={stage}|geometry={geom}",
-                        duration,
-                    )
+                    add(drive_by_key, f"drive={drive}|stage={stage}|geometry={geom}", duration)
                     add(drive_by_drive, f"drive={drive}|stage={stage}", duration)
 
         return {
@@ -637,14 +587,10 @@ class ObservationProgressReporter:
             "drive_by_drive": drive_by_drive,
             "gaps": gaps,
             "current_item_samples": current_item_samples,
-            "current_open_item": self._latest_open_item(
-                [ev for ev in events if not ev.get("_history")]
-            ),
+            "current_open_item": self._latest_open_item([ev for ev in events if not ev.get("_history")]),
         }
 
-    def _latest_open_item(
-        self, events: List[Mapping[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+    def _latest_open_item(self, events: List[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
         """Return the currently open plan item event for the current run.
 
         The snapshot intentionally keeps the last plan item until the next one
@@ -682,9 +628,7 @@ class ObservationProgressReporter:
             return dict(stack[-1])
         return None
 
-    def _estimate_item_duration(
-        self, item: Mapping[str, Any], tables: Mapping[str, Any]
-    ) -> tuple[Optional[float], str, str, int]:
+    def _estimate_item_duration(self, item: Mapping[str, Any], tables: Mapping[str, Any]) -> tuple[Optional[float], str, str, int]:
         key = _duration_key(item)
         phase_key = _phase_key(item)
         values = tables["item_by_key"].get(key, [])
@@ -709,11 +653,7 @@ class ObservationProgressReporter:
             component += integration
             used += len(integration_values)
         else:
-            integration_values = (
-                tables["integration_by_phase"].get(phase_key, [])
-                if _allow_phase_duration_fallback(item)
-                else []
-            )
+            integration_values = tables["integration_by_phase"].get(phase_key, []) if _allow_phase_duration_fallback(item) else []
             integration = _median_recent(integration_values)
             if integration is not None:
                 component += integration
@@ -726,9 +666,7 @@ class ObservationProgressReporter:
         drive = str(item.get("drive_kind") or "unknown")
         geom = _geometry_kind_from(item)
         for stage in ("moving", "tracking", "running", "scanning"):
-            vals = tables["drive_by_key"].get(
-                f"drive={drive}|stage={stage}|geometry={geom}", []
-            )
+            vals = tables["drive_by_key"].get(f"drive={drive}|stage={stage}|geometry={geom}", [])
             d = _median_recent(vals)
             if d is None:
                 vals = tables["drive_by_drive"].get(f"drive={drive}|stage={stage}", [])
@@ -737,11 +675,7 @@ class ObservationProgressReporter:
                 # Avoid counting long scan_block/scan drives twice when their drive duration
                 # already encloses the integration.  For point observations moving/tracking
                 # overheads are genuinely useful.
-                if (
-                    drive in {"scan", "scan_block"}
-                    and stage in {"running", "scanning"}
-                    and component > 0.0
-                ):
+                if drive in {"scan", "scan_block"} and stage in {"running", "scanning"} and component > 0.0:
                     continue
                 component += d
                 used += len(vals)
@@ -815,10 +749,7 @@ class ObservationProgressReporter:
             mode = str(item.get("mode") or item.get("phase") or "").upper()
             drive = str(item.get("drive_kind") or "").lower()
             geom = _geometry_kind_from(item).lower()
-            if mode == "ON" and (
-                drive in {"scan", "scan_block"}
-                or geom in {"scan_line", "scan_block", "scan_block_line"}
-            ):
+            if mode == "ON" and (drive in {"scan", "scan_block"} or geom in {"scan_line", "scan_block", "scan_block_line"}):
                 group = "ON_SCAN_SEQUENCE:" + self._eta_scan_group_key(item)
             else:
                 # Include item_uid so non-scan items do not collapse together.
@@ -827,6 +758,50 @@ class ObservationProgressReporter:
                 units += 1
                 previous_group = group
         return units
+
+    def _eta_progress_fraction_remaining(self, *, current_item_open: bool) -> Optional[float]:
+        """Low-confidence sanity estimate from elapsed time and plan fraction.
+
+        Event-history ETA can be too optimistic during OTF maps when the first
+        few scan blocks happen to be short or when per-item histories do not yet
+        represent the full HOT/OFF/ON cadence.  This estimate is deliberately
+        used only while a plan item is actually open; in an inter-item gap the
+        snapshot may still point to the just-finished item and would otherwise
+        overestimate badly.
+        """
+        if not current_item_open:
+            return None
+        plan = self.snapshot.get("plan") if isinstance(self.snapshot.get("plan"), Mapping) else {}
+        geometry = self.snapshot.get("geometry") if isinstance(self.snapshot.get("geometry"), Mapping) else {}
+        timing = self.snapshot.get("time") if isinstance(self.snapshot.get("time"), Mapping) else {}
+        total = plan.get("total")
+        if not isinstance(total, int) or total <= 1:
+            return None
+        start, end = _index_start_end(plan)
+        if start is None or end is None:
+            return None
+        width = max(1, end - start + 1)
+        frac = 0.5
+        line_total = geometry.get("line_total") or plan.get("line_total")
+        current_line = geometry.get("current_line_index0")
+        if isinstance(line_total, int) and line_total > 0:
+            try:
+                line = max(0, min(int(current_line), line_total - 1))
+                frac = (line + 0.5) / float(line_total)
+            except Exception:
+                frac = 0.5
+        completed = start + width * max(0.0, min(1.0, frac))
+        if not (0.0 < completed < float(total)):
+            return None
+        progress_fraction = completed / float(total)
+        if progress_fraction < 0.10:
+            return None
+        elapsed = _finite_float(timing.get("elapsed_sec"))
+        if elapsed is None:
+            elapsed = max(0.0, time.time() - self.started_at_unix)
+        if elapsed <= 0.0:
+            return None
+        return max(0.0, elapsed * (1.0 - progress_fraction) / progress_fraction)
 
     def _refresh_remaining_estimate(self, *, now: Optional[float] = None) -> None:
         """Update ETA fields in the snapshot using observed event history.
@@ -885,15 +860,9 @@ class ObservationProgressReporter:
             confidences: List[str] = []
 
             open_item = tables.get("current_open_item")
-            open_start = (
-                _finite_float(open_item.get("time_unix"))
-                if isinstance(open_item, Mapping)
-                else None
-            )
+            open_start = _finite_float(open_item.get("time_unix")) if isinstance(open_item, Mapping) else None
             if current_item is not None and open_start is not None:
-                estimated, method, confidence, n = self._estimate_item_duration(
-                    current_item, tables
-                )
+                estimated, method, confidence, n = self._estimate_item_duration(current_item, tables)
                 if estimated is not None:
                     partial = max(0.0, now - open_start)
                     remaining += max(0.0, estimated - partial)
@@ -902,9 +871,7 @@ class ObservationProgressReporter:
                     confidences.append(confidence)
 
             for item in future_items:
-                estimated, method, confidence, n = self._estimate_item_duration(
-                    item, tables
-                )
+                estimated, method, confidence, n = self._estimate_item_duration(item, tables)
                 if estimated is not None:
                     remaining += estimated
                     sample_count += n
@@ -930,10 +897,7 @@ class ObservationProgressReporter:
                 else:
                     last_finish = None
                     for ev in reversed(self._events_all):
-                        if ev.get("event") in {
-                            "plan_item_finished",
-                            "plan_item_failed",
-                        }:
+                        if ev.get("event") in {"plan_item_finished", "plan_item_failed"}:
                             last_finish = _finite_float(ev.get("time_unix"))
                             break
                     if last_finish is not None:
@@ -947,6 +911,14 @@ class ObservationProgressReporter:
                     remaining += gap_remaining
                     methods.append("event_history_inter_item_gap")
                     confidences.append("low")
+
+            fraction_remaining = self._eta_progress_fraction_remaining(
+                current_item_open=open_start is not None
+            )
+            if fraction_remaining is not None and remaining < 0.75 * fraction_remaining:
+                remaining = fraction_remaining
+                methods.append("elapsed_plan_fraction_sanity")
+                confidences.append("low")
 
             if remaining <= 0.0 and future_items:
                 timing.update(
@@ -1024,35 +996,15 @@ class ObservationProgressReporter:
         try:
             yield
         except BaseException as exc:
-            self.event(
-                "plan_item_failed",
-                error=repr(exc),
-                duration_sec=max(0.0, time.time() - started_at),
-                **plan,
-            )
+            self.event("plan_item_failed", error=repr(exc), duration_sec=max(0.0, time.time() - started_at), **plan)
             raise
         else:
-            self.event(
-                "plan_item_finished",
-                duration_sec=max(0.0, time.time() - started_at),
-                **plan,
-            )
+            self.event("plan_item_finished", duration_sec=max(0.0, time.time() - started_at), **plan)
 
     @contextmanager
-    def drive(
-        self,
-        *,
-        kind: str,
-        stage: str,
-        geometry: Optional[Mapping[str, Any]] = None,
-        **fields: Any,
-    ) -> Iterator[None]:
+    def drive(self, *, kind: str, stage: str, geometry: Optional[Mapping[str, Any]] = None, **fields: Any) -> Iterator[None]:
         started_at = time.time()
-        geometry_kind = (
-            _geometry_kind_from({"geometry": geometry or {}})
-            if geometry is not None
-            else str(fields.get("geometry_kind") or "unknown")
-        )
+        geometry_kind = _geometry_kind_from({"geometry": geometry or {}}) if geometry is not None else str(fields.get("geometry_kind") or "unknown")
         activity = {"drive_kind": kind, "motion_stage": stage, **json_safe(fields)}
         sections: Dict[str, Any] = {"activity": activity}
         replace_sections = ()
@@ -1060,35 +1012,14 @@ class ObservationProgressReporter:
             sections["geometry"] = geometry
             replace_sections = ("geometry",)
         self.update(_replace_sections=replace_sections, **sections)
-        self.event(
-            "drive_started",
-            drive_kind=kind,
-            motion_stage=stage,
-            geometry_kind=geometry_kind,
-            **fields,
-        )
+        self.event("drive_started", drive_kind=kind, motion_stage=stage, geometry_kind=geometry_kind, **fields)
         try:
             yield
         except BaseException as exc:
-            self.event(
-                "drive_failed",
-                drive_kind=kind,
-                motion_stage=stage,
-                geometry_kind=geometry_kind,
-                duration_sec=max(0.0, time.time() - started_at),
-                error=repr(exc),
-                **fields,
-            )
+            self.event("drive_failed", drive_kind=kind, motion_stage=stage, geometry_kind=geometry_kind, duration_sec=max(0.0, time.time() - started_at), error=repr(exc), **fields)
             raise
         else:
-            self.event(
-                "drive_finished",
-                drive_kind=kind,
-                motion_stage=stage,
-                geometry_kind=geometry_kind,
-                duration_sec=max(0.0, time.time() - started_at),
-                **fields,
-            )
+            self.event("drive_finished", drive_kind=kind, motion_stage=stage, geometry_kind=geometry_kind, duration_sec=max(0.0, time.time() - started_at), **fields)
 
     @contextmanager
     def integration(
@@ -1103,9 +1034,7 @@ class ObservationProgressReporter:
         **fields: Any,
     ) -> Iterator[None]:
         started_at = time.time()
-        geometry_kind = _geometry_kind_from(
-            {"geometry": geometry or (self.snapshot.get("geometry") or {})}
-        )
+        geometry_kind = _geometry_kind_from({"geometry": geometry or (self.snapshot.get("geometry") or {})})
         data = {
             "expected_metadata_position": metadata_position,
             "expected_metadata_id": str(id),
@@ -1194,9 +1123,7 @@ class ObservationProgressReporter:
                 if path.exists() and path.stat().st_size > 0:
                     commander.record("file", name=str(path))
             except Exception as exc:
-                self._log_debug(
-                    f"Observation progress sidecar record failed for {path}: {exc}"
-                )
+                self._log_debug(f"Observation progress sidecar record failed for {path}: {exc}")
 
     def copy_sidecars_to_local_record_dir(
         self,
@@ -1216,15 +1143,11 @@ class ObservationProgressReporter:
         if not self.enabled:
             return
         try:
-            root = Path(
-                record_root or os.environ.get("NECST_RECORD_ROOT", Path.home() / "data")
-            ).expanduser()
+            root = Path(record_root or os.environ.get("NECST_RECORD_ROOT", Path.home() / "data")).expanduser()
             name = str(record_name or self.record_name).lstrip("/")
             record_dir = root / name
             if not record_dir.is_dir():
-                self._log_debug(
-                    f"Observation progress local record dir not found: {record_dir}"
-                )
+                self._log_debug(f"Observation progress local record dir not found: {record_dir}")
                 return
             for path in (self.plan_path, self.events_path, self.snapshot_path):
                 if path.exists() and path.stat().st_size > 0:
