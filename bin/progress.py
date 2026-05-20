@@ -936,17 +936,20 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
     lines.append(f"│ {pct_bar(percent):<58}│")
     lines.append("├──────────────────── CURRENT ACTIVITY ──────────────────────┤")
     line_info = ""
-    current_line = geom.get("current_line_index0")
-    line_total = geom.get("line_total") or plan.get("line_total")
-    if current_line is not None and line_total is not None:
-        try:
-            line_info = f" line={int(current_line) + 1}/{int(line_total)}"
-        except Exception:
-            line_info = f" line={compact_value(current_line)}/{compact_value(line_total)}"
-    elif current_line is not None:
-        line_info = f" line={compact_value(current_line)}"
-    elif line_total is not None:
-        line_info = f" line_total={line_total}"
+    if display_summary.get("has_otf_lines"):
+        line_info = f" line={display_summary.get('current_line_label', '-')}"
+    else:
+        current_line = geom.get("current_line_index0")
+        line_total = geom.get("line_total") or plan.get("line_total")
+        if current_line is not None and line_total is not None:
+            try:
+                line_info = f" line={int(current_line) + 1}/{int(line_total)}"
+            except Exception:
+                line_info = f" line={compact_value(current_line)}/{compact_value(line_total)}"
+        elif current_line is not None:
+            line_info = f" line={compact_value(current_line)}"
+        elif line_total is not None:
+            line_info = f" line_total={line_total}"
     lines.append(frame_line(f"drive={drive} mot={motion} data={data_state}{line_info}"))
     loc = activity.get("location_context")
     if loc:
@@ -985,7 +988,13 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         if enc_lon is not None or enc_lat is not None:
             lines.append(frame_line(f"enc  : {azel_text(enc_lon, enc_lat, antenna.get('encoder_frame'))}"))
         if antenna.get("tracking_error_deg") is not None:
-            lines.append(frame_line(f"err  : tracking_error={compact_value(antenna.get('tracking_error_deg'))} deg"))
+            try:
+                err_arcsec = float(antenna.get("tracking_error_deg")) * 3600.0
+                dlon_arcsec = float(antenna.get("tracking_delta_lon_deg")) * 3600.0
+                dlat_arcsec = float(antenna.get("tracking_delta_lat_deg")) * 3600.0
+                lines.append(frame_line(f"err  : {err_arcsec:.1f} arcsec  dAz={dlon_arcsec:.1f} dEl={dlat_arcsec:.1f}"))
+            except Exception:
+                lines.append(frame_line(f"err  : tracking_error={compact_value(antenna.get('tracking_error_deg'))} deg"))
         if not (cmd_lon is not None or enc_lon is not None):
             lines.append(frame_line(f"ant  : {compact_value(antenna)}"))
     lines.append("├──────────────────── DATA ──────────────────────────────────┤")
@@ -1240,7 +1249,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 <section class=\"card\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
 <section class=\"card\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
 <section class="card positionview"><h2>Live Position</h2><div class="kv bigpos" id="position"></div></section>
-<section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span>OTF=line map; Grid/PSW=ON-basis map visits; Skydip=elevation sequence. OFF/reference points are labels, not progress denominator.</span></div><div id="plotview" class="plotbox small">-</div></section>
+<section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span>OTF=line map; Grid/PSW=ON-basis map visits; Skydip=elevation sequence. OFF/HOT markers use their offset when available; reference is the base coordinate, not necessarily the OFF point.</span></div><div id="plotview" class="plotbox small">-</div></section>
 <section class="card eventview"><h2>Recent Events</h2><div id="events"></div></section>
 <section class="card"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
 <section class="card"><h2>Data</h2><div class="kv" id="data"></div></section>
@@ -1327,6 +1336,51 @@ function azElText(lon, lat, frame='altaz') {
   if (f === 'altaz' || f === 'alt-az' || f === 'azel') return `Az ${x.toFixed(3)}°, El ${y.toFixed(3)}°`;
   return `${String(frame || 'coord')} lon ${x.toFixed(3)}°, lat ${y.toFixed(3)}°`;
 }
+function degToHms(deg) {
+  let h = ((Number(deg)/15) % 24 + 24) % 24;
+  const ih = Math.floor(h); const m0 = (h-ih)*60; const im = Math.floor(m0); const s = (m0-im)*60;
+  return `${String(ih).padStart(2,'0')}:${String(im).padStart(2,'0')}:${s.toFixed(1).padStart(4,'0')}`;
+}
+function degToDms(deg) {
+  const sign = Number(deg) < 0 ? '-' : '+';
+  let a = Math.abs(Number(deg)); const id = Math.floor(a); const m0 = (a-id)*60; const im = Math.floor(m0); const s = (m0-im)*60;
+  return `${sign}${String(id).padStart(2,'0')}:${String(im).padStart(2,'0')}:${s.toFixed(1).padStart(4,'0')}`;
+}
+function skyCoordText(v) {
+  const p = pair(v); if (!p) return '-';
+  const f = coordFrame(v).toLowerCase();
+  if (['j2000','fk5','icrs','radec','ra-dec'].includes(f)) return `${degToHms(p[0])}, ${degToDms(p[1])} ${coordFrame(v) || 'J2000'}`;
+  if (['galactic','gal','lb','l-b'].includes(f)) return `${p[0].toFixed(4)}, ${p[1].toFixed(4)} Galactic`;
+  return coordText(v);
+}
+function utcText(unix) {
+  const t = Number(unix);
+  if (!Number.isFinite(t)) return '-';
+  return new Date(t*1000).toISOString().replace('T',' ').replace(/[.][0-9]+Z$/, ' UTC');
+}
+function siteLongitudeDeg(snapshot) {
+  const candidates = [
+    snapshot?.site?.longitude_deg, snapshot?.site?.lon_deg,
+    snapshot?.observer?.longitude_deg, snapshot?.observer?.lon_deg,
+    snapshot?.observation?.site_lon_deg, snapshot?.antenna?.site_lon_deg
+  ];
+  for (const v of candidates) { const x=Number(v); if (Number.isFinite(x)) return x; }
+  return null;
+}
+function gmstDeg(unix) {
+  const jd = Number(unix)/86400 + 2440587.5;
+  const d = jd - 2451545.0;
+  return ((280.46061837 + 360.98564736629*d) % 360 + 360) % 360;
+}
+function lstText(snapshot, unix) {
+  const lon = siteLongitudeDeg(snapshot);
+  if (!Number.isFinite(lon)) return 'site longitude missing';
+  return degToHms(gmstDeg(unix) + lon);
+}
+function arcsecTextDeg(v, digits=1) {
+  const x = Number(v);
+  return Number.isFinite(x) ? `${(x*3600).toFixed(digits)} arcsec` : '-';
+}
 function usableText(v) { const t = val(v); return (!t || t === '-' || t === 'None' || t === 'null' || t === 'unknown') ? '' : t; }
 function inferTargetFromName(text) {
   const raw = usableText(text);
@@ -1358,13 +1412,13 @@ function geometryRows(snapshot) {
   const g = snapshot?.geometry || {}; const obsType = String(snapshot?.observation?.type || '').toLowerCase();
   const rows = [['kind', g.kind], ['frame', g.frame], ['unit', g.unit], ['target name', g.target_name || displayTarget(snapshot)]];
   if (obsType.includes('grid')) {
-    rows.push(['map offset', offsetArcsecText(g.offset)], ['offset frame', coordFrame(g.offset, g.frame)], ['target center', coordText(g.target)], ['OFF/reference', coordText(g.reference)], ['cos correction', g.cos_correction]);
+    rows.push(['map offset', offsetArcsecText(g.offset)], ['offset frame', coordFrame(g.offset, g.frame)], ['target center', skyCoordText(g.target)], ['reference base', skyCoordText(g.reference)], ['cos correction', g.cos_correction]);
   } else if (obsType.includes('psw')) {
-    rows.push(['target/ON', coordText(g.target)], ['OFF/reference', coordText(g.reference)], ['map offset', offsetArcsecText(g.offset)], ['cos correction', g.cos_correction]);
+    rows.push(['target/ON', skyCoordText(g.target)], ['reference base', skyCoordText(g.reference)], ['map offset', offsetArcsecText(g.offset)], ['cos correction', g.cos_correction]);
   } else if (obsType.includes('sky')) {
-    rows.push(['sky position', coordText(g.target)], ['elevation', g.el_deg ?? g.elevation_deg ?? (Array.isArray(g.target) ? g.target[1] : null)]);
+    rows.push(['sky position', skyCoordText(g.target)], ['elevation', g.el_deg ?? g.elevation_deg ?? (Array.isArray(g.target) ? g.target[1] : null)]);
   } else {
-    rows.push(['target', coordText(g.target)], ['reference', coordText(g.reference)], ['map offset', offsetArcsecText(g.offset)], ['cos correction', g.cos_correction]);
+    rows.push(['target', skyCoordText(g.target)], ['reference base', skyCoordText(g.reference)], ['map offset', offsetArcsecText(g.offset)], ['cos correction', g.cos_correction]);
   }
   rows.push(['scan start', coordText(g.start)], ['scan stop', coordText(g.stop)]);
   if (g.current_line_index0 !== undefined && g.line_total !== undefined) {
@@ -1372,16 +1426,30 @@ function geometryRows(snapshot) {
   }
   return rows;
 }
-function positionRows(snapshot) {
+function currentMapOffsetText(snapshot, plan, events) {
+  const rows = collectMapRows(snapshot, flattenItems(plan), events).rows;
+  const cur = rows.find(r => !r.b && r.status === 'current' && (r.coordSource === 'offset_arcsec' || r.coordSource === 'offset'));
+  if (cur && cur.coordSource === 'offset_arcsec') return `(${cur.a[0].toFixed(1)}, ${cur.a[1].toFixed(1)}) arcsec ${cur.frame || ''}`.trim();
+  if (cur && cur.coordSource === 'offset') return offsetArcsecText([cur.a[0], cur.a[1], cur.frame].filter(x=>x!==undefined && x!=='')); 
+  const g = snapshot?.geometry || {};
+  return offsetArcsecText(g.offset);
+}
+function positionRows(snapshot, psummary, plan, events, serverTimeUnix) {
   const a = snapshot?.antenna || {}; const g = snapshot?.geometry || {};
+  const lineText = String(psummary?.progress || '').startsWith('OTF line ') ? String(psummary.progress).replace('OTF line ', '') :
+    ((g.current_line_index0 !== undefined && g.line_total !== undefined) ? `${Number(g.current_line_index0)+1}/${g.line_total}` : '-');
   return [
+    ['UTC', utcText(serverTimeUnix)],
+    ['LST', lstText(snapshot, serverTimeUnix)],
     ['Encoder Az/El', azElText(a.encoder_lon_deg, a.encoder_lat_deg, a.encoder_frame)],
     ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame)],
-    ['tracking error', a.tracking_error_deg !== undefined ? `${Number(a.tracking_error_deg).toFixed(3)} deg` : '-'],
-    ['tracking dAz', a.tracking_delta_lon_deg !== undefined ? `${Number(a.tracking_delta_lon_deg).toFixed(3)} deg` : '-'],
-    ['tracking dEl', a.tracking_delta_lat_deg !== undefined ? `${Number(a.tracking_delta_lat_deg).toFixed(3)} deg` : '-'],
-    ['map offset', offsetArcsecText(g.offset)],
-    ['current line', (g.current_line_index0 !== undefined && g.line_total !== undefined) ? `${Number(g.current_line_index0)+1}/${g.line_total}` : '-']
+    ['tracking error', arcsecTextDeg(a.tracking_error_deg)],
+    ['ΔAz enc-cmd', arcsecTextDeg(a.tracking_delta_lon_deg)],
+    ['ΔEl enc-cmd', arcsecTextDeg(a.tracking_delta_lat_deg)],
+    ['current line', lineText],
+    ['map offset', currentMapOffsetText(snapshot, plan, events)],
+    ['target RA/Dec or L/B', skyCoordText(g.target)],
+    ['reference RA/Dec or L/B', skyCoordText(g.reference)]
   ];
 }
 function dataRows(snapshot) {
@@ -1477,6 +1545,15 @@ function equalAspectBounds(xmin, xmax, ymin, ymax) {
   else w = h * innerAspect;
   return {xmin: cx - w/2, xmax: cx + w/2, ymin: cy - h/2, ymax: cy + h/2};
 }
+function rawBounds(pts) {
+  if (!pts || !pts.length) return null;
+  return {
+    xmin: Math.min(...pts.map(p=>p[0])),
+    xmax: Math.max(...pts.map(p=>p[0])),
+    ymin: Math.min(...pts.map(p=>p[1])),
+    ymax: Math.max(...pts.map(p=>p[1]))
+  };
+}
 function paddedBounds(scalePts, fallbackPts) {
   const pts = scalePts.length ? scalePts : fallbackPts;
   let xmin=Math.min(...pts.map(p=>p[0])), xmax=Math.max(...pts.map(p=>p[0])), ymin=Math.min(...pts.map(p=>p[1])), ymax=Math.max(...pts.map(p=>p[1]));
@@ -1528,19 +1605,21 @@ function renderPoint(row, b) {
 
 function pointPlotCoordinate(g, mode, obsType, kind) {
   const upper = String(mode || '').toUpperCase();
-  // Grid maps are scientifically understood as offsets around the ON target.
-  // The absolute target coordinate is usually the same for every ON waypoint,
-  // while g.offset carries the grid position.  Use that offset for ON-map
-  // plotting so a 5x5 grid is visible instead of collapsing to one point.
-  if (obsType.includes('grid') && (upper === 'ON' || kind === 'grid_point')) {
-    const off = pair(g.offset);
-    if (off) return {xy: [off[0]*3600, off[1]*3600], source: 'offset_arcsec'};
+  const off = pair(g.offset);
+  const isOffsetMap = obsType.includes('grid') || obsType.includes('psw');
+  // For Grid/PSW the scientifically useful map is the offset map around the ON
+  // target.  ``reference`` is the base coordinate for an offset, not necessarily
+  // the OFF position itself.  Therefore OFF/HOT/reference points must be plotted
+  // from their offset when available; otherwise they are not forced to the map
+  // center.  This prevents a far OFF from appearing at (0,0).
+  if (isOffsetMap && off) return {xy: [off[0]*3600, off[1]*3600], source: 'offset_arcsec'};
+  if (obsType.includes('grid') && (upper === 'ON' || kind === 'grid_point') && off) {
+    return {xy: [off[0]*3600, off[1]*3600], source: 'offset_arcsec'};
   }
   const target = pair(g.target);
   if (target) return {xy: target, source: 'target'};
   const ref = pair(g.reference);
-  if (ref) return {xy: ref, source: 'reference'};
-  const off = pair(g.offset);
+  if (ref && !isOffsetMap) return {xy: ref, source: 'reference'};
   if (off) return {xy: off, source: 'offset'};
   return {xy: null, source: ''};
 }
@@ -1729,10 +1808,22 @@ function currentLineMotionProgress(snapshot, row, serverTimeUnix) {
     if (lineMotionClock.key !== key) { lineMotionClock.key = key; lineMotionClock.start = null; }
     return {fraction:null, waiting:true, stage, label:`line not started (${stage})`};
   }
-  if (lineMotionClock.key !== key || lineMotionClock.start === null) {
-    lineMotionClock.key = key; lineMotionClock.start = now;
-  }
   const duration = lineExpectedDurationSec(row);
+  if (lineMotionClock.key !== key || lineMotionClock.start === null) {
+    const ctlTime = Number(snapshot?.live?.control?.time_unix);
+    // Prefer the control-status timestamp if it looks like the start time of
+    // the current line section.  If that topic timestamp is actually updated
+    // continuously, this still falls back to the first browser observation of
+    // the line because the stored start is not overwritten while the key is the
+    // same.  This reduces the typical one-refresh lag without restarting the
+    // timer every refresh.
+    let start = now;
+    if (Number.isFinite(ctlTime) && ctlTime <= now + 1) {
+      const lookback = duration ? Math.max(10, 1.6*duration) : 30;
+      if (ctlTime >= now - lookback) start = ctlTime;
+    }
+    lineMotionClock.key = key; lineMotionClock.start = start;
+  }
   if (!duration) return {fraction:null, waiting:false, stage, label:'line section active; duration unknown'};
   const raw = (now - lineMotionClock.start) / duration;
   const fraction = Math.max(0, Math.min(0.98, raw));
@@ -1759,17 +1850,19 @@ function fmtAxisNumber(v, axes) {
   if (!Number.isFinite(v)) return '-';
   return axes?.unit === 'arcsec' ? v.toFixed(0) : v.toFixed(3);
 }
-function axisDecorations(b, axes) {
+function axisDecorations(b, axes, dataB=null) {
   const x0in = b.xmin <= 0 && 0 <= b.xmax;
   const y0in = b.ymin <= 0 && 0 <= b.ymax;
   let out = '';
-  out += `<text class="plot-note" x="${PLOT.left}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(b.xmin, axes))}</text>`;
-  out += `<text class="plot-note" x="${PLOT.right-42}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(b.xmax, axes))}</text>`;
-  out += `<text class="plot-note" x="${PLOT.left-42}" y="${PLOT.bottom}" >${esc(fmtAxisNumber(b.ymin, axes))}</text>`;
-  out += `<text class="plot-note" x="${PLOT.left-42}" y="${PLOT.top+4}" >${esc(fmtAxisNumber(b.ymax, axes))}</text>`;
   if (x0in) out += `<line x1="${sx(0,b)}" y1="${PLOT.top}" x2="${sx(0,b)}" y2="${PLOT.bottom}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0.45"/>`;
   if (y0in) out += `<line x1="${PLOT.left}" y1="${sy(0,b)}" x2="${PLOT.right}" y2="${sy(0,b)}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0.45"/>`;
-  if (x0in && y0in) out += `<text x="${sx(0,b)+5}" y="${sy(0,b)-5}" font-size="11" font-weight="700">(0,0)</text>`;
+  if (dataB) {
+    const xmin=sx(dataB.xmin,b), xmax=sx(dataB.xmax,b), ymin=sy(dataB.ymin,b), ymax=sy(dataB.ymax,b);
+    out += `<text class="plot-note" x="${Math.max(PLOT.left, Math.min(PLOT.right-42, xmin-16))}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(dataB.xmin, axes))}</text>`;
+    if (Math.abs(dataB.xmax-dataB.xmin) > 1e-9) out += `<text class="plot-note" x="${Math.max(PLOT.left, Math.min(PLOT.right-42, xmax-16))}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(dataB.xmax, axes))}</text>`;
+    out += `<text class="plot-note" x="${PLOT.left-42}" y="${Math.max(PLOT.top+6, Math.min(PLOT.bottom, ymin+4))}">${esc(fmtAxisNumber(dataB.ymin, axes))}</text>`;
+    if (Math.abs(dataB.ymax-dataB.ymin) > 1e-9) out += `<text class="plot-note" x="${PLOT.left-42}" y="${Math.max(PLOT.top+6, Math.min(PLOT.bottom, ymax+4))}">${esc(fmtAxisNumber(dataB.ymax, axes))}</text>`;
+  }
   return out;
 }
 function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
@@ -1777,6 +1870,7 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   const rows = collected.rows; const allPts = collected.allPts; const boundsPts = collected.boundsPts;
   if (!allPts.length) return '<div>No numeric geometry. This is normal for target-name-only observations.</div>';
   const obsType = String(snapshot?.observation?.type || '').toLowerCase();
+  const dataB = rawBounds(boundsPts.length ? boundsPts : allPts);
   let b=paddedBounds(boundsPts, allPts);
   const ls = lineSummary(rows);
   const currentRow = ls.currentRow;
@@ -1817,18 +1911,19 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
     const basisRows = onRows.length ? onRows : pointRows;
     const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
     countText = `Grid ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}${visitPassText(c,u)}`;
-    note = 'Progress is ON-basis. Thin dashed path shows planned ON order; repeated visits are aggregated at each map point. OFF/reference visits are labels only.';
+    note = 'Progress is ON-basis. Thin dashed path shows planned ON order; repeated visits are aggregated at each map point. OFF/HOT markers are labels only; reference is the base coordinate.';
   } else if (obsType.includes('psw')) {
     const basisRows = onRows.length ? onRows : pointRows;
     const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
     countText = `PSW ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}${visitPassText(c,u)}`;
-    note = 'Progress is ON-basis. OFF/HOT/reference visits are labeled diamonds and are not the progress denominator.';
+    note = 'Progress is ON-basis. OFF/HOT markers are labeled diamonds and are not the progress denominator.';
   } else {
     const c = pointCounts(pointRows);
     countText = `Point sequence: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
     note = 'Current item is orange; OFF/HOT/reference labels are grouped when repeated.';
   }
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.h-64}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note)}</text></svg>`;
+  const rangeText = dataB ? ` map range x=${fmtAxisNumber(dataB.xmin, axes)}..${fmtAxisNumber(dataB.xmax, axes)}, y=${fmtAxisNumber(dataB.ymin, axes)}..${fmtAxisNumber(dataB.ymax, axes)} ${axes.unit || ''}` : '';
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.h-64}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes, dataB)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note + rangeText)}</text></svg>`;
 }
 function skydipRowsFrom(snapshot, items, events) {
   const rows=[];
@@ -1883,7 +1978,7 @@ async function update() {
     document.getElementById('bar').style.width = pct(plan).toFixed(1) + '%';
     renderPlanView(snap, s.plan || {}, statusEvents, s.server_time_unix);
     kv('activity', activity, [['phase','phase'], ['drive_kind','drive_kind'], ['motion_stage','motion_stage'], ['data_state','data_state'], ['location_context','location_context'], ['description','description']]);
-    kvSmart('position', positionRows(snap));
+    kvSmart('position', positionRows(snap, psummary, s.plan || {}, statusEvents, s.server_time_unix));
     kvSmart('geometry', geometryRows(snap));
     kvSmart('data', dataRows(snap));
     kv('paths', s.paths || {}, [['snapshot','snapshot'], ['events','events'], ['plan','plan']]);
