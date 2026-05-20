@@ -26,12 +26,7 @@ PLOT_KINDS = {"auto", "timeline", "map", "skydip", "summary", "dashboard"}
 # Fixed, high-contrast colors for human-readable progress figures.
 # These are intentionally kept in this plotting command rather than in the
 # observation runtime, so observation execution remains unaffected by UI choices.
-STATUS_COLOR = {
-    "done": "#2ca02c",
-    "current": "#ff7f0e",
-    "pending": "#bdbdbd",
-    "snapshot": "#1f77b4",
-}
+STATUS_COLOR = {"done": "#2ca02c", "current": "#ff7f0e", "pending": "#bdbdbd", "snapshot": "#1f77b4"}
 PHASE_COLOR = {
     "HOT": "#d62728",
     "OFF": "#1f77b4",
@@ -54,25 +49,19 @@ def safe_name(value: Any) -> str:
     sanitized = re.sub(r"[^A-Za-z0-9_.-]+", "_", original)
     sanitized = re.sub(r"_+", "_", sanitized).strip("_") or "record"
     if sanitized != original:
-        digest = hashlib.sha1(
-            original.encode("utf-8", errors="surrogatepass")
-        ).hexdigest()[:8]
+        digest = hashlib.sha1(original.encode("utf-8", errors="surrogatepass")).hexdigest()[:8]
         sanitized = f"{sanitized}_{digest}"
     return sanitized
 
 
 def progress_root(value: Optional[str] = None) -> Path:
-    return Path(
-        value or os.environ.get("NECST_PROGRESS_ROOT", "/tmp/necst_progress")
-    ).expanduser()
+    return Path(value or os.environ.get("NECST_PROGRESS_ROOT", "/tmp/necst_progress")).expanduser()
 
 
 def strip_record_file_header(text: str) -> str:
     lines = text.splitlines()
     start = 0
-    while start < len(lines) and (
-        not lines[start].strip() or lines[start].lstrip().startswith("#")
-    ):
+    while start < len(lines) and (not lines[start].strip() or lines[start].lstrip().startswith("#")):
         start += 1
     return "\n".join(lines[start:])
 
@@ -118,11 +107,7 @@ def read_events(path: Path, *, required: bool = True) -> List[Dict[str, Any]]:
 
 def current_record_name(root: Path) -> Optional[str]:
     try:
-        text = (
-            (root / "current_observation_record.txt")
-            .read_text(encoding="utf-8")
-            .strip()
-        )
+        text = (root / "current_observation_record.txt").read_text(encoding="utf-8").strip()
         return text or None
     except Exception:
         return None
@@ -153,14 +138,10 @@ def resolve_progress_dir(args: argparse.Namespace) -> Path:
         latest = latest_progress_dir(root)
         if latest is not None:
             return latest
-    raise FileNotFoundError(
-        "Specify --path <progress_dir> or use --latest with an existing progress root"
-    )
+    raise FileNotFoundError("Specify --path <progress_dir> or use --latest with an existing progress root")
 
 
-def load_progress_tree(
-    path: Path,
-) -> Tuple[Dict[str, Any], Dict[str, Any], List[Dict[str, Any]]]:
+def load_progress_tree(path: Path) -> Tuple[Dict[str, Any], Dict[str, Any], List[Dict[str, Any]]]:
     snapshot = read_json(path / "observation_progress.json") or {}
     plan = read_json(path / "observation_plan.json", required=False) or {"items": []}
     events = read_events(path / "observation_events.jsonl", required=False)
@@ -170,15 +151,12 @@ def load_progress_tree(
 def import_matplotlib():
     try:
         import matplotlib
-
         matplotlib.use("Agg")
         # Record names and target names can contain Japanese characters.  Some
         # observing environments have Japanese fonts installed and render them
         # correctly; minimal CI/containers often do not.  Suppress matplotlib's
         # repeated missing-glyph warnings so --json output remains clean on stderr.
-        warnings.filterwarnings(
-            "ignore", message="Glyph .* missing from font.*", category=UserWarning
-        )
+        warnings.filterwarnings("ignore", message="Glyph .* missing from font.*", category=UserWarning)
         import matplotlib.pyplot as plt
         from matplotlib.patches import Rectangle
     except Exception as exc:  # pragma: no cover - depends on optional install
@@ -230,9 +208,7 @@ def flatten_plan_items(plan: Mapping[str, Any]) -> List[Dict[str, Any]]:
                     child["geometry"] = child_geom
                     parent_uid = str(item.get("item_uid") or "scan_block")
                     child["_parent_item_uid"] = parent_uid
-                    child["item_uid"] = (
-                        f"{parent_uid}:line:{line.get('line_index0', len(result))}"
-                    )
+                    child["item_uid"] = f"{parent_uid}:line:{line.get('line_index0', len(result))}"
                     child["line_index0"] = line.get("line_index0")
                     if child.get("index0") is None and item.get("index0") is not None:
                         child["index0"] = item.get("index0")
@@ -246,13 +222,7 @@ def event_item_uid(event: Mapping[str, Any]) -> Optional[str]:
 
 
 def completed_item_uids(events: Sequence[Mapping[str, Any]]) -> set:
-    return {
-        uid
-        for event in events
-        if event.get("event") == "plan_item_finished"
-        for uid in [event_item_uid(event)]
-        if uid
-    }
+    return {uid for event in events if event.get("event") == "plan_item_finished" for uid in [event_item_uid(event)] if uid}
 
 
 def _index_range(payload: Mapping[str, Any]) -> Optional[Tuple[int, int]]:
@@ -261,11 +231,7 @@ def _index_range(payload: Mapping[str, Any]) -> Optional[Tuple[int, int]]:
     except Exception:
         return None
     try:
-        end = (
-            int(payload.get("index0_end"))
-            if payload.get("index0_end") is not None
-            else start
-        )
+        end = int(payload.get("index0_end")) if payload.get("index0_end") is not None else start
     except Exception:
         end = start
     if end < start:
@@ -273,9 +239,7 @@ def _index_range(payload: Mapping[str, Any]) -> Optional[Tuple[int, int]]:
     return start, end
 
 
-def completed_index_ranges(
-    events: Sequence[Mapping[str, Any]]
-) -> List[Tuple[int, int]]:
+def completed_index_ranges(events: Sequence[Mapping[str, Any]]) -> List[Tuple[int, int]]:
     ranges: List[Tuple[int, int]] = []
     for event in events:
         if event.get("event") != "plan_item_finished":
@@ -290,9 +254,7 @@ FINAL_LIFECYCLE_STATES = {"finished", "error", "aborted"}
 
 
 def _snapshot_is_final(snapshot: Mapping[str, Any]) -> bool:
-    lifecycle = (
-        snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
-    )
+    lifecycle = snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
     return str(lifecycle.get("state") or "").lower() in FINAL_LIFECYCLE_STATES
 
 
@@ -311,9 +273,7 @@ def current_index_range(snapshot: Mapping[str, Any]) -> Optional[Tuple[int, int]
     return _index_range(plan)
 
 
-def _index_in_ranges(
-    item: Mapping[str, Any], ranges: Sequence[Tuple[int, int]]
-) -> bool:
+def _index_in_ranges(item: Mapping[str, Any], ranges: Sequence[Tuple[int, int]]) -> bool:
     try:
         idx = int(item.get("index0"))
     except Exception:
@@ -324,9 +284,7 @@ def _index_in_ranges(
 def auto_kind(plan: Mapping[str, Any], snapshot: Mapping[str, Any]) -> str:
     items = flatten_plan_items(plan)
     kinds = {item_geometry(item).get("kind") for item in items}
-    snap_geom = (
-        snapshot.get("geometry") if isinstance(snapshot.get("geometry"), dict) else {}
-    )
+    snap_geom = snapshot.get("geometry") if isinstance(snapshot.get("geometry"), dict) else {}
     kinds.add(snap_geom.get("kind"))
     if kinds & {"scan_line", "scan_block", "scan_block_line", "grid_point", "point"}:
         return "map"
@@ -344,9 +302,7 @@ def event_label(event: Mapping[str, Any]) -> str:
     return " ".join(parts)
 
 
-def event_time_range(
-    events: Sequence[Mapping[str, Any]], snapshot: Mapping[str, Any]
-) -> Tuple[float, float]:
+def event_time_range(events: Sequence[Mapping[str, Any]], snapshot: Mapping[str, Any]) -> Tuple[float, float]:
     event_times: List[float] = []
     for event in events:
         value = event.get("time_unix")
@@ -379,16 +335,12 @@ def event_time_range(
     return start, end
 
 
-def build_phase_spans(
-    events: Sequence[Mapping[str, Any]], snapshot: Mapping[str, Any]
-) -> List[Dict[str, Any]]:
+def build_phase_spans(events: Sequence[Mapping[str, Any]], snapshot: Mapping[str, Any]) -> List[Dict[str, Any]]:
     start_time, end_time = event_time_range(events, snapshot)
     open_by_key: Dict[Tuple[str, str], Dict[str, Any]] = {}
     spans: List[Dict[str, Any]] = []
 
-    def close_matching(
-        event: Mapping[str, Any], finish_time: float, suffix: str
-    ) -> None:
+    def close_matching(event: Mapping[str, Any], finish_time: float, suffix: str) -> None:
         phase = str(event.get("phase") or event.get("mode") or "")
         uid = str(event.get("item_uid") or event.get("id") or phase or "unknown")
         candidates = [(suffix, uid), (suffix, phase), (suffix, "*")]
@@ -405,35 +357,17 @@ def build_phase_spans(
             continue
         t = float(t)
         name = str(event.get("event", ""))
-        phase = str(
-            event.get("phase")
-            or event.get("mode")
-            or event.get("expected_metadata_position")
-            or ""
-        )
+        phase = str(event.get("phase") or event.get("mode") or event.get("expected_metadata_position") or "")
         uid = str(event.get("item_uid") or event.get("id") or phase or "unknown")
         if name.endswith("started"):
             if name == "integration_started":
                 key = ("integration", uid)
                 label = phase or str(event.get("metadata_position") or "integration")
-                open_by_key[key] = {
-                    "kind": "integration",
-                    "label": label,
-                    "start": t,
-                    "uid": uid,
-                }
+                open_by_key[key] = {"kind": "integration", "label": label, "start": t, "uid": uid}
             elif name in {"plan_item_started", "drive_started"}:
-                key = (
-                    name.replace("_started", ""),
-                    uid if name == "plan_item_started" else "*",
-                )
+                key = (name.replace("_started", ""), uid if name == "plan_item_started" else "*")
                 label = phase or event.get("drive_kind") or name.replace("_started", "")
-                open_by_key[key] = {
-                    "kind": key[0],
-                    "label": str(label),
-                    "start": t,
-                    "uid": uid,
-                }
+                open_by_key[key] = {"kind": key[0], "label": str(label), "start": t, "uid": uid}
         elif name.endswith("finished"):
             if name == "integration_finished":
                 close_matching(event, t, "integration")
@@ -450,23 +384,11 @@ def build_phase_spans(
         for event in events:
             t = event.get("time_unix")
             if isinstance(t, (int, float)):
-                spans.append(
-                    {
-                        "kind": "event",
-                        "label": str(event.get("event", "event")),
-                        "start": float(t),
-                        "end": float(t) + dt,
-                    }
-                )
-    return sorted(
-        spans,
-        key=lambda item: (float(item.get("start", 0.0)), str(item.get("label", ""))),
-    )
+                spans.append({"kind": "event", "label": str(event.get("event", "event")), "start": float(t), "end": float(t) + dt})
+    return sorted(spans, key=lambda item: (float(item.get("start", 0.0)), str(item.get("label", ""))))
 
 
-def _draw_timeline(
-    ax: Any, snapshot: Mapping[str, Any], events: Sequence[Mapping[str, Any]]
-) -> None:
+def _draw_timeline(ax: Any, snapshot: Mapping[str, Any], events: Sequence[Mapping[str, Any]]) -> None:
     spans = build_phase_spans(events, snapshot)
     start_time, end_time = event_time_range(events, snapshot)
     labels: List[str] = []
@@ -487,60 +409,24 @@ def _draw_timeline(
         label = next((p for p in preferred if p in raw_label.upper()), raw_label)
         y = y_of.get(label, 0)
         left = float(span.get("start", start_time)) - start_time
-        width = max(
-            0.02,
-            float(span.get("end", start_time)) - float(span.get("start", start_time)),
-        )
-        ax.barh(
-            y,
-            width,
-            left=left,
-            height=0.72,
-            align="center",
-            color=phase_color(raw_label),
-            alpha=0.85,
-        )
+        width = max(0.02, float(span.get("end", start_time)) - float(span.get("start", start_time)))
+        ax.barh(y, width, left=left, height=0.72, align="center", color=phase_color(raw_label), alpha=0.85)
     timing = snapshot.get("time") if isinstance(snapshot.get("time"), dict) else {}
     now = timing.get("updated_at_unix")
     if isinstance(now, (int, float)) and start_time <= float(now) <= end_time:
-        ax.axvline(
-            float(now) - start_time,
-            color="black",
-            linestyle="--",
-            linewidth=1.0,
-            alpha=0.8,
-        )
-        ax.text(
-            float(now) - start_time, len(labels) - 0.2, " now", va="bottom", fontsize=8
-        )
+        ax.axvline(float(now) - start_time, color="black", linestyle="--", linewidth=1.0, alpha=0.8)
+        ax.text(float(now) - start_time, len(labels) - 0.2, " now", va="bottom", fontsize=8)
     if not spans:
-        ax.text(
-            0.5,
-            0.5,
-            "No events to plot",
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-        )
+        ax.text(0.5, 0.5, "No events to plot", ha="center", va="center", transform=ax.transAxes)
     ax.set_yticks(list(y_of.values()))
     ax.set_yticklabels(labels)
     ax.set_xlabel("Elapsed time since first event [s]")
     ax.grid(True, axis="x", alpha=0.3)
 
 
-def plot_timeline(
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-    out: Path,
-    *,
-    dpi: int,
-) -> None:
+def plot_timeline(snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]], out: Path, *, dpi: int) -> None:
     plt, _ = import_matplotlib()
-    labels = {
-        str(span.get("label") or span.get("kind") or "event")
-        for span in build_phase_spans(events, snapshot)
-    }
+    labels = {str(span.get("label") or span.get("kind") or "event") for span in build_phase_spans(events, snapshot)}
     height = max(3.5, 1.2 + 0.45 * max(1, len(labels)))
     fig, ax = plt.subplots(figsize=(11.0, height))
     _draw_timeline(ax, snapshot, events)
@@ -551,14 +437,8 @@ def plot_timeline(
 
 
 def progress_title(snapshot: Mapping[str, Any], suffix: str) -> str:
-    obs = (
-        snapshot.get("observation")
-        if isinstance(snapshot.get("observation"), dict)
-        else {}
-    )
-    lifecycle = (
-        snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
-    )
+    obs = snapshot.get("observation") if isinstance(snapshot.get("observation"), dict) else {}
+    lifecycle = snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
     obs_type = obs.get("type") or "Observation"
     record = obs.get("record_name") or "unknown record"
     state = lifecycle.get("state") or "unknown"
@@ -572,6 +452,7 @@ def status_for_item(
     *,
     done_ranges: Sequence[Tuple[int, int]] = (),
     current_range: Optional[Tuple[int, int]] = None,
+    snapshot: Optional[Mapping[str, Any]] = None,
 ) -> Tuple[str, str]:
     uid = str(item.get("item_uid") or "")
     parent_uid = str(item.get("_parent_item_uid") or "")
@@ -585,6 +466,26 @@ def status_for_item(
         return "done", "x"
     if done_ranges and _index_in_ranges(item, done_ranges):
         return "done", "x"
+
+    # A merged OTF scan_block is one NECST plan item, but its Plan View rows are
+    # per-line children.  During scan_block execution the latest snapshot keeps
+    # the parent item current for the whole block.  If the live control status
+    # supplies current_line_index0, classify child lines by that line index so
+    # progress-plot matches the CLI/Web Plan View: previous line=done, current
+    # line=current, later lines=pending.
+    if snapshot is not None and current_uid and parent_uid == current_uid:
+        geometry = snapshot.get("geometry") if isinstance(snapshot.get("geometry"), Mapping) else {}
+        try:
+            live_line = int(geometry.get("current_line_index0"))
+            item_line = int(item_geometry(item).get("line_index0", item.get("line_index0")))
+            if item_line < live_line:
+                return "done", "x"
+            if item_line == live_line:
+                return "current", "o"
+            return "pending", "."
+        except Exception:
+            pass
+
     if current_uid and (uid == current_uid or parent_uid == current_uid):
         return "current", "o"
     if current_range is not None and _index_in_ranges(item, [current_range]):
@@ -602,12 +503,7 @@ def geometry_xy(geom: Mapping[str, Any]) -> Optional[Tuple[float, float]]:
     return None
 
 
-def _draw_map(
-    ax: Any,
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-) -> int:
+def _draw_map(ax: Any, snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]]) -> int:
     items = flatten_plan_items(plan)
     done = completed_item_uids(events)
     done_ranges = completed_index_ranges(events)
@@ -623,9 +519,7 @@ def _draw_map(
         kind = geom.get("kind")
         if kind not in {"scan_line", "scan_block_line", "point", "grid_point"}:
             continue
-        status, marker = status_for_item(
-            item, done, current, done_ranges=done_ranges, current_range=active_range
-        )
+        status, marker = status_for_item(item, done, current, done_ranges=done_ranges, current_range=active_range, snapshot=snapshot)
         staged.append((status, marker, item, geom))
     order = {"pending": 0, "done": 1, "current": 2}
     for status, marker, item, geom in sorted(staged, key=lambda x: order.get(x[0], 0)):
@@ -640,15 +534,7 @@ def _draw_map(
                 continue
             lw = 2.8 if status == "current" else 1.3
             alpha = 0.9 if status != "pending" else 0.55
-            ax.plot(
-                [start[0], stop[0]],
-                [start[1], stop[1]],
-                color=color,
-                linewidth=lw,
-                alpha=alpha,
-                marker=marker if status == "current" else None,
-                label=label,
-            )
+            ax.plot([start[0], stop[0]], [start[1], stop[1]], color=color, linewidth=lw, alpha=alpha, marker=marker if status == "current" else None, label=label)
             plotted += 1
         elif kind in {"point", "grid_point"}:
             xy = geometry_xy(geom)
@@ -656,21 +542,9 @@ def _draw_map(
                 continue
             size = 70 if status == "current" else 28
             edge = "black" if status == "current" else "none"
-            ax.scatter(
-                [xy[0]],
-                [xy[1]],
-                s=size,
-                color=color,
-                edgecolors=edge,
-                linewidths=0.8,
-                marker="o",
-                label=label,
-                alpha=0.95,
-            )
+            ax.scatter([xy[0]], [xy[1]], s=size, color=color, edgecolors=edge, linewidths=0.8, marker="o", label=label, alpha=0.95)
             plotted += 1
-    snap_geom = (
-        snapshot.get("geometry") if isinstance(snapshot.get("geometry"), dict) else {}
-    )
+    snap_geom = snapshot.get("geometry") if isinstance(snapshot.get("geometry"), dict) else {}
     # The blue snapshot overlay is useful only while the snapshot really denotes
     # an active item.  During the inter-item gap after plan_item_finished, the
     # snapshot intentionally still contains the completed item, but drawing it
@@ -678,49 +552,21 @@ def _draw_map(
     snapshot_status = "pending"
     snap_plan = snapshot.get("plan") if isinstance(snapshot.get("plan"), dict) else {}
     if isinstance(snap_plan, dict):
-        snapshot_status, _ = status_for_item(
-            snap_plan,
-            done,
-            current,
-            done_ranges=done_ranges,
-            current_range=active_range,
-        )
+        snapshot_status, _ = status_for_item(snap_plan, done, current, done_ranges=done_ranges, current_range=active_range, snapshot=snapshot)
     if isinstance(snap_geom, dict) and snapshot_status != "done":
         if snap_geom.get("kind") in {"scan_line", "scan_block_line"}:
             start = as_float_pair(snap_geom.get("start"))
             stop = as_float_pair(snap_geom.get("stop"))
             if start is not None and stop is not None:
-                ax.plot(
-                    [start[0], stop[0]],
-                    [start[1], stop[1]],
-                    color=STATUS_COLOR["snapshot"],
-                    linewidth=3.2,
-                    alpha=0.65,
-                    label="snapshot",
-                )
+                ax.plot([start[0], stop[0]], [start[1], stop[1]], color=STATUS_COLOR["snapshot"], linewidth=3.2, alpha=0.65, label="snapshot")
                 plotted += 1
         elif snap_geom.get("kind") in {"point", "grid_point"}:
             xy = geometry_xy(snap_geom)
             if xy is not None:
-                ax.scatter(
-                    [xy[0]],
-                    [xy[1]],
-                    s=95,
-                    color=STATUS_COLOR["snapshot"],
-                    edgecolors="black",
-                    linewidths=0.8,
-                    label="snapshot",
-                )
+                ax.scatter([xy[0]], [xy[1]], s=95, color=STATUS_COLOR["snapshot"], edgecolors="black", linewidths=0.8, label="snapshot")
                 plotted += 1
     if plotted == 0:
-        ax.text(
-            0.5,
-            0.5,
-            "No numeric point/scan geometry found",
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-        )
+        ax.text(0.5, 0.5, "No numeric point/scan geometry found", ha="center", va="center", transform=ax.transAxes)
     frame = ""
     for item in items:
         frame = str(item_geometry(item).get("frame") or "")
@@ -745,14 +591,7 @@ def _draw_map(
     return plotted
 
 
-def plot_map(
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-    out: Path,
-    *,
-    dpi: int,
-) -> None:
+def plot_map(snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]], out: Path, *, dpi: int) -> None:
     plt, _ = import_matplotlib()
     fig, ax = plt.subplots(figsize=(8.5, 7.0))
     _draw_map(ax, snapshot, plan, events)
@@ -762,11 +601,7 @@ def plot_map(
     plt.close(fig)
 
 
-def _skydip_points(
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-) -> List[Tuple[int, float, str, str]]:
+def _skydip_points(snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]]) -> List[Tuple[int, float, str, str]]:
     items = flatten_plan_items(plan)
     done = completed_item_uids(events)
     done_ranges = completed_index_ranges(events)
@@ -775,9 +610,7 @@ def _skydip_points(
     points: List[Tuple[int, float, str, str]] = []
     for idx, item in enumerate(items):
         geom = item_geometry(item)
-        el = (
-            geom.get("el_deg") or geom.get("target_el_deg") or geom.get("elevation_deg")
-        )
+        el = geom.get("el_deg") or geom.get("target_el_deg") or geom.get("elevation_deg")
         if el is None and geom.get("target") is not None:
             pair = as_float_pair(geom.get("target"))
             if pair is not None:
@@ -786,20 +619,13 @@ def _skydip_points(
             value = float(el)
         except Exception:
             continue
-        status, _ = status_for_item(
-            item, done, current, done_ranges=done_ranges, current_range=active_range
-        )
+        status, _ = status_for_item(item, done, current, done_ranges=done_ranges, current_range=active_range, snapshot=snapshot)
         label = str(item.get("mode") or item.get("label") or idx + 1)
         points.append((idx + 1, value, label, status))
     return points
 
 
-def _draw_skydip(
-    ax: Any,
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-) -> int:
+def _draw_skydip(ax: Any, snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]]) -> int:
     points = _skydip_points(snapshot, plan, events)
     if points:
         xs = [p[0] for p in points]
@@ -812,27 +638,11 @@ def _draw_skydip(
             size = 70 if status == "current" else 38
             legend_label = status if status not in used else None
             used.add(status)
-            ax.scatter(
-                [x],
-                [y],
-                s=size,
-                color=color,
-                edgecolors=edge,
-                linewidths=0.8,
-                label=legend_label,
-                zorder=3,
-            )
+            ax.scatter([x], [y], s=size, color=color, edgecolors=edge, linewidths=0.8, label=legend_label, zorder=3)
             if status == "current":
                 ax.text(x, y, f" {label}", va="center", fontsize=8)
     else:
-        ax.text(
-            0.5,
-            0.5,
-            "No skydip elevation geometry found",
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-        )
+        ax.text(0.5, 0.5, "No skydip elevation geometry found", ha="center", va="center", transform=ax.transAxes)
     ax.set_xlabel("Sequence index")
     ax.set_ylabel("Elevation [deg]")
     ax.grid(True, alpha=0.3)
@@ -841,14 +651,7 @@ def _draw_skydip(
     return len(points)
 
 
-def plot_skydip(
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-    out: Path,
-    *,
-    dpi: int,
-) -> None:
+def plot_skydip(snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]], out: Path, *, dpi: int) -> None:
     plt, _ = import_matplotlib()
     fig, ax = plt.subplots(figsize=(8.0, 5.0))
     _draw_skydip(ax, snapshot, plan, events)
@@ -858,29 +661,12 @@ def plot_skydip(
     plt.close(fig)
 
 
-def plot_summary(
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-    out: Path,
-    *,
-    dpi: int,
-) -> None:
+def plot_summary(snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]], out: Path, *, dpi: int) -> None:
     plt, _ = import_matplotlib()
-    obs = (
-        snapshot.get("observation")
-        if isinstance(snapshot.get("observation"), dict)
-        else {}
-    )
-    lifecycle = (
-        snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
-    )
-    current_plan = (
-        snapshot.get("plan") if isinstance(snapshot.get("plan"), dict) else {}
-    )
-    activity = (
-        snapshot.get("activity") if isinstance(snapshot.get("activity"), dict) else {}
-    )
+    obs = snapshot.get("observation") if isinstance(snapshot.get("observation"), dict) else {}
+    lifecycle = snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
+    current_plan = snapshot.get("plan") if isinstance(snapshot.get("plan"), dict) else {}
+    activity = snapshot.get("activity") if isinstance(snapshot.get("activity"), dict) else {}
     timing = snapshot.get("time") if isinstance(snapshot.get("time"), dict) else {}
     items = plan.get("items") if isinstance(plan.get("items"), list) else []
     lines = [
@@ -898,13 +684,7 @@ def plot_summary(
     ]
     fig, ax = plt.subplots(figsize=(8.5, 5.0))
     ax.axis("off")
-    ax.text(
-        0.02,
-        0.98,
-        "NECST Observation Progress Summary\n\n" + "\n".join(lines),
-        va="top",
-        family="monospace",
-    )
+    ax.text(0.02, 0.98, "NECST Observation Progress Summary\n\n" + "\n".join(lines), va="top", family="monospace")
     fig.tight_layout()
     fig.savefig(out, dpi=dpi)
     plt.close(fig)
@@ -923,25 +703,11 @@ def format_plan_progress(plan: Mapping[str, Any]) -> str:
     return "-"
 
 
-def _summary_lines(
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-) -> List[str]:
-    obs = (
-        snapshot.get("observation")
-        if isinstance(snapshot.get("observation"), dict)
-        else {}
-    )
-    lifecycle = (
-        snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
-    )
-    current_plan = (
-        snapshot.get("plan") if isinstance(snapshot.get("plan"), dict) else {}
-    )
-    activity = (
-        snapshot.get("activity") if isinstance(snapshot.get("activity"), dict) else {}
-    )
+def _summary_lines(snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]]) -> List[str]:
+    obs = snapshot.get("observation") if isinstance(snapshot.get("observation"), dict) else {}
+    lifecycle = snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
+    current_plan = snapshot.get("plan") if isinstance(snapshot.get("plan"), dict) else {}
+    activity = snapshot.get("activity") if isinstance(snapshot.get("activity"), dict) else {}
     data = snapshot.get("data") if isinstance(snapshot.get("data"), dict) else {}
     timing = snapshot.get("time") if isinstance(snapshot.get("time"), dict) else {}
     return [
@@ -956,34 +722,14 @@ def _summary_lines(
     ]
 
 
-def plot_dashboard(
-    snapshot: Mapping[str, Any],
-    plan: Mapping[str, Any],
-    events: Sequence[Mapping[str, Any]],
-    out: Path,
-    *,
-    dpi: int,
-) -> None:
+def plot_dashboard(snapshot: Mapping[str, Any], plan: Mapping[str, Any], events: Sequence[Mapping[str, Any]], out: Path, *, dpi: int) -> None:
     plt, _ = import_matplotlib()
-    fig, axes = plt.subplots(
-        2,
-        2,
-        figsize=(12.5, 8.0),
-        constrained_layout=True,
-        gridspec_kw={"height_ratios": [0.92, 1.08]},
-    )
+    fig, axes = plt.subplots(2, 2, figsize=(12.5, 8.0), constrained_layout=True, gridspec_kw={"height_ratios": [0.92, 1.08]})
     ax_summary, ax_timeline = axes[0]
     ax_geom, ax_extra = axes[1]
 
     ax_summary.axis("off")
-    ax_summary.text(
-        0.02,
-        0.98,
-        "Current status\n\n" + "\n".join(_summary_lines(snapshot, plan, events)),
-        va="top",
-        family="monospace",
-        fontsize=9,
-    )
+    ax_summary.text(0.02, 0.98, "Current status\n\n" + "\n".join(_summary_lines(snapshot, plan, events)), va="top", family="monospace", fontsize=9)
     ax_summary.set_title("Status")
 
     _draw_timeline(ax_timeline, snapshot, events)
@@ -1004,9 +750,7 @@ def plot_dashboard(
         lines = ["Recent events"]
         for ev in recent:
             lines.append(f"{ev.get('seq', '')}: {event_label(ev)}")
-        ax_extra.text(
-            0.02, 0.98, "\n".join(lines), va="top", family="monospace", fontsize=8
-        )
+        ax_extra.text(0.02, 0.98, "\n".join(lines), va="top", family="monospace", fontsize=8)
         ax_extra.set_title("Recent events")
 
     fig.suptitle(progress_title(snapshot, "Dashboard"), fontsize=12)
@@ -1025,9 +769,7 @@ def run(args: argparse.Namespace) -> int:
     kind = args.kind
     if kind == "auto":
         kind = auto_kind(plan, snapshot)
-    out = (
-        Path(args.out).expanduser() if args.out else default_output(progress_dir, kind)
-    )
+    out = Path(args.out).expanduser() if args.out else default_output(progress_dir, kind)
     out.parent.mkdir(parents=True, exist_ok=True)
     if kind == "timeline":
         plot_timeline(snapshot, plan, events, out, dpi=args.dpi)
@@ -1042,52 +784,22 @@ def run(args: argparse.Namespace) -> int:
     else:
         raise ValueError(f"Unknown plot kind: {kind}")
     if args.json:
-        print(
-            json.dumps(
-                {"ok": True, "kind": kind, "path": str(progress_dir), "out": str(out)},
-                ensure_ascii=False,
-                indent=2,
-                sort_keys=True,
-            )
-        )
+        print(json.dumps({"ok": True, "kind": kind, "path": str(progress_dir), "out": str(out)}, ensure_ascii=False, indent=2, sort_keys=True))
     else:
         print(f"Wrote {kind} plot: {out}")
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Plot NECST observation-progress sidecar files."
-    )
+    parser = argparse.ArgumentParser(description="Plot NECST observation-progress sidecar files.")
     source = parser.add_mutually_exclusive_group()
-    source.add_argument(
-        "--path", help="Progress directory containing observation_progress.json"
-    )
-    source.add_argument(
-        "--latest",
-        action="store_true",
-        help="Use latest progress directory under --root",
-    )
-    parser.add_argument(
-        "--root",
-        help="Progress root directory; default: NECST_PROGRESS_ROOT or /tmp/necst_progress",
-    )
-    parser.add_argument(
-        "--kind",
-        choices=sorted(PLOT_KINDS),
-        default="auto",
-        help="Plot kind; default: auto",
-    )
-    parser.add_argument(
-        "--out",
-        help="Output PNG/PDF path. Default is placed in the progress directory.",
-    )
-    parser.add_argument(
-        "--dpi", type=int, default=120, help="Output DPI for raster formats"
-    )
-    parser.add_argument(
-        "--json", action="store_true", help="Print machine-readable result"
-    )
+    source.add_argument("--path", help="Progress directory containing observation_progress.json")
+    source.add_argument("--latest", action="store_true", help="Use latest progress directory under --root")
+    parser.add_argument("--root", help="Progress root directory; default: NECST_PROGRESS_ROOT or /tmp/necst_progress")
+    parser.add_argument("--kind", choices=sorted(PLOT_KINDS), default="auto", help="Plot kind; default: auto")
+    parser.add_argument("--out", help="Output PNG/PDF path. Default is placed in the progress directory.")
+    parser.add_argument("--dpi", type=int, default=120, help="Output DPI for raster formats")
+    parser.add_argument("--json", action="store_true", help="Print machine-readable result")
     return parser
 
 
@@ -1098,14 +810,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return run(args)
     except Exception as exc:
         if args.json:
-            print(
-                json.dumps(
-                    {"ok": False, "error": str(exc)},
-                    ensure_ascii=False,
-                    indent=2,
-                    sort_keys=True,
-                )
-            )
+            print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False, indent=2, sort_keys=True))
         else:
             print(f"progress-plot: error: {exc}", file=sys.stderr)
         return 1

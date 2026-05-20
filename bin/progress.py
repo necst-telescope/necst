@@ -1300,6 +1300,9 @@ h1 { font-size:1.05rem; margin:0 0 .3rem; }
 .kv { display:grid; grid-template-columns: 6.9rem minmax(0,1fr); gap:.12rem .38rem; align-items:baseline; }
 .bigpos { grid-template-columns: 8.8rem minmax(0,1fr); font-size:.86rem; }
 .bigpos .v.important-pos { font-size:1.03rem; font-weight:700; }
+.bigpos .v.warning-pos { color:var(--warn); font-weight:800; }
+.bigpos .v.critical-pos { color:var(--err); font-weight:800; }
+.bigpos .v.muted-pos { color:var(--muted); }
 .k { color:var(--muted); }
 .v { min-width:0; overflow-wrap:anywhere; }
 .status { font-weight:700; padding:.08rem .38rem; border-radius:999px; border:1px solid var(--border); }
@@ -1750,17 +1753,33 @@ function optionalWeatherRows(snapshot) {
   if (pres !== null) rows.push(['pressure', `${pres.toFixed(1)} hPa`, '']);
   return rows;
 }
+function isOtfScanBlock(snapshot) {
+  const obsType = String(snapshot?.observation?.type || '').toLowerCase();
+  const act = snapshot?.activity || {};
+  const plan = snapshot?.plan || {};
+  const geom = snapshot?.geometry || {};
+  const drive = String(act.drive_kind || plan.drive_kind || '').toLowerCase();
+  const kind = String(geom.kind || '').toLowerCase();
+  return obsType === 'otf' && (drive === 'scan_block' || kind === 'scan_block');
+}
 function trackingExpected(snapshot) {
   const act = snapshot?.activity || {};
   const stage = String(act.motion_stage || act.control_section_kind || '').toLowerCase();
   const phase = String(act.phase || snapshot?.plan?.mode || '').toUpperCase();
+  if (phase !== 'ON') return false;
+  // In scan_block OTF, progress.integration() intentionally spans the whole
+  // block so that data/metadata bookkeeping stays active from initial standby
+  // through final sections.  Therefore data_state=integrating is not a promise
+  // that the antenna is already on a science line.  The official tracking check
+  // is meaningful for the observer warning only during the actual line section.
+  if (isOtfScanBlock(snapshot)) return stage === 'line';
   const dataState = String(act.data_state || '').toLowerCase();
-  return phase === 'ON' && (stage === 'tracking' || stage === 'line' || stage === 'scanning' || dataState === 'integrating');
+  return stage === 'tracking' || stage === 'line' || stage === 'scanning' || dataState === 'integrating';
 }
 function trackingProblem(snapshot) {
   const a = snapshot?.antenna || {};
   if (!trackingExpected(snapshot)) return null;
-  if (!a.tracking_status_available) return 'Tracking status is unavailable while ON tracking/integration is expected.';
+  if (!a.tracking_status_available) return 'Tracking status is unavailable while ON line/tracking is expected.';
   if (!a.tracking_ok) {
     const err = degToArcsec(a.tracking_error_deg);
     const age = Number(a.tracking_status_age_sec);
@@ -1770,21 +1789,37 @@ function trackingProblem(snapshot) {
   }
   return null;
 }
-function officialTrackingRows(a) {
+function officialTrackingRows(a, snapshot=null) {
+  const expected = trackingExpected(snapshot);
   if (!a || !a.tracking_status_available) {
     return [
-      ['Tracking status', 'unavailable', 'muted'],
-      ['Tracking error', '-', 'muted']
+      ['Tracking status', expected ? 'unavailable while required' : 'unavailable', expected ? 'warning' : 'muted'],
+      ['Tracking error', '-', expected ? 'warning' : 'muted']
     ];
   }
   const err = degToArcsec(a.tracking_error_deg);
   const age = Number(a.tracking_status_age_sec);
   const ok = !!a.tracking_ok;
   const ageText = Number.isFinite(age) ? `, age ${age.toFixed(1)} s` : '';
-  return [
-    ['Tracking status', ok ? `OK${ageText}` : `not OK${ageText}`, ok ? 'ok' : 'critical'],
-    ['Tracking error', arcsecText(err), ok ? 'ok' : 'critical']
+  const warn = trackingProblem(snapshot);
+  if (ok) {
+    return [
+      ['Tracking status', `OK${ageText}`, 'ok'],
+      ['Tracking error', arcsecText(err), 'ok']
+    ];
+  }
+  if (!expected) {
+    return [
+      ['Tracking status', `not OK${ageText} (not required now)`, 'muted'],
+      ['Tracking error', arcsecText(err), 'muted']
+    ];
+  }
+  const rows = [
+    ['Tracking status', `not OK${ageText}`, 'warning'],
+    ['Tracking error', arcsecText(err), 'warning']
   ];
+  if (warn) rows.push(['Tracking warning', warn, 'warning']);
+  return rows;
 }
 function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const a = snapshot?.antenna || {}; const g = snapshot?.geometry || {};
@@ -1799,7 +1834,7 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const rows = [
     ['Encoder Az/El', azElText(a.encoder_lon_deg, a.encoder_lat_deg, a.encoder_frame), 'important'],
     ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame), ''],
-    ...officialTrackingRows(a),
+    ...officialTrackingRows(a, snapshot),
     [isCal ? 'calibration now' : (g.cos_correction ? 'map offset actual' : 'map offset'), isCal ? phase : (off ? coordPairText(off, frame, 'arcsec') : '-'), 'important'],
     ['progress item', psummary?.progress || '-', 'important'],
     ['UTC', utcText(utcUnix), ''],
@@ -2146,8 +2181,8 @@ function observerPlanSummary(snapshot, plan, events) {
     const c = pointCounts(sky);
     let skyNo = c.currentNo;
     if (!skyNo && Number.isInteger(p.index0)) skyNo = p.index0 + 1;
-    progress = `Skydip step ${skyNo || '-'} / ${c.total || '-'}`;
-    basis = 'elevation step'; completed = c.done; remaining = c.remaining; total = c.total; current = currentMode;
+    progress = `Skydip step ${skyNo || '-'}/${c.total || '-'}`;
+    basis = 'elevation step'; completed = c.done; remaining = c.remaining; total = c.total; current = 'elevation';
   } else if (obsType.includes('grid')) {
     const c = pointCounts(onPointRows.length ? onPointRows : pointRows);
     progress = `Grid ON ${c.currentNo || c.done}/${c.total || '-'}`;
@@ -2395,8 +2430,9 @@ async function update() {
       const updated = typeof timing.updated_at_unix === 'number' ? new Date(timing.updated_at_unix*1000).toLocaleTimeString() : '-';
       msg += `<div class=\"notice\"><span class=\"important\">This observation is ${esc(life.state)}.</span> Last update: ${esc(updated)}. Waiting for the next observation snapshot.</div>`;
     }
-    const trackingWarn = trackingProblem(snap);
-    if (trackingWarn) msg += `<div class="warning">${esc(trackingWarn)}</div>`;
+    // Do not show tracking as a full-width banner.  Tracking is an observing
+    // position detail; show it in the Live Position card where the user can see
+    // whether it is required for the current section.
     document.getElementById('message').innerHTML = msg;
     kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), target_label: displayTarget(snap), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence, remaining_samples: timing.remaining_sample_count}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target_label'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA confidence','remaining_confidence'], ['ETA samples','remaining_samples']]);
     document.querySelector('#observation div:nth-child(2)').innerHTML = `<span class=\"status ${stateClass(life.state)}\">${esc(life.state ?? '-')}</span>`;

@@ -209,6 +209,24 @@ def _index_start_end(item: Mapping[str, Any]) -> tuple[Optional[int], Optional[i
     return start, end
 
 
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, str(default)))
+    except Exception:
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, str(default)))
+    except Exception:
+        return default
+
+
+def _env_truthy(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 class ObservationProgressReporter:
     """Best-effort structured progress reporter.
 
@@ -294,7 +312,112 @@ class ObservationProgressReporter:
         }
         if self.enabled:
             self._ensure_dirs()
+            self._cleanup_old_record_dirs()
             self._write_snapshot()
+
+    def _record_dir_mtime(self, path: Path) -> float:
+        """Return the newest mtime of progress files in one record directory."""
+        mtimes: List[float] = []
+        try:
+            mtimes.append(path.stat().st_mtime)
+        except Exception:
+            pass
+        for name in ("observation_progress.json", "observation_events.jsonl", "observation_plan.json"):
+            try:
+                mtimes.append((path / name).stat().st_mtime)
+            except Exception:
+                pass
+        return max(mtimes) if mtimes else 0.0
+
+    def _progress_record_dirs(self) -> List[Path]:
+        """Return directories that look like reporter-owned record directories.
+
+        The progress root may be a user-selected directory.  Cleanup must never
+        remove arbitrary subdirectories just because they are below that root;
+        only directories containing the reporter's known sidecar file names are
+        treated as progress records.  Symlinks are ignored to avoid deleting a
+        linked external directory.
+        """
+        try:
+            entries = list(self.root.iterdir())
+        except Exception:
+            return []
+        record_dirs: List[Path] = []
+        for path in entries:
+            try:
+                if path.is_symlink() or not path.is_dir():
+                    continue
+            except Exception:
+                continue
+            if any((path / name).exists() for name in ("observation_progress.json", "observation_events.jsonl", "observation_plan.json")):
+                record_dirs.append(path)
+        return record_dirs
+
+    def _cleanup_old_record_dirs(self) -> None:
+        """Best-effort retention cleanup for ``NECST_PROGRESS_ROOT``.
+
+        ``current_observation_progress.json`` and the current run directory are
+        rewritten for each observation, but historical ``<record_name>/``
+        directories are useful for post-run inspection and ETA priors.  Keep a
+        bounded number of recent directories by default so the default
+        ``/tmp/necst_progress`` location cannot grow without limit during long
+        observing campaigns.
+
+        Environment variables:
+        - ``NECST_PROGRESS_RETENTION_MAX_RECORD_DIRS``: maximum record
+          directories to keep.  Default 200.  Set <=0 to disable count cleanup.
+        - ``NECST_PROGRESS_RETENTION_MIN_RECORD_DIRS``: minimum number of recent
+          directories protected from age-based cleanup.  Default 20.
+        - ``NECST_PROGRESS_RETENTION_MAX_AGE_DAYS``: optional age limit.  Default
+          0 disables age-based cleanup.
+        - ``NECST_PROGRESS_RETENTION_DISABLE``: truthy value disables cleanup.
+        """
+        if _env_truthy("NECST_PROGRESS_RETENTION_DISABLE"):
+            return
+        max_dirs = _env_int("NECST_PROGRESS_RETENTION_MAX_RECORD_DIRS", 200)
+        min_keep = max(0, _env_int("NECST_PROGRESS_RETENTION_MIN_RECORD_DIRS", 20))
+        max_age_days = _env_float("NECST_PROGRESS_RETENTION_MAX_AGE_DAYS", 0.0)
+        if max_dirs <= 0 and max_age_days <= 0.0:
+            return
+        try:
+            current_resolved = self.record_dir.resolve()
+        except Exception:
+            current_resolved = self.record_dir
+        candidates = []
+        for path in self._progress_record_dirs():
+            try:
+                if path.resolve() == current_resolved:
+                    continue
+            except Exception:
+                if path == self.record_dir:
+                    continue
+            candidates.append((self._record_dir_mtime(path), path))
+        candidates.sort(key=lambda item: item[0], reverse=True)
+        delete: List[Path] = []
+        if max_dirs > 0:
+            keep_other_count = max(0, max_dirs - 1)  # reserve one slot for the current run
+            for _, path in candidates[keep_other_count:]:
+                delete.append(path)
+        if max_age_days > 0.0:
+            cutoff = time.time() - max_age_days * 86400.0
+            protected = {path for _, path in candidates[:min_keep]}
+            for mtime, path in candidates:
+                if path in protected:
+                    continue
+                if mtime > 0.0 and mtime < cutoff:
+                    delete.append(path)
+        seen = set()
+        for path in delete:
+            key = str(path)
+            if key in seen:
+                continue
+            seen.add(key)
+            try:
+                if path.is_symlink():
+                    continue
+                shutil.rmtree(path)
+            except Exception as exc:
+                self._log_debug(f"Observation progress retention cleanup failed for {path}: {exc}")
 
     def attach_commander(self, commander: Any) -> None:
         self._commander = commander
