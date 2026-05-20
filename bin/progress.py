@@ -205,24 +205,23 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
         antenna_update.update(cmd)
     if enc:
         antenna_update.update(enc)
-    cmd_lon = _finite_float(cmd.get("command_lon_deg")) if isinstance(cmd, dict) else None
-    cmd_lat = _finite_float(cmd.get("command_lat_deg")) if isinstance(cmd, dict) else None
-    enc_lon = _finite_float(enc.get("encoder_lon_deg")) if isinstance(enc, dict) else None
-    enc_lat = _finite_float(enc.get("encoder_lat_deg")) if isinstance(enc, dict) else None
-    if None not in (cmd_lon, cmd_lat, enc_lon, enc_lat):
-        # Azimuth/longitude is circular.  Without wrapping, a perfectly normal
-        # 359.9 deg -> 0.1 deg crossing would look like a 359.8 deg tracking
-        # error.  Use the shortest signed angular difference for the longitude
-        # component; latitude/elevation remains a linear difference.
-        dlon = angular_delta_deg(enc_lon, cmd_lon)
-        dlat = enc_lat - cmd_lat
-        antenna_update["tracking_delta_lon_deg"] = dlon
-        antenna_update["tracking_delta_lat_deg"] = dlat
-        antenna_update["tracking_error_deg"] = math.hypot(dlon, dlat)
-        cmd_ts = _finite_float(cmd.get("command_time_unix")) if isinstance(cmd, dict) else None
-        enc_ts = _finite_float(enc.get("encoder_time_unix")) if isinstance(enc, dict) else None
-        if None not in (cmd_ts, enc_ts):
-            antenna_update["tracking_sample_delta_sec"] = enc_ts - cmd_ts
+    tracking = live_payload.get("tracking") if isinstance(live_payload.get("tracking"), dict) else {}
+    if tracking:
+        terr = _finite_float(tracking.get("error_deg"))
+        tstat = _finite_float(tracking.get("time_unix"))
+        antenna_update["tracking_status_available"] = True
+        antenna_update["tracking_ok"] = bool(tracking.get("ok", False))
+        if terr is not None:
+            antenna_update["tracking_error_deg"] = terr
+        if tstat is not None:
+            antenna_update["tracking_status_time_unix"] = tstat
+            antenna_update["tracking_status_age_sec"] = max(0.0, time.time() - tstat)
+    else:
+        # Do not compute a tracking error from the latest command and latest
+        # encoder samples here.  altaz_cmd is a time-tagged command stream and
+        # its newest sample is not necessarily the command at the encoder time.
+        # NECST's antenna_tracking topic already performs the correct comparison.
+        antenna_update.setdefault("tracking_status_available", False)
     if antenna_update:
         out.setdefault("antenna", {}).update(antenna_update)
     weather_payload = live_payload.get("weather") if isinstance(live_payload.get("weather"), dict) else {}
@@ -273,6 +272,7 @@ class LiveRosCache:
         self.control: Dict[str, Any] = {}
         self.command: Dict[str, Any] = {}
         self.encoder: Dict[str, Any] = {}
+        self.tracking: Dict[str, Any] = {}
         self.weather: Dict[str, Dict[str, Any]] = {}
         if self.requested:
             self._start()
@@ -315,6 +315,17 @@ class LiveRosCache:
             def encoder_cb(msg: Any) -> None:
                 self.encoder = _msg_coord(msg, prefix="encoder")
 
+            def tracking_cb(msg: Any) -> None:
+                # TrackingStatus is produced by NECST's antenna tracking node.
+                # It compares the encoder position with the command value at the
+                # encoder timestamp, using the control-side interpolation/extrapolation.
+                # Progress should not recompute tracking error from two latest samples.
+                self.tracking = {
+                    "ok": bool(getattr(msg, "ok", False)),
+                    "error_deg": _finite_float(getattr(msg, "error", None)),
+                    "time_unix": _finite_float(getattr(msg, "time", None)),
+                }
+
             def weather_cb(key: str):
                 def _callback(msg: Any) -> None:
                     self.weather[key] = {
@@ -333,6 +344,13 @@ class LiveRosCache:
             topic.antenna_control_status.subscription(self._node, control_cb)
             topic.altaz_cmd.subscription(self._node, command_cb)
             topic.antenna_encoder.subscription(self._node, encoder_cb)
+            try:
+                topic.antenna_tracking.subscription(self._node, tracking_cb)
+            except Exception:
+                # Older deployments may not expose this topic; in that case the
+                # monitor should still show Az/El and simply mark tracking status
+                # as unavailable.
+                pass
             # Weather topics are indexed (typically /weather/ambient/out and
             # /weather/ambient/in).  Subscribe explicitly to both common keys; if
             # a site has only one of them, ROS simply leaves the other empty.
@@ -371,6 +389,8 @@ class LiveRosCache:
             payload["command"] = dict(self.command)
         if self.encoder:
             payload["encoder"] = dict(self.encoder)
+        if self.tracking:
+            payload["tracking"] = dict(self.tracking)
         if self.weather:
             payload["weather"] = {key: dict(value) for key, value in self.weather.items()}
         return payload
@@ -1049,8 +1069,15 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
             lines.append(frame_line(f"cmd  : {azel_text(cmd_lon, cmd_lat, antenna.get('command_frame'))}"))
         if enc_lon is not None or enc_lat is not None:
             lines.append(frame_line(f"enc  : {azel_text(enc_lon, enc_lat, antenna.get('encoder_frame'))}"))
-        if antenna.get("tracking_error_deg") is not None:
-            lines.append(frame_line(f"err  : tracking_error={compact_value(antenna.get('tracking_error_deg'))} deg"))
+        if antenna.get("tracking_status_available"):
+            terr = _finite_float(antenna.get("tracking_error_deg"))
+            age = _finite_float(antenna.get("tracking_status_age_sec"))
+            ok_text = "OK" if antenna.get("tracking_ok") else "not OK"
+            terr_text = "-" if terr is None else f"{terr * 3600.0:.1f} arcsec"
+            age_text = "-" if age is None else f"age={age:.1f}s"
+            lines.append(frame_line(f"trk  : {ok_text} error={terr_text} {age_text}"))
+        else:
+            lines.append(frame_line("trk  : status unavailable"))
         if not (cmd_lon is not None or enc_lon is not None):
             lines.append(frame_line(f"ant  : {compact_value(antenna)}"))
     lines.append("├──────────────────── DATA ──────────────────────────────────┤")
@@ -1367,7 +1394,7 @@ function arcsecText(v, digits=1) {
 }
 function utcText(unixSec) {
   const n = Number(unixSec);
-  return Number.isFinite(n) ? new Date(n*1000).toISOString().replace('T',' ').replace(/\.\d+Z$/,' UTC') : '-';
+  return Number.isFinite(n) ? new Date(n*1000).toISOString().replace('T',' ').replace(/\\.\\d+Z$/,' UTC') : '-';
 }
 function lstText(unixSec, lonDeg) {
   const t = Number(unixSec), lon = Number(lonDeg);
@@ -1698,12 +1725,24 @@ function optionalWeatherRows(snapshot) {
   if (pres !== null) rows.push(['pressure', `${pres.toFixed(1)} hPa`, '']);
   return rows;
 }
+function officialTrackingRows(a) {
+  if (!a || !a.tracking_status_available) {
+    return [
+      ['Tracking status', 'unavailable', 'muted'],
+      ['Tracking error', '-', 'muted']
+    ];
+  }
+  const err = degToArcsec(a.tracking_error_deg);
+  const age = Number(a.tracking_status_age_sec);
+  const ok = !!a.tracking_ok;
+  const ageText = Number.isFinite(age) ? `, age ${age.toFixed(1)} s` : '';
+  return [
+    ['Tracking status', ok ? `OK${ageText}` : `not OK${ageText}`, ok ? 'ok' : 'important'],
+    ['Tracking error', arcsecText(err), ok ? 'ok' : 'important']
+  ];
+}
 function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const a = snapshot?.antenna || {}; const g = snapshot?.geometry || {};
-  const dAz = degToArcsec(a.tracking_delta_lon_deg);
-  const dEl = degToArcsec(a.tracking_delta_lat_deg);
-  const terr = degToArcsec(a.tracking_error_deg);
-  const sampleDt = Number(a.tracking_sample_delta_sec);
   const frame = g.offset_frame || g.frame || '';
   const off = plannedOffsetFromGeometry(snapshot);
   const phase = String(snapshot?.activity?.phase || snapshot?.plan?.mode || '').toUpperCase();
@@ -1714,11 +1753,8 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const gal = targetGalPair(snapshot);
   const rows = [
     ['Encoder Az/El', azElText(a.encoder_lon_deg, a.encoder_lat_deg, a.encoder_frame), 'important'],
-    ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame), 'important'],
-    ['Enc-Cmd Az', arcsecText(dAz), ''],
-    ['Enc-Cmd El', arcsecText(dEl), ''],
-    ['Enc-Cmd RSS', arcsecText(terr), ''],
-    ['cmd-enc sample Δt', Number.isFinite(sampleDt) ? `${sampleDt.toFixed(3)} s` : '-', Math.abs(sampleDt) > 0.2 ? 'important' : ''],
+    ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame), ''],
+    ...officialTrackingRows(a),
     [isCal ? 'calibration now' : (g.cos_correction ? 'map offset actual' : 'map offset'), isCal ? phase : (off ? coordPairText(off, frame, 'arcsec') : '-'), 'important'],
     ['progress item', psummary?.progress || '-', 'important'],
     ['UTC', utcText(utcUnix), ''],
