@@ -219,6 +219,10 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
         antenna_update["tracking_delta_lon_deg"] = dlon
         antenna_update["tracking_delta_lat_deg"] = dlat
         antenna_update["tracking_error_deg"] = math.hypot(dlon, dlat)
+        cmd_ts = _finite_float(cmd.get("command_time_unix")) if isinstance(cmd, dict) else None
+        enc_ts = _finite_float(enc.get("encoder_time_unix")) if isinstance(enc, dict) else None
+        if None not in (cmd_ts, enc_ts):
+            antenna_update["tracking_sample_delta_sec"] = enc_ts - cmd_ts
     if antenna_update:
         out.setdefault("antenna", {}).update(antenna_update)
     weather_payload = live_payload.get("weather") if isinstance(live_payload.get("weather"), dict) else {}
@@ -642,7 +646,9 @@ def summarize_display_plan(
         done, cur, rem, total_n, cur_pos = count_status(skydip_rows or rows)
         display_kind = "Skydip"
         basis = "elevation step"
-        progress_label = f"Skydip step {cur_pos if cur_pos is not None else schedule_step}/{total_n if total_n else '-'}"
+        fallback_pos = index0 + 1 if isinstance(index0, int) else None
+        step_pos = cur_pos if cur_pos is not None else fallback_pos
+        progress_label = f"Skydip step {step_pos if step_pos is not None else '-'}/{total_n if total_n else '-'}"
         current_unit_label = "elevation"
         completed_units, remaining_units, total_units = done, rem, total_n
     elif "grid" in obs_type:
@@ -1654,17 +1660,25 @@ function temperatureCFromAny(value) {
   // WeatherMsg uses K, but some future snapshots may already store degC.
   return n > 170 ? n - 273.15 : n;
 }
+function humidityPercentFromAny(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  // NECST WeatherMsg humidity is defined as a 0--1 fraction.  Some older
+  // snapshots used *_percent names while still carrying the same fraction.
+  if (n >= 0 && n <= 1.000001) return n * 100.0;
+  return n;
+}
 function weatherRowsForKey(snapshot, key, label) {
   const w = snapshot?.weather || {};
   const base = w[key] || {};
   const rows = [];
   const temp = temperatureCFromAny(base.temperature_c ?? base.temperature_degC ?? base.temperature_k ?? base.temperature);
-  const hum = Number(base.humidity_percent ?? base.relative_humidity_percent ?? base.humidity);
+  const hum = humidityPercentFromAny(base.humidity ?? base.relative_humidity ?? base.humidity_percent ?? base.relative_humidity_percent);
   const pres = Number(base.pressure_hpa ?? base.pressure_mbar ?? base.pressure);
   const wind = Number(base.wind_speed_mps ?? base.wind_speed);
   const wdir = Number(base.wind_direction_deg ?? base.wind_direction);
   if (temp !== null) rows.push([`${label} temp.`, `${temp.toFixed(1)} °C`, '']);
-  if (Number.isFinite(hum)) rows.push([`${label} humidity`, `${hum.toFixed(0)} %`, '']);
+  if (hum !== null) rows.push([`${label} humidity`, `${hum.toFixed(0)} %`, '']);
   if (Number.isFinite(pres)) rows.push([`${label} pressure`, `${pres.toFixed(1)} hPa`, '']);
   if (Number.isFinite(wind)) rows.push([`${label} wind`, Number.isFinite(wdir) ? `${wind.toFixed(1)} m/s @ ${wdir.toFixed(0)}°` : `${wind.toFixed(1)} m/s`, '']);
   return rows;
@@ -1677,7 +1691,7 @@ function optionalWeatherRows(snapshot) {
   const env = snapshot || {};
   const tempRaw = firstNumeric(env, [['weather','temperature_c'], ['weather','temperature_degC'], ['weather','temperature_k'], ['weather','temperature'], ['environment','temperature_c'], ['environment','temperature_degC'], ['site','temperature_c']]);
   const temp = temperatureCFromAny(tempRaw);
-  const hum = firstNumeric(env, [['weather','humidity_percent'], ['weather','relative_humidity_percent'], ['environment','humidity_percent'], ['environment','relative_humidity_percent'], ['site','humidity_percent']]);
+  const hum = humidityPercentFromAny(firstNumeric(env, [['weather','humidity'], ['weather','relative_humidity'], ['weather','humidity_percent'], ['weather','relative_humidity_percent'], ['environment','humidity'], ['environment','relative_humidity'], ['environment','humidity_percent'], ['environment','relative_humidity_percent'], ['site','humidity'], ['site','humidity_percent']]));
   const pres = firstNumeric(env, [['weather','pressure_hpa'], ['weather','pressure_mbar'], ['environment','pressure_hpa'], ['environment','pressure_mbar'], ['site','pressure_hpa']]);
   if (temp !== null) rows.push(['air temp.', `${temp.toFixed(1)} °C`, '']);
   if (hum !== null) rows.push(['humidity', `${hum.toFixed(0)} %`, '']);
@@ -1689,8 +1703,11 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const dAz = degToArcsec(a.tracking_delta_lon_deg);
   const dEl = degToArcsec(a.tracking_delta_lat_deg);
   const terr = degToArcsec(a.tracking_error_deg);
+  const sampleDt = Number(a.tracking_sample_delta_sec);
   const frame = g.offset_frame || g.frame || '';
   const off = plannedOffsetFromGeometry(snapshot);
+  const phase = String(snapshot?.activity?.phase || snapshot?.plan?.mode || '').toUpperCase();
+  const isCal = phase && phase !== 'ON';
   const utcUnix = Number(snapshot?.time?.updated_at_unix ?? serverTimeUnix);
   const lonForLst = nestedGet(snapshot, [['site','longitude_deg'], ['site','lon_deg'], ['observer','longitude_deg'], ['observation','site_longitude_deg'], ['telescope','longitude_deg']]);
   const radec = targetRaDecPair(snapshot);
@@ -1700,8 +1717,9 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
     ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame), 'important'],
     ['Enc-Cmd Az', arcsecText(dAz), ''],
     ['Enc-Cmd El', arcsecText(dEl), ''],
-    ['tracking RSS', arcsecText(terr), ''],
-    [g.cos_correction ? 'map offset actual' : 'map offset', off ? coordPairText(off, frame, 'arcsec') : '-', 'important'],
+    ['Enc-Cmd RSS', arcsecText(terr), ''],
+    ['cmd-enc sample Δt', Number.isFinite(sampleDt) ? `${sampleDt.toFixed(3)} s` : '-', Math.abs(sampleDt) > 0.2 ? 'important' : ''],
+    [isCal ? 'calibration now' : (g.cos_correction ? 'map offset actual' : 'map offset'), isCal ? phase : (off ? coordPairText(off, frame, 'arcsec') : '-'), 'important'],
     ['progress item', psummary?.progress || '-', 'important'],
     ['UTC', utcText(utcUnix), ''],
     ['LST', lstText(utcUnix, lonForLst), ''],
@@ -1768,7 +1786,7 @@ function statusFor(item, snapshot, events) {
   if (!finalState && ((cur && (uid === cur || parent === cur)) || inRange(item, cr))) return 'current';
   return 'pending';
 }
-const PLOT = {w: 640, h: 430, left: 48, right: 592, top: 42, bottom: 352};
+const PLOT = {w: 660, h: 460, left: 64, right: 612, top: 42, bottom: 330};
 function sx(x, bounds) { return PLOT.left + (x-bounds.xmin) * (PLOT.right-PLOT.left) / Math.max(1e-9, bounds.xmax-bounds.xmin); }
 function sy(y, bounds) { return PLOT.bottom - (y-bounds.ymin) * (PLOT.bottom-PLOT.top) / Math.max(1e-9, bounds.ymax-bounds.ymin); }
 function colorFor(status) { return status === 'done' ? '#2ca02c' : status === 'current' ? '#ff7f0e' : '#bdbdbd'; }
@@ -1837,6 +1855,7 @@ function pointDisplayLabel(row) {
     return '';  // Avoid clutter: grid maps can have many ON points.
   }
   if (!raw || raw === '-') return '';
+  if (raw === 'HOT') return '';
   if (row.status === 'current') return `${raw} now${repeat}`;
   return `${raw}${repeat}`;
 }
@@ -1867,6 +1886,11 @@ function mapCenterContext(items, obsType) {
 function pointPlotCoordinate(g, mode, obsType, kind, mapCtx=null) {
   const upper = String(mode || '').toUpperCase();
   const offsetMap = obsType.includes('grid') || obsType.includes('psw');
+  if (offsetMap && upper === 'HOT') {
+    // HOT is taken at the calibration load / OFF-position sequence, but it is
+    // not a sky map position needed by observers.  Do not draw it in Plan View.
+    return {xy: null, source: 'hidden_hot'};
+  }
   if (offsetMap && (upper === 'ON' || kind === 'grid_point')) {
     const off = actualOffsetArcsecFromGeometry(g, mapCtx);
     if (off) return {xy: off, source: 'offset_arcsec'};
@@ -2009,7 +2033,9 @@ function observerPlanSummary(snapshot, plan, events) {
   } else if (obsType.includes('sky')) {
     const sky = skydipRowsFrom(snapshot, flattenItems(plan), events);
     const c = pointCounts(sky);
-    progress = `Skydip step ${c.currentNo || scheduleStep(p)}/${c.total || '-'}`;
+    let skyNo = c.currentNo;
+    if (!skyNo && Number.isInteger(p.index0)) skyNo = p.index0 + 1;
+    progress = `Skydip step ${skyNo || '-'} / ${c.total || '-'}`;
     basis = 'elevation step'; completed = c.done; remaining = c.remaining; total = c.total; current = currentMode;
   } else if (obsType.includes('grid')) {
     const c = pointCounts(onPointRows.length ? onPointRows : pointRows);
@@ -2134,10 +2160,10 @@ function axisDecorations(b, axes) {
   const by = Number.isFinite(b.dataYmin) ? b.dataYmin : b.ymin;
   const ty = Number.isFinite(b.dataYmax) ? b.dataYmax : b.ymax;
   let out = '';
-  out += `<text class="plot-note" x="${sx(lx,b)-18}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(lx, axes))}</text>`;
-  out += `<text class="plot-note" x="${sx(rx,b)-18}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(rx, axes))}</text>`;
-  out += `<text class="plot-note" x="${PLOT.left-42}" y="${sy(by,b)+4}" >${esc(fmtAxisNumber(by, axes))}</text>`;
-  out += `<text class="plot-note" x="${PLOT.left-42}" y="${sy(ty,b)+4}" >${esc(fmtAxisNumber(ty, axes))}</text>`;
+  out += `<text class="plot-note" text-anchor="middle" x="${sx(lx,b)}" y="${PLOT.bottom+18}">${esc(fmtAxisNumber(lx, axes))}</text>`;
+  out += `<text class="plot-note" text-anchor="middle" x="${sx(rx,b)}" y="${PLOT.bottom+18}">${esc(fmtAxisNumber(rx, axes))}</text>`;
+  out += `<text class="plot-note" text-anchor="end" x="${PLOT.left-9}" y="${sy(by,b)+4}" >${esc(fmtAxisNumber(by, axes))}</text>`;
+  out += `<text class="plot-note" text-anchor="end" x="${PLOT.left-9}" y="${sy(ty,b)+4}" >${esc(fmtAxisNumber(ty, axes))}</text>`;
   if (x0in) out += `<line x1="${sx(0,b)}" y1="${PLOT.top}" x2="${sx(0,b)}" y2="${PLOT.bottom}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0.45"/>`;
   if (y0in) out += `<line x1="${PLOT.left}" y1="${sy(0,b)}" x2="${PLOT.right}" y2="${sy(0,b)}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0.45"/>`;
   return out;
@@ -2196,9 +2222,9 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   } else {
     const c = pointCounts(pointRows);
     countText = `Point sequence: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
-    note = 'Current item is orange; OFF/HOT/reference labels are grouped when repeated.';
+    note = 'Current item is orange; OFF/SKY labels are grouped when repeated; HOT is hidden from the map.';
   }
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.h-64}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note)}</text></svg>`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.bottom+42}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note)}</text></svg>`;
 }
 function skydipRowsFrom(snapshot, items, events) {
   const rows=[];
@@ -2220,11 +2246,25 @@ function renderSkydipSvg(snapshot, items, events) {
   const ymin=ymin0 - Math.max(2, 0.08*span), ymax=ymax0 + Math.max(2, 0.08*span);
   const b={xmin:xmin-0.5, xmax:xmax+0.5, ymin, ymax};
   const poly = rows.map(r=>`${sx(r.x,b)},${sy(r.y,b)}`).join(' ');
-  const pts = rows.map(r=>`<circle cx="${sx(r.x,b)}" cy="${sy(r.y,b)}" r="${r.status==='current'?6:4}" fill="${colorFor(r.status)}" stroke="${r.status==='current'?'var(--bg)':'none'}" stroke-width="2"/>`).join('');
+  let grid = '';
+  const ticks = 5;
+  for (let i=0; i<ticks; i++) {
+    const yv = ymin0 + (ymax0-ymin0) * (ticks===1 ? 0 : i/(ticks-1));
+    const yy = sy(yv,b);
+    grid += `<line x1="${PLOT.left}" y1="${yy}" x2="${PLOT.right}" y2="${yy}" stroke="var(--muted)" opacity="0.22" stroke-dasharray="3 4"/>`;
+    grid += `<text class="plot-note" text-anchor="end" x="${PLOT.left-9}" y="${yy+4}">${esc(yv.toFixed(1))}</text>`;
+  }
+  const pts = rows.map(r=>{
+    const x=sx(r.x,b), y=sy(r.y,b);
+    const mode=String(r.label || '').toUpperCase();
+    const label = mode === 'HOT' ? 'HOT/load' : (r.status==='current' ? `${mode || 'SKY'} now` : '');
+    const text = label ? `<text x="${Math.min(PLOT.w-125, x+8)}" y="${Math.max(18, y-10)}" font-size="11" font-weight="700">${esc(label)}</text>` : '';
+    return `<circle cx="${x}" cy="${y}" r="${r.status==='current'?6:4}" fill="${colorFor(r.status)}" stroke="${r.status==='current'?'var(--bg)':'none'}" stroke-width="2"/>${text}`;
+  }).join('');
   const c = pointCounts(rows);
   const cur = rows.find(r=>r.status==='current');
   const curText = cur ? `Current elevation ${cur.y.toFixed(1)} deg at step ${cur.x}/${rows.length}` : `Elevation sequence ${rows.length} steps`;
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.h-64}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">Skydip: ${esc(curText)}; ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">This is elevation vs. sequence order for sky-dipping, not a sky map.</text></svg>`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${grid}<polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.bottom+42}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">Skydip: ${esc(curText)}; ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">This is elevation vs. sequence order for sky-dipping; first HOT/load step is labelled when present.</text></svg>`;
 }
 async function update() {
   try {
