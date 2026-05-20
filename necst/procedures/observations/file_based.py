@@ -45,6 +45,13 @@ class FileBasedObservation(Observation):
         file = kwargs["file"]
         self._obs_file = file
         self.obsspec = self.SpecParser.from_file(file)
+        # Keep the user-facing target name in progress snapshots.
+        # FileBasedObservation historically used obsspec.target only for the
+        # default record name, so Web/terminal progress displays could show
+        # target="-" for Grid/PSW/skydip observations even though the obsfile
+        # has a target.  Observation.execute() passes self.target to
+        # ObservationProgressReporter, so set it before execution starts.
+        self.target = getattr(self.obsspec, "target", None)
         self._spectral_recording_setup: Optional[SpectralRecordingObservationSetup] = None
         self._spectral_recording_gate_open = False
         self._pointing_reference_beam: Optional[PointingReferenceBeamContext] = (

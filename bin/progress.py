@@ -658,7 +658,7 @@ def summarize_display_plan(
         "schedule_step": schedule_step,
         "mode": current_plan.get("mode") or "-",
         "role": current_plan.get("role") or "-",
-        "target": geom.get("target_name") or obs.get("target") or "-",
+        "target": observer_target_name(obs, geom),
         "label": current_plan.get("label") or "-",
     }
 
@@ -741,6 +741,48 @@ def compact_record_name(value: Any, *, max_len: int = 24) -> str:
     return f"{text[:keep]}…{text[-tail:]}"
 
 
+
+
+def observer_target_name(obs: Mapping[str, Any], geom: Mapping[str, Any]) -> str:
+    """Return the best user-facing target name available for progress display."""
+
+    def usable(value: Any) -> Optional[str]:
+        text = compact_value(value)
+        if text in {"-", "None", "none", "unknown", "null"}:
+            return None
+        return text
+
+    for value in (geom.get("target_name"), obs.get("target")):
+        text = usable(value)
+        if text:
+            return text
+
+    record = usable(obs.get("record_name"))
+    if record:
+        tokens = re.split(r"[_\-]+", record)
+        skip = {"necst", "otf", "grid", "psw", "sky", "skydip", "rsky", "hot", "off", "on"}
+        filtered = []
+        for tok in tokens:
+            low = tok.lower()
+            if not tok or low in skip:
+                continue
+            if re.fullmatch(r"20\d{6}", tok) or re.fullmatch(r"\d{4,6}", tok):
+                continue
+            filtered.append(tok)
+        if filtered:
+            return "_".join(filtered[-3:])
+
+    obsfile = usable(obs.get("obs_file"))
+    if obsfile:
+        stem = Path(obsfile).stem
+        tokens = [t for t in re.split(r"[_\-]+", stem) if t]
+        skip = {"otf", "grid", "psw", "sky", "skydip", "rsky", "obs"}
+        filtered = [t for t in tokens if t.lower() not in skip]
+        if filtered:
+            return "_".join(filtered)
+    return "-"
+
+
 def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]], *, compact: bool = False, full_plan: Optional[Mapping[str, Any]] = None) -> str:
     if snapshot is None:
         return "No active NECST observation progress found."
@@ -806,7 +848,7 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
             f"remain={display_summary.get('remaining_units', '-')} "
             f"basis={display_summary.get('basis', '-') }"
         )
-        target = compact_value(geom.get("target_name") or obs.get("target"))
+        target = observer_target_name(obs, geom)
         target_part = "" if target == "-" else f" target={target}"
         return (
             f"{state_prefix} {obs_type} {progress_part} {phase} "
@@ -1219,6 +1261,19 @@ function pct(plan) {
   return 0;
 }
 function pair(v) { if (!Array.isArray(v) || v.length < 2) return null; const x=Number(v[0]), y=Number(v[1]); return Number.isFinite(x)&&Number.isFinite(y) ? [x,y] : null; }
+function usableText(v) { const t = val(v); return (!t || t === '-' || t === 'None' || t === 'null' || t === 'unknown') ? '' : t; }
+function inferTargetFromName(text) {
+  const raw = usableText(text);
+  if (!raw) return '';
+  const toks = raw.split(/[_-]+/).filter(Boolean);
+  const skip = new Set(['necst','otf','grid','psw','sky','skydip','rsky','hot','off','on']);
+  const kept = toks.filter(t => !skip.has(t.toLowerCase()) && !/^20\\d{6}$/.test(t) && !/^\\d{4,6}$/.test(t));
+  return kept.length ? kept.slice(-3).join('_') : '';
+}
+function displayTarget(snapshot) {
+  const g = snapshot?.geometry || {}; const obs = snapshot?.observation || {};
+  return usableText(g.target_name) || usableText(obs.target) || inferTargetFromName(obs.record_name) || inferTargetFromName(obs.obs_file) || '-';
+}
 function geomOf(item) { return item && typeof item.geometry === 'object' && item.geometry ? item.geometry : {}; }
 function geomContext(g) {
   const out = {};
@@ -1342,24 +1397,44 @@ function renderPoint(row, b) {
   const text = label ? `<text x="${Math.min(PLOT.w-100, x+7)}" y="${Math.max(16, y-6)}" font-size="12" font-weight="700">${esc(label + suffix)}</text>` : '';
   return shape + text;
 }
+function pointPlotCoordinate(g, mode, obsType, kind) {
+  const upper = String(mode || '').toUpperCase();
+  // Grid maps are scientifically understood as offsets around the ON target.
+  // The absolute target coordinate is usually the same for every ON waypoint,
+  // while g.offset carries the grid position.  Use that offset for ON-map
+  // plotting so a 5x5 grid is visible instead of collapsing to one point.
+  if (obsType.includes('grid') && (upper === 'ON' || kind === 'grid_point')) {
+    const off = pair(g.offset);
+    if (off) return {xy: off, source: 'offset'};
+  }
+  const target = pair(g.target);
+  if (target) return {xy: target, source: 'target'};
+  const ref = pair(g.reference);
+  if (ref) return {xy: ref, source: 'reference'};
+  const off = pair(g.offset);
+  if (off) return {xy: off, source: 'offset'};
+  return {xy: null, source: ''};
+}
 function collectMapRows(snapshot, items, events) {
   const rows=[]; const allPts=[]; const boundsPts=[];
+  const obsType = String(snapshot?.observation?.type || '').toLowerCase();
   for (const item of items) {
     const g = geomOf(item); const k=g.kind; const mode = itemMode(item);
     const status = statusFor(item,snapshot,events);
     if (k === 'scan_line' || k === 'scan_block_line') {
       const a=pair(g.start), b=pair(g.stop);
       if (a&&b) {
-        rows.push({item,a,b,status,mode:mode || 'ON',kind:k,lineIndex:g.line_index0,frame:g.frame,unit:g.unit});
+        rows.push({item,a,b,status,mode:mode || 'ON',kind:k,lineIndex:g.line_index0,frame:g.frame,unit:g.unit,coordSource:'line'});
         allPts.push(a,b);
         if ((mode || 'ON') === 'ON') boundsPts.push(a,b);
       }
     }
     if (k === 'point' || k === 'grid_point') {
-      const xy=pair(g.target)||pair(g.reference)||pair(g.offset);
+      const plotted = pointPlotCoordinate(g, mode, obsType, k);
+      const xy = plotted.xy;
       if (xy) {
         const pointLabel = pointKind(item);
-        rows.push({item,a:xy,b:null,status,mode:mode || pointLabel,kind:k,pointLabel,frame:g.frame,unit:g.unit});
+        rows.push({item,a:xy,b:null,status,mode:mode || pointLabel,kind:k,pointLabel,frame:g.frame,unit:g.unit,coordSource:plotted.source});
         allPts.push(xy);
         if ((mode || '').toUpperCase() === 'ON' || k === 'grid_point') boundsPts.push(xy);
       }
@@ -1421,7 +1496,7 @@ function observerPlanSummary(snapshot, plan, events) {
     progress = `PSW ON ${c.currentNo || c.done}/${c.total || '-'}`;
     basis = 'ON target visit'; completed = c.done; remaining = c.remaining; total = c.total; current = currentMode;
   }
-  return {progress, basis, current, completed, remaining, total, schedule_step: scheduleStep(p), mode: p.mode ?? '-', role: p.role ?? '-', target: geom.target_name || snapshot?.observation?.target || '-', label: p.label ?? '-'};
+  return {progress, basis, current, completed, remaining, total, schedule_step: scheduleStep(p), mode: p.mode ?? '-', role: p.role ?? '-', target: displayTarget(snapshot), label: p.label ?? '-'};
 }
 function projectionOnLine(a, b, p, bounds) {
   if (!a || !b || !p) return null;
@@ -1481,6 +1556,8 @@ function renderNowMarker(row, p, b, label) {
   return `<g><circle cx="${x}" cy="${y}" r="6" fill="#ff7f0e" stroke="var(--bg)" stroke-width="2"/><circle cx="${x}" cy="${y}" r="2" fill="var(--bg)"/><text x="${Math.min(PLOT.w-120, x+9)}" y="${Math.max(18, y-10)}" font-size="11" font-weight="700">${esc(label)}</text></g>`;
 }
 function mapAxisLabels(rows) {
+  const offsetBasis = rows.some(r => r.coordSource === 'offset' && (String(r.mode || '').toUpperCase() === 'ON' || r.kind === 'grid_point'));
+  if (offsetBasis) return {x:'offset x (deg)', y:'offset y (deg)'};
   const r = rows.find(x=>x.frame) || rows[0] || {};
   const frame = r.frame || 'map'; const unit = r.unit || 'deg';
   return {x:`${frame} x (${unit})`, y:`${frame} y (${unit})`};
@@ -1578,7 +1655,7 @@ async function update() {
       msg += `<div class=\"notice\"><span class=\"important\">This observation is ${esc(life.state)}.</span> Last update: ${esc(updated)}. Waiting for the next observation snapshot.</div>`;
     }
     document.getElementById('message').innerHTML = msg;
-    kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA confidence','remaining_confidence']]);
+    kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), target_label: displayTarget(snap), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target_label'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA confidence','remaining_confidence']]);
     document.querySelector('#observation div:nth-child(2)').innerHTML = `<span class=\"status ${stateClass(life.state)}\">${esc(life.state ?? '-')}</span>`;
     const statusEvents = s.status_events || s.events || [];
     const psummary = observerPlanSummary(snap, s.plan || {}, statusEvents);
