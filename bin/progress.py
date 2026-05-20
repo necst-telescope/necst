@@ -426,6 +426,243 @@ def pct_bar(percent: Optional[float], width: int = 50) -> str:
     return "[" + "#" * n + "-" * (width - n) + f"] {p:5.1f}%"
 
 
+def _geom_of(item: Mapping[str, Any]) -> Mapping[str, Any]:
+    geom = item.get("geometry") if isinstance(item, Mapping) else None
+    return geom if isinstance(geom, Mapping) else {}
+
+
+def _display_geom_context(geom: Mapping[str, Any]) -> Dict[str, Any]:
+    out: Dict[str, Any] = {}
+    for key in ("target_name", "target", "reference", "offset", "mode", "frame", "unit"):
+        if key in geom:
+            out[key] = geom[key]
+    return out
+
+
+def _flatten_plan_items_for_display(plan: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    """Flatten scan-block children for observer-facing progress summaries.
+
+    This mirrors the browser Plan View logic.  Parent plan items are kept so
+    point/OFF/HOT items remain visible, while scan_block lines are expanded into
+    per-line pseudo-items for OTF line progress.
+    """
+    raw_items = plan.get("items") if isinstance(plan, Mapping) else None
+    if not isinstance(raw_items, list):
+        return []
+    out: List[Dict[str, Any]] = []
+    for raw in raw_items:
+        if not isinstance(raw, Mapping):
+            continue
+        item = dict(raw)
+        out.append(item)
+        geom = _geom_of(item)
+        lines = geom.get("lines")
+        if geom.get("kind") in {"scan_block", "scan_block_line"} and isinstance(lines, list):
+            for line in lines:
+                if not isinstance(line, Mapping):
+                    continue
+                child = dict(item)
+                merged_geom = dict(_display_geom_context(geom))
+                merged_geom.update(dict(line))
+                merged_geom.setdefault("kind", "scan_block_line")
+                if "frame" not in merged_geom and geom.get("frame") is not None:
+                    merged_geom["frame"] = geom.get("frame")
+                if "unit" not in merged_geom and geom.get("unit") is not None:
+                    merged_geom["unit"] = geom.get("unit")
+                child["geometry"] = merged_geom
+                child["_parent_item_uid"] = item.get("item_uid")
+                child["item_uid"] = f"{item.get('item_uid') or 'scan_block'}:line:{line.get('line_index0', len(out))}"
+                child.setdefault("index0", item.get("index0"))
+                out.append(child)
+    return out
+
+
+def _display_item_mode(item: Mapping[str, Any]) -> str:
+    geom = _geom_of(item)
+    return str(item.get("mode") or geom.get("mode") or "").upper()
+
+
+def _display_status_for_item(
+    item: Mapping[str, Any],
+    snapshot: Mapping[str, Any],
+    events: Iterable[Mapping[str, Any]],
+) -> str:
+    plan = snapshot.get("plan") if isinstance(snapshot.get("plan"), Mapping) else {}
+    lifecycle = snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), Mapping) else {}
+    geometry = snapshot.get("geometry") if isinstance(snapshot.get("geometry"), Mapping) else {}
+    cur = plan.get("item_uid")
+    uid = item.get("item_uid")
+    parent = item.get("_parent_item_uid")
+    current_range = _index_range_from_mapping(plan)
+    final_state = str(lifecycle.get("state") or "").lower() in FINAL_LIFECYCLE_STATES
+
+    event_list = list(events or [])
+    for event in event_list:
+        if event.get("event") == "plan_item_finished" and event.get("item_uid") in {uid, parent}:
+            return "done"
+    item_range = _index_range_from_mapping(item)
+    for event in event_list:
+        if event.get("event") != "plan_item_finished":
+            continue
+        event_range = _index_range_from_mapping(event)
+        if item_range is not None and event_range is not None and _ranges_overlap(item_range, event_range):
+            return "done"
+
+    try:
+        live_line = int(geometry.get("current_line_index0"))
+        item_line = int(_geom_of(item).get("line_index0", item.get("line_index0")))
+        has_line = True
+    except Exception:
+        live_line = item_line = -1
+        has_line = False
+    if not final_state and cur and parent == cur and has_line:
+        if item_line < live_line:
+            return "done"
+        if item_line == live_line:
+            return "current"
+        return "pending"
+
+    overlaps_current = bool(current_range and item_range and _ranges_overlap(current_range, item_range))
+    if not final_state and ((cur and (uid == cur or parent == cur)) or overlaps_current):
+        return "current"
+    return "pending"
+
+
+def summarize_display_plan(
+    snapshot: Optional[Mapping[str, Any]],
+    full_plan: Optional[Mapping[str, Any]],
+    events: Iterable[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    """Build an observer-facing progress summary.
+
+    Display should answer an observer's question first:
+    "what observing unit am I in, and how many useful units remain?".
+    Internal NECST item indices are retained as schedule_step, but they are not
+    the primary progress unit for OTF/Grid/PSW/Skydip.
+    """
+    snap = snapshot if isinstance(snapshot, Mapping) else {}
+    obs = snap.get("observation") if isinstance(snap.get("observation"), Mapping) else {}
+    current_plan = snap.get("plan") if isinstance(snap.get("plan"), Mapping) else {}
+    geom = snap.get("geometry") if isinstance(snap.get("geometry"), Mapping) else {}
+    obs_type = str(obs.get("type") or "").lower()
+
+    rows: List[Dict[str, Any]] = []
+    for item in _flatten_plan_items_for_display(full_plan):
+        g = _geom_of(item)
+        kind = str(g.get("kind") or "")
+        has_line = kind in {"scan_line", "scan_block_line"} and g.get("start") is not None and g.get("stop") is not None
+        has_point = kind in {"point", "grid_point"} and (g.get("target") is not None or g.get("reference") is not None or g.get("offset") is not None)
+        has_skydip = kind == "skydip_elevation" or ("sky" in obs_type and (g.get("target") is not None or g.get("el_deg") is not None or g.get("elevation_deg") is not None))
+        if not (has_line or has_point or has_skydip):
+            continue
+        mode = _display_item_mode(item) or ("ON" if has_line else "POINT")
+        rows.append({"item": item, "kind": kind, "has_line": has_line, "has_point": has_point, "has_skydip": has_skydip, "mode": mode, "status": _display_status_for_item(item, snap, events)})
+
+    line_rows = [row for row in rows if row["has_line"] and (row["mode"] in {"", "ON"})]
+    if not line_rows:
+        line_rows = [row for row in rows if row["has_line"]]
+    point_rows = [row for row in rows if row["has_point"]]
+    on_point_rows = [row for row in point_rows if row["mode"] == "ON" or row["kind"] == "grid_point"]
+    skydip_rows = [row for row in rows if row["has_skydip"]]
+
+    def count_status(items: List[Dict[str, Any]]) -> tuple[int, int, int, int, Optional[int]]:
+        done = sum(1 for row in items if row["status"] == "done")
+        cur = sum(1 for row in items if row["status"] == "current")
+        rem = sum(1 for row in items if row["status"] == "pending")
+        cur_pos: Optional[int] = None
+        for idx, row in enumerate(items):
+            if row["status"] == "current":
+                cur_pos = idx + 1
+                break
+        return done, cur, rem, len(items), cur_pos
+
+    schedule_step = "-"
+    index0 = current_plan.get("index0")
+    total = current_plan.get("total")
+    index0_end = current_plan.get("index0_end")
+    if isinstance(index0, int) and isinstance(total, int) and total > 0:
+        if isinstance(index0_end, int) and index0_end >= index0:
+            schedule_step = f"{index0 + 1}-{index0_end + 1}/{total}"
+        else:
+            schedule_step = f"{index0 + 1}/{total}"
+
+    display_kind = "schedule"
+    basis = "schedule item"
+    progress_label = f"step {schedule_step}"
+    current_unit_label = compact_value(current_plan.get("mode") or "-")
+    completed_units: Any = "-"
+    remaining_units: Any = "-"
+    total_units: Any = "-"
+    has_otf_lines = False
+    current_line_label = "-"
+    current_line_number: Optional[int] = None
+    completed_lines = active_lines = remaining_lines = 0
+
+    if line_rows:
+        done, cur, rem, total_n, cur_pos = count_status(line_rows)
+        display_kind = "OTF"
+        basis = "ON scan line"
+        has_otf_lines = True
+        current_line_number = cur_pos
+        current_line_label = f"{cur_pos if cur_pos is not None else '-'}/{total_n}"
+        progress_label = f"OTF line {current_line_label}"
+        current_unit_label = "scan line"
+        completed_units, remaining_units, total_units = done, rem, total_n
+        completed_lines, active_lines, remaining_lines = done, cur, rem
+    elif "sky" in obs_type or skydip_rows:
+        done, cur, rem, total_n, cur_pos = count_status(skydip_rows or rows)
+        display_kind = "Skydip"
+        basis = "elevation step"
+        progress_label = f"Skydip step {cur_pos if cur_pos is not None else schedule_step}/{total_n if total_n else '-'}"
+        current_unit_label = "elevation"
+        completed_units, remaining_units, total_units = done, rem, total_n
+    elif "grid" in obs_type:
+        basis_rows = on_point_rows or point_rows
+        done, cur, rem, total_n, cur_pos = count_status(basis_rows)
+        display_kind = "Grid"
+        basis = "ON grid point"
+        progress_label = f"Grid ON {cur_pos if cur_pos is not None else max(0, done)}/{total_n if total_n else '-'}"
+        current_unit_label = compact_value(current_plan.get("mode") or "-")
+        completed_units, remaining_units, total_units = done, rem, total_n
+    elif "psw" in obs_type:
+        basis_rows = on_point_rows or point_rows
+        done, cur, rem, total_n, cur_pos = count_status(basis_rows)
+        display_kind = "PSW"
+        basis = "ON target visit"
+        progress_label = f"PSW ON {cur_pos if cur_pos is not None else max(0, done)}/{total_n if total_n else '-'}"
+        current_unit_label = compact_value(current_plan.get("mode") or "-")
+        completed_units, remaining_units, total_units = done, rem, total_n
+    elif point_rows:
+        done, cur, rem, total_n, cur_pos = count_status(point_rows)
+        display_kind = "Point"
+        basis = "pointing item"
+        progress_label = f"point {cur_pos if cur_pos is not None else schedule_step}/{total_n if total_n else '-'}"
+        current_unit_label = compact_value(current_plan.get("mode") or "-")
+        completed_units, remaining_units, total_units = done, rem, total_n
+
+    return {
+        "display_kind": display_kind,
+        "basis": basis,
+        "progress_label": progress_label,
+        "current_unit_label": current_unit_label,
+        "completed_units": completed_units,
+        "remaining_units": remaining_units,
+        "total_units": total_units,
+        "has_otf_lines": has_otf_lines,
+        "current_line_label": current_line_label,
+        "current_line_number": current_line_number,
+        "total_lines": total_units if has_otf_lines else 0,
+        "completed_lines": completed_lines,
+        "active_lines": active_lines,
+        "remaining_lines": remaining_lines,
+        "schedule_step": schedule_step,
+        "mode": current_plan.get("mode") or "-",
+        "role": current_plan.get("role") or "-",
+        "target": geom.get("target_name") or obs.get("target") or "-",
+        "label": current_plan.get("label") or "-",
+    }
+
+
 def _index_range_from_mapping(payload: Mapping[str, Any]) -> Optional[tuple[int, int]]:
     try:
         start = int(payload.get("index0"))
@@ -504,7 +741,7 @@ def compact_record_name(value: Any, *, max_len: int = 24) -> str:
     return f"{text[:keep]}…{text[-tail:]}"
 
 
-def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]], *, compact: bool = False) -> str:
+def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]], *, compact: bool = False, full_plan: Optional[Mapping[str, Any]] = None) -> str:
     if snapshot is None:
         return "No active NECST observation progress found."
     if "_error" in snapshot:
@@ -518,8 +755,10 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
     antenna = snapshot.get("antenna") or {}
     data = snapshot.get("data") or {}
     timing = snapshot.get("time") or {}
+    event_list = list(events)
+    display_summary = summarize_display_plan(snapshot, full_plan, event_list)
 
-    display_status = progress_display_status(lifecycle, plan, events)
+    display_status = progress_display_status(lifecycle, plan, event_list)
     state = compact_value(lifecycle.get("state")).upper()
     status_label = compact_value(display_status)
     obs_type = compact_value(obs.get("type"))
@@ -548,27 +787,35 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         index_label = f"-/{total}"
 
     if compact:
-        compact_line_info = ""
-        current_line = geom.get("current_line_index0")
-        line_total = geom.get("line_total") or plan.get("line_total")
-        if current_line is not None and line_total is not None:
-            try:
-                compact_line_info = f" line={int(current_line) + 1}/{int(line_total)}"
-            except Exception:
-                compact_line_info = f" line={compact_value(current_line)}/{compact_value(line_total)}"
-        elif current_line is not None:
-            compact_line_info = f" line={compact_value(current_line)}"
         state_prefix = state if status_label.lower() == str(lifecycle.get("state") or "").lower() else f"{state} status={status_label}"
-        eta_method = compact_eta_method(timing.get('remaining_method'), max_len=28)
+        eta_method = compact_eta_method(timing.get('remaining_method'), max_len=22)
         method_part = "" if eta_method == "-" else f" eta={eta_method}"
+        progress_label = str(display_summary.get("progress_label") or f"step {index_label}")
+        if progress_label.startswith("OTF line "):
+            progress_part = "line=" + progress_label.split("OTF line ", 1)[1]
+        elif progress_label.startswith("Grid ON "):
+            progress_part = "grid_on=" + progress_label.split("Grid ON ", 1)[1]
+        elif progress_label.startswith("PSW ON "):
+            progress_part = "psw_on=" + progress_label.split("PSW ON ", 1)[1]
+        elif progress_label.startswith("Skydip step "):
+            progress_part = "skydip=" + progress_label.split("Skydip step ", 1)[1]
+        else:
+            progress_part = progress_label.replace(" ", "=")
+        counts_part = (
+            f"done={display_summary.get('completed_units', '-')} "
+            f"remain={display_summary.get('remaining_units', '-')} "
+            f"basis={display_summary.get('basis', '-') }"
+        )
+        target = compact_value(geom.get("target_name") or obs.get("target"))
+        target_part = "" if target == "-" else f" target={target}"
         return (
-            f"{state_prefix} {obs_type} item={index_label} {phase} "
+            f"{state_prefix} {obs_type} {progress_part} {phase} "
             f"elapsed={fmt_seconds_short(timing.get('elapsed_sec'))} "
             f"remain={fmt_seconds_short(timing.get('estimated_remaining_sec'), approx=True)} "
             f"conf={compact_value(timing.get('remaining_confidence'))}\n"
-            f"drive={drive}:{motion}{compact_line_info} data={data_state} "
+            f"drive={drive}:{motion} data={data_state}{target_part} "
             f"metadata={compact_value(data.get('expected_metadata_position'))} "
-            f"id={compact_value(data.get('expected_metadata_id'))}{method_part}"
+            f"id={compact_value(data.get('expected_metadata_id'))} {counts_part}{method_part}".rstrip()
         )
 
     lines = []
@@ -595,12 +842,19 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
     label = compact_value(plan.get("label"))
     role = compact_value(plan.get("role"))
     obs_id = compact_value(plan.get("obs_id"))
-    lines.append(frame_line(f"item {index_label}  phase={phase}  id={obs_id}  role={role}"))
-    if plan.get("index0_end") is not None:
-        lines.append(frame_line(
-            f"block index={plan.get('index0')}..{plan.get('index0_end')} "
-            f"lines={compact_value(plan.get('line_total'))} label={label}"
-        ))
+    lines.append(frame_line(
+        f"{display_summary.get('progress_label', 'step ' + index_label)}  "
+        f"done={display_summary.get('completed_units', '-')}  "
+        f"remaining={display_summary.get('remaining_units', '-')}"
+    ))
+    lines.append(frame_line(
+        f"basis={display_summary.get('basis', 'schedule item')}  "
+        f"current={display_summary.get('current_unit_label', phase)}  "
+        f"schedule step={display_summary['schedule_step']}"
+    ))
+    lines.append(frame_line(f"phase={phase}  id={obs_id}  role={role}"))
+    if label != "-":
+        lines.append(frame_line(f"label={label}"))
     lines.append(f"│ {pct_bar(percent):<58}│")
     lines.append("├──────────────────── CURRENT ACTIVITY ──────────────────────┤")
     line_info = ""
@@ -665,7 +919,7 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
             f"age={compact_value(data.get('latest_spectrum_age_sec'))}"
         ))
     lines.append("├──────────────────── RECENT EVENTS ─────────────────────────┤")
-    event_lines = list(events)[-8:] or snapshot.get("recent_events", [])[-8:]
+    event_lines = event_list[-8:] or snapshot.get("recent_events", [])[-8:]
     if not event_lines:
         lines.append(frame_line("-"))
     for event in event_lines[-8:]:
@@ -696,8 +950,11 @@ def cmd_once(args: argparse.Namespace) -> int:
         if args.json:
             print(json.dumps(snapshot or {}, ensure_ascii=False, indent=2, sort_keys=True))
             return 0
-        events = read_recent_events(latest_events_path(root, snapshot), args.events)
-        print(render(snapshot, events, compact=args.compact))
+        events_path = latest_events_path(root, snapshot)
+        events = read_recent_events(events_path, args.events)
+        plan_path = latest_plan_path(root, snapshot)
+        full_plan = read_json(plan_path) if plan_path else None
+        print(render(snapshot, events, compact=args.compact, full_plan=full_plan))
         return 0
     finally:
         live.close()
@@ -710,13 +967,16 @@ def cmd_watch(args: argparse.Namespace) -> int:
         while True:
             live.spin_once(0.0)
             snapshot = apply_dynamic_remaining(merge_live_telemetry(read_json(current_snapshot_path(root)), live.snapshot()))
-            events = read_recent_events(latest_events_path(root, snapshot), args.events)
+            events_path = latest_events_path(root, snapshot)
+            events = read_recent_events(events_path, args.events)
+            plan_path = latest_plan_path(root, snapshot)
+            full_plan = read_json(plan_path) if plan_path else None
             if args.no_clear:
-                print(render(snapshot, events, compact=args.compact))
+                print(render(snapshot, events, compact=args.compact, full_plan=full_plan))
                 print()
             else:
                 sys.stdout.write("\x1b[H\x1b[2J")
-                sys.stdout.write(render(snapshot, events, compact=args.compact))
+                sys.stdout.write(render(snapshot, events, compact=args.compact, full_plan=full_plan))
                 sys.stdout.write("\n")
                 sys.stdout.flush()
             time.sleep(args.interval)
@@ -828,7 +1088,7 @@ def build_state(root: Path, *, events_limit: int = 12, live: Optional[LiveRosCac
         # ``events`` so the dashboard stays readable.
         "status_events": all_events,
         "plan": plan or {},
-        "rendered": render(snapshot if isinstance(snapshot, dict) else None, all_events, compact=True),
+        "rendered": render(snapshot if isinstance(snapshot, dict) else None, all_events, compact=True, full_plan=plan if isinstance(plan, dict) else None),
         "server_time_unix": time.time(),
     }
 
@@ -861,18 +1121,23 @@ h1 { font-size:1.05rem; margin:0 0 .3rem; }
 .status.running, .status.finished { color:var(--ok); } .status.error, .status.aborted { color:var(--err); } .status.cleanup { color:var(--warn); }
 .bar { width:100%; height:.86rem; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:#9992; margin-top:.35rem; }
 .fill { height:100%; width:0%; background:currentColor; color:var(--ok); transition:width .2s; }
-pre { white-space:pre-wrap; overflow:auto; max-height:18rem; margin:.2rem 0 0; font-size:.78rem; }
-table { border-collapse:collapse; width:100%; font-size:.78rem; }
-th, td { border-bottom:1px solid var(--border); text-align:left; padding:.2rem; vertical-align:top; }
+pre { white-space:pre-wrap; overflow:auto; max-height:18rem; margin:.2rem 0 0; font-size:.74rem; }
+table { border-collapse:collapse; width:100%; font-size:.74rem; table-layout:fixed; }
+th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem .18rem; vertical-align:top; overflow:hidden; text-overflow:ellipsis; }
+#events { overflow:auto; max-height:17rem; }
+#events th:nth-child(1), #events td:nth-child(1) { width:3.9rem; }
+#events th:nth-child(3), #events td:nth-child(3) { width:5.6rem; }
 .plotbox { min-height: 500px; display:flex; align-items:center; justify-content:center; }
 .plotbox svg { width:100%; height:auto; max-height:72vh; color:var(--plot-text); }
-.plotbox svg text { fill: currentColor; }
+.plotbox svg text { fill: currentColor; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
 .legend { display:flex; gap:.65rem; flex-wrap:wrap; margin:.2rem 0 .35rem; font-size:.78rem; color:var(--muted); }
 .dot { display:inline-block; width:.72rem; height:.72rem; border-radius:999px; vertical-align:-.08rem; margin-right:.22rem; }
 .small { font-size:.74rem; color:var(--muted); }
 .planview { grid-column: span 3; grid-row: span 2; min-height: 38rem; }
 .planview .plotbox { min-height: 560px; }
 .planview svg { max-height: 78vh; }
+.axis-label { font-size:11px; fill:currentColor; }
+.plot-note { font-size:11px; fill:currentColor; }
 .important { font-weight:700; }
 .notice { margin:.25rem 0 .5rem; padding:.42rem .55rem; border:1px solid var(--border); border-radius:9px; background:#9991; }
 @media (max-width: 1100px) { .planview { grid-column: span 2; } }
@@ -887,7 +1152,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.2rem; 
 <section class=\"card\"><h2>Observation</h2><div class=\"kv\" id=\"observation\"></div></section>
 <section class=\"card\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
 <section class=\"card\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
-<section class=\"card planview\"><h2>Plan View</h2><div class=\"legend\"><span><i class=\"dot\" style=\"background:#2ca02c\"></i>done</span><span><i class=\"dot\" style=\"background:#ff7f0e\"></i>current</span><span><i class=\"dot\" style=\"background:#bdbdbd\"></i>pending</span><span>OFF/ref points are labeled; aspect follows observation coordinates; orange line has scan direction.</span></div><div id=\"plotview\" class=\"plotbox small\">-</div></section>
+<section class=\"card planview\"><h2>Plan View</h2><div class=\"legend\"><span><i class=\"dot\" style=\"background:#2ca02c\"></i>done</span><span><i class=\"dot\" style=\"background:#ff7f0e\"></i>current</span><span><i class=\"dot\" style=\"background:#bdbdbd\"></i>pending</span><span>OTF=line map, Grid/PSW=ON-basis point sequence, Skydip=elevation sequence. OFF/reference points are labels, not progress basis.</span></div><div id=\"plotview\" class=\"plotbox small\">-</div></section>
 <section class=\"card\"><h2>Geometry</h2><div class=\"kv\" id=\"geometry\"></div></section>
 <section class=\"card\"><h2>Data</h2><div class=\"kv\" id=\"data\"></div></section>
 <section class=\"card\"><h2>Recent Events</h2><div id=\"events\"></div></section>
@@ -1009,12 +1274,13 @@ const PLOT = {w: 640, h: 430, left: 48, right: 592, top: 42, bottom: 352};
 function sx(x, bounds) { return PLOT.left + (x-bounds.xmin) * (PLOT.right-PLOT.left) / Math.max(1e-9, bounds.xmax-bounds.xmin); }
 function sy(y, bounds) { return PLOT.bottom - (y-bounds.ymin) * (PLOT.bottom-PLOT.top) / Math.max(1e-9, bounds.ymax-bounds.ymin); }
 function colorFor(status) { return status === 'done' ? '#2ca02c' : status === 'current' ? '#ff7f0e' : '#bdbdbd'; }
-function renderPlanView(snapshot, plan, events) {
+function renderPlanView(snapshot, plan, events, serverTimeUnix=null) {
   const items = flattenItems(plan);
   const kinds = new Set(items.map(it=>geomOf(it).kind));
+  const obsType = String(snapshot?.observation?.type || '').toLowerCase();
   const plot = document.getElementById('plotview');
-  if (kinds.has('skydip_elevation')) { plot.innerHTML = renderSkydipSvg(snapshot, items, events); return; }
-  if ([...kinds].some(k => ['scan_line','scan_block_line','point','grid_point'].includes(k))) { plot.innerHTML = renderMapSvg(snapshot, items, events); return; }
+  if (kinds.has('skydip_elevation') || obsType.includes('sky')) { plot.innerHTML = renderSkydipSvg(snapshot, items, events); return; }
+  if ([...kinds].some(k => ['scan_line','scan_block_line','point','grid_point'].includes(k))) { plot.innerHTML = renderMapSvg(snapshot, items, events, serverTimeUnix); return; }
   plot.innerHTML = '<div>No plottable geometry yet.</div>';
 }
 function itemMode(item) { return String(item?.mode || geomOf(item).mode || '').toUpperCase(); }
@@ -1035,12 +1301,17 @@ function equalAspectBounds(xmin, xmax, ymin, ymax) {
   let cx = (xmin + xmax) / 2, cy = (ymin + ymax) / 2;
   let w = Math.max(1e-6, xmax - xmin), h = Math.max(1e-6, ymax - ymin);
   const dataAspect = w / h;
-  if (dataAspect > innerAspect) {
-    h = w / innerAspect;
-  } else {
-    w = h * innerAspect;
-  }
+  if (dataAspect > innerAspect) h = w / innerAspect;
+  else w = h * innerAspect;
   return {xmin: cx - w/2, xmax: cx + w/2, ymin: cy - h/2, ymax: cy + h/2};
+}
+function paddedBounds(scalePts, fallbackPts) {
+  const pts = scalePts.length ? scalePts : fallbackPts;
+  let xmin=Math.min(...pts.map(p=>p[0])), xmax=Math.max(...pts.map(p=>p[0])), ymin=Math.min(...pts.map(p=>p[1])), ymax=Math.max(...pts.map(p=>p[1]));
+  const unitSpan = Math.max(Math.abs(xmax-xmin), Math.abs(ymax-ymin));
+  const minPad = unitSpan <= 1e-9 ? 0.05 : 0.0;
+  const dx=Math.max(minPad, 1e-6, (xmax-xmin)*0.08), dy=Math.max(minPad, 1e-6, (ymax-ymin)*0.08);
+  return equalAspectBounds(xmin-dx, xmax+dx, ymin-dy, ymax+dy);
 }
 function projectFraction(a, b, p) {
   if (!a || !b || !p) return null;
@@ -1059,29 +1330,19 @@ function antennaPoint(snapshot, prefix, requiredFrame) {
   if (requiredFrame && frame && frame !== String(requiredFrame).toLowerCase()) return null;
   return [x, y];
 }
-function renderAntennaMarker(label, p, b, color, shape) {
-  if (!p) return '';
-  const clipped = clipPoint(p, b);
-  const x = sx(clipped.p[0], b), y = sy(clipped.p[1], b);
-  const suffix = clipped.clipped ? ' outside' : '';
-  if (shape === 'cross') {
-    return `<g><line x1="${x-6}" y1="${y}" x2="${x+6}" y2="${y}" stroke="${color}" stroke-width="2"/><line x1="${x}" y1="${y-6}" x2="${x}" y2="${y+6}" stroke="${color}" stroke-width="2"/><text x="${Math.min(PLOT.w-50, x+8)}" y="${Math.max(16, y-8)}" font-size="11">${esc(label + suffix)}</text></g>`;
-  }
-  return `<g><circle cx="${x}" cy="${y}" r="5" fill="none" stroke="${color}" stroke-width="2"/><text x="${Math.min(PLOT.w-50, x+8)}" y="${Math.max(16, y+13)}" font-size="11">${esc(label + suffix)}</text></g>`;
-}
 function renderPoint(row, b) {
   const clipped = clipPoint(row.a, b);
   const x = sx(clipped.p[0], b), y = sy(clipped.p[1], b);
   const r = row.status === 'current' ? 6 : 4;
   const label = row.pointLabel;
   const shape = row.mode === 'ON' || row.mode === 'POINT'
-    ? `<circle cx="${x}" cy="${y}" r="${r}" fill="${colorFor(row.status)}" stroke="${row.status==='current'?'#111':'none'}"/>`
-    : `<path d="M ${x} ${y-r-2} L ${x+r+2} ${y} L ${x} ${y+r+2} L ${x-r-2} ${y} Z" fill="${colorFor(row.status)}" stroke="#1118"/>`;
+    ? `<circle cx="${x}" cy="${y}" r="${r}" fill="${colorFor(row.status)}" stroke="${row.status==='current'?'var(--bg)':'none'}" stroke-width="2"/>`
+    : `<path d="M ${x} ${y-r-2} L ${x+r+2} ${y} L ${x} ${y+r+2} L ${x-r-2} ${y} Z" fill="${colorFor(row.status)}" stroke="var(--bg)" stroke-width="1.5"/>`;
   const suffix = clipped.clipped ? ' (outside)' : '';
-  const text = label ? `<text x="${Math.min(PLOT.w-70, x+7)}" y="${Math.max(16, y-6)}" font-size="12" font-weight="700">${esc(label + suffix)}</text>` : '';
+  const text = label ? `<text x="${Math.min(PLOT.w-100, x+7)}" y="${Math.max(16, y-6)}" font-size="12" font-weight="700">${esc(label + suffix)}</text>` : '';
   return shape + text;
 }
-function renderMapSvg(snapshot, items, events) {
+function collectMapRows(snapshot, items, events) {
   const rows=[]; const allPts=[]; const boundsPts=[];
   for (const item of items) {
     const g = geomOf(item); const k=g.kind; const mode = itemMode(item);
@@ -1089,7 +1350,7 @@ function renderMapSvg(snapshot, items, events) {
     if (k === 'scan_line' || k === 'scan_block_line') {
       const a=pair(g.start), b=pair(g.stop);
       if (a&&b) {
-        rows.push({item,a,b,status,mode:mode || 'ON',lineIndex:g.line_index0,frame:g.frame});
+        rows.push({item,a,b,status,mode:mode || 'ON',kind:k,lineIndex:g.line_index0,frame:g.frame,unit:g.unit});
         allPts.push(a,b);
         if ((mode || 'ON') === 'ON') boundsPts.push(a,b);
       }
@@ -1098,45 +1359,205 @@ function renderMapSvg(snapshot, items, events) {
       const xy=pair(g.target)||pair(g.reference)||pair(g.offset);
       if (xy) {
         const pointLabel = pointKind(item);
-        rows.push({item,a:xy,b:null,status,mode:mode || pointLabel,pointLabel,frame:g.frame});
+        rows.push({item,a:xy,b:null,status,mode:mode || pointLabel,kind:k,pointLabel,frame:g.frame,unit:g.unit});
         allPts.push(xy);
         if ((mode || '').toUpperCase() === 'ON' || k === 'grid_point') boundsPts.push(xy);
       }
     }
   }
+  return {rows, allPts, boundsPts};
+}
+function lineRowsFrom(rows) {
+  let lineRows = rows.filter(r => r.b && (r.mode === 'ON' || r.mode === ''));
+  if (!lineRows.length) lineRows = rows.filter(r => r.b);
+  lineRows.sort((a,b)=>(Number(a.lineIndex ?? 0)-Number(b.lineIndex ?? 0)));
+  return lineRows;
+}
+function lineSummary(rows) {
+  const lineRows = lineRowsFrom(rows);
+  const currentRow = lineRows.find(r => r.status === 'current') || null;
+  const currentNo = currentRow ? lineRows.indexOf(currentRow) + 1 : null;
+  return {lineRows, currentRow, currentNo, done: lineRows.filter(r=>r.status==='done').length, current: lineRows.filter(r=>r.status==='current').length, remaining: lineRows.filter(r=>r.status==='pending').length, total: lineRows.length};
+}
+function pointCounts(rows) {
+  return {done: rows.filter(r=>r.status==='done').length, current: rows.filter(r=>r.status==='current').length, remaining: rows.filter(r=>r.status==='pending').length, total: rows.length, currentNo: rows.findIndex(r=>r.status==='current') + 1};
+}
+function scheduleStep(plan) {
+  if (Number.isInteger(plan?.index0) && Number.isInteger(plan?.total) && plan.total > 0) {
+    const end = Number.isInteger(plan?.index0_end) && plan.index0_end >= plan.index0 ? plan.index0_end : plan.index0;
+    return end > plan.index0 ? `${plan.index0+1}-${end+1}/${plan.total}` : `${plan.index0+1}/${plan.total}`;
+  }
+  return '-';
+}
+function observerPlanSummary(snapshot, plan, events) {
+  const obsType = String(snapshot?.observation?.type || '').toLowerCase();
+  const rows = collectMapRows(snapshot, flattenItems(plan), events).rows;
+  const ls = lineSummary(rows);
+  const p = snapshot?.plan || {};
+  const geom = snapshot?.geometry || {};
+  const pointRows = rows.filter(r => !r.b);
+  const onPointRows = pointRows.filter(r => String(r.mode || r.pointLabel || '').toUpperCase() === 'ON' || r.kind === 'grid_point');
+  const currentMode = p.mode ?? snapshot?.activity?.phase ?? '-';
+  let progress = `step ${scheduleStep(p)}`;
+  let basis = 'schedule item';
+  let current = currentMode;
+  let completed = '-';
+  let remaining = '-';
+  let total = '-';
+  if (ls.total) {
+    progress = `OTF line ${ls.currentNo ?? '-'}/${ls.total}`;
+    basis = 'ON scan line'; completed = ls.done; remaining = ls.remaining; total = ls.total; current = 'scan line';
+  } else if (obsType.includes('sky')) {
+    const sky = skydipRowsFrom(snapshot, flattenItems(plan), events);
+    const c = pointCounts(sky);
+    progress = `Skydip step ${c.currentNo || scheduleStep(p)}/${c.total || '-'}`;
+    basis = 'elevation step'; completed = c.done; remaining = c.remaining; total = c.total; current = currentMode;
+  } else if (obsType.includes('grid')) {
+    const c = pointCounts(onPointRows.length ? onPointRows : pointRows);
+    progress = `Grid ON ${c.currentNo || c.done}/${c.total || '-'}`;
+    basis = 'ON grid point'; completed = c.done; remaining = c.remaining; total = c.total; current = currentMode;
+  } else if (obsType.includes('psw')) {
+    const c = pointCounts(onPointRows.length ? onPointRows : pointRows);
+    progress = `PSW ON ${c.currentNo || c.done}/${c.total || '-'}`;
+    basis = 'ON target visit'; completed = c.done; remaining = c.remaining; total = c.total; current = currentMode;
+  }
+  return {progress, basis, current, completed, remaining, total, schedule_step: scheduleStep(p), mode: p.mode ?? '-', role: p.role ?? '-', target: geom.target_name || snapshot?.observation?.target || '-', label: p.label ?? '-'};
+}
+function projectionOnLine(a, b, p, bounds) {
+  if (!a || !b || !p) return null;
+  const vx = b[0] - a[0], vy = b[1] - a[1];
+  const den = vx*vx + vy*vy;
+  if (den <= 1e-18) return null;
+  const t = ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / den;
+  const cx = a[0] + t*vx, cy = a[1] + t*vy;
+  const dist = Math.hypot(p[0]-cx, p[1]-cy);
+  const lineLen = Math.sqrt(den);
+  const mapScale = Math.max(Math.abs(bounds.xmax-bounds.xmin), Math.abs(bounds.ymax-bounds.ymin), 1e-9);
+  const reliable = t >= -0.08 && t <= 1.08 && dist <= Math.max(0.18*lineLen, 0.025*mapScale);
+  return {t: Math.max(0, Math.min(1, t)), rawT: t, dist, reliable};
+}
+function pointInsideBounds(p, bounds, margin=0.02) {
+  if (!p) return false;
+  const dx = (bounds.xmax-bounds.xmin)*margin, dy = (bounds.ymax-bounds.ymin)*margin;
+  return p[0] >= bounds.xmin-dx && p[0] <= bounds.xmax+dx && p[1] >= bounds.ymin-dy && p[1] <= bounds.ymax+dy;
+}
+function median(xs) {
+  const a = xs.filter(x=>Number.isFinite(x) && x > 0).sort((a,b)=>a-b);
+  if (!a.length) return null;
+  const m = Math.floor(a.length/2);
+  return a.length % 2 ? a[m] : 0.5*(a[m-1]+a[m]);
+}
+function currentIntegrationTiming(snapshot, events, serverTimeUnix) {
+  const phase = String(snapshot?.activity?.phase || snapshot?.plan?.mode || '').toUpperCase();
+  const id = snapshot?.data?.expected_metadata_id ?? snapshot?.plan?.obs_id;
+  const evs = (events || []).filter(e => typeof e.time_unix === 'number');
+  let currentStart = null;
+  for (const e of evs) {
+    const samePhase = !phase || !e.phase || String(e.phase).toUpperCase() === phase;
+    const sameId = id === undefined || id === null || e.id === undefined || String(e.id) === String(id);
+    if (e.event === 'integration_started' && samePhase && sameId) currentStart = e.time_unix;
+    if (e.event === 'integration_finished' && samePhase && sameId && currentStart !== null && e.time_unix >= currentStart) currentStart = null;
+  }
+  const samples = [];
+  const starts = new Map();
+  for (const e of evs) {
+    const key = `${String(e.phase || '')}:${String(e.id ?? '')}`;
+    if (e.event === 'integration_started') starts.set(key, e.time_unix);
+    if (e.event === 'integration_finished' && starts.has(key)) {
+      const dt = e.time_unix - starts.get(key);
+      if (dt > 0.05 && dt < 3600) samples.push(dt);
+      starts.delete(key);
+    }
+  }
+  const typical = median(samples);
+  const now = Number.isFinite(serverTimeUnix) ? serverTimeUnix : Date.now()/1000;
+  if (currentStart !== null && typical) return {fraction: Math.max(0, Math.min(1, (now-currentStart)/typical)), age: now-currentStart, typical, source:'time'};
+  return null;
+}
+function pointAtFraction(a, b, t) { return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]; }
+function renderNowMarker(row, p, b, label) {
+  if (!row || !p) return '';
+  const x=sx(p[0],b), y=sy(p[1],b);
+  return `<g><circle cx="${x}" cy="${y}" r="6" fill="#ff7f0e" stroke="var(--bg)" stroke-width="2"/><circle cx="${x}" cy="${y}" r="2" fill="var(--bg)"/><text x="${Math.min(PLOT.w-120, x+9)}" y="${Math.max(18, y-10)}" font-size="11" font-weight="700">${esc(label)}</text></g>`;
+}
+function mapAxisLabels(rows) {
+  const r = rows.find(x=>x.frame) || rows[0] || {};
+  const frame = r.frame || 'map'; const unit = r.unit || 'deg';
+  return {x:`${frame} x (${unit})`, y:`${frame} y (${unit})`};
+}
+function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
+  const collected = collectMapRows(snapshot, items, events);
+  const rows = collected.rows; const allPts = collected.allPts; const boundsPts = collected.boundsPts;
   if (!allPts.length) return '<div>No numeric geometry. This is normal for target-name-only observations.</div>';
-  const scalePts = boundsPts.length >= 2 ? boundsPts : allPts;
-  let xmin=Math.min(...scalePts.map(p=>p[0])), xmax=Math.max(...scalePts.map(p=>p[0])), ymin=Math.min(...scalePts.map(p=>p[1])), ymax=Math.max(...scalePts.map(p=>p[1]));
-  const dx=Math.max(1e-6,(xmax-xmin)*0.08), dy=Math.max(1e-6,(ymax-ymin)*0.08);
-  let b=equalAspectBounds(xmin-dx, xmax+dx, ymin-dy, ymax+dy);
+  const obsType = String(snapshot?.observation?.type || '').toLowerCase();
+  let b=paddedBounds(boundsPts, allPts);
+  const ls = lineSummary(rows);
   rows.sort((a,b)=>({pending:0,done:1,current:2}[a.status]-{pending:0,done:1,current:2}[b.status]));
-  const currentRow = rows.find(r => r.b && r.status === 'current') || null;
+  const currentRow = ls.currentRow;
   const rowFrame = currentRow?.frame || rows.find(r=>r.frame)?.frame || '';
   const cmd = antennaPoint(snapshot, 'command', rowFrame);
   const enc = antennaPoint(snapshot, 'encoder', rowFrame);
-  const lineNo = snapshot?.geometry?.current_line_index0;
-  const lineTotal = snapshot?.geometry?.line_total;
-  const lineLabel = Number.isInteger(lineNo) ? `line ${lineNo+1}${Number.isInteger(lineTotal) ? '/' + lineTotal : ''}` : '';
-  const frac = currentRow && cmd ? projectFraction(currentRow.a, currentRow.b, cmd) : null;
-  const scanText = currentRow ? `${lineLabel || 'current line'}  direction: start→stop${frac !== null ? '  cmd: ' + (100*frac).toFixed(1) + '%' : ''}` : 'current scan line is shown in orange when available';
+  const tel = enc || cmd;
+  const proj = currentRow && tel ? projectionOnLine(currentRow.a, currentRow.b, tel, b) : null;
+  const telescopeCanOverlay = Boolean(proj?.reliable && pointInsideBounds(tel, b, 0.03));
+  const timeProgress = currentRow ? currentIntegrationTiming(snapshot, events, serverTimeUnix) : null;
+  let nowPoint = null, nowLabel = '';
+  if (currentRow && telescopeCanOverlay) { nowPoint = tel; nowLabel = `Telescope ${(100*proj.t).toFixed(0)}%`; }
+  else if (currentRow && timeProgress) { nowPoint = pointAtFraction(currentRow.a, currentRow.b, timeProgress.fraction); nowLabel = `Now≈${(100*timeProgress.fraction).toFixed(0)}%`; }
+  const axes = mapAxisLabels(rows);
   const lineEls = rows.map(r => {
     if (!r.b) return renderPoint(r,b);
     const x1=sx(r.a[0],b), y1=sy(r.a[1],b), x2=sx(r.b[0],b), y2=sy(r.b[1],b);
     const arrow = r.status === 'current' ? ' marker-end="url(#arrowhead)"' : '';
     return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorFor(r.status)}" stroke-width="${r.status==='current'?4:2}" opacity="${r.status==='pending'?0.55:0.95}"${arrow}/>`;
   }).join('');
-  const liveEls = renderAntennaMarker('CMD', cmd, b, '#58a6ff', 'cross') + renderAntennaMarker('ENC', enc, b, '#d2a8ff', 'circle');
-  const counts = {done: rows.filter(r=>r.status==='done').length, current: rows.filter(r=>r.status==='current').length, pending: rows.filter(r=>r.status==='pending').length};
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-54}" font-size="12">${esc(scanText)}</text><text x="${PLOT.left}" y="${PLOT.h-34}" font-size="11">x: ${esc(b.xmin.toFixed(3))} .. ${esc(b.xmax.toFixed(3))}</text><text x="${PLOT.left+285}" y="${PLOT.h-34}" font-size="11">done ${counts.done} / current ${counts.current} / pending ${counts.pending}</text><text x="${PLOT.left+285}" y="${PLOT.h-16}" font-size="11">CMD cross, ENC circle; OFF/ref labels are clipped if outside ON map</text></svg>`;
+  const liveEls = nowPoint ? renderNowMarker(currentRow, nowPoint, b, nowLabel) : '';
+  const pointRows = rows.filter(r=>!r.b);
+  const onRows = pointRows.filter(r=>String(r.mode || r.pointLabel || '').toUpperCase()==='ON' || r.kind === 'grid_point');
+  let countText = '', note = '';
+  if (ls.total) {
+    countText = `OTF lines: ${ls.done} done + ${ls.current} current + ${ls.remaining} remaining = ${ls.total}`;
+    note = nowPoint ? 'Orange dot marks telescope/estimated position along the current scan line.' : 'No live telescope marker: live antenna coordinates are absolute while this map may be relative, and no line-time estimate is available.';
+  } else if (obsType.includes('grid')) {
+    const c = pointCounts(onRows.length ? onRows : pointRows);
+    countText = `Grid ON points: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
+    note = 'Progress is ON-basis. OFF/reference points are shown as labels and clipped if far away.';
+  } else if (obsType.includes('psw')) {
+    const c = pointCounts(onRows.length ? onRows : pointRows);
+    countText = `PSW ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
+    note = 'Progress is ON-basis. OFF/HOT/reference positions are labels, not the progress denominator.';
+  } else {
+    const c = pointCounts(pointRows);
+    countText = `Point sequence: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
+    note = 'Current item is orange; labels identify ON/OFF/HOT/reference points when available.';
+  }
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.h-64}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note)}</text></svg>`;
+}
+function skydipRowsFrom(snapshot, items, events) {
+  const rows=[];
+  for (let i=0; i<items.length; i++) {
+    const g=geomOf(items[i]);
+    let el = Number(g.el_deg ?? g.target_el_deg ?? g.elevation_deg);
+    const t=pair(g.target);
+    if (!Number.isFinite(el) && t) el=t[1];
+    if (Number.isFinite(el)) rows.push({x:i+1,y:el,status:statusFor(items[i],snapshot,events), label:itemMode(items[i]) || String(items[i]?.mode || '')});
+  }
+  return rows;
 }
 function renderSkydipSvg(snapshot, items, events) {
-  const rows=[];
-  for (let i=0; i<items.length; i++) { const g=geomOf(items[i]); let el = Number(g.el_deg ?? g.target_el_deg ?? g.elevation_deg); const t=pair(g.target); if (!Number.isFinite(el) && t) el=t[1]; if (Number.isFinite(el)) rows.push({x:i+1,y:el,status:statusFor(items[i],snapshot,events)}); }
-  if (!rows.length) return '<div>No skydip elevation geometry.</div>';
-  const ymin=Math.min(...rows.map(r=>r.y))-5, ymax=Math.max(...rows.map(r=>r.y))+5; const xmin=1, xmax=Math.max(1, rows.length); const b=equalAspectBounds(xmin,xmax,ymin,ymax);
+  const rows=skydipRowsFrom(snapshot, items, events);
+  if (!rows.length) return '<div>No skydip elevation geometry. Skydip plot needs elevation values in plan geometry.</div>';
+  const ymin0=Math.min(...rows.map(r=>r.y)), ymax0=Math.max(...rows.map(r=>r.y));
+  const xmin=1, xmax=Math.max(1, rows.length);
+  const span=Math.max(1e-6, Math.abs(ymax0-ymin0));
+  const ymin=ymin0 - Math.max(2, 0.08*span), ymax=ymax0 + Math.max(2, 0.08*span);
+  const b={xmin:xmin-0.5, xmax:xmax+0.5, ymin, ymax};
   const poly = rows.map(r=>`${sx(r.x,b)},${sy(r.y,b)}`).join(' ');
-  const pts = rows.map(r=>`<circle cx="${sx(r.x,b)}" cy="${sy(r.y,b)}" r="${r.status==='current'?6:4}" fill="${colorFor(r.status)}" stroke="${r.status==='current'?'#111':'none'}"/>`).join('');
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text x="${PLOT.left}" y="${PLOT.h-34}" font-size="11">sequence step</text><text x="${PLOT.left+285}" y="${PLOT.h-34}" font-size="11">elevation ${esc(ymin.toFixed(1))}..${esc(ymax.toFixed(1))} deg</text></svg>`;
+  const pts = rows.map(r=>`<circle cx="${sx(r.x,b)}" cy="${sy(r.y,b)}" r="${r.status==='current'?6:4}" fill="${colorFor(r.status)}" stroke="${r.status==='current'?'var(--bg)':'none'}" stroke-width="2"/>`).join('');
+  const c = pointCounts(rows);
+  const cur = rows.find(r=>r.status==='current');
+  const curText = cur ? `Current elevation ${cur.y.toFixed(1)} deg at step ${cur.x}/${rows.length}` : `Elevation sequence ${rows.length} steps`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.h-64}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">Skydip: ${esc(curText)}; ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">This is elevation vs. sequence order for sky-dipping, not a sky map.</text></svg>`;
 }
 async function update() {
   try {
@@ -1159,15 +1580,22 @@ async function update() {
     document.getElementById('message').innerHTML = msg;
     kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA confidence','remaining_confidence']]);
     document.querySelector('#observation div:nth-child(2)').innerHTML = `<span class=\"status ${stateClass(life.state)}\">${esc(life.state ?? '-')}</span>`;
-    kv('plan', plan, [['item_uid',(p)=>shortRecordName(p?.item_uid, 34)], ['index0','index0'], ['index0_end','index0_end'], ['total','total'], ['mode','mode'], ['role','role'], ['label','label'], ['obs_id','obs_id']]);
+    const statusEvents = s.status_events || s.events || [];
+    const psummary = observerPlanSummary(snap, s.plan || {}, statusEvents);
+    kv('plan', psummary, [['progress','progress'], ['basis','basis'], ['current','current'], ['completed','completed'], ['remaining','remaining'], ['total','total'], ['mode','mode'], ['role','role'], ['target','target'], ['label','label']]);
     document.getElementById('bar').style.width = pct(plan).toFixed(1) + '%';
-    renderPlanView(snap, s.plan || {}, s.status_events || s.events || []);
+    renderPlanView(snap, s.plan || {}, statusEvents, s.server_time_unix);
     kv('activity', activity, [['phase','phase'], ['drive_kind','drive_kind'], ['motion_stage','motion_stage'], ['data_state','data_state'], ['location_context','location_context'], ['description','description']]);
     kv('geometry', geom, [['kind','kind'], ['frame','frame'], ['unit','unit'], ['target_name','target_name'], ['target','target'], ['reference','reference'], ['offset','offset'], ['start','start'], ['stop','stop'], ['current_line','current_line_index0'], ['line_total','line_total']]);
     kv('data', data, [['expected position','expected_metadata_position'], ['expected id','expected_metadata_id'], ['expected line','expected_metadata_line_index'], ['latest position','latest_spectrum_position'], ['latest id','latest_spectrum_id'], ['latest line','latest_spectrum_line_index'], ['latest age [s]','latest_spectrum_age_sec']]);
     kv('paths', s.paths || {}, [['snapshot','snapshot'], ['events','events'], ['plan','plan']]);
-    const rows = (s.events || []).slice(-12).map(ev => `<tr><td>${esc(ev.seq ?? '')}</td><td>${esc(ev.event ?? '')}</td><td>${esc(ev.phase ?? '')}</td><td>${esc(ev.id ?? ev.obs_id ?? '')}</td><td>${esc(ev.line_index ?? ev.line_index0 ?? '')}</td></tr>`).join('');
-    document.getElementById('events').innerHTML = `<table><thead><tr><th>seq</th><th>event</th><th>phase</th><th>id</th><th>line</th></tr></thead><tbody>${rows || '<tr><td colspan=\"5\">-</td></tr>'}</tbody></table>`;
+    const rows = (s.events || []).slice(-10).map(ev => {
+      const t = typeof ev.time_unix === 'number' ? new Date(ev.time_unix*1000).toLocaleTimeString() : String(ev.seq ?? '');
+      const name = String(ev.event ?? '').replace('integration_', 'int_').replace('plan_item_', 'item_');
+      const detail = [ev.phase, ev.id ?? ev.obs_id, ev.line_index ?? ev.line_index0].filter(x => x !== undefined && x !== null && x !== '').join('/');
+      return `<tr><td title="${esc(ev.seq ?? '')}">${esc(t)}</td><td title="${esc(ev.event ?? '')}">${esc(name)}</td><td>${esc(detail)}</td></tr>`;
+    }).join('');
+    document.getElementById('events').innerHTML = `<table><thead><tr><th>time</th><th>event</th><th>detail</th></tr></thead><tbody>${rows || '<tr><td colspan="3">-</td></tr>'}</tbody></table>`;
     document.getElementById('terminal').textContent = s.rendered || '';
   } catch (err) {
     document.getElementById('message').innerHTML = `<span class=\"err\">${esc(err)}</span>`;
