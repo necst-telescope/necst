@@ -142,6 +142,73 @@ class FileBasedObservation(Observation):
                 return float(value.to_value(""))
         return float(value)
 
+
+    @staticmethod
+    def _get_mapping_or_attr(obj, names):
+        """Best-effort getter for neclib Config entries and plain mappings."""
+        if obj is None:
+            return None
+        for name in names:
+            try:
+                if isinstance(obj, dict) and name in obj:
+                    return obj[name]
+            except Exception:
+                pass
+            try:
+                value = getattr(obj, name)
+            except Exception:
+                value = None
+            if value is not None:
+                return value
+        return None
+
+    def _config_quantity_to_float(self, value, unit: str):
+        if value is None:
+            return None
+        if hasattr(value, "to_value"):
+            try:
+                return float(value.to_value(unit))
+            except Exception:
+                try:
+                    return float(value.to_value(""))
+                except Exception:
+                    pass
+        try:
+            return float(value)
+        except Exception:
+            return None
+
+    def _progress_site_fields(self):
+        """Return observatory site metadata for progress display, if available.
+
+        File-based observations do not store site coordinates in the .obs file;
+        NECST normally obtains them from the loaded telescope configuration
+        (config.location).  Keep this best-effort and non-fatal so progress
+        reporting never blocks an observation if a simulator or test config is
+        sparse.
+        """
+        loc = getattr(config, "location", None)
+        site = {}
+        lon = self._config_quantity_to_float(
+            self._get_mapping_or_attr(loc, ("lon", "longitude", "longitude_deg", "site_lon_deg")),
+            "deg",
+        )
+        lat = self._config_quantity_to_float(
+            self._get_mapping_or_attr(loc, ("lat", "latitude", "latitude_deg", "site_lat_deg")),
+            "deg",
+        )
+        height = self._config_quantity_to_float(
+            self._get_mapping_or_attr(loc, ("height", "alt", "altitude", "elevation", "height_m", "site_elev_m")),
+            "m",
+        )
+        if lon is not None:
+            site["longitude_deg"] = lon
+        if lat is not None:
+            site["latitude_deg"] = lat
+        if height is not None:
+            site["height_m"] = height
+        return site
+
     def _waypoint_reference_geometry_fields(self, waypoint):
         """Return target/reference/offset metadata for progress displays.
 
@@ -631,6 +698,9 @@ class FileBasedObservation(Observation):
             observation_type=self.observation_type,
             obs_file=str(file),
         )
+        site_fields = self._progress_site_fields()
+        if site_fields:
+            self.progress.update(site=site_fields)
         self.com.record("file", name=file)
         i = 0
         while i < len(all_waypoints):

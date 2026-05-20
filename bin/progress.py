@@ -221,6 +221,9 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
         antenna_update["tracking_error_deg"] = math.hypot(dlon, dlat)
     if antenna_update:
         out.setdefault("antenna", {}).update(antenna_update)
+    weather_payload = live_payload.get("weather") if isinstance(live_payload.get("weather"), dict) else {}
+    if weather_payload:
+        out.setdefault("weather", {}).update(weather_payload)
 
     lifecycle = out.get("lifecycle") if isinstance(out.get("lifecycle"), dict) else {}
     final_state = str(lifecycle.get("state") or "").lower() in {"finished", "error", "aborted"}
@@ -266,6 +269,7 @@ class LiveRosCache:
         self.control: Dict[str, Any] = {}
         self.command: Dict[str, Any] = {}
         self.encoder: Dict[str, Any] = {}
+        self.weather: Dict[str, Dict[str, Any]] = {}
         if self.requested:
             self._start()
 
@@ -307,9 +311,32 @@ class LiveRosCache:
             def encoder_cb(msg: Any) -> None:
                 self.encoder = _msg_coord(msg, prefix="encoder")
 
+            def weather_cb(key: str):
+                def _callback(msg: Any) -> None:
+                    self.weather[key] = {
+                        "temperature_k": _finite_float(getattr(msg, "temperature", None)),
+                        "in_temperature_k": _finite_float(getattr(msg, "in_temperature", None)),
+                        "pressure_hpa": _finite_float(getattr(msg, "pressure", None)),
+                        "humidity_percent": _finite_float(getattr(msg, "humidity", None)),
+                        "in_humidity_percent": _finite_float(getattr(msg, "in_humidity", None)),
+                        "wind_speed_mps": _finite_float(getattr(msg, "wind_speed", None)),
+                        "wind_direction_deg": _finite_float(getattr(msg, "wind_direction", None)),
+                        "rain_rate": _finite_float(getattr(msg, "rain_rate", None)),
+                        "time_unix": _finite_float(getattr(msg, "time", None)),
+                    }
+                return _callback
+
             topic.antenna_control_status.subscription(self._node, control_cb)
             topic.altaz_cmd.subscription(self._node, command_cb)
             topic.antenna_encoder.subscription(self._node, encoder_cb)
+            # Weather topics are indexed (typically /weather/ambient/out and
+            # /weather/ambient/in).  Subscribe explicitly to both common keys; if
+            # a site has only one of them, ROS simply leaves the other empty.
+            try:
+                topic.weather["out"].subscription(self._node, weather_cb("out"))
+                topic.weather["in"].subscription(self._node, weather_cb("in"))
+            except Exception:
+                pass
             self.available = True
         except Exception as exc:
             self.available = False
@@ -340,6 +367,8 @@ class LiveRosCache:
             payload["command"] = dict(self.command)
         if self.encoder:
             payload["encoder"] = dict(self.encoder)
+        if self.weather:
+            payload["weather"] = {key: dict(value) for key, value in self.weather.items()}
         return payload
 
     def close(self) -> None:
@@ -758,6 +787,27 @@ def _coord_frame(value: Any, default: str = "") -> str:
     return default
 
 
+def _geom_offset_actual_arcsec(geom: Mapping[str, Any]) -> Optional[tuple[float, float, str]]:
+    value = geom.get("offset")
+    pair = _coord_pair(value)
+    if pair is None:
+        return None
+    unit = str(geom.get("offset_unit") or geom.get("unit") or "deg").lower()
+    scale = 1.0 if "arcsec" in unit else 3600.0
+    x, y = pair[0] * scale, pair[1] * scale
+    frame = str(geom.get("offset_frame") or _coord_frame(value, str(geom.get("frame") or "")))
+    if bool(geom.get("cos_correction")):
+        lat = None
+        for key in ("reference", "target"):
+            ref = geom.get(key)
+            rpair = _coord_pair(ref)
+            if rpair is not None:
+                lat = rpair[1]
+                break
+        if lat is not None:
+            x *= math.cos(math.radians(lat))
+    return x, y, frame
+
 def offset_arcsec_text(value: Any) -> str:
     pair = _coord_pair(value)
     if pair is None:
@@ -765,6 +815,14 @@ def offset_arcsec_text(value: Any) -> str:
     frame = _coord_frame(value)
     suffix = f" {frame}" if frame else ""
     return f"({pair[0]*3600:.1f}, {pair[1]*3600:.1f}) arcsec{suffix}"
+
+def geometry_offset_arcsec_text(geom: Mapping[str, Any]) -> str:
+    actual = _geom_offset_actual_arcsec(geom)
+    if actual is None:
+        return offset_arcsec_text(geom.get("offset"))
+    x, y, frame = actual
+    suffix = f" {frame}" if frame else ""
+    return f"({x:.1f}, {y:.1f}) arcsec{suffix}"
 
 
 def azel_text(lon: Any, lat: Any, frame: Any = "altaz") -> str:
@@ -936,20 +994,17 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
     lines.append(f"│ {pct_bar(percent):<58}│")
     lines.append("├──────────────────── CURRENT ACTIVITY ──────────────────────┤")
     line_info = ""
-    if display_summary.get("has_otf_lines"):
-        line_info = f" line={display_summary.get('current_line_label', '-')}"
-    else:
-        current_line = geom.get("current_line_index0")
-        line_total = geom.get("line_total") or plan.get("line_total")
-        if current_line is not None and line_total is not None:
-            try:
-                line_info = f" line={int(current_line) + 1}/{int(line_total)}"
-            except Exception:
-                line_info = f" line={compact_value(current_line)}/{compact_value(line_total)}"
-        elif current_line is not None:
-            line_info = f" line={compact_value(current_line)}"
-        elif line_total is not None:
-            line_info = f" line_total={line_total}"
+    current_line = geom.get("current_line_index0")
+    line_total = geom.get("line_total") or plan.get("line_total")
+    if current_line is not None and line_total is not None:
+        try:
+            line_info = f" line={int(current_line) + 1}/{int(line_total)}"
+        except Exception:
+            line_info = f" line={compact_value(current_line)}/{compact_value(line_total)}"
+    elif current_line is not None:
+        line_info = f" line={compact_value(current_line)}"
+    elif line_total is not None:
+        line_info = f" line_total={line_total}"
     lines.append(frame_line(f"drive={drive} mot={motion} data={data_state}{line_info}"))
     loc = activity.get("location_context")
     if loc:
@@ -975,7 +1030,8 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
     else:
         lines.append("│ plan : -                                                     │")
     if geom.get("offset") is not None:
-        lines.append(frame_line(f"map offset={offset_arcsec_text(geom.get('offset'))}"))
+        label = "map offset(actual)" if geom.get("cos_correction") else "map offset"
+        lines.append(frame_line(f"{label}={geometry_offset_arcsec_text(geom)}"))
     if geom.get("cos_correction") is not None:
         lines.append(frame_line(f"cos_correction={compact_value(geom.get('cos_correction'))}"))
     if antenna:
@@ -988,13 +1044,7 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         if enc_lon is not None or enc_lat is not None:
             lines.append(frame_line(f"enc  : {azel_text(enc_lon, enc_lat, antenna.get('encoder_frame'))}"))
         if antenna.get("tracking_error_deg") is not None:
-            try:
-                err_arcsec = float(antenna.get("tracking_error_deg")) * 3600.0
-                dlon_arcsec = float(antenna.get("tracking_delta_lon_deg")) * 3600.0
-                dlat_arcsec = float(antenna.get("tracking_delta_lat_deg")) * 3600.0
-                lines.append(frame_line(f"err  : {err_arcsec:.1f} arcsec  dAz={dlon_arcsec:.1f} dEl={dlat_arcsec:.1f}"))
-            except Exception:
-                lines.append(frame_line(f"err  : tracking_error={compact_value(antenna.get('tracking_error_deg'))} deg"))
+            lines.append(frame_line(f"err  : tracking_error={compact_value(antenna.get('tracking_error_deg'))} deg"))
         if not (cmd_lon is not None or enc_lon is not None):
             lines.append(frame_line(f"ant  : {compact_value(antenna)}"))
     lines.append("├──────────────────── DATA ──────────────────────────────────┤")
@@ -1206,6 +1256,8 @@ h1 { font-size:1.05rem; margin:0 0 .3rem; }
 .card { border:1px solid var(--border); border-radius:10px; padding:.55rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:10.5rem; }
 .card h2 { font-size:.92rem; margin:.03rem 0 .35rem; }
 .kv { display:grid; grid-template-columns: 6.9rem minmax(0,1fr); gap:.12rem .38rem; align-items:baseline; }
+.bigpos { grid-template-columns: 8.8rem minmax(0,1fr); font-size:.86rem; }
+.bigpos .v.important-pos { font-size:1.03rem; font-weight:700; }
 .k { color:var(--muted); }
 .v { min-width:0; overflow-wrap:anywhere; }
 .status { font-weight:700; padding:.08rem .38rem; border-radius:999px; border:1px solid var(--border); }
@@ -1249,7 +1301,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 <section class=\"card\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
 <section class=\"card\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
 <section class="card positionview"><h2>Live Position</h2><div class="kv bigpos" id="position"></div></section>
-<section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span>OTF=line map; Grid/PSW=ON-basis map visits; Skydip=elevation sequence. OFF/HOT markers use their offset when available; reference is the base coordinate, not necessarily the OFF point.</span></div><div id="plotview" class="plotbox small">-</div></section>
+<section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span>OTF=line map; Grid/PSW=ON-basis map visits; Skydip=elevation sequence. OFF/reference points are labels, not progress denominator.</span></div><div id="plotview" class="plotbox small">-</div></section>
 <section class="card eventview"><h2>Recent Events</h2><div id="events"></div></section>
 <section class="card"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
 <section class="card"><h2>Data</h2><div class="kv" id="data"></div></section>
@@ -1298,6 +1350,141 @@ function compactMethod(v, maxLen=28) {
   if (s.length <= maxLen) return s;
   return s.slice(0, Math.max(8, maxLen - 1)) + '…';
 }
+
+function degToArcsec(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n * 3600.0 : null;
+}
+function arcsecText(v, digits=1) {
+  const n = Number(v);
+  return Number.isFinite(n) ? `${n.toFixed(digits)} arcsec` : '-';
+}
+function utcText(unixSec) {
+  const n = Number(unixSec);
+  return Number.isFinite(n) ? new Date(n*1000).toISOString().replace('T',' ').replace(/\.\d+Z$/,' UTC') : '-';
+}
+function lstText(unixSec, lonDeg) {
+  const t = Number(unixSec), lon = Number(lonDeg);
+  if (!Number.isFinite(t) || !Number.isFinite(lon)) return '-';
+  const jd = t / 86400.0 + 2440587.5;
+  const d = jd - 2451545.0;
+  let gmst = 18.697374558 + 24.06570982441908 * d;
+  gmst = ((gmst % 24) + 24) % 24;
+  let lst = gmst + lon / 15.0;
+  lst = ((lst % 24) + 24) % 24;
+  let h = Math.floor(lst), m = Math.floor((lst-h)*60), sec = Math.round((((lst-h)*60)-m)*60);
+  if (sec >= 60) { sec -= 60; m += 1; }
+  if (m >= 60) { m -= 60; h = (h + 1) % 24; }
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function nestedGet(obj, paths) {
+  for (const path of paths) {
+    let cur = obj;
+    let ok = true;
+    for (const key of path) {
+      if (!cur || typeof cur !== 'object' || !(key in cur)) { ok = false; break; }
+      cur = cur[key];
+    }
+    if (ok && cur !== undefined && cur !== null && cur !== '') return cur;
+  }
+  return undefined;
+}
+function pad2(n) { return String(Math.trunc(Math.abs(n))).padStart(2, '0'); }
+function raHmsText(raDeg) {
+  let ra = Number(raDeg);
+  if (!Number.isFinite(ra)) return '-';
+  ra = ((ra % 360) + 360) % 360;
+  const total = ra / 15.0 * 3600.0;
+  let h = Math.floor(total / 3600.0);
+  let m = Math.floor((total - h*3600.0) / 60.0);
+  let sec = total - h*3600.0 - m*60.0;
+  sec = Math.round(sec * 10) / 10;
+  if (sec >= 60.0) { sec -= 60.0; m += 1; }
+  if (m >= 60) { m -= 60; h = (h + 1) % 24; }
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${sec.toFixed(1).padStart(4,'0')}`;
+}
+function decDmsText(decDeg) {
+  const dec = Number(decDeg);
+  if (!Number.isFinite(dec)) return '-';
+  const sign = dec < 0 ? '-' : '+';
+  const a = Math.abs(dec);
+  let d = Math.floor(a);
+  let m = Math.floor((a - d) * 60.0);
+  let sec = Math.round((a - d - m/60.0) * 3600.0);
+  if (sec >= 60) { sec -= 60; m += 1; }
+  if (m >= 60) { m -= 60; d += 1; }
+  return `${sign}${String(d).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function frameLooksRadec(frame) {
+  const f = String(frame || '').toLowerCase();
+  return f.includes('j2000') || f.includes('radec') || f.includes('ra/dec') || f.includes('icrs') || f.includes('fk5');
+}
+function frameLooksGalactic(frame) {
+  const f = String(frame || '').toLowerCase();
+  return f.includes('gal') || f === 'lb' || f.includes('l,b');
+}
+function radecText(pair, frame='J2000') {
+  if (!Array.isArray(pair) || pair.length < 2) return '-';
+  const a = Number(pair[0]), b = Number(pair[1]);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return '-';
+  return `${raHmsText(a)}, ${decDmsText(b)} ${frame || 'J2000'}`;
+}
+function galText(pair, frame='galactic') {
+  if (!Array.isArray(pair) || pair.length < 2) return '-';
+  const a = Number(pair[0]), b = Number(pair[1]);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return '-';
+  return `${a.toFixed(4)}, ${b.toFixed(4)} ${frame || 'galactic'}`;
+}
+function sphToVec(lonDeg, latDeg) {
+  const lon = lonDeg * Math.PI / 180.0, lat = latDeg * Math.PI / 180.0;
+  const cl = Math.cos(lat);
+  return [cl*Math.cos(lon), cl*Math.sin(lon), Math.sin(lat)];
+}
+function vecToSph(v) {
+  const r = Math.hypot(v[0], v[1], v[2]);
+  if (!Number.isFinite(r) || r <= 0) return null;
+  let lon = Math.atan2(v[1], v[0]) * 180.0 / Math.PI;
+  if (lon < 0) lon += 360.0;
+  const lat = Math.asin(Math.max(-1, Math.min(1, v[2]/r))) * 180.0 / Math.PI;
+  return [lon, lat];
+}
+const ICRS_TO_GAL = [
+  [-0.0548755604162154, -0.8734370902348850, -0.4838350155487132],
+  [ 0.4941094278755837, -0.4448296299600112,  0.7469822444972189],
+  [-0.8676661490190047, -0.1980763734312015,  0.4559837761750669],
+];
+function matVec(m, v) { return [m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2], m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2], m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]]; }
+function matTVec(m, v) { return [m[0][0]*v[0]+m[1][0]*v[1]+m[2][0]*v[2], m[0][1]*v[0]+m[1][1]*v[1]+m[2][1]*v[2], m[0][2]*v[0]+m[1][2]*v[1]+m[2][2]*v[2]]; }
+function radecToGalactic(p) { const q = pair(p); if (!q) return null; return vecToSph(matVec(ICRS_TO_GAL, sphToVec(q[0], q[1]))); }
+function galacticToRadec(p) { const q = pair(p); if (!q) return null; return vecToSph(matTVec(ICRS_TO_GAL, sphToVec(q[0], q[1]))); }
+function targetSkyPair(snapshot) {
+  const g = snapshot?.geometry || {};
+  return pair(g.target) ? {coord:g.target, frame:coordFrame(g.target, g.frame || '')}
+    : pair(g.reference) ? {coord:g.reference, frame:coordFrame(g.reference, g.frame || '')}
+    : null;
+}
+function targetRaDecPair(snapshot) {
+  const t = targetSkyPair(snapshot); if (!t) return null;
+  if (frameLooksRadec(t.frame)) return pair(t.coord);
+  if (frameLooksGalactic(t.frame)) return galacticToRadec(t.coord);
+  return null;
+}
+function targetGalPair(snapshot) {
+  const t = targetSkyPair(snapshot); if (!t) return null;
+  if (frameLooksGalactic(t.frame)) return pair(t.coord);
+  if (frameLooksRadec(t.frame)) return radecToGalactic(t.coord);
+  return null;
+}
+function coordPairText(pair, frame='', unit='deg') {
+  if (!Array.isArray(pair) || pair.length < 2) return '-';
+  const a = Number(pair[0]), b = Number(pair[1]);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return '-';
+  const suffix = frame ? ` ${frame}` : '';
+  if (String(unit || '').toLowerCase().includes('arcsec')) return `(${a.toFixed(1)}, ${b.toFixed(1)}) arcsec${suffix}`;
+  if (frameLooksRadec(frame)) return radecText([a, b], frame || 'J2000');
+  if (frameLooksGalactic(frame)) return galText([a, b], frame || 'galactic');
+  return `(${a.toFixed(5)}, ${b.toFixed(5)}) deg${suffix}`;
+}
 function kv(id, obj, keys) {
   const el = document.getElementById(id); el.innerHTML = '';
   for (const [label, key] of keys) {
@@ -1319,10 +1506,14 @@ function pair(v) { if (!Array.isArray(v) || v.length < 2) return null; const x=N
 function coordFrame(v, fallback='') { return Array.isArray(v) && v.length >= 3 && v[2] !== undefined && v[2] !== null ? String(v[2]) : fallback; }
 function coordText(v, unit='deg', digits=3) {
   const p = pair(v); if (!p) return usableText(v) || '-';
-  const u = unit || 'deg'; const scale = u === 'arcsec' ? 3600 : 1;
+  const frame = coordFrame(v);
+  const u = unit || 'deg';
+  if (u !== 'arcsec' && frameLooksRadec(frame)) return radecText(p, frame || 'J2000');
+  if (u !== 'arcsec' && frameLooksGalactic(frame)) return galText(p, frame || 'galactic');
+  const scale = u === 'arcsec' ? 3600 : 1;
   const suffix = u === 'arcsec' ? 'arcsec' : 'deg';
   const d = u === 'arcsec' ? 1 : digits;
-  return `(${(p[0]*scale).toFixed(d)}, ${(p[1]*scale).toFixed(d)}) ${suffix}${coordFrame(v) ? ' ' + coordFrame(v) : ''}`;
+  return `(${(p[0]*scale).toFixed(d)}, ${(p[1]*scale).toFixed(d)}) ${suffix}${frame ? ' ' + frame : ''}`;
 }
 function offsetArcsecText(v, label='') {
   const p = pair(v); if (!p) return '-';
@@ -1335,51 +1526,6 @@ function azElText(lon, lat, frame='altaz') {
   const f=String(frame || '').toLowerCase();
   if (f === 'altaz' || f === 'alt-az' || f === 'azel') return `Az ${x.toFixed(3)}°, El ${y.toFixed(3)}°`;
   return `${String(frame || 'coord')} lon ${x.toFixed(3)}°, lat ${y.toFixed(3)}°`;
-}
-function degToHms(deg) {
-  let h = ((Number(deg)/15) % 24 + 24) % 24;
-  const ih = Math.floor(h); const m0 = (h-ih)*60; const im = Math.floor(m0); const s = (m0-im)*60;
-  return `${String(ih).padStart(2,'0')}:${String(im).padStart(2,'0')}:${s.toFixed(1).padStart(4,'0')}`;
-}
-function degToDms(deg) {
-  const sign = Number(deg) < 0 ? '-' : '+';
-  let a = Math.abs(Number(deg)); const id = Math.floor(a); const m0 = (a-id)*60; const im = Math.floor(m0); const s = (m0-im)*60;
-  return `${sign}${String(id).padStart(2,'0')}:${String(im).padStart(2,'0')}:${s.toFixed(1).padStart(4,'0')}`;
-}
-function skyCoordText(v) {
-  const p = pair(v); if (!p) return '-';
-  const f = coordFrame(v).toLowerCase();
-  if (['j2000','fk5','icrs','radec','ra-dec'].includes(f)) return `${degToHms(p[0])}, ${degToDms(p[1])} ${coordFrame(v) || 'J2000'}`;
-  if (['galactic','gal','lb','l-b'].includes(f)) return `${p[0].toFixed(4)}, ${p[1].toFixed(4)} Galactic`;
-  return coordText(v);
-}
-function utcText(unix) {
-  const t = Number(unix);
-  if (!Number.isFinite(t)) return '-';
-  return new Date(t*1000).toISOString().replace('T',' ').replace(/[.][0-9]+Z$/, ' UTC');
-}
-function siteLongitudeDeg(snapshot) {
-  const candidates = [
-    snapshot?.site?.longitude_deg, snapshot?.site?.lon_deg,
-    snapshot?.observer?.longitude_deg, snapshot?.observer?.lon_deg,
-    snapshot?.observation?.site_lon_deg, snapshot?.antenna?.site_lon_deg
-  ];
-  for (const v of candidates) { const x=Number(v); if (Number.isFinite(x)) return x; }
-  return null;
-}
-function gmstDeg(unix) {
-  const jd = Number(unix)/86400 + 2440587.5;
-  const d = jd - 2451545.0;
-  return ((280.46061837 + 360.98564736629*d) % 360 + 360) % 360;
-}
-function lstText(snapshot, unix) {
-  const lon = siteLongitudeDeg(snapshot);
-  if (!Number.isFinite(lon)) return 'site longitude missing';
-  return degToHms(gmstDeg(unix) + lon);
-}
-function arcsecTextDeg(v, digits=1) {
-  const x = Number(v);
-  return Number.isFinite(x) ? `${(x*3600).toFixed(digits)} arcsec` : '-';
 }
 function usableText(v) { const t = val(v); return (!t || t === '-' || t === 'None' || t === 'null' || t === 'unknown') ? '' : t; }
 function inferTargetFromName(text) {
@@ -1402,55 +1548,167 @@ function isBlank(v) {
 }
 function kvSmart(id, rows) {
   const el = document.getElementById(id); el.innerHTML = '';
-  const filtered = rows.filter(([label, raw]) => !isBlank(raw));
-  const useRows = filtered.length ? filtered : [['status', 'no mode-specific values yet']];
-  for (const [label, raw] of useRows) {
-    el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v" title="${esc(raw ?? '-')}">${esc(val(raw, label, ''))}</div>`);
+  for (const row of rows || []) {
+    const label = Array.isArray(row) ? row[0] : '-';
+    const raw = Array.isArray(row) ? row[1] : row;
+    const role = Array.isArray(row) ? (row[2] || '') : '';
+    const cls = role ? ` ${role}-pos` : '';
+    el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v${cls}" title="${esc(raw ?? '-')}">${esc(raw ?? '-')}</div>`);
   }
 }
 function geometryRows(snapshot) {
-  const g = snapshot?.geometry || {}; const obsType = String(snapshot?.observation?.type || '').toLowerCase();
-  const rows = [['kind', g.kind], ['frame', g.frame], ['unit', g.unit], ['target name', g.target_name || displayTarget(snapshot)]];
-  if (obsType.includes('grid')) {
-    rows.push(['map offset', offsetArcsecText(g.offset)], ['offset frame', coordFrame(g.offset, g.frame)], ['target center', skyCoordText(g.target)], ['reference base', skyCoordText(g.reference)], ['cos correction', g.cos_correction]);
-  } else if (obsType.includes('psw')) {
-    rows.push(['target/ON', skyCoordText(g.target)], ['reference base', skyCoordText(g.reference)], ['map offset', offsetArcsecText(g.offset)], ['cos correction', g.cos_correction]);
-  } else if (obsType.includes('sky')) {
-    rows.push(['sky position', skyCoordText(g.target)], ['elevation', g.el_deg ?? g.elevation_deg ?? (Array.isArray(g.target) ? g.target[1] : null)]);
-  } else {
-    rows.push(['target', skyCoordText(g.target)], ['reference base', skyCoordText(g.reference)], ['map offset', offsetArcsecText(g.offset)], ['cos correction', g.cos_correction]);
+  const g = snapshot?.geometry || {};
+  const obsType = String(snapshot?.observation?.type || '').toLowerCase();
+  const mode = String(snapshot?.plan?.mode || g.mode || '').toUpperCase();
+  const rows = [];
+  rows.push(['kind', g.kind], ['frame', g.frame], ['target name', g.target_name || displayTarget(snapshot)]);
+  const off = actualOffsetArcsecFromGeometry(g);
+  const offFrame = g.offset_frame || g.frame || '';
+  if (off) {
+    rows.push([g.cos_correction ? 'map offset actual' : 'map offset', coordPairText(off, offFrame, 'arcsec')]);
+    if (g.cos_correction) rows.push(['offset note', 'x is dLon*cos(lat); raw command dLon is not shown here']);
   }
-  rows.push(['scan start', coordText(g.start)], ['scan stop', coordText(g.stop)]);
-  if (g.current_line_index0 !== undefined && g.line_total !== undefined) {
-    rows.push(['line', `${Number(g.current_line_index0)+1}/${g.line_total}`]);
+  if (g.target !== undefined) {
+    const label = mode === 'OFF' || mode === 'SKY' ? 'OFF/SKY target' : (obsType.includes('grid') ? 'absolute target' : 'target/ON');
+    rows.push([label, coordText(g.target)]);
   }
+  if (g.reference !== undefined) {
+    const label = mode === 'ON' ? 'ON/reference center' : 'reference base';
+    rows.push([label, coordText(g.reference)]);
+  }
+  if (g.start !== undefined || g.stop !== undefined) rows.push(['scan start', coordText(g.start)], ['scan stop', coordText(g.stop)]);
+  if (g.cos_correction !== undefined) rows.push(['cos correction', g.cos_correction]);
+  return rows.filter(r => r[1] !== undefined && r[1] !== null && r[1] !== '');
+}
+function liveCoordPair(snapshot, frameName) {
+  const a = snapshot?.antenna || {};
+  const f = String(frameName || '').toLowerCase();
+  const candidates = [
+    [`encoder_${f}_lon_deg`, `encoder_${f}_lat_deg`],
+    [`command_${f}_lon_deg`, `command_${f}_lat_deg`],
+    [`${f}_lon_deg`, `${f}_lat_deg`],
+    [`${f}_l_deg`, `${f}_b_deg`],
+    [`encoder_${f}_l_deg`, `encoder_${f}_b_deg`],
+    [`command_${f}_l_deg`, `command_${f}_b_deg`]
+  ];
+  for (const [kx, ky] of candidates) {
+    const x = Number(a[kx]); const y = Number(a[ky]);
+    if (Number.isFinite(x) && Number.isFinite(y)) return [x, y];
+  }
+  return null;
+}
+function offsetReferenceLatitudeDeg(g, mapCtx=null) {
+  const candidates = [g?.reference, g?.target, mapCtx?.center];
+  for (const c of candidates) {
+    const p = pair(c);
+    if (p && Number.isFinite(p[1])) return p[1];
+  }
+  return null;
+}
+function actualOffsetArcsecFromGeometry(g, mapCtx=null) {
+  const off = pair(g?.offset);
+  if (!off) return null;
+  const unit = String(g?.offset_unit || g?.unit || 'deg').toLowerCase();
+  const scale = unit.includes('arcsec') ? 1.0 : 3600.0;
+  let x = off[0] * scale;
+  let y = off[1] * scale;
+  // In NECST grid/pointing specs with cos_correction=true, offset[0] is the
+  // longitude-like command delta.  Display the observer-facing tangent-plane X
+  // offset, dLon*cos(lat), so a requested -600 arcsec appears as -600 arcsec.
+  if (g?.cos_correction) {
+    const lat = offsetReferenceLatitudeDeg(g, mapCtx);
+    if (Number.isFinite(lat)) x *= Math.cos(lat * Math.PI / 180.0);
+  }
+  return [x, y];
+}
+function plannedOffsetFromGeometry(snapshot) {
+  const g = snapshot?.geometry || {};
+  return actualOffsetArcsecFromGeometry(g);
+}
+function angularDeltaDegJS(a, b) {
+  let d = Number(a) - Number(b);
+  if (!Number.isFinite(d)) return NaN;
+  d = ((d + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
+  return d;
+}
+function skyOffsetArcsecFromCenter(target, center) {
+  const t = pair(target), c = pair(center);
+  if (!t || !c) return null;
+  const dx = angularDeltaDegJS(t[0], c[0]) * Math.cos(c[1] * Math.PI / 180.0) * 3600.0;
+  const dy = (t[1] - c[1]) * 3600.0;
+  return [dx, dy];
+}
+function sameSkyFrame(a, b) {
+  const fa = String(coordFrame(a) || '').toLowerCase();
+  const fb = String(coordFrame(b) || '').toLowerCase();
+  return !fa || !fb || fa === fb || (frameLooksRadec(fa) && frameLooksRadec(fb)) || (frameLooksGalactic(fa) && frameLooksGalactic(fb));
+}
+function firstNumeric(obj, paths) {
+  const v = nestedGet(obj, paths);
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function temperatureCFromAny(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  // WeatherMsg uses K, but some future snapshots may already store degC.
+  return n > 170 ? n - 273.15 : n;
+}
+function weatherRowsForKey(snapshot, key, label) {
+  const w = snapshot?.weather || {};
+  const base = w[key] || {};
+  const rows = [];
+  const temp = temperatureCFromAny(base.temperature_c ?? base.temperature_degC ?? base.temperature_k ?? base.temperature);
+  const hum = Number(base.humidity_percent ?? base.relative_humidity_percent ?? base.humidity);
+  const pres = Number(base.pressure_hpa ?? base.pressure_mbar ?? base.pressure);
+  const wind = Number(base.wind_speed_mps ?? base.wind_speed);
+  const wdir = Number(base.wind_direction_deg ?? base.wind_direction);
+  if (temp !== null) rows.push([`${label} temp.`, `${temp.toFixed(1)} °C`, '']);
+  if (Number.isFinite(hum)) rows.push([`${label} humidity`, `${hum.toFixed(0)} %`, '']);
+  if (Number.isFinite(pres)) rows.push([`${label} pressure`, `${pres.toFixed(1)} hPa`, '']);
+  if (Number.isFinite(wind)) rows.push([`${label} wind`, Number.isFinite(wdir) ? `${wind.toFixed(1)} m/s @ ${wdir.toFixed(0)}°` : `${wind.toFixed(1)} m/s`, '']);
   return rows;
 }
-function currentMapOffsetText(snapshot, plan, events) {
-  const rows = collectMapRows(snapshot, flattenItems(plan), events).rows;
-  const cur = rows.find(r => !r.b && r.status === 'current' && (r.coordSource === 'offset_arcsec' || r.coordSource === 'offset'));
-  if (cur && cur.coordSource === 'offset_arcsec') return `(${cur.a[0].toFixed(1)}, ${cur.a[1].toFixed(1)}) arcsec ${cur.frame || ''}`.trim();
-  if (cur && cur.coordSource === 'offset') return offsetArcsecText([cur.a[0], cur.a[1], cur.frame].filter(x=>x!==undefined && x!=='')); 
-  const g = snapshot?.geometry || {};
-  return offsetArcsecText(g.offset);
+function optionalWeatherRows(snapshot) {
+  const rows = [];
+  rows.push(...weatherRowsForKey(snapshot, 'out', 'out'));
+  rows.push(...weatherRowsForKey(snapshot, 'in', 'in'));
+  if (rows.length) return rows;
+  const env = snapshot || {};
+  const tempRaw = firstNumeric(env, [['weather','temperature_c'], ['weather','temperature_degC'], ['weather','temperature_k'], ['weather','temperature'], ['environment','temperature_c'], ['environment','temperature_degC'], ['site','temperature_c']]);
+  const temp = temperatureCFromAny(tempRaw);
+  const hum = firstNumeric(env, [['weather','humidity_percent'], ['weather','relative_humidity_percent'], ['environment','humidity_percent'], ['environment','relative_humidity_percent'], ['site','humidity_percent']]);
+  const pres = firstNumeric(env, [['weather','pressure_hpa'], ['weather','pressure_mbar'], ['environment','pressure_hpa'], ['environment','pressure_mbar'], ['site','pressure_hpa']]);
+  if (temp !== null) rows.push(['air temp.', `${temp.toFixed(1)} °C`, '']);
+  if (hum !== null) rows.push(['humidity', `${hum.toFixed(0)} %`, '']);
+  if (pres !== null) rows.push(['pressure', `${pres.toFixed(1)} hPa`, '']);
+  return rows;
 }
-function positionRows(snapshot, psummary, plan, events, serverTimeUnix) {
+function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const a = snapshot?.antenna || {}; const g = snapshot?.geometry || {};
-  const lineText = String(psummary?.progress || '').startsWith('OTF line ') ? String(psummary.progress).replace('OTF line ', '') :
-    ((g.current_line_index0 !== undefined && g.line_total !== undefined) ? `${Number(g.current_line_index0)+1}/${g.line_total}` : '-');
-  return [
-    ['UTC', utcText(serverTimeUnix)],
-    ['LST', lstText(snapshot, serverTimeUnix)],
-    ['Encoder Az/El', azElText(a.encoder_lon_deg, a.encoder_lat_deg, a.encoder_frame)],
-    ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame)],
-    ['tracking error', arcsecTextDeg(a.tracking_error_deg)],
-    ['ΔAz enc-cmd', arcsecTextDeg(a.tracking_delta_lon_deg)],
-    ['ΔEl enc-cmd', arcsecTextDeg(a.tracking_delta_lat_deg)],
-    ['current line', lineText],
-    ['map offset', currentMapOffsetText(snapshot, plan, events)],
-    ['target RA/Dec or L/B', skyCoordText(g.target)],
-    ['reference RA/Dec or L/B', skyCoordText(g.reference)]
+  const dAz = degToArcsec(a.tracking_delta_lon_deg);
+  const dEl = degToArcsec(a.tracking_delta_lat_deg);
+  const terr = degToArcsec(a.tracking_error_deg);
+  const frame = g.offset_frame || g.frame || '';
+  const off = plannedOffsetFromGeometry(snapshot);
+  const utcUnix = Number(snapshot?.time?.updated_at_unix ?? serverTimeUnix);
+  const lonForLst = nestedGet(snapshot, [['site','longitude_deg'], ['site','lon_deg'], ['observer','longitude_deg'], ['observation','site_longitude_deg'], ['telescope','longitude_deg']]);
+  const radec = targetRaDecPair(snapshot);
+  const gal = targetGalPair(snapshot);
+  const rows = [
+    ['Encoder Az/El', azElText(a.encoder_lon_deg, a.encoder_lat_deg, a.encoder_frame), 'important'],
+    ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame), 'important'],
+    ['Enc-Cmd Az', arcsecText(dAz), ''],
+    ['Enc-Cmd El', arcsecText(dEl), ''],
+    ['tracking RSS', arcsecText(terr), ''],
+    [g.cos_correction ? 'map offset actual' : 'map offset', off ? coordPairText(off, frame, 'arcsec') : '-', 'important'],
+    ['progress item', psummary?.progress || '-', 'important'],
+    ['UTC', utcText(utcUnix), ''],
+    ['LST', lstText(utcUnix, lonForLst), ''],
+    ['target RA,Dec J2000', radec ? radecText(radec, 'J2000') : '-', ''],
+    ['target Galactic l,b', gal ? galText(gal, 'galactic') : '-', '']
   ];
+  return rows.concat(optionalWeatherRows(snapshot));
 }
 function dataRows(snapshot) {
   const d = snapshot?.data || {};
@@ -1545,22 +1803,14 @@ function equalAspectBounds(xmin, xmax, ymin, ymax) {
   else w = h * innerAspect;
   return {xmin: cx - w/2, xmax: cx + w/2, ymin: cy - h/2, ymax: cy + h/2};
 }
-function rawBounds(pts) {
-  if (!pts || !pts.length) return null;
-  return {
-    xmin: Math.min(...pts.map(p=>p[0])),
-    xmax: Math.max(...pts.map(p=>p[0])),
-    ymin: Math.min(...pts.map(p=>p[1])),
-    ymax: Math.max(...pts.map(p=>p[1]))
-  };
-}
 function paddedBounds(scalePts, fallbackPts) {
   const pts = scalePts.length ? scalePts : fallbackPts;
   let xmin=Math.min(...pts.map(p=>p[0])), xmax=Math.max(...pts.map(p=>p[0])), ymin=Math.min(...pts.map(p=>p[1])), ymax=Math.max(...pts.map(p=>p[1]));
+  const data = {dataXmin:xmin, dataXmax:xmax, dataYmin:ymin, dataYmax:ymax};
   const unitSpan = Math.max(Math.abs(xmax-xmin), Math.abs(ymax-ymin));
   const minPad = unitSpan <= 1e-9 ? 0.05 : 0.0;
   const dx=Math.max(minPad, 1e-6, (xmax-xmin)*0.08), dy=Math.max(minPad, 1e-6, (ymax-ymin)*0.08);
-  return equalAspectBounds(xmin-dx, xmax+dx, ymin-dy, ymax+dy);
+  return {...equalAspectBounds(xmin-dx, xmax+dx, ymin-dy, ymax+dy), ...data};
 }
 function projectFraction(a, b, p) {
   if (!a || !b || !p) return null;
@@ -1603,29 +1853,51 @@ function renderPoint(row, b) {
   return shape + text;
 }
 
-function pointPlotCoordinate(g, mode, obsType, kind) {
+function mapCenterContext(items, obsType) {
+  if (!(obsType.includes('grid') || obsType.includes('psw'))) return null;
+  for (const item of items || []) {
+    const g = geomOf(item); const mode = itemMode(item);
+    if (String(mode || '').toUpperCase() === 'ON') {
+      const center = pair(g.reference) ? g.reference : (pair(g.target) ? g.target : null);
+      if (center) return {center, frame:coordFrame(center, g.frame || '')};
+    }
+  }
+  return null;
+}
+function pointPlotCoordinate(g, mode, obsType, kind, mapCtx=null) {
   const upper = String(mode || '').toUpperCase();
-  const off = pair(g.offset);
-  const isOffsetMap = obsType.includes('grid') || obsType.includes('psw');
-  // For Grid/PSW the scientifically useful map is the offset map around the ON
-  // target.  ``reference`` is the base coordinate for an offset, not necessarily
-  // the OFF position itself.  Therefore OFF/HOT/reference points must be plotted
-  // from their offset when available; otherwise they are not forced to the map
-  // center.  This prevents a far OFF from appearing at (0,0).
-  if (isOffsetMap && off) return {xy: [off[0]*3600, off[1]*3600], source: 'offset_arcsec'};
-  if (obsType.includes('grid') && (upper === 'ON' || kind === 'grid_point') && off) {
-    return {xy: [off[0]*3600, off[1]*3600], source: 'offset_arcsec'};
+  const offsetMap = obsType.includes('grid') || obsType.includes('psw');
+  if (offsetMap && (upper === 'ON' || kind === 'grid_point')) {
+    const off = actualOffsetArcsecFromGeometry(g, mapCtx);
+    if (off) return {xy: off, source: 'offset_arcsec'};
+  }
+  if (offsetMap && upper !== 'ON' && upper !== '') {
+    // Absolute OFF/SKY positions are not reference bases.  Convert target minus
+    // ON center into the same map-offset plane when both coordinates are in the
+    // same sky frame.  This makes a far OFF appear at the proper clipped edge
+    // instead of incorrectly at (0,0).
+    if (mapCtx?.center && pair(g.target) && sameSkyFrame(g.target, mapCtx.center)) {
+      const offAbs = skyOffsetArcsecFromCenter(g.target, mapCtx.center);
+      if (offAbs) return {xy: offAbs, source: 'absolute_target_offset_arcsec'};
+    }
+    if (pair(g.offset)) {
+      const off = actualOffsetArcsecFromGeometry(g, mapCtx);
+      if (off) return {xy: off, source: 'offset_arcsec'};
+    }
+    return {xy: [1.0e9, 0.0], source: 'external_reference'};
   }
   const target = pair(g.target);
   if (target) return {xy: target, source: 'target'};
   const ref = pair(g.reference);
-  if (ref && !isOffsetMap) return {xy: ref, source: 'reference'};
+  if (ref) return {xy: ref, source: 'reference'};
+  const off = pair(g.offset);
   if (off) return {xy: off, source: 'offset'};
   return {xy: null, source: ''};
 }
 function collectMapRows(snapshot, items, events) {
   const rows=[]; const allPts=[]; const boundsPts=[];
   const obsType = String(snapshot?.observation?.type || '').toLowerCase();
+  const mapCtx = mapCenterContext(items, obsType);
   for (const item of items) {
     const g = geomOf(item); const k=g.kind; const mode = itemMode(item);
     const status = statusFor(item,snapshot,events);
@@ -1638,7 +1910,7 @@ function collectMapRows(snapshot, items, events) {
       }
     }
     if (k === 'point' || k === 'grid_point') {
-      const plotted = pointPlotCoordinate(g, mode, obsType, k);
+      const plotted = pointPlotCoordinate(g, mode, obsType, k, mapCtx);
       const xy = plotted.xy;
       if (xy) {
         const pointLabel = pointKind(item);
@@ -1799,7 +2071,20 @@ function lineExpectedDurationSec(row) {
   if (!Number.isFinite(length) || length <= 0) return null;
   return length / speed;
 }
-function currentLineMotionProgress(snapshot, row, serverTimeUnix) {
+function lastLineDriveStartedAt(events) {
+  let t = null;
+  for (const ev of events || []) {
+    if (!ev || ev.event !== 'drive_started') continue;
+    const drive = String(ev.drive_kind || '').toLowerCase();
+    const stage = String(ev.motion_stage || '').toLowerCase();
+    if (!(drive.includes('scan') || drive.includes('block'))) continue;
+    if (!(stage === 'line' || stage === 'scanning')) continue;
+    const et = Number(ev.time_unix);
+    if (Number.isFinite(et)) t = et;
+  }
+  return t;
+}
+function currentLineMotionProgress(snapshot, row, serverTimeUnix, events=null) {
   if (!row) return null;
   const stage = String(snapshot?.activity?.motion_stage || '-');
   const now = Number.isFinite(serverTimeUnix) ? serverTimeUnix : Date.now()/1000;
@@ -1808,22 +2093,13 @@ function currentLineMotionProgress(snapshot, row, serverTimeUnix) {
     if (lineMotionClock.key !== key) { lineMotionClock.key = key; lineMotionClock.start = null; }
     return {fraction:null, waiting:true, stage, label:`line not started (${stage})`};
   }
-  const duration = lineExpectedDurationSec(row);
+  const eventStart = lastLineDriveStartedAt(events);
   if (lineMotionClock.key !== key || lineMotionClock.start === null) {
-    const ctlTime = Number(snapshot?.live?.control?.time_unix);
-    // Prefer the control-status timestamp if it looks like the start time of
-    // the current line section.  If that topic timestamp is actually updated
-    // continuously, this still falls back to the first browser observation of
-    // the line because the stored start is not overwritten while the key is the
-    // same.  This reduces the typical one-refresh lag without restarting the
-    // timer every refresh.
-    let start = now;
-    if (Number.isFinite(ctlTime) && ctlTime <= now + 1) {
-      const lookback = duration ? Math.max(10, 1.6*duration) : 30;
-      if (ctlTime >= now - lookback) start = ctlTime;
-    }
-    lineMotionClock.key = key; lineMotionClock.start = start;
+    lineMotionClock.key = key; lineMotionClock.start = eventStart || now;
+  } else if (eventStart && Math.abs(lineMotionClock.start - eventStart) > 0.2) {
+    lineMotionClock.start = eventStart;
   }
+  const duration = lineExpectedDurationSec(row);
   if (!duration) return {fraction:null, waiting:false, stage, label:'line section active; duration unknown'};
   const raw = (now - lineMotionClock.start) / duration;
   const fraction = Math.max(0, Math.min(0.98, raw));
@@ -1840,7 +2116,7 @@ function mapAxisLabels(rows) {
   if (offsetBasis) {
     const r = rows.find(x=>x.coordSource === 'offset_arcsec' || x.coordSource === 'offset') || rows[0] || {};
     const frame = r.frame || 'map';
-    return {x:`map offset x (arcsec, ${frame})`, y:`map offset y (arcsec, ${frame})`, unit:'arcsec'};
+    return {x:`actual map offset x (arcsec, ${frame})`, y:`map offset y (arcsec, ${frame})`, unit:'arcsec'};
   }
   const r = rows.find(x=>x.frame) || rows[0] || {};
   const frame = r.frame || 'map'; const unit = r.unit || 'deg';
@@ -1850,19 +2126,20 @@ function fmtAxisNumber(v, axes) {
   if (!Number.isFinite(v)) return '-';
   return axes?.unit === 'arcsec' ? v.toFixed(0) : v.toFixed(3);
 }
-function axisDecorations(b, axes, dataB=null) {
+function axisDecorations(b, axes) {
   const x0in = b.xmin <= 0 && 0 <= b.xmax;
   const y0in = b.ymin <= 0 && 0 <= b.ymax;
+  const lx = Number.isFinite(b.dataXmin) ? b.dataXmin : b.xmin;
+  const rx = Number.isFinite(b.dataXmax) ? b.dataXmax : b.xmax;
+  const by = Number.isFinite(b.dataYmin) ? b.dataYmin : b.ymin;
+  const ty = Number.isFinite(b.dataYmax) ? b.dataYmax : b.ymax;
   let out = '';
+  out += `<text class="plot-note" x="${sx(lx,b)-18}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(lx, axes))}</text>`;
+  out += `<text class="plot-note" x="${sx(rx,b)-18}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(rx, axes))}</text>`;
+  out += `<text class="plot-note" x="${PLOT.left-42}" y="${sy(by,b)+4}" >${esc(fmtAxisNumber(by, axes))}</text>`;
+  out += `<text class="plot-note" x="${PLOT.left-42}" y="${sy(ty,b)+4}" >${esc(fmtAxisNumber(ty, axes))}</text>`;
   if (x0in) out += `<line x1="${sx(0,b)}" y1="${PLOT.top}" x2="${sx(0,b)}" y2="${PLOT.bottom}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0.45"/>`;
   if (y0in) out += `<line x1="${PLOT.left}" y1="${sy(0,b)}" x2="${PLOT.right}" y2="${sy(0,b)}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0.45"/>`;
-  if (dataB) {
-    const xmin=sx(dataB.xmin,b), xmax=sx(dataB.xmax,b), ymin=sy(dataB.ymin,b), ymax=sy(dataB.ymax,b);
-    out += `<text class="plot-note" x="${Math.max(PLOT.left, Math.min(PLOT.right-42, xmin-16))}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(dataB.xmin, axes))}</text>`;
-    if (Math.abs(dataB.xmax-dataB.xmin) > 1e-9) out += `<text class="plot-note" x="${Math.max(PLOT.left, Math.min(PLOT.right-42, xmax-16))}" y="${PLOT.bottom+15}">${esc(fmtAxisNumber(dataB.xmax, axes))}</text>`;
-    out += `<text class="plot-note" x="${PLOT.left-42}" y="${Math.max(PLOT.top+6, Math.min(PLOT.bottom, ymin+4))}">${esc(fmtAxisNumber(dataB.ymin, axes))}</text>`;
-    if (Math.abs(dataB.ymax-dataB.ymin) > 1e-9) out += `<text class="plot-note" x="${PLOT.left-42}" y="${Math.max(PLOT.top+6, Math.min(PLOT.bottom, ymax+4))}">${esc(fmtAxisNumber(dataB.ymax, axes))}</text>`;
-  }
   return out;
 }
 function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
@@ -1870,7 +2147,6 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   const rows = collected.rows; const allPts = collected.allPts; const boundsPts = collected.boundsPts;
   if (!allPts.length) return '<div>No numeric geometry. This is normal for target-name-only observations.</div>';
   const obsType = String(snapshot?.observation?.type || '').toLowerCase();
-  const dataB = rawBounds(boundsPts.length ? boundsPts : allPts);
   let b=paddedBounds(boundsPts, allPts);
   const ls = lineSummary(rows);
   const currentRow = ls.currentRow;
@@ -1880,7 +2156,7 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   const tel = enc || cmd;
   const proj = currentRow && tel ? projectionOnLine(currentRow.a, currentRow.b, tel, b) : null;
   const telescopeCanOverlay = Boolean(proj?.reliable && pointInsideBounds(tel, b, 0.03));
-  const lineProgress = currentRow ? currentLineMotionProgress(snapshot, currentRow, serverTimeUnix) : null;
+  const lineProgress = currentRow ? currentLineMotionProgress(snapshot, currentRow, serverTimeUnix, events) : null;
   let nowPoint = null, nowLabel = '';
   if (currentRow && telescopeCanOverlay) {
     nowPoint = tel; nowLabel = `Telescope ${(100*proj.t).toFixed(0)}%`;
@@ -1911,19 +2187,18 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
     const basisRows = onRows.length ? onRows : pointRows;
     const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
     countText = `Grid ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}${visitPassText(c,u)}`;
-    note = 'Progress is ON-basis. Thin dashed path shows planned ON order; repeated visits are aggregated at each map point. OFF/HOT markers are labels only; reference is the base coordinate.';
+    note = 'Progress is ON-basis. Thin dashed path shows planned ON order; OFF/SKY is plotted as target-center offset when available and is not the denominator.';
   } else if (obsType.includes('psw')) {
     const basisRows = onRows.length ? onRows : pointRows;
     const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
     countText = `PSW ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}${visitPassText(c,u)}`;
-    note = 'Progress is ON-basis. OFF/HOT markers are labeled diamonds and are not the progress denominator.';
+    note = 'Progress is ON-basis. OFF/HOT/SKY visits are labeled diamonds and are not the progress denominator.';
   } else {
     const c = pointCounts(pointRows);
     countText = `Point sequence: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
     note = 'Current item is orange; OFF/HOT/reference labels are grouped when repeated.';
   }
-  const rangeText = dataB ? ` map range x=${fmtAxisNumber(dataB.xmin, axes)}..${fmtAxisNumber(dataB.xmax, axes)}, y=${fmtAxisNumber(dataB.ymin, axes)}..${fmtAxisNumber(dataB.ymax, axes)} ${axes.unit || ''}` : '';
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.h-64}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes, dataB)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note + rangeText)}</text></svg>`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.h-64}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note)}</text></svg>`;
 }
 function skydipRowsFrom(snapshot, items, events) {
   const rows=[];
@@ -1978,7 +2253,7 @@ async function update() {
     document.getElementById('bar').style.width = pct(plan).toFixed(1) + '%';
     renderPlanView(snap, s.plan || {}, statusEvents, s.server_time_unix);
     kv('activity', activity, [['phase','phase'], ['drive_kind','drive_kind'], ['motion_stage','motion_stage'], ['data_state','data_state'], ['location_context','location_context'], ['description','description']]);
-    kvSmart('position', positionRows(snap, psummary, s.plan || {}, statusEvents, s.server_time_unix));
+    kvSmart('position', positionRows(snap, psummary, s.server_time_unix));
     kvSmart('geometry', geometryRows(snap));
     kvSmart('data', dataRows(snap));
     kv('paths', s.paths || {}, [['snapshot','snapshot'], ['events','events'], ['plan','plan']]);
