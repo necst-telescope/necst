@@ -17,6 +17,7 @@ import os
 import re
 import sys
 import time
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
@@ -36,6 +37,19 @@ def safe_name(value: Any) -> str:
 
 def progress_root(value: Optional[str] = None) -> Path:
     return Path(value or os.environ.get("NECST_PROGRESS_ROOT", "/tmp/necst_progress")).expanduser()
+
+
+def live_status_max_age_sec() -> float:
+    """Maximum age for live ROS status before it is treated as stale.
+
+    This is intentionally short because Plan View uses live status to decide
+    which scan-line section is current.  A stale section status is worse than
+    no live status; it makes the dashboard jump to a delayed line fraction.
+    """
+    try:
+        return max(0.2, float(os.environ.get("NECST_PROGRESS_LIVE_STATUS_MAX_AGE_SEC", "2.0")))
+    except Exception:
+        return 2.0
 
 
 def strip_record_file_header(text: str) -> str:
@@ -409,10 +423,41 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
     antenna_update: Dict[str, Any] = {}
     cmd = live_payload.get("command") if isinstance(live_payload.get("command"), dict) else {}
     enc = live_payload.get("encoder") if isinstance(live_payload.get("encoder"), dict) else {}
-    if cmd:
-        antenna_update.update(cmd)
-    if enc:
-        antenna_update.update(enc)
+    pointing = live_payload.get("pointing_status") if isinstance(live_payload.get("pointing_status"), dict) else {}
+    if pointing:
+        antenna_update["pointing_status_available"] = True
+        antenna_update["pointing_status_valid"] = bool(pointing.get("valid", False))
+        if pointing.get("cmd_az_deg") is not None:
+            antenna_update["command_lon_deg"] = pointing.get("cmd_az_deg")
+            antenna_update["command_lat_deg"] = pointing.get("cmd_el_deg")
+            antenna_update["command_frame"] = "altaz"
+            antenna_update["command_unit"] = "deg"
+            antenna_update["command_time_unix"] = pointing.get("command_time_unix")
+        if pointing.get("enc_az_deg") is not None:
+            antenna_update["encoder_lon_deg"] = pointing.get("enc_az_deg")
+            antenna_update["encoder_lat_deg"] = pointing.get("enc_el_deg")
+            antenna_update["encoder_frame"] = "altaz"
+            antenna_update["encoder_unit"] = "deg"
+            antenna_update["encoder_time_unix"] = pointing.get("encoder_time_unix")
+        antenna_update["tracking_status_available"] = True
+        antenna_update["tracking_ok"] = bool(pointing.get("tracking_ok", False))
+        antenna_update["tracking_error_deg"] = pointing.get("tracking_error_deg")
+        antenna_update["tracking_status_time_unix"] = pointing.get("publish_time_unix")
+        antenna_update["tracking_status_age_sec"] = max(0.0, time.time() - pointing.get("publish_time_unix", time.time())) if pointing.get("publish_time_unix") is not None else None
+        antenna_update["tracking_threshold_deg"] = pointing.get("tracking_threshold_deg")
+        antenna_update["command_stale"] = bool(pointing.get("command_stale", False))
+        antenna_update["encoder_stale"] = bool(pointing.get("encoder_stale", False))
+        antenna_update["command_age_sec"] = pointing.get("cmd_age_sec")
+        antenna_update["encoder_age_sec"] = pointing.get("enc_age_sec")
+        antenna_update["delta_az_deg"] = pointing.get("delta_az_deg")
+        antenna_update["delta_el_deg"] = pointing.get("delta_el_deg")
+        antenna_update["delta_az_cos_el_deg"] = pointing.get("delta_az_cos_el_deg")
+        antenna_update["pointing_basis"] = pointing.get("basis")
+    else:
+        if cmd:
+            antenna_update.update(cmd)
+        if enc:
+            antenna_update.update(enc)
     tracking = live_payload.get("tracking") if isinstance(live_payload.get("tracking"), dict) else {}
     if tracking:
         terr = _finite_float(tracking.get("error_deg"))
@@ -435,11 +480,78 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
     weather_payload = live_payload.get("weather") if isinstance(live_payload.get("weather"), dict) else {}
     if weather_payload:
         out.setdefault("weather", {}).update(weather_payload)
+    queue_payload = live_payload.get("queue_status") if isinstance(live_payload.get("queue_status"), dict) else {}
+    if queue_payload:
+        out.setdefault("antenna_command_queue", {}).update(queue_payload)
+    spec_payload = live_payload.get("spectrometer_status") if isinstance(live_payload.get("spectrometer_status"), dict) else {}
+    if spec_payload:
+        out.setdefault("spectrometer", {}).update(spec_payload)
 
     lifecycle = out.get("lifecycle") if isinstance(out.get("lifecycle"), dict) else {}
     final_state = str(lifecycle.get("state") or "").lower() in {"finished", "error", "aborted"}
+    section_status = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), dict) else {}
     ctrl = live_payload.get("control") if isinstance(live_payload.get("control"), dict) else {}
-    if ctrl and not final_state:
+    if section_status and not final_state:
+        activity = out.setdefault("activity", {})
+        geometry = out.setdefault("geometry", {})
+        data = out.setdefault("data", {})
+        # Preserve the observation-progress line index before live antenna
+        # section status may overwrite geometry.current_line_index0.  The
+        # former answers "which planned OTF item is being processed", while
+        # the latter answers "which antenna scan-line section is active now".
+        # Mixing them makes Plan View jump to the next line during OFF,
+        # standby, or accelerate intervals.
+        progress_line_index = geometry.get("current_line_index0")
+        if isinstance(progress_line_index, int) and progress_line_index >= 0:
+            geometry.setdefault("progress_line_index0", progress_line_index)
+        section_kind = section_status.get("section_kind")
+        section_label = section_status.get("section_label")
+        line_index = section_status.get("line_index")
+        if section_kind not in (None, ""):
+            activity["motion_stage"] = section_kind
+            activity["control_section_kind"] = section_kind
+        if section_label not in (None, ""):
+            activity["control_section_label"] = section_label
+            geometry["current_line_label"] = section_label
+        if section_status.get("control_id") not in (None, ""):
+            activity["control_id"] = section_status.get("control_id")
+        activity["control_tight"] = bool(section_status.get("tight", False))
+        activity["control_section_uid"] = section_status.get("section_uid")
+        activity["control_section_plan_index"] = section_status.get("section_plan_index")
+        activity["control_section_sequence_index"] = section_status.get("section_sequence_index")
+        activity["control_section_line_index"] = line_index
+        activity["control_status_basis"] = section_status.get("status_basis")
+        activity["control_section_active"] = bool(section_status.get("active", False))
+        activity["control_section_science_line"] = bool(section_status.get("science_line", False))
+        activity["control_section_interrupt_ok"] = bool(section_status.get("interrupt_ok", False))
+        activity["control_section_start_unix"] = section_status.get("section_start_unix")
+        activity["control_section_stop_unix"] = section_status.get("section_stop_unix")
+        activity["control_section_duration_sec"] = section_status.get("section_duration_sec")
+        activity["control_section_command_time_unix"] = section_status.get("command_time_unix")
+        activity["control_section_query_time_unix"] = section_status.get("query_time_unix")
+        activity["control_section_publish_time_unix"] = section_status.get("publish_time_unix")
+        pub_time = section_status.get("publish_time_unix")
+        try:
+            section_age = max(0.0, time.time() - float(pub_time))
+        except Exception:
+            section_age = None
+        activity["control_section_age_sec"] = section_age
+        activity["control_section_fresh"] = bool(section_age is not None and section_age <= live_status_max_age_sec())
+        if section_status.get("fraction_valid"):
+            activity["control_section_fraction"] = section_status.get("nominal_fraction")
+        if isinstance(line_index, int) and line_index >= 0:
+            geometry["current_line_index0"] = line_index
+            if data.get("latest_control_line_index") is None:
+                data["latest_control_line_index"] = line_index
+        if section_status.get("geometry_valid"):
+            geometry["live_section_geometry"] = {
+                "frame": section_status.get("section_frame"),
+                "unit": section_status.get("section_unit"),
+                "start": [section_status.get("section_start_lon_deg"), section_status.get("section_start_lat_deg")],
+                "stop": [section_status.get("section_stop_lon_deg"), section_status.get("section_stop_lat_deg")],
+                "speed_deg_per_sec": section_status.get("section_speed_deg_per_sec"),
+            }
+    elif ctrl and not final_state:
         activity = out.setdefault("activity", {})
         geometry = out.setdefault("geometry", {})
         section_kind = ctrl.get("section_kind")
@@ -456,6 +568,7 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
             activity["control_id"] = ctrl_id
         if ctrl.get("tight") is not None:
             activity["control_tight"] = bool(ctrl.get("tight"))
+        activity["control_section_line_index"] = line_index
         if isinstance(line_index, int) and line_index >= 0:
             geometry["current_line_index0"] = line_index
             data = out.setdefault("data", {})
@@ -477,10 +590,18 @@ class LiveRosCache:
         self._rclpy = None
         self._node = None
         self._owns_context = False
+        self._lock = threading.RLock()
+        self._executor = None
+        self._spin_thread: Optional[threading.Thread] = None
+        self._spin_mode = "disabled"
         self.control: Dict[str, Any] = {}
         self.command: Dict[str, Any] = {}
         self.encoder: Dict[str, Any] = {}
         self.tracking: Dict[str, Any] = {}
+        self.section_status: Dict[str, Any] = {}
+        self.pointing_status: Dict[str, Any] = {}
+        self.queue_status: Dict[str, Any] = {}
+        self.spectrometer_status: Dict[str, Any] = {}
         self.weather: Dict[str, Dict[str, Any]] = {}
         if self.requested:
             self._start()
@@ -534,9 +655,115 @@ class LiveRosCache:
                     "time_unix": _finite_float(getattr(msg, "time", None)),
                 }
 
+            def section_status_cb(msg: Any) -> None:
+                self.section_status = {
+                    "active": bool(getattr(msg, "active", False)),
+                    "control_id": str(getattr(msg, "control_id", "")),
+                    "section_uid": str(getattr(msg, "section_uid", "")),
+                    "section_plan_index": int(getattr(msg, "section_plan_index", -1)),
+                    "section_sequence_index": int(getattr(msg, "section_sequence_index", -1)),
+                    "section_kind": str(getattr(msg, "section_kind", "")),
+                    "section_label": str(getattr(msg, "section_label", "")),
+                    "line_index": int(getattr(msg, "line_index", -1)),
+                    "section_start_unix": _finite_float(getattr(msg, "section_start_unix", None)),
+                    "section_stop_unix": _finite_float(getattr(msg, "section_stop_unix", None)),
+                    "section_duration_sec": _finite_float(getattr(msg, "section_duration_sec", None)),
+                    "query_time_unix": _finite_float(getattr(msg, "query_time_unix", None)),
+                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
+                    "command_time_unix": _finite_float(getattr(msg, "command_time_unix", None)),
+                    "nominal_fraction": _finite_float(getattr(msg, "nominal_fraction", None)),
+                    "fraction_valid": bool(getattr(msg, "fraction_valid", False)),
+                    "tight": bool(getattr(msg, "tight", False)),
+                    "science_line": bool(getattr(msg, "science_line", False)),
+                    "interrupt_ok": bool(getattr(msg, "interrupt_ok", False)),
+                    "geometry_valid": bool(getattr(msg, "geometry_valid", False)),
+                    "section_frame": str(getattr(msg, "section_frame", "")),
+                    "section_unit": str(getattr(msg, "section_unit", "")),
+                    "section_start_lon_deg": _finite_float(getattr(msg, "section_start_lon_deg", None)),
+                    "section_start_lat_deg": _finite_float(getattr(msg, "section_start_lat_deg", None)),
+                    "section_stop_lon_deg": _finite_float(getattr(msg, "section_stop_lon_deg", None)),
+                    "section_stop_lat_deg": _finite_float(getattr(msg, "section_stop_lat_deg", None)),
+                    "section_speed_deg_per_sec": _finite_float(getattr(msg, "section_speed_deg_per_sec", None)),
+                    "status_basis": str(getattr(msg, "status_basis", "")),
+                }
+
+            def pointing_status_cb(msg: Any) -> None:
+                self.pointing_status = {
+                    "valid": bool(getattr(msg, "valid", False)),
+                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
+                    "command_time_unix": _finite_float(getattr(msg, "command_time_unix", None)),
+                    "encoder_time_unix": _finite_float(getattr(msg, "encoder_time_unix", None)),
+                    "cmd_az_deg": _finite_float(getattr(msg, "cmd_az_deg", None)),
+                    "cmd_el_deg": _finite_float(getattr(msg, "cmd_el_deg", None)),
+                    "enc_az_deg": _finite_float(getattr(msg, "enc_az_deg", None)),
+                    "enc_el_deg": _finite_float(getattr(msg, "enc_el_deg", None)),
+                    "delta_az_deg": _finite_float(getattr(msg, "delta_az_deg", None)),
+                    "delta_el_deg": _finite_float(getattr(msg, "delta_el_deg", None)),
+                    "delta_az_cos_el_deg": _finite_float(getattr(msg, "delta_az_cos_el_deg", None)),
+                    "tracking_error_deg": _finite_float(getattr(msg, "tracking_error_deg", None)),
+                    "tracking_threshold_deg": _finite_float(getattr(msg, "tracking_threshold_deg", None)),
+                    "tracking_ok": bool(getattr(msg, "tracking_ok", False)),
+                    "cmd_age_sec": _finite_float(getattr(msg, "cmd_age_sec", None)),
+                    "enc_age_sec": _finite_float(getattr(msg, "enc_age_sec", None)),
+                    "command_stale": bool(getattr(msg, "command_stale", False)),
+                    "encoder_stale": bool(getattr(msg, "encoder_stale", False)),
+                    "basis": str(getattr(msg, "basis", "")),
+                }
+
+            def queue_status_cb(msg: Any) -> None:
+                self.queue_status = {
+                    "active": bool(getattr(msg, "active", False)),
+                    "control_id": str(getattr(msg, "control_id", "")),
+                    "mode": str(getattr(msg, "mode", "")),
+                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
+                    "command_offset_sec": _finite_float(getattr(msg, "command_offset_sec", None)),
+                    "min_buffer_sec": _finite_float(getattr(msg, "min_buffer_sec", None)),
+                    "max_buffer_sec": _finite_float(getattr(msg, "max_buffer_sec", None)),
+                    "queue_length": int(getattr(msg, "queue_length", 0)),
+                    "head_lead_sec": _finite_float(getattr(msg, "head_lead_sec", None)),
+                    "tail_lead_sec": _finite_float(getattr(msg, "tail_lead_sec", None)),
+                    "last_publish_wall_time_unix": _finite_float(getattr(msg, "last_publish_wall_time_unix", None)),
+                    "last_published_cmd_time_unix": _finite_float(getattr(msg, "last_published_cmd_time_unix", None)),
+                    "publish_gap_sec": _finite_float(getattr(msg, "publish_gap_sec", None)),
+                    "generator_exhausted": bool(getattr(msg, "generator_exhausted", False)),
+                    "guard_latched": bool(getattr(msg, "guard_latched", False)),
+                    "reason": str(getattr(msg, "reason", "")),
+                }
+
+            def spectrometer_status_cb(msg: Any) -> None:
+                self.spectrometer_status = {
+                    "valid": bool(getattr(msg, "valid", False)),
+                    "recorder_active": bool(getattr(msg, "recorder_active", False)),
+                    "saving_enabled": bool(getattr(msg, "saving_enabled", False)),
+                    "acquiring": bool(getattr(msg, "acquiring", False)),
+                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
+                    "last_dump_time_unix": _finite_float(getattr(msg, "last_dump_time_unix", None)),
+                    "last_record_time_unix": _finite_float(getattr(msg, "last_record_time_unix", None)),
+                    "last_stream_time_unix": _finite_float(getattr(msg, "last_stream_time_unix", None)),
+                    "last_dump_age_sec": _finite_float(getattr(msg, "last_dump_age_sec", None)),
+                    "latest_time_spectrometer": str(getattr(msg, "latest_time_spectrometer", "")),
+                    "record_every_n": int(getattr(msg, "record_every_n", 0)),
+                    "data_queue_size_max": int(getattr(msg, "data_queue_size_max", 0)),
+                    "n_streams": int(getattr(msg, "n_streams", 0)),
+                    "n_boards": int(getattr(msg, "n_boards", 0)),
+                    "missing_board_count": int(getattr(msg, "missing_board_count", 0)),
+                    "tp_mode": bool(getattr(msg, "tp_mode", False)),
+                    "tp_range_start": int(getattr(msg, "tp_range_start", -1)),
+                    "tp_range_stop": int(getattr(msg, "tp_range_stop", -1)),
+                    "qlook_ch_start": int(getattr(msg, "qlook_ch_start", -1)),
+                    "qlook_ch_stop": int(getattr(msg, "qlook_ch_stop", -1)),
+                    "metadata_position": str(getattr(msg, "metadata_position", "")),
+                    "metadata_id": str(getattr(msg, "metadata_id", "")),
+                    "section_kind": str(getattr(msg, "section_kind", "")),
+                    "section_label": str(getattr(msg, "section_label", "")),
+                    "line_index": int(getattr(msg, "line_index", -1)),
+                    "recorder_path": str(getattr(msg, "recorder_path", "")),
+                    "warning": str(getattr(msg, "warning", "")),
+                }
+
             def weather_cb(key: str):
                 def _callback(msg: Any) -> None:
-                    self.weather[key] = {
+                    payload = {
                         "temperature_k": _finite_float(getattr(msg, "temperature", None)),
                         "in_temperature_k": _finite_float(getattr(msg, "in_temperature", None)),
                         "pressure_hpa": _finite_float(getattr(msg, "pressure", None)),
@@ -547,6 +774,8 @@ class LiveRosCache:
                         "rain_rate": _finite_float(getattr(msg, "rain_rate", None)),
                         "time_unix": _finite_float(getattr(msg, "time", None)),
                     }
+                    with self._lock:
+                        self.weather[key] = payload
                 return _callback
 
             topic.antenna_control_status.subscription(self._node, control_cb)
@@ -559,6 +788,17 @@ class LiveRosCache:
                 # monitor should still show Az/El and simply mark tracking status
                 # as unavailable.
                 pass
+            for topic_obj, callback in (
+                (getattr(topic, "antenna_section_status", None), section_status_cb),
+                (getattr(topic, "antenna_pointing_status", None), pointing_status_cb),
+                (getattr(topic, "antenna_command_queue_status", None), queue_status_cb),
+                (getattr(topic, "spectrometer_status", None), spectrometer_status_cb),
+            ):
+                try:
+                    if topic_obj is not None:
+                        topic_obj.subscription(self._node, callback)
+                except Exception:
+                    pass
             # Weather topics are indexed (typically /weather/ambient/out and
             # /weather/ambient/in).  Subscribe explicitly to both common keys; if
             # a site has only one of them, ROS simply leaves the other empty.
@@ -568,6 +808,7 @@ class LiveRosCache:
             except Exception:
                 pass
             self.available = True
+            self._start_background_spin()
         except Exception as exc:
             self.available = False
             self.error = str(exc)
@@ -578,8 +819,43 @@ class LiveRosCache:
                 pass
             self._node = None
 
+    def _start_background_spin(self) -> None:
+        """Continuously drain ROS callbacks in a background executor.
+
+        Request-driven ``spin_once(0)`` is not enough for the web monitor once
+        v39 subscribes to several status topics.  ``spin_once`` processes at
+        most one ready callback, so a 1 Hz HTTP refresh can leave section,
+        pointing, queue, and spectrometer status several seconds stale.  The
+        dashboard must cache live ROS telemetry independently of browser
+        refreshes.
+        """
+        if not (self.available and self._rclpy is not None and self._node is not None):
+            return
+        try:
+            from rclpy.executors import MultiThreadedExecutor  # type: ignore
+
+            executor = MultiThreadedExecutor(num_threads=2)
+            executor.add_node(self._node)
+            self._executor = executor
+            self._spin_mode = "background-executor"
+            self._spin_thread = threading.Thread(
+                target=executor.spin,
+                name="necst-progress-ros-spin",
+                daemon=True,
+            )
+            self._spin_thread.start()
+        except Exception as exc:
+            # Fall back to explicit spin_once calls used by older progress.py.
+            # This is less responsive but keeps --no-ros and old ROS installs usable.
+            self._executor = None
+            self._spin_thread = None
+            self._spin_mode = "request-spin-fallback"
+            self.error = f"background ROS spin disabled: {exc}"
+
     def spin_once(self, timeout_sec: float = 0.0) -> None:
         if not (self.available and self._rclpy is not None and self._node is not None):
+            return
+        if self._executor is not None:
             return
         try:
             self._rclpy.spin_once(self._node, timeout_sec=timeout_sec)
@@ -588,22 +864,44 @@ class LiveRosCache:
             self.available = False
 
     def snapshot(self) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {"available": self.available}
-        if self.error:
-            payload["error"] = self.error
-        if self.control:
-            payload["control"] = dict(self.control)
-        if self.command:
-            payload["command"] = dict(self.command)
-        if self.encoder:
-            payload["encoder"] = dict(self.encoder)
-        if self.tracking:
-            payload["tracking"] = dict(self.tracking)
-        if self.weather:
-            payload["weather"] = {key: dict(value) for key, value in self.weather.items()}
-        return payload
+        with self._lock:
+            payload: Dict[str, Any] = {"available": self.available, "spin_mode": self._spin_mode}
+            if self.error:
+                payload["error"] = self.error
+            if self.control:
+                payload["control"] = dict(self.control)
+            if self.command:
+                payload["command"] = dict(self.command)
+            if self.encoder:
+                payload["encoder"] = dict(self.encoder)
+            if self.tracking:
+                payload["tracking"] = dict(self.tracking)
+            if self.section_status:
+                payload["section_status"] = dict(self.section_status)
+            if self.pointing_status:
+                payload["pointing_status"] = dict(self.pointing_status)
+            if self.queue_status:
+                payload["queue_status"] = dict(self.queue_status)
+            if self.spectrometer_status:
+                payload["spectrometer_status"] = dict(self.spectrometer_status)
+            if self.weather:
+                payload["weather"] = {key: dict(value) for key, value in self.weather.items()}
+            return payload
 
     def close(self) -> None:
+        try:
+            if self._executor is not None:
+                try:
+                    self._executor.shutdown()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        try:
+            if self._spin_thread is not None and self._spin_thread.is_alive():
+                self._spin_thread.join(timeout=1.0)
+        except Exception:
+            pass
         try:
             if self._node is not None:
                 self._node.destroy_node()
@@ -743,6 +1041,57 @@ def _display_item_mode(item: Mapping[str, Any]) -> str:
     return str(item.get("mode") or geom.get("mode") or "").upper()
 
 
+def _int_or_none(value: Any) -> Optional[int]:
+    try:
+        if value is None:
+            return None
+        out = int(value)
+    except Exception:
+        return None
+    return out
+
+
+def _live_scan_line_state(snapshot: Mapping[str, Any]) -> Dict[str, Any]:
+    """Return authoritative live scan-line state for display decisions.
+
+    The observation-progress snapshot and antenna section status answer
+    different questions.  ``geometry.current_line_index0`` from the former can
+    advance while the telescope is still in OFF, standby, or accelerate.  Plan
+    View must therefore use an antenna line as ``current`` only when the new
+    AntennaSectionStatus says that the current-time section is an actual science
+    line.
+    """
+    activity = snapshot.get("activity") if isinstance(snapshot.get("activity"), Mapping) else {}
+    geometry = snapshot.get("geometry") if isinstance(snapshot.get("geometry"), Mapping) else {}
+
+    basis = str(activity.get("control_status_basis") or "").lower()
+    active = bool(activity.get("control_section_active", False))
+    fresh = activity.get("control_section_fresh", True) is not False
+    authoritative = active and fresh and basis not in {"", "idle", "future-buffered", "no-current-section"}
+
+    section_line = _int_or_none(activity.get("control_section_line_index"))
+    if section_line is None and authoritative:
+        section_line = _int_or_none(geometry.get("current_line_index0"))
+
+    progress_line = _int_or_none(geometry.get("progress_line_index0"))
+    if progress_line is None and not authoritative:
+        progress_line = _int_or_none(geometry.get("current_line_index0"))
+
+    kind = str(activity.get("control_section_kind") or activity.get("motion_stage") or "").lower()
+    science_line = bool(activity.get("control_section_science_line", False))
+    line_active = science_line or kind in {"line", "scanning"}
+
+    return {
+        "authoritative": authoritative,
+        "basis": basis,
+        "kind": kind,
+        "has_line": section_line is not None and section_line >= 0,
+        "line_index": section_line,
+        "progress_line_index": progress_line,
+        "line_active": line_active,
+    }
+
+
 def _display_status_for_item(
     item: Mapping[str, Any],
     snapshot: Mapping[str, Any],
@@ -777,6 +1126,24 @@ def _display_status_for_item(
         live_line = item_line = -1
         has_line = False
     if not final_state and cur and parent == cur and has_line:
+        live_state = _live_scan_line_state(snapshot)
+        if live_state.get("authoritative"):
+            if live_state.get("has_line"):
+                live_line = int(live_state["line_index"])
+                if item_line < live_line:
+                    return "done"
+                if item_line == live_line:
+                    return "current"
+                return "pending"
+            progress_line = live_state.get("progress_line_index")
+            if isinstance(progress_line, int):
+                if item_line < progress_line:
+                    return "done"
+                return "pending"
+            # A live section exists but it is not a scan-line section.  Do not
+            # fall back to marking every child of the active scan block as
+            # current; that is the unstable Plan View behaviour seen on sky.
+            return "pending"
         if item_line < live_line:
             return "done"
         if item_line == live_line:
@@ -1240,6 +1607,11 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
     elif line_total is not None:
         line_info = f" line_total={line_total}"
     lines.append(frame_line(f"drive={drive} mot={motion} data={data_state}{line_info}"))
+    if activity.get("control_section_fraction") is not None:
+        frac = _finite_float(activity.get("control_section_fraction"))
+        source = compact_value(activity.get("control_status_basis"))
+        if frac is not None:
+            lines.append(frame_line(f"section: command_fraction={100.0*frac:.1f}% basis={source}"))
     loc = activity.get("location_context")
     if loc:
         lines.append(frame_line(f"location_context={compact_value(loc)}"))
@@ -1283,7 +1655,17 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
             ok_text = "OK" if antenna.get("tracking_ok") else "not OK"
             terr_text = "-" if terr is None else f"{terr * 3600.0:.1f} arcsec"
             age_text = "-" if age is None else f"age={age:.1f}s"
+            basis = compact_value(antenna.get("pointing_basis"))
             lines.append(frame_line(f"trk  : {ok_text} error={terr_text} {age_text}"))
+            if basis != "-":
+                lines.append(frame_line(f"basis: {basis}"))
+            cmd_age = _finite_float(antenna.get("command_age_sec"))
+            enc_age = _finite_float(antenna.get("encoder_age_sec"))
+            if cmd_age is not None or enc_age is not None:
+                lines.append(frame_line(
+                    f"age  : cmd={fmt_seconds_short(cmd_age)} enc={fmt_seconds_short(enc_age)} "
+                    f"stale={bool(antenna.get('command_stale'))}/{bool(antenna.get('encoder_stale'))}"
+                ))
         else:
             lines.append(frame_line("trk  : status unavailable"))
         if not (cmd_lon is not None or enc_lon is not None):
@@ -1294,6 +1676,29 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         f"id={compact_value(data.get('expected_metadata_id'))} "
         f"line={compact_value(data.get('expected_metadata_line_index'))}"
     ))
+    queue = snapshot.get("antenna_command_queue") if isinstance(snapshot.get("antenna_command_queue"), dict) else {}
+    if queue:
+        q_state = "active" if queue.get("active") else "inactive"
+        q_len = compact_value(queue.get("queue_length"))
+        head = fmt_seconds_short(queue.get("head_lead_sec"))
+        tail = fmt_seconds_short(queue.get("tail_lead_sec"))
+        gap = fmt_seconds_short(queue.get("publish_gap_sec"))
+        lines.append(frame_line(f"queue: {q_state} len={q_len} head/tail={head}/{tail} gap={gap}"))
+        if queue.get("guard_latched") or queue.get("reason"):
+            lines.append(frame_line(
+                f"queue reason={compact_value(queue.get('reason'))} "
+                f"guard={compact_value(queue.get('guard_latched'))}"
+            ))
+    spec = snapshot.get("spectrometer") if isinstance(snapshot.get("spectrometer"), dict) else {}
+    if spec:
+        acq = "acq" if spec.get("acquiring") else "no-acq"
+        rec = "rec" if spec.get("recorder_active") else "no-rec"
+        save = "save" if spec.get("saving_enabled") else "no-save"
+        age = compact_value(spec.get("last_dump_age_sec"))
+        lines.append(frame_line(
+            f"spectrometer: {acq}/{rec}/{save} dump_age={age} "
+            f"streams={compact_value(spec.get('n_streams'))} boards={compact_value(spec.get('n_boards'))}"
+        ))
     if data.get("latest_spectrum_position") is not None:
         lines.append(frame_line(
             f"latest  : {compact_value(data.get('latest_spectrum_position'))} "
@@ -1494,34 +1899,40 @@ _HTML_TEMPLATE = """<!doctype html>
 @media (prefers-color-scheme: dark) {
   :root { --bg:#1b1b20; --fg:#eceff4; --panel:#202028; --muted:#aeb6c2; --border:#c8d0dc44; --plot-text:#eceff4; }
 }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .55rem; line-height: 1.22; font-size:13px; background:var(--bg); color:var(--fg); }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .58rem; line-height: 1.23; font-size:13px; background:var(--bg); color:var(--fg); }
 header { display:flex; gap:1rem; align-items:baseline; justify-content:space-between; flex-wrap:wrap; }
 h1 { font-size:1.05rem; margin:0 0 .3rem; }
 .grid {
   display:grid;
-  grid-template-columns: repeat(3, minmax(190px, .9fr)) repeat(3, minmax(210px, 1.45fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-areas:
-    "obs plan activity planview planview planview"
-    "position position geometry planview planview planview"
-    "env terminal files event event event";
+    "obs obs obs plan plan plan activity activity activity position position position"
+    "planview planview planview planview planview planview planview planview planview planview planview planview"
+    "geometry geometry geometry queue queue queue spectrometer spectrometer spectrometer trace trace trace"
+    "env env terminal terminal terminal files files event event event event event";
   gap: .55rem;
-  align-items:stretch;
+  align-items:start;
 }
-.card { border:1px solid var(--border); border-radius:10px; padding:.55rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:10.5rem; }
-.card h2 { font-size:.92rem; margin:.03rem 0 .35rem; }
-.kv { display:grid; grid-template-columns: 6.9rem minmax(0,1fr); gap:.12rem .38rem; align-items:baseline; }
-.bigpos { grid-template-columns: 8.8rem minmax(0,1fr); font-size:.86rem; }
+.card { border:1px solid var(--border); border-radius:10px; padding:.58rem .62rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:0; }
+.card h2 { font-size:.92rem; margin:.03rem 0 .35rem; letter-spacing:.01em; }
+.kv { display:grid; grid-template-columns: 6.7rem minmax(0,1fr); gap:.12rem .38rem; align-items:baseline; }
+.obsview .kv, .planinfoview .kv, .activityview .kv { grid-template-columns: 5.7rem minmax(0,1fr); }
+.bigpos { grid-template-columns: 8.4rem minmax(0,1fr); font-size:.86rem; }
 .bigpos .v.important-pos { font-size:1.03rem; font-weight:700; }
-.bigpos .v.warning-pos { color:var(--warn); font-weight:800; }
-.bigpos .v.critical-pos { color:var(--err); font-weight:800; }
-.bigpos .v.muted-pos { color:var(--muted); }
+.v.ok-pos { color:var(--ok); font-weight:700; }
+.v.important-pos { font-weight:700; }
+.v.warning-pos { color:var(--warn); font-weight:800; }
+.v.critical-pos { color:var(--err); font-weight:800; }
+.v.muted-pos { color:var(--muted); }
 .k { color:var(--muted); }
-.v { min-width:0; overflow-wrap:anywhere; }
+.v { min-width:0; overflow-wrap:break-word; word-break:normal; }
+.traceview .v, .eventview .v { overflow-wrap:anywhere; }
+#paths .v { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .status { font-weight:700; padding:.08rem .38rem; border-radius:999px; border:1px solid var(--border); }
 .status.running, .status.finished { color:var(--ok); } .status.error, .status.aborted { color:var(--err); } .status.cleanup { color:var(--warn); }
 .bar { width:100%; height:.86rem; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:#9992; margin-top:.35rem; }
 .fill { height:100%; width:0%; background:currentColor; color:var(--ok); transition:width .2s; }
-pre { white-space:pre-wrap; overflow:auto; max-height:18rem; margin:.2rem 0 0; font-size:.74rem; }
+pre { white-space:pre-wrap; overflow:auto; max-height:14rem; margin:.2rem 0 0; font-size:.74rem; }
 table { border-collapse:collapse; width:100%; font-size:.74rem; table-layout:fixed; }
 th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem .18rem; vertical-align:top; overflow:hidden; text-overflow:ellipsis; }
 #events { overflow:auto; max-height:12rem; }
@@ -1529,10 +1940,11 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 #events th:nth-child(1), #events td:nth-child(1) { width:4.4rem; white-space:nowrap; }
 #events th:nth-child(2), #events td:nth-child(2) { width:8.5rem; }
 #events th:nth-child(3), #events td:nth-child(3) { width:auto; }
-.plotbox { min-height: 500px; display:flex; align-items:center; justify-content:center; }
-.plotbox svg { width:100%; height:auto; max-height:72vh; color:var(--plot-text); }
+.plotbox { min-height: 360px; display:flex; align-items:center; justify-content:center; }
+.plotbox svg { width:100%; height:auto; max-height:64vh; color:var(--plot-text); }
 .plotbox svg text { fill: currentColor; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
-.legend { display:flex; gap:.65rem; flex-wrap:wrap; margin:.2rem 0 .35rem; font-size:.78rem; color:var(--muted); }
+.legend { display:flex; gap:.65rem; flex-wrap:wrap; margin:.15rem 0 .30rem; font-size:.78rem; color:var(--muted); }
+.legend-note { flex-basis:100%; font-size:.74rem; }
 .dot { display:inline-block; width:.72rem; height:.72rem; border-radius:999px; vertical-align:-.08rem; margin-right:.22rem; }
 .small { font-size:.74rem; color:var(--muted); }
 .obsview { grid-area: obs; }
@@ -1540,28 +1952,70 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 .activityview { grid-area: activity; }
 .positionview { grid-area: position; }
 .geometryview { grid-area: geometry; }
-.envview { grid-area: env; min-height: 9.5rem; }
-.terminalview { grid-area: terminal; min-height: 9.5rem; }
-.filesview { grid-area: files; min-height: 9.5rem; }
-.eventview { grid-area: event; min-height: 9.5rem; }
-.planview { grid-area: planview; min-height: 37rem; }
-.planview .plotbox { min-height: 560px; }
-.planview svg { max-height: 78vh; }
-#terminal { max-height: 12rem; }
+.queueview { grid-area: queue; min-height: 8.7rem; }
+.spectrometerview { grid-area: spectrometer; min-height: 8.7rem; }
+.traceview { grid-area: trace; min-height: 8.7rem; }
+.envview { grid-area: env; min-height: 8.4rem; }
+.terminalview { grid-area: terminal; min-height: 8.4rem; }
+.filesview { grid-area: files; min-height: 8.4rem; }
+.eventview { grid-area: event; min-height: 8.4rem; }
+.planview { grid-area: planview; min-height:0; }
+.planview .plotbox { min-height: 455px; }
+.planview svg { max-height: 66vh; }
+#terminal { max-height: 10.5rem; }
 .axis-label { font-size:11px; fill:currentColor; }
 .plot-note { font-size:11px; fill:currentColor; }
 .important { font-weight:700; color:var(--warn); }
 .critical { color:var(--err); font-weight:800; }
 .warning { margin:.25rem 0 .5rem; padding:.5rem .65rem; border:2px solid var(--err); border-radius:9px; background:#c1121f22; color:var(--fg); font-size:.98rem; font-weight:750; }
 .notice { margin:.25rem 0 .5rem; padding:.42rem .55rem; border:1px solid var(--border); border-radius:9px; background:#9991; }
+@media (min-width: 1500px) {
+  .grid {
+    grid-template-areas:
+      "obs obs plan plan activity activity position position position position position position"
+      "planview planview planview planview planview planview planview planview planview planview planview planview"
+      "geometry geometry geometry queue queue queue spectrometer spectrometer spectrometer trace trace trace"
+      "env env terminal terminal terminal files files event event event event event";
+  }
+  .planview .plotbox { min-height: 500px; }
+}
 @media (max-width: 1100px) {
-  .grid { grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); grid-template-areas: none; }
-  .obsview, .planinfoview, .activityview, .positionview, .geometryview, .envview, .terminalview, .filesview, .eventview, .planview { grid-area: auto; }
-  .planview, .eventview, .positionview { grid-column: span 2; grid-row: auto; }
+  .grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-areas:
+      "obs obs obs plan plan plan"
+      "activity activity activity position position position"
+      "planview planview planview planview planview planview"
+      "geometry geometry geometry queue queue queue"
+      "spectrometer spectrometer spectrometer trace trace trace"
+      "env env terminal terminal files files"
+      "event event event event event event";
+  }
+  .planview .plotbox { min-height: 420px; }
 }
 @media (max-width: 760px) {
-  .planview, .eventview, .positionview { grid-column: span 1; grid-row: span 1; min-height: auto; }
-  .plotbox { min-height: 360px; }
+  body { padding: .45rem; }
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "obs"
+      "plan"
+      "activity"
+      "position"
+      "planview"
+      "geometry"
+      "queue"
+      "spectrometer"
+      "trace"
+      "env"
+      "terminal"
+      "files"
+      "event";
+  }
+  .card { min-height: auto; }
+  .plotbox { min-height: 330px; }
+  .planview .plotbox { min-height: 350px; }
+  .kv, .bigpos, .obsview .kv, .planinfoview .kv, .activityview .kv { grid-template-columns: 7.0rem minmax(0, 1fr); }
 }
 .err { color:var(--err); font-weight:700; }
 </style>
@@ -1574,8 +2028,11 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 <section class=\"card planinfoview\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
 <section class=\"card activityview\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
 <section class="card positionview"><h2>Live Position</h2><div class="kv bigpos" id="position"></div></section>
-<section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span>OTF=line map; Grid/PSW=ON-basis map visits; Skydip=elevation sequence. OFF/reference points are labels, not progress denominator.</span></div><div id="plotview" class="plotbox small">-</div></section>
+<section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span class="legend-note">OTF: scan lines; Grid/PSW: ON visits; Skydip: elevation sequence. OFF/reference points are labels.</span></div><div id="plotview" class="plotbox small">-</div></section>
 <section class="card geometryview"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
+<section class="card queueview"><h2>Command Queue</h2><div class="kv" id="queue"></div></section>
+<section class="card spectrometerview"><h2>Spectrometer</h2><div class="kv" id="spectrometer"></div></section>
+<section class="card traceview"><h2>System Trace</h2><div class="kv" id="trace"></div></section>
 <section class="card envview"><h2>Environment</h2><div class="kv" id="environment"></div></section>
 <section class="card terminalview"><h2>Terminal View</h2><pre id=\"terminal\"></pre></section>
 <section class="card filesview"><h2>Files</h2><div class=\"kv\" id=\"paths\"></div></section>
@@ -2007,6 +2464,124 @@ function officialTrackingRows(a, snapshot=null) {
   if (warn) rows.push(['Tracking warning', warn, 'warning']);
   return rows;
 }
+function secText(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? `${n.toFixed(1)} s` : '-';
+}
+function ageSinceUnix(unix, serverTimeUnix=null) {
+  const t = Number(unix);
+  const now = Number(serverTimeUnix);
+  if (!Number.isFinite(t) || !Number.isFinite(now)) return null;
+  return Math.max(0, now - t);
+}
+function ageRole(age, warn=2.5, critical=8.0) {
+  const n = Number(age);
+  if (!Number.isFinite(n)) return 'muted';
+  if (n >= critical) return 'critical';
+  if (n >= warn) return 'warning';
+  return 'ok';
+}
+function boolText(v, yes='yes', no='no') { return v ? yes : no; }
+function shortUidText(v) {
+  const s = usableText(v);
+  if (!s) return '-';
+  return s.length > 30 ? `${s.slice(0, 13)}…${s.slice(-12)}` : s;
+}
+function fractionPercentText(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? `${(100.0 * Math.max(0, Math.min(1, n))).toFixed(1)} %` : '-';
+}
+function signedArcsecText(deg) {
+  const n = Number(deg);
+  if (!Number.isFinite(n)) return '-';
+  const a = n * 3600.0;
+  return `${a >= 0 ? '+' : ''}${a.toFixed(1)} arcsec`;
+}
+function roleFromBoolOk(ok, available=true) {
+  if (!available) return 'muted';
+  return ok ? 'ok' : 'warning';
+}
+function commandQueueRows(snapshot, serverTimeUnix=null) {
+  const q = snapshot?.antenna_command_queue || {};
+  if (!q || !Object.keys(q).length) return [['status', 'not reported', 'muted'], ['source', 'AntennaCommandQueueStatus unavailable', 'muted']];
+  const active = !!q.active;
+  const gap = Number(q.publish_gap_sec);
+  const tail = Number(q.tail_lead_sec);
+  const head = Number(q.head_lead_sec);
+  const qlen = Number(q.queue_length);
+  const statusRole = q.guard_latched ? 'warning' : (active ? 'ok' : 'muted');
+  const gapRole = Number.isFinite(gap) ? ageRole(gap, 1.5, 5.0) : 'muted';
+  const leadText = `${secText(head)} / ${secText(tail)}`;
+  const leadRole = active && Number.isFinite(tail) && tail < 0.2 ? 'warning' : (active ? 'ok' : 'muted');
+  const age = ageSinceUnix(q.publish_time_unix, serverTimeUnix);
+  const rows = [
+    ['status', active ? 'active' : 'inactive', statusRole],
+    ['queue length', Number.isFinite(qlen) ? String(qlen) : '-', active && qlen <= 0 ? 'warning' : ''],
+    ['head/tail lead', leadText, leadRole],
+    ['publish gap', secText(gap), gapRole],
+    ['buffer config', `offset ${secText(q.command_offset_sec)}, max ${secText(q.max_buffer_sec)}`, ''],
+    ['generator', q.generator_exhausted ? 'exhausted' : 'running/available', q.generator_exhausted ? 'muted' : 'ok'],
+    ['guard', q.guard_latched ? 'latched' : 'clear', q.guard_latched ? 'warning' : 'ok'],
+    ['status age', secText(age), ageRole(age, 3.0, 10.0)]
+  ];
+  if (!isBlank(q.mode)) rows.splice(1, 0, ['mode', q.mode, '']);
+  if (!isBlank(q.reason)) rows.push(['reason', q.reason, q.guard_latched ? 'warning' : 'muted']);
+  return rows;
+}
+function spectrometerRows(snapshot, serverTimeUnix=null) {
+  const sp = snapshot?.spectrometer || {};
+  if (!sp || !Object.keys(sp).length) return [['status', 'not reported', 'muted'], ['source', 'SpectrometerStatus unavailable', 'muted']];
+  const valid = !!sp.valid;
+  const acquiring = !!sp.acquiring;
+  const recording = !!sp.recorder_active;
+  const saving = !!sp.saving_enabled;
+  const dumpAge = Number(sp.last_dump_age_sec);
+  const pubAge = ageSinceUnix(sp.publish_time_unix, serverTimeUnix);
+  const missing = Number(sp.missing_board_count);
+  const modeBits = `${acquiring ? 'acquiring' : 'idle'} / ${recording ? 'recording' : 'no-rec'} / ${saving ? 'saving' : 'no-save'}`;
+  const statusRole = valid && acquiring && saving ? 'ok' : (valid ? 'warning' : 'muted');
+  const dumpRole = Number.isFinite(dumpAge) ? ageRole(dumpAge, 1.5, 5.0) : 'muted';
+  const rows = [
+    ['status', modeBits, statusRole],
+    ['last dump age', secText(dumpAge), dumpRole],
+    ['streams/boards', `${val(sp.n_streams)} streams, ${val(sp.n_boards)} boards`, ''],
+    ['missing boards', Number.isFinite(missing) ? String(missing) : '-', Number.isFinite(missing) && missing > 0 ? 'warning' : 'ok'],
+    ['metadata', [sp.metadata_position, sp.metadata_id].filter(x => !isBlank(x)).join(' / ') || '-', 'important'],
+    ['line index', isBlank(sp.line_index) || Number(sp.line_index) < 0 ? '-' : String(sp.line_index), ''],
+    ['TP/qlook ch', `TP ${val(sp.tp_range_start)}:${val(sp.tp_range_stop)}, qlook ${val(sp.qlook_ch_start)}:${val(sp.qlook_ch_stop)}`, ''],
+    ['status age', secText(pubAge), ageRole(pubAge, 3.0, 10.0)]
+  ];
+  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(2, 0, ['latest spec time', sp.latest_time_spectrometer, 'muted']);
+  if (!isBlank(sp.recorder_path)) rows.push(['record path', sp.recorder_path, 'muted']);
+  if (!isBlank(sp.warning)) rows.push(['warning', sp.warning, 'warning']);
+  return rows;
+}
+function systemTraceRows(snapshot, serverTimeUnix=null) {
+  const a = snapshot?.activity || {};
+  const ant = snapshot?.antenna || {};
+  const q = snapshot?.antenna_command_queue || {};
+  const sp = snapshot?.spectrometer || {};
+  const sectionAge = ageSinceUnix(a.control_section_publish_time_unix, serverTimeUnix);
+  const pointingAge = ageSinceUnix(ant.tracking_status_time_unix, serverTimeUnix);
+  const queueAge = ageSinceUnix(q.publish_time_unix, serverTimeUnix);
+  const specAge = ageSinceUnix(sp.publish_time_unix, serverTimeUnix);
+  const frac = a.control_section_fraction;
+  const rows = [
+    ['ROS live cache', snapshot?.live?.spin_mode || 'file-only/no-ros', snapshot?.live?.spin_mode === 'background-executor' ? 'ok' : 'warn'],
+    ['section source', a.control_status_basis || 'fallback/unknown', a.control_status_basis ? 'ok' : 'muted'],
+    ['section fresh', a.control_section_fresh === false ? 'stale; not used for tracking' : 'fresh/unknown', a.control_section_fresh === false ? 'warn' : 'ok'],
+    ['section id', shortUidText(a.control_section_uid), 'muted'],
+    ['section index', `plan ${val(a.control_section_plan_index)} / seq ${val(a.control_section_sequence_index)}`, 'muted'],
+    ['section progress', fractionPercentText(frac), Number.isFinite(Number(frac)) ? 'important' : 'muted'],
+    ['section age', secText(sectionAge), ageRole(sectionAge, 2.0, 5.0)],
+    ['pointing source', ant.pointing_basis || (ant.tracking_status_available ? 'legacy tracking' : 'none'), ant.tracking_status_available ? 'ok' : 'muted'],
+    ['pointing age', secText(pointingAge), ageRole(pointingAge, 2.0, 5.0)],
+    ['queue age', secText(queueAge), q.active ? ageRole(queueAge, 2.0, 5.0) : 'muted'],
+    ['spectrometer age', secText(specAge), sp.valid ? ageRole(specAge, 2.0, 5.0) : 'muted']
+  ];
+  if (a.control_section_duration_sec !== undefined) rows.splice(5, 0, ['section duration', secText(a.control_section_duration_sec), '']);
+  return rows;
+}
 function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const a = snapshot?.antenna || {}; const g = snapshot?.geometry || {};
   const frame = g.offset_frame || g.frame || '';
@@ -2100,6 +2675,28 @@ function idxRange(obj) {
 }
 function inRange(item, r) { const ir = idxRange(item); return ir && r && ir[0] <= r[1] && ir[1] >= r[0]; }
 function doneRanges(events) { return (events||[]).filter(e=>e.event==='plan_item_finished').map(idxRange).filter(Boolean); }
+function intOrNull(v) {
+  if (v === undefined || v === null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+}
+function liveScanLineState(snapshot) {
+  const a = snapshot?.activity || {};
+  const g = snapshot?.geometry || {};
+  const basis = String(a.control_status_basis || '').toLowerCase();
+  const active = a.control_section_active === true;
+  const fresh = a.control_section_fresh !== false;
+  const authoritative = active && fresh && !['', 'idle', 'future-buffered', 'no-current-section'].includes(basis);
+  let sectionLine = intOrNull(a.control_section_line_index);
+  if (sectionLine === null && authoritative) sectionLine = intOrNull(g.current_line_index0);
+  let progressLine = intOrNull(g.progress_line_index0);
+  if (progressLine === null && !authoritative) progressLine = intOrNull(g.current_line_index0);
+  const kind = String(a.control_section_kind || a.motion_stage || '').toLowerCase();
+  const science = a.control_section_science_line === true;
+  const lineActive = science || kind === 'line' || kind === 'scanning';
+  return {authoritative, basis, kind, hasLine: sectionLine !== null && sectionLine >= 0, lineIndex: sectionLine, progressLineIndex: progressLine, lineActive};
+}
+
 function statusFor(item, snapshot, events) {
   const cur = snapshot?.plan?.item_uid; const parent = item._parent_item_uid; const uid = item.item_uid; const cr = idxRange(snapshot?.plan);
   const lifecycle = String(snapshot?.lifecycle?.state || '').toLowerCase();
@@ -2110,6 +2707,19 @@ function statusFor(item, snapshot, events) {
   for (const r of doneRanges(events)) if (inRange(item, r)) return 'done';
   const inActiveBlock = !finalState && cur && parent === cur && Number.isFinite(liveLine) && Number.isFinite(itemLine);
   if (inActiveBlock) {
+    const state = liveScanLineState(snapshot);
+    if (state.authoritative) {
+      if (state.hasLine) {
+        if (itemLine < state.lineIndex) return 'done';
+        if (itemLine === state.lineIndex) return 'current';
+        return 'pending';
+      }
+      if (state.progressLineIndex !== null) {
+        if (itemLine < state.progressLineIndex) return 'done';
+        return 'pending';
+      }
+      return 'pending';
+    }
     if (itemLine < liveLine) return 'done';
     if (itemLine === liveLine) return 'current';
     return 'pending';
@@ -2409,11 +3019,13 @@ function lineMotionKey(snapshot, row) {
   const uid = snapshot?.plan?.item_uid || row?.item?.item_uid || '';
   const line = snapshot?.geometry?.current_line_index0 ?? row?.lineIndex ?? '';
   const id = snapshot?.data?.expected_metadata_id ?? snapshot?.plan?.obs_id ?? '';
+  const sectionUid = snapshot?.activity?.control_section_uid || '';
   const ctrl = snapshot?.live?.control || {};
   const ctrlId = ctrl.id || snapshot?.activity?.control_id || '';
-  return `${rec}|${uid}|${line}|${id}|${ctrlId}`;
+  return `${rec}|${uid}|${line}|${id}|${ctrlId}|${sectionUid}`;
 }
 function isActualLineMotion(snapshot) {
+  // Test/debug invariant: motion_stage=line means the line/scanning section is active.
   const drive = String(snapshot?.activity?.drive_kind || snapshot?.plan?.drive_kind || '').toLowerCase();
   const stage = String(snapshot?.activity?.motion_stage || '').toLowerCase();
   if (!(drive.includes('scan') || drive.includes('block'))) return false;
@@ -2474,9 +3086,15 @@ function currentLineMotionProgress(snapshot, row, serverTimeUnix, events=null) {
     if (lineMotionClock.key !== key) { lineMotionClock.key = key; lineMotionClock.start = null; lineMotionClock.source = null; }
     return {fraction:null, waiting:true, stage, label:`line not started (${stage})`};
   }
+  const statusFraction = Number(snapshot?.activity?.control_section_fraction);
+  const statusSource = snapshot?.activity?.control_status_basis || 'section-status';
+  if (Number.isFinite(statusFraction)) {
+    const fraction = Math.max(0, Math.min(1, statusFraction));
+    return {fraction, rawFraction:statusFraction, waiting:false, stage, source:statusSource, label:`Command ${(100*fraction).toFixed(0)}%`};
+  }
   const controlStart = controlLineStartedAt(snapshot, row);
   const eventStart = controlStart ?? lastMatchedLineDriveStartedAt(events, snapshot, row);
-  const startSource = controlStart !== null ? 'control-status' : (eventStart !== null ? 'matched-event' : 'browser-observed');
+  const startSource = controlStart !== null ? 'control-status-fallback' : (eventStart !== null ? 'matched-event-fallback' : 'browser-observed-fallback');
   if (lineMotionClock.key !== key || lineMotionClock.start === null) {
     lineMotionClock.key = key;
     lineMotionClock.start = eventStart ?? now;
@@ -2489,7 +3107,7 @@ function currentLineMotionProgress(snapshot, row, serverTimeUnix, events=null) {
   if (!duration) return {fraction:null, waiting:false, stage, label:'line section active; duration unknown'};
   const raw = (now - lineMotionClock.start) / duration;
   const fraction = Math.max(0, Math.min(0.98, raw));
-  return {fraction, rawFraction:raw, waiting:false, stage, duration, source:lineMotionClock.source, label:`Line ${(100*fraction).toFixed(0)}%`};
+  return {fraction, rawFraction:raw, waiting:false, stage, duration, source:lineMotionClock.source, label:`Line ${(100*fraction).toFixed(0)}% (fallback)`};
 }
 function pointAtFraction(a, b, t) { return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]; }
 function renderNowMarker(row, p, b, label) {
@@ -2566,9 +3184,18 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   if (ls.total) {
     countText = `OTF lines: ${ls.done} done + ${ls.current} current + ${ls.remaining} remaining = ${ls.total}`;
     if (nowPoint && telescopeCanOverlay) note = 'Line marker = live antenna projected on current line.';
-    else if (nowPoint) note = `Line marker uses ${lineProgress?.source || 'browser'} line timer; live antenna projection is unavailable.`;
+    else if (nowPoint) {
+      // Backward-compatible test/debug marker: Line marker uses ${lineProgress?.source || 'browser'} line timer.
+      const src = String(lineProgress?.source || 'browser');
+      if (src === 'current-time' || src === 'section-status') note = `Line marker uses antenna section status (${src}); live antenna projection is unavailable.`;
+      else note = `Line marker uses ${src} line timer; live antenna projection is unavailable.`;
+    }
     else if (lineProgress?.waiting) note = `Line marker waits for line motion: stage=${lineProgress.stage}.`;
-    else note = 'No line-position marker: antenna coordinates do not match this map and no reliable line timer is available.';
+    else {
+      const state = liveScanLineState(snapshot);
+      if (state.authoritative && !state.lineActive) note = `No current scan-line marker: antenna section is ${state.kind || state.basis}, not a science line.`;
+      else note = 'No line-position marker: antenna coordinates do not match this map and no reliable line timer is available.';
+    }
   } else if (obsType.includes('grid')) {
     const basisRows = onRows.length ? onRows : pointRows;
     const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
@@ -2658,6 +3285,9 @@ async function update() {
     kvSmart('activity', activityRows(snap));
     kvSmart('position', positionRows(snap, psummary, s.server_time_unix));
     kvSmart('geometry', geometryRows(snap));
+    kvSmart('queue', commandQueueRows(snap, s.server_time_unix));
+    kvSmart('spectrometer', spectrometerRows(snap, s.server_time_unix));
+    kvSmart('trace', systemTraceRows(snap, s.server_time_unix));
     kvSmart('environment', environmentRows(snap));
     kv('paths', s.paths || {}, [['snapshot','snapshot'], ['events','events'], ['plan','plan']]);
     const rows = (s.events || []).slice(-10).map(ev => {
@@ -2755,7 +3385,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--serve", action="store_true", help="Serve a lightweight web dashboard")
     parser.add_argument("--host", default="127.0.0.1", help="With --serve, bind address (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8080, help="With --serve, bind port (default: 8080)")
-    parser.add_argument("--refresh-ms", type=int, default=1000, help="With --serve, browser refresh interval [ms]")
+    parser.add_argument("--refresh-ms", type=int, default=500, help="With --serve, browser refresh interval [ms]")
     parser.add_argument("--quiet", action="store_true", help="With --serve, suppress HTTP request logs")
     parser.add_argument("--no-ros", action="store_true", help="Disable optional live ROS telemetry augmentation")
     parser.add_argument("--from-end", action="store_true", help="With --follow, start at end of current event log")

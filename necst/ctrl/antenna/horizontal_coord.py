@@ -1,6 +1,7 @@
 __all__ = ["HorizontalCoord"]
 
 import time
+from dataclasses import replace
 
 import astropy.units as u
 from collections import deque
@@ -15,6 +16,8 @@ from neclib.coordinates import (
 )
 from neclib.coordinates.paths import ControlContext
 from necst_msgs.msg import (
+    AntennaCommandQueueStatus,
+    AntennaSectionStatus,
     Boolean,
     ControlStatus,
     CoordMsg,
@@ -55,21 +58,24 @@ class HorizontalCoord(AlertHandlerNode):
 
         self.publisher = topic.altaz_cmd.publisher(self)
         topic.antenna_encoder.subscription(self, self._update_enc)
-        topic.weather["out"].subscription(self, self._update_weather)
+        topic.weather.subscription(self, self._update_weather)
         topic.antenna_cmd_transition.subscription(self, self.next)
         service.raw_coord.service(self, self._update_cmd)
         service.scan_block.service(self, self._update_scan_block_cmd)
 
         self.status_publisher = topic.antenna_control_status.publisher(self)
+        self.section_status_publisher = topic.antenna_section_status.publisher(self)
+        self.queue_status_publisher = topic.antenna_command_queue_status.publisher(self)
 
         self.create_timer(1 / config.antenna_command_frequency, self.command_realtime)
         self.create_timer(0.2, self.convert)
+        self.create_timer(0.2, self.publish_control_diagnostics)
 
         self.result_queue = deque()
         self._rq_lock = threading.Lock()
         self._gen_lock = threading.RLock()
+        self._history_lock = threading.Lock()
 
-        # TODO: Add the following parameters to the config
         self._min_buffer_sec = 0.5
         self._max_buffer_sec = 3.0
         self._max_groups_per_convert = 10
@@ -95,6 +101,8 @@ class HorizontalCoord(AlertHandlerNode):
         self._last_publish_cmd_stamp: float = 0.0
         self._current_mode: str = "idle"
         self._guard_latched: bool = False
+        self._published_command_history = deque(maxlen=max(200, int(config.antenna_command_frequency * 10)))
+        self._last_queue_status_reason: str = "init"
 
         self.gc = self.create_guard_condition(self._clear_cmd)
 
@@ -124,8 +132,11 @@ class HorizontalCoord(AlertHandlerNode):
             self._last_published_context = None
             self._last_published_cmd_time = 0.0
             self._idle_exec_id = self._next_exec_id()
+        with self._history_lock:
+            self._published_command_history.clear()
         self.cmd = None
         self._current_mode = "idle"
+        self._last_queue_status_reason = reason
 
     def _clear_cmd(self) -> None:
         with self._rq_lock:
@@ -142,6 +153,8 @@ class HorizontalCoord(AlertHandlerNode):
         self._transition_to_idle(reason="guard_or_clear_cmd")
         with self._rq_lock:
             self.result_queue.clear()
+        with self._history_lock:
+            self._published_command_history.clear()
 
     def _update_cmd(
         self, request: CoordinateCommand.Request, response: CoordinateCommand.Response
@@ -155,6 +168,8 @@ class HorizontalCoord(AlertHandlerNode):
             self._last_active_context = None
             self._last_published_context = None
             self._last_published_cmd_time = 0.0
+            with self._history_lock:
+                self._published_command_history.clear()
             self._current_exec_id = self._next_exec_id()
             self._current_mode = mode
             self._parse_cmd(request)
@@ -259,9 +274,7 @@ class HorizontalCoord(AlertHandlerNode):
         try:
             kind = self._SCAN_BLOCK_KIND_MAP[int(msg.kind)]
         except KeyError as exc:
-            raise ValueError(
-                f"Unsupported scan block section kind: {msg.kind!r}"
-            ) from exc
+            raise ValueError(f"Unsupported scan block section kind: {msg.kind!r}") from exc
 
         start = (float(msg.start[0]), float(msg.start[1]))
         stop = (float(msg.stop[0]), float(msg.stop[1]))
@@ -288,17 +301,13 @@ class HorizontalCoord(AlertHandlerNode):
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
 
-        sections = [
-            self._convert_scan_block_section(section) for section in msg.sections
-        ]
+        sections = [self._convert_scan_block_section(section) for section in msg.sections]
         if len(sections) == 0:
             raise ValueError("Scan block request must include at least one section.")
         if float(getattr(msg, "obsfreq", 0.0)) > 0:
             self.finder.obsfreq = float(msg.obsfreq) * u.GHz
 
-        section_frames = {
-            str(section.frame) for section in msg.sections if str(section.frame) != ""
-        }
+        section_frames = {str(section.frame) for section in msg.sections if str(section.frame) != ""}
         if len(section_frames) != 1:
             raise ValueError(
                 "Current control-side scan_block implementation requires exactly one "
@@ -350,6 +359,8 @@ class HorizontalCoord(AlertHandlerNode):
             self._last_active_context = None
             self._last_published_context = None
             self._last_published_cmd_time = 0.0
+            with self._history_lock:
+                self._published_command_history.clear()
             self._current_exec_id = self._next_exec_id()
             self._current_mode = mode
             self._parse_scan_block_cmd(request)
@@ -418,7 +429,7 @@ class HorizontalCoord(AlertHandlerNode):
             try:
                 with self._gen_lock:
                     coord = next(self.executing_generator)
-                self._last_active_context = coord.context
+                self._last_active_context = self._snapshot_context(coord.context)
             except (StopIteration, TypeError):
                 self.cmd = None
                 self._generator_exhausted = True
@@ -438,6 +449,7 @@ class HorizontalCoord(AlertHandlerNode):
             if len(az) == 0:
                 continue
 
+            context_snapshot = self._snapshot_context(coord.context)
             for _az, _el, _dAz, _dEl, _t in zip(
                 az, el, coord.dAz, coord.dEl, coord.time
             ):
@@ -452,7 +464,7 @@ class HorizontalCoord(AlertHandlerNode):
                     float(_dAz.to_value("deg")),
                     float(_dEl.to_value("deg")),
                     t_val,
-                    coord.context,
+                    context_snapshot,
                 )
                 new_queue.append(cmd)
                 last_t = t_val
@@ -464,6 +476,210 @@ class HorizontalCoord(AlertHandlerNode):
                 break
 
         return new_queue
+
+    def _snapshot_context(self, context: ControlContext) -> ControlContext:
+        """Freeze mutable ControlContext metadata before queue/history storage."""
+        try:
+            return replace(context)
+        except Exception:
+            frozen = ControlContext()
+            try:
+                frozen.update(context)
+            except Exception:
+                pass
+            return frozen
+
+    def _context_section_uid(self, context: Optional[ControlContext]) -> str:
+        if context is None:
+            return ""
+        base = str(getattr(context, "section_uid", "") or "")
+        exec_id = self._current_exec_id or self._idle_exec_id
+        if not base:
+            base = (
+                f"p{int(getattr(context, 'section_plan_index', -1)):04d}:"
+                f"s{int(getattr(context, 'section_sequence_index', -1)):06d}:"
+                f"{str(getattr(context, 'kind', '') or 'section')}:"
+                f"l{int(getattr(context, 'line_index', -1))}"
+            )
+        return f"{exec_id}:{base}"[:96]
+
+    @staticmethod
+    def _finite_float(value: Any, default: float = float("nan")) -> float:
+        try:
+            out = float(value)
+        except Exception:
+            return default
+        return out
+
+    def _find_current_context(self, query_time: float) -> Tuple[Optional[ControlContext], float, str]:
+        """Return the context matching the current wall time, not the future horizon.
+
+        The antenna command stream is pre-published up to antenna_command_offset_sec
+        into the future.  Progress/status displays must not use the farthest future
+        command as the current section.  This method first tries section interval
+        membership and then falls back to the newest published command with
+        command_time <= query_time.
+        """
+        with self._history_lock:
+            history = list(self._published_command_history)
+
+        interval_match = None
+        interval_capable = False
+        for cmd_time, context, wall_time in reversed(history):
+            start = getattr(context, "start", None)
+            stop = getattr(context, "stop", None)
+            try:
+                start_f = float(start)
+                stop_f = float(stop)
+            except Exception:
+                continue
+            if not (start_f == start_f and stop_f == stop_f):
+                continue
+            interval_capable = True
+            if start_f <= query_time < stop_f:
+                interval_match = (cmd_time, context, wall_time)
+                break
+        if interval_match is not None:
+            return interval_match[1], float(query_time), "current-time"
+
+        if interval_capable:
+            # We have interval-aware v39 contexts, but none covers the current
+            # wall time.  Reporting the latest past section as active would be
+            # another form of stale-state misidentification.  Let QueueStatus
+            # describe the gap/lag instead.
+            return None, float(query_time), "no-current-section"
+
+        past = [entry for entry in history if float(entry[0]) <= query_time]
+        if past:
+            cmd_time, context, _wall_time = past[-1]
+            return context, float(cmd_time), "last-published-past"
+
+        if history:
+            # All stored commands are still in the future.  Do not report that
+            # future section as the current section; this is exactly the horizon
+            # vs current-time ambiguity that the new status topic is meant to avoid.
+            return None, float(query_time), "future-buffered"
+
+        return None, float(query_time), "idle"
+
+    def _make_section_status(self, query_time: Optional[float] = None) -> AntennaSectionStatus:
+        now = time.time() if query_time is None else float(query_time)
+        context, command_time, basis = self._find_current_context(now)
+        publish_time = time.time()
+        exec_id = self._current_exec_id or self._idle_exec_id
+        if context is None:
+            return AntennaSectionStatus(
+                active=False,
+                control_id=exec_id,
+                section_uid="",
+                section_plan_index=-1,
+                section_sequence_index=-1,
+                section_kind="",
+                section_label="",
+                line_index=-1,
+                section_start_unix=float("nan"),
+                section_stop_unix=float("nan"),
+                section_duration_sec=float("nan"),
+                query_time_unix=now,
+                publish_time_unix=publish_time,
+                command_time_unix=command_time,
+                nominal_fraction=float("nan"),
+                fraction_valid=False,
+                tight=False,
+                science_line=False,
+                interrupt_ok=True,
+                geometry_valid=False,
+                section_frame="",
+                section_unit="",
+                section_start_lon_deg=float("nan"),
+                section_start_lat_deg=float("nan"),
+                section_stop_lon_deg=float("nan"),
+                section_stop_lat_deg=float("nan"),
+                section_speed_deg_per_sec=float("nan"),
+                status_basis=basis,
+            )
+
+        start = self._finite_float(getattr(context, "start", None))
+        stop = self._finite_float(getattr(context, "stop", None))
+        duration = self._finite_float(getattr(context, "duration", None))
+        if not (duration == duration) and (start == start) and (stop == stop):
+            duration = stop - start
+        fraction = float("nan")
+        fraction_valid = False
+        if (duration == duration) and duration > 0 and (start == start):
+            fraction = max(0.0, min(1.0, (command_time - start) / duration))
+            fraction_valid = True
+
+        kind = str(getattr(context, "kind", "") or "")[:64]
+        line_index = int(getattr(context, "line_index", -1))
+        tight = bool(getattr(context, "tight", False))
+        infinite = bool(getattr(context, "infinite", False))
+        waypoint = bool(getattr(context, "waypoint", False))
+        geometry_valid = bool(getattr(context, "geometry_valid", False))
+        return AntennaSectionStatus(
+            active=True,
+            control_id=exec_id,
+            section_uid=self._context_section_uid(context),
+            section_plan_index=int(getattr(context, "section_plan_index", -1)),
+            section_sequence_index=int(getattr(context, "section_sequence_index", -1)),
+            section_kind=kind,
+            section_label=str(getattr(context, "label", "") or "")[:64],
+            line_index=line_index,
+            section_start_unix=start,
+            section_stop_unix=stop,
+            section_duration_sec=duration,
+            query_time_unix=now,
+            publish_time_unix=publish_time,
+            command_time_unix=command_time,
+            nominal_fraction=fraction,
+            fraction_valid=fraction_valid,
+            tight=tight,
+            science_line=bool(tight and kind in {"line", "scanning"}),
+            interrupt_ok=bool(infinite and (not waypoint)),
+            geometry_valid=geometry_valid,
+            section_frame=str(getattr(context, "section_frame", "") or "")[:32],
+            section_unit=str(getattr(context, "section_unit", "") or "")[:16],
+            section_start_lon_deg=self._finite_float(getattr(context, "section_start_lon_deg", None)),
+            section_start_lat_deg=self._finite_float(getattr(context, "section_start_lat_deg", None)),
+            section_stop_lon_deg=self._finite_float(getattr(context, "section_stop_lon_deg", None)),
+            section_stop_lat_deg=self._finite_float(getattr(context, "section_stop_lat_deg", None)),
+            section_speed_deg_per_sec=self._finite_float(getattr(context, "section_speed_deg_per_sec", None)),
+            status_basis=basis[:32],
+        )
+
+    def _make_queue_status(self, publish_time: Optional[float] = None, reason: str = "timer") -> AntennaCommandQueueStatus:
+        now = time.time() if publish_time is None else float(publish_time)
+        with self._rq_lock:
+            qlen = len(self.result_queue)
+            head_lead = (self.result_queue[0][4] - now) if self.result_queue else float("nan")
+            tail_lead = (self.result_queue[-1][4] - now) if self.result_queue else float("nan")
+        publish_gap = (
+            now - self._last_publish_wall_time
+            if self._last_publish_wall_time
+            else float("nan")
+        )
+        return AntennaCommandQueueStatus(
+            active=bool(self._current_exec_id is not None or self.cmd is not None or qlen > 0),
+            control_id=self._current_exec_id or self._idle_exec_id,
+            mode=str(self._current_mode or "idle")[:32],
+            publish_time_unix=now,
+            command_offset_sec=float(config.antenna_command_offset_sec),
+            min_buffer_sec=float(self._min_buffer_sec),
+            max_buffer_sec=float(self._max_buffer_sec),
+            queue_length=int(qlen),
+            head_lead_sec=float(head_lead),
+            tail_lead_sec=float(tail_lead),
+            last_publish_wall_time_unix=float(self._last_publish_wall_time),
+            last_published_cmd_time_unix=float(self._last_published_cmd_time),
+            publish_gap_sec=float(publish_gap),
+            generator_exhausted=bool(self._generator_exhausted),
+            guard_latched=bool(self._guard_latched),
+            reason=str(reason or self._last_queue_status_reason or "")[:64],
+        )
+
+    def publish_control_diagnostics(self) -> None:
+        self.section_status_publisher.publish(self._make_section_status())
+        self.queue_status_publisher.publish(self._make_queue_status(reason="timer"))
 
     def _update_enc(self, msg: CoordMsg) -> None:
         if (msg.unit != "deg") or (msg.frame != "altaz"):
@@ -563,6 +779,8 @@ class HorizontalCoord(AlertHandlerNode):
                 self._last_published_cmd_time, float(cmd[4])
             )
             self._last_published_context = cmd[5]
+            with self._history_lock:
+                self._published_command_history.append((float(cmd[4]), cmd[5], now))
 
         # IMPORTANT: publish control status from the REALTIME side,
         # not convert-side future state.
@@ -738,7 +956,7 @@ class HorizontalCoord(AlertHandlerNode):
             try:
                 with self._gen_lock:
                     coord = next(self.executing_generator)
-                self._last_active_context = coord.context
+                self._last_active_context = self._snapshot_context(coord.context)
             except (StopIteration, TypeError):
                 self.cmd = None
                 self._generator_exhausted = True
@@ -791,6 +1009,7 @@ class HorizontalCoord(AlertHandlerNode):
                 else:
                     last_t = max(float(last_t), float(min_accept_t))
 
+                context_snapshot = self._snapshot_context(coord.context)
                 for _az, _el, _dAz, _dEl, _t in zip(
                     az, el, coord.dAz, coord.dEl, coord.time
                 ):
@@ -806,7 +1025,7 @@ class HorizontalCoord(AlertHandlerNode):
                         float(_dAz.to_value("deg")),
                         float(_dEl.to_value("deg")),
                         t_val,
-                        coord.context,
+                        context_snapshot,
                     )
                     self.result_queue.append(cmd)
                     last_t = t_val
