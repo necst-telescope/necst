@@ -1899,25 +1899,28 @@ _HTML_TEMPLATE = """<!doctype html>
 @media (prefers-color-scheme: dark) {
   :root { --bg:#1b1b20; --fg:#eceff4; --panel:#202028; --muted:#aeb6c2; --border:#c8d0dc44; --plot-text:#eceff4; }
 }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .58rem; line-height: 1.23; font-size:13px; background:var(--bg); color:var(--fg); }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .42rem; line-height: 1.15; font-size:12.2px; background:var(--bg); color:var(--fg); }
 header { display:flex; gap:1rem; align-items:baseline; justify-content:space-between; flex-wrap:wrap; }
-h1 { font-size:1.05rem; margin:0 0 .3rem; }
+h1 { font-size:.98rem; margin:0 0 .18rem; }
 .grid {
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-areas:
-    "obs obs obs plan plan plan activity activity activity position position position"
-    "planview planview planview planview planview planview planview planview planview planview planview planview"
-    "geometry geometry geometry queue queue queue spectrometer spectrometer spectrometer trace trace trace"
-    "env env terminal terminal terminal files files event event event event event";
-  gap: .55rem;
-  align-items:start;
+  grid-auto-flow: row dense;
+  grid-auto-rows: 1.05rem;
+  gap: .38rem;
+  align-items:stretch;
 }
-.card { border:1px solid var(--border); border-radius:10px; padding:.58rem .62rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:0; }
-.card h2 { font-size:.92rem; margin:.03rem 0 .35rem; letter-spacing:.01em; }
-.kv { display:grid; grid-template-columns: 6.7rem minmax(0,1fr); gap:.12rem .38rem; align-items:baseline; }
-.obsview .kv, .planinfoview .kv, .activityview .kv { grid-template-columns: 5.7rem minmax(0,1fr); }
-.bigpos { grid-template-columns: 8.4rem minmax(0,1fr); font-size:.86rem; }
+.card { border:1px solid var(--border); border-radius:8px; padding:.42rem .46rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:0; height:100%; box-sizing:border-box; position:relative; overflow:auto; overscroll-behavior:contain; }
+.card h2 { font-size:.84rem; margin:.01rem 0 .22rem; letter-spacing:.01em; }
+.kv { display:grid; grid-template-columns: 5.9rem minmax(0,1fr); gap:.06rem .28rem; align-items:baseline; }
+.obsview .kv { grid-template-columns: 5.8rem minmax(0,1fr); }
+.planinfoview .kv, .activityview .kv { grid-template-columns: 4.7rem minmax(0,1fr); }
+.envview .kv { grid-template-columns: 6.0rem minmax(0,1fr); }
+.geometryview .kv { grid-template-columns: 5.0rem minmax(0,1fr); }
+.queueview .kv { grid-template-columns: 5.9rem minmax(0,1fr); }
+.spectrometerview .kv { grid-template-columns: 5.1rem minmax(0,1fr); }
+.traceview .kv { grid-template-columns: 4.6rem minmax(0,1fr); }
+.bigpos { grid-template-columns: 6.5rem minmax(0,1fr); font-size:.80rem; }
 .bigpos .v.important-pos { font-size:1.03rem; font-weight:700; }
 .v.ok-pos { color:var(--ok); font-weight:700; }
 .v.important-pos { font-weight:700; }
@@ -1927,42 +1930,34 @@ h1 { font-size:1.05rem; margin:0 0 .3rem; }
 .k { color:var(--muted); }
 .v { min-width:0; overflow-wrap:break-word; word-break:normal; }
 .traceview .v, .eventview .v { overflow-wrap:anywhere; }
+#trace .k, #trace .v { font-size:.76rem; line-height:1.05; }
 #paths .v { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.filesview .kv { grid-template-columns:4.2rem minmax(0,1fr); }
+#paths .k, #paths .v { font-size:.64rem; line-height:1.05; }
 .status { font-weight:700; padding:.08rem .38rem; border-radius:999px; border:1px solid var(--border); }
 .status.running, .status.finished { color:var(--ok); } .status.error, .status.aborted { color:var(--err); } .status.cleanup { color:var(--warn); }
 .bar { width:100%; height:.86rem; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:#9992; margin-top:.35rem; }
 .fill { height:100%; width:0%; background:currentColor; color:var(--ok); transition:width .2s; }
-pre { white-space:pre-wrap; overflow:auto; max-height:14rem; margin:.2rem 0 0; font-size:.74rem; }
-table { border-collapse:collapse; width:100%; font-size:.74rem; table-layout:fixed; }
-th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem .18rem; vertical-align:top; overflow:hidden; text-overflow:ellipsis; }
-#events { overflow:auto; max-height:12rem; }
+pre { white-space:pre-wrap; overflow:auto; max-height:7.2rem; margin:.12rem 0 0; font-size:.69rem; }
+table { border-collapse:collapse; width:100%; font-size:.69rem; table-layout:fixed; }
+th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem .13rem; vertical-align:top; overflow:hidden; text-overflow:ellipsis; }
+#events { overflow:auto; max-height:7.2rem; }
 #events table { table-layout:auto; }
-#events th:nth-child(1), #events td:nth-child(1) { width:4.4rem; white-space:nowrap; }
-#events th:nth-child(2), #events td:nth-child(2) { width:8.5rem; }
+#events th:nth-child(1), #events td:nth-child(1) { width:4.2rem; white-space:nowrap; }
+#events th:nth-child(2), #events td:nth-child(2) { width:7.6rem; }
 #events th:nth-child(3), #events td:nth-child(3) { width:auto; }
-.plotbox { min-height: 360px; display:flex; align-items:center; justify-content:center; }
-.plotbox svg { width:100%; height:auto; max-height:64vh; color:var(--plot-text); }
+.plotbox { min-height: 210px; display:flex; align-items:center; justify-content:center; }
+.plotbox svg { width:100%; height:auto; max-height:34vh; color:var(--plot-text); }
 .plotbox svg text { fill: currentColor; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
-.legend { display:flex; gap:.65rem; flex-wrap:wrap; margin:.15rem 0 .30rem; font-size:.78rem; color:var(--muted); }
-.legend-note { flex-basis:100%; font-size:.74rem; }
-.dot { display:inline-block; width:.72rem; height:.72rem; border-radius:999px; vertical-align:-.08rem; margin-right:.22rem; }
-.small { font-size:.74rem; color:var(--muted); }
-.obsview { grid-area: obs; }
-.planinfoview { grid-area: plan; }
-.activityview { grid-area: activity; }
-.positionview { grid-area: position; }
-.geometryview { grid-area: geometry; }
-.queueview { grid-area: queue; min-height: 8.7rem; }
-.spectrometerview { grid-area: spectrometer; min-height: 8.7rem; }
-.traceview { grid-area: trace; min-height: 8.7rem; }
-.envview { grid-area: env; min-height: 8.4rem; }
-.terminalview { grid-area: terminal; min-height: 8.4rem; }
-.filesview { grid-area: files; min-height: 8.4rem; }
-.eventview { grid-area: event; min-height: 8.4rem; }
-.planview { grid-area: planview; min-height:0; }
-.planview .plotbox { min-height: 455px; }
-.planview svg { max-height: 66vh; }
-#terminal { max-height: 10.5rem; }
+.legend { display:flex; gap:.45rem; flex-wrap:wrap; margin:.08rem 0 .14rem; font-size:.70rem; color:var(--muted); }
+.legend-note { flex-basis:auto; font-size:.68rem; }
+.dot { display:inline-block; width:.62rem; height:.62rem; border-radius:999px; vertical-align:-.06rem; margin-right:.18rem; }
+.small { font-size:.70rem; color:var(--muted); }
+.queueview, .spectrometerview, .traceview, .envview, .terminalview, .filesview, .eventview { min-height: 0; }
+.planview { min-height:0; }
+.planview .plotbox { min-height: 0; height: calc(100% - 3.0rem); }
+.planview svg { max-height: 31vh; }
+#terminal { max-height: none; }
 .axis-label { font-size:11px; fill:currentColor; }
 .plot-note { font-size:11px; fill:currentColor; }
 .important { font-weight:700; color:var(--warn); }
@@ -1970,76 +1965,294 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.16rem 
 .warning { margin:.25rem 0 .5rem; padding:.5rem .65rem; border:2px solid var(--err); border-radius:9px; background:#c1121f22; color:var(--fg); font-size:.98rem; font-weight:750; }
 .notice { margin:.25rem 0 .5rem; padding:.42rem .55rem; border:1px solid var(--border); border-radius:9px; background:#9991; }
 @media (min-width: 1500px) {
-  .grid {
-    grid-template-areas:
-      "obs obs plan plan activity activity position position position position position position"
-      "planview planview planview planview planview planview planview planview planview planview planview planview"
-      "geometry geometry geometry queue queue queue spectrometer spectrometer spectrometer trace trace trace"
-      "env env terminal terminal terminal files files event event event event event";
-  }
-  .planview .plotbox { min-height: 500px; }
+  .planview .plotbox { min-height: 200px; }
+  .planview svg { max-height: 29vh; }
 }
 @media (max-width: 1100px) {
-  .grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    grid-template-areas:
-      "obs obs obs plan plan plan"
-      "activity activity activity position position position"
-      "planview planview planview planview planview planview"
-      "geometry geometry geometry queue queue queue"
-      "spectrometer spectrometer spectrometer trace trace trace"
-      "env env terminal terminal files files"
-      "event event event event event event";
-  }
-  .planview .plotbox { min-height: 420px; }
+  .grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .planview .plotbox { min-height: 210px; }
+  .planview svg { max-height: 32vh; }
 }
 @media (max-width: 760px) {
   body { padding: .45rem; }
-  .grid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "obs"
-      "plan"
-      "activity"
-      "position"
-      "planview"
-      "geometry"
-      "queue"
-      "spectrometer"
-      "trace"
-      "env"
-      "terminal"
-      "files"
-      "event";
-  }
-  .card { min-height: auto; }
-  .plotbox { min-height: 330px; }
-  .planview .plotbox { min-height: 350px; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .card[data-card-id] { grid-column: 1 / -1 !important; grid-row:auto !important; min-height:auto !important; height:auto !important; }
+  .plotbox { min-height: 260px; }
+  .planview .plotbox { min-height: 270px; }
+  .planview svg { max-height: 48vh; }
   .kv, .bigpos, .obsview .kv, .planinfoview .kv, .activityview .kv { grid-template-columns: 7.0rem minmax(0, 1fr); }
 }
+
+.header-tools { display:flex; align-items:center; gap:.55rem; flex-wrap:wrap; justify-content:flex-end; }
+.layout-tools { display:inline-flex; align-items:center; gap:.22rem; }
+.layout-btn { font:inherit; font-size:.70rem; line-height:1.05; padding:.16rem .36rem; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--fg); cursor:pointer; }
+.layout-btn:hover { background:#9992; }
+body.layout-unlocked .grid { background-image: linear-gradient(to right, #ff7f0e22 1px, transparent 1px), linear-gradient(to bottom, #ff7f0e18 1px, transparent 1px); background-size: calc((100% - 11*.38rem)/12 + .38rem) calc(1.05rem + .38rem); }
+body.layout-unlocked .card { outline:1px dashed #ff7f0e88; cursor:grab; }
+body.layout-unlocked .card h2::after { content:"  drag / resize"; font-size:.64rem; color:var(--warn); font-weight:500; }
+body.layout-unlocked .card.dragging { opacity:.55; cursor:grabbing; }
+body.layout-unlocked .card.drag-over { outline:2px solid #ff7f0e; }
+body.layout-unlocked .plotbox, body.layout-unlocked pre, body.layout-unlocked table { pointer-events:none; }
+.resize-grip { display:none; position:absolute; right:2px; bottom:2px; width:15px; height:15px; border-right:2px solid var(--warn); border-bottom:2px solid var(--warn); opacity:.75; cursor:nwse-resize; border-radius:2px; }
+body.layout-unlocked .resize-grip { display:block; pointer-events:auto; }
+body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse-resize; }
 .err { color:var(--err); font-weight:700; }
 </style>
 </head>
 <body>
-<header><h1>NECST Observation Progress</h1><div class=\"small\">Auto refresh: __REFRESH_MS__ ms | <a href=\"/api/state\">JSON</a></div></header>
+<header><h1>NECST Observation Progress</h1><div class="header-tools small"><span>Auto refresh: __REFRESH_MS__ ms</span><span class="layout-tools"><button type="button" id="layoutToggle" class="layout-btn" title="Unlock card layout editing">Layout: locked</button><button type="button" id="layoutReset" class="layout-btn" title="Restore the standard v44 card order and grid sizes">Reset layout</button></span><a href="/api/state">JSON</a></div></header>
 <div id=\"message\" class=\"small\">Loading...</div>
 <div class=\"grid\">
-<section class=\"card obsview\"><h2>Observation</h2><div class=\"kv\" id=\"observation\"></div></section>
-<section class=\"card planinfoview\"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
-<section class=\"card activityview\"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
-<section class="card positionview"><h2>Live Position</h2><div class="kv bigpos" id="position"></div></section>
-<section class="card planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>visited/done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>not yet visited</span><span class="legend-note">OTF: scan lines; Grid/PSW: ON visits; Skydip: elevation sequence. OFF/reference points are labels.</span></div><div id="plotview" class="plotbox small">-</div></section>
-<section class="card geometryview"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
-<section class="card queueview"><h2>Command Queue</h2><div class="kv" id="queue"></div></section>
-<section class="card spectrometerview"><h2>Spectrometer</h2><div class="kv" id="spectrometer"></div></section>
-<section class="card traceview"><h2>System Trace</h2><div class="kv" id="trace"></div></section>
-<section class="card envview"><h2>Environment</h2><div class="kv" id="environment"></div></section>
-<section class="card terminalview"><h2>Terminal View</h2><pre id=\"terminal\"></pre></section>
-<section class="card filesview"><h2>Files</h2><div class=\"kv\" id=\"paths\"></div></section>
-<section class="card eventview"><h2>Recent Events</h2><div id="events"></div></section>
+<section class="card obsview" data-card-id="observation"><h2>Observation</h2><div class=\"kv\" id=\"observation\"></div></section>
+<section class="card positionview" data-card-id="position"><h2>Live Position</h2><div class="kv bigpos" id="position"></div></section>
+<section class="card planinfoview" data-card-id="plan"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
+<section class="card activityview" data-card-id="activity"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
+<section class="card geometryview" data-card-id="geometry"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
+<section class="card planview" data-card-id="planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>pending</span><span class="legend-note">OTF lines / ON visits</span></div><div id="plotview" class="plotbox small">-</div></section>
+<section class="card traceview" data-card-id="trace"><h2>System Trace</h2><div class="kv" id="trace"></div></section>
+<section class="card queueview" data-card-id="queue"><h2>Command Queue</h2><div class="kv" id="queue"></div></section>
+<section class="card spectrometerview" data-card-id="spectrometer"><h2>Spectrometer</h2><div class="kv" id="spectrometer"></div></section>
+<section class="card envview" data-card-id="environment"><h2>Environment</h2><div class="kv" id="environment"></div></section>
+<section class="card terminalview" data-card-id="terminal"><h2>Terminal View</h2><pre id=\"terminal\"></pre></section>
+<section class="card filesview" data-card-id="files"><h2>Files</h2><div class=\"kv\" id=\"paths\"></div></section>
+<section class="card eventview" data-card-id="events"><h2>Recent Events</h2><div id="events"></div></section>
 </div>
 <script>
 const refreshMs = __REFRESH_MS__;
+const layoutStorageKey = 'necst-progress-card-layout-v44';
+const oldLayoutStorageKeys = ['necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
+const defaultCardLayout = [
+  {id:'position', col:3, row:12},
+  {id:'observation', col:3, row:12},
+  {id:'activity', col:2, row:12},
+  {id:'geometry', col:2, row:12},
+  {id:'environment', col:2, row:12},
+  {id:'planview', col:5, row:20},
+  {id:'plan', col:2, row:20},
+  {id:'queue', col:2, row:20},
+  {id:'spectrometer', col:3, row:20},
+  {id:'trace', col:3, row:7},
+  {id:'terminal', col:3, row:7},
+  {id:'files', col:3, row:7},
+  {id:'events', col:3, row:7}
+];
+const defaultLayoutCards = defaultCardLayout.map(x => x.id);
+let layoutUnlocked = false;
+let dragCardId = null;
+let activeResize = null;
+function clampNumber(x, lo, hi) {
+  const n = Number(x);
+  if (!Number.isFinite(n)) return lo;
+  return Math.max(lo, Math.min(hi, n));
+}
+function gridColumnCount() {
+  const grid = document.querySelector('.grid');
+  if (!grid) return 12;
+  const text = getComputedStyle(grid).gridTemplateColumns || '';
+  const count = text.trim().split(/\\s+/).filter(Boolean).length;
+  return Math.max(1, count || 12);
+}
+function validLayoutOrder(order) {
+  if (!Array.isArray(order) || order.length !== defaultLayoutCards.length) return null;
+  const seen = new Set(order);
+  if (seen.size !== defaultLayoutCards.length) return null;
+  for (const id of defaultLayoutCards) if (!seen.has(id)) return null;
+  return order.slice();
+}
+function defaultLayoutState() {
+  const sizes = {};
+  for (const spec of defaultCardLayout) sizes[spec.id] = {col: spec.col, row: spec.row};
+  return {order: defaultLayoutCards.slice(), sizes};
+}
+function normalizeLayoutState(raw) {
+  const def = defaultLayoutState();
+  if (Array.isArray(raw)) {
+    const order = validLayoutOrder(raw);
+    return order ? {order, sizes: def.sizes} : def;
+  }
+  if (!raw || typeof raw !== 'object') return def;
+  const order = validLayoutOrder(raw.order) || def.order;
+  const sizes = {};
+  for (const spec of defaultCardLayout) {
+    const src = raw.sizes && typeof raw.sizes === 'object' ? raw.sizes[spec.id] : null;
+    sizes[spec.id] = {
+      col: clampNumber(src?.col ?? spec.col, 1, 12),
+      row: clampNumber(src?.row ?? Math.round((src?.minHeight ?? spec.row * 22) / 22) ?? spec.row, 3, 60)
+    };
+  }
+  return {order, sizes};
+}
+function readLayoutState() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(layoutStorageKey) || 'null');
+    if (raw) return normalizeLayoutState(raw);
+  } catch (_) {}
+  return defaultLayoutState();
+}
+function writeLayoutState(state) {
+  const valid = normalizeLayoutState(state);
+  try { localStorage.setItem(layoutStorageKey, JSON.stringify(valid)); } catch (_) {}
+}
+function setCardDraggable(card, enabled) {
+  card.draggable = !!enabled;
+  card.setAttribute('aria-grabbed', enabled ? 'false' : 'false');
+}
+function applyLayoutState(state) {
+  const valid = normalizeLayoutState(state);
+  const maxCols = gridColumnCount();
+  valid.order.forEach((cardId, index) => {
+    const el = document.querySelector(`[data-card-id="${cardId}"]`);
+    if (!el) return;
+    const size = valid.sizes[cardId] || {col: 3, row: 8};
+    const col = clampNumber(size.col, 1, Math.max(1, maxCols));
+    const row = clampNumber(size.row ?? 8, 3, 60);
+    el.style.order = String(index);
+    el.style.gridColumn = `span ${col}`;
+    el.style.gridRow = `span ${row}`;
+    el.dataset.layoutCol = String(col);
+    el.dataset.layoutRow = String(row);
+    el.style.minHeight = '';
+    delete el.dataset.layoutMinHeight;
+  });
+}
+function currentLayoutState() {
+  const def = defaultLayoutState();
+  const cards = Array.from(document.querySelectorAll('.card[data-card-id]'));
+  cards.sort((a, b) => Number(a.style.order || 0) - Number(b.style.order || 0));
+  const order = validLayoutOrder(cards.map(c => c.dataset.cardId)) || readLayoutState().order || def.order;
+  const sizes = {};
+  for (const spec of defaultCardLayout) {
+    const card = document.querySelector(`[data-card-id="${spec.id}"]`);
+    sizes[spec.id] = {
+      col: clampNumber(card?.dataset.layoutCol ?? spec.col, 1, 12),
+      row: clampNumber(card?.dataset.layoutRow ?? spec.row ?? 8, 3, 60)
+    };
+  }
+  return {order, sizes};
+}
+function moveCardInOrder(order, fromId, toId) {
+  const next = order.slice();
+  const from = next.indexOf(fromId);
+  const to = next.indexOf(toId);
+  if (from < 0 || to < 0 || from === to) return next;
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+function saveAndApplyLayout(state) {
+  const next = normalizeLayoutState(state);
+  applyLayoutState(next);
+  writeLayoutState(next);
+}
+function setLayoutUnlocked(enabled) {
+  layoutUnlocked = !!enabled;
+  document.body.classList.toggle('layout-unlocked', layoutUnlocked);
+  for (const card of document.querySelectorAll('.card[data-card-id]')) setCardDraggable(card, layoutUnlocked);
+  const btn = document.getElementById('layoutToggle');
+  if (btn) btn.textContent = layoutUnlocked ? 'Layout: unlocked' : 'Layout: locked';
+}
+function ensureResizeGrip(card) {
+  if (card.querySelector(':scope > .resize-grip')) return;
+  const grip = document.createElement('div');
+  grip.className = 'resize-grip';
+  grip.title = 'Drag to resize this card in grid columns/rows; Reset layout restores defaults';
+  grip.addEventListener('pointerdown', (event) => {
+    if (!layoutUnlocked) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const id = card.dataset.cardId;
+    const state = currentLayoutState();
+    const size = state.sizes[id] || {col: 3, row: 8};
+    const grid = document.querySelector('.grid');
+    const gridRect = grid ? grid.getBoundingClientRect() : {width: 1200};
+    const style = grid ? getComputedStyle(grid) : null;
+    const colWidth = Math.max(24, gridRect.width / Math.max(1, gridColumnCount()));
+    const rowHeight = style ? parseFloat(style.gridAutoRows) || 18 : 18;
+    const rowGap = style ? parseFloat(style.rowGap) || 0 : 0;
+    const rowPitch = Math.max(8, rowHeight + rowGap);
+    activeResize = {
+      id,
+      startX: event.clientX,
+      startY: event.clientY,
+      startCol: clampNumber(size.col, 1, 12),
+      startRow: clampNumber(size.row ?? 8, 3, 60),
+      colWidth,
+      rowPitch,
+      state
+    };
+    card.classList.add('resizing');
+    try { card.setPointerCapture(event.pointerId); } catch (_) {}
+  });
+  card.addEventListener('pointermove', (event) => {
+    if (!activeResize || activeResize.id !== card.dataset.cardId) return;
+    event.preventDefault();
+    const maxCols = gridColumnCount();
+    const dx = event.clientX - activeResize.startX;
+    const dy = event.clientY - activeResize.startY;
+    const nextCol = clampNumber(activeResize.startCol + Math.round(dx / activeResize.colWidth), 1, Math.max(1, maxCols));
+    const nextRow = clampNumber(activeResize.startRow + Math.round(dy / activeResize.rowPitch), 3, 60);
+    const st = activeResize.state;
+    st.sizes[activeResize.id] = {col: nextCol, row: nextRow};
+    applyLayoutState(st);
+  });
+  const finish = () => {
+    if (!activeResize || activeResize.id !== card.dataset.cardId) return;
+    card.classList.remove('resizing');
+    writeLayoutState(currentLayoutState());
+    activeResize = null;
+  };
+  card.addEventListener('pointerup', finish);
+  card.addEventListener('pointercancel', finish);
+  grip.addEventListener('dragstart', (event) => event.preventDefault());
+  card.appendChild(grip);
+}
+function initLayoutEditor() {
+  applyLayoutState(readLayoutState());
+  const toggle = document.getElementById('layoutToggle');
+  const reset = document.getElementById('layoutReset');
+  if (toggle) toggle.addEventListener('click', () => setLayoutUnlocked(!layoutUnlocked));
+  if (reset) reset.addEventListener('click', () => {
+    try { localStorage.removeItem(layoutStorageKey); for (const key of oldLayoutStorageKeys) localStorage.removeItem(key); } catch (_) {}
+    applyLayoutState(defaultLayoutState());
+    setLayoutUnlocked(false);
+  });
+  for (const card of document.querySelectorAll('.card[data-card-id]')) {
+    ensureResizeGrip(card);
+    setCardDraggable(card, false);
+    card.addEventListener('dragstart', (event) => {
+      if (!layoutUnlocked || activeResize) { event.preventDefault(); return; }
+      dragCardId = card.dataset.cardId;
+      card.classList.add('dragging');
+      try { event.dataTransfer.setData('text/plain', dragCardId); event.dataTransfer.effectAllowed = 'move'; } catch (_) {}
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      for (const c of document.querySelectorAll('.card.drag-over')) c.classList.remove('drag-over');
+      dragCardId = null;
+    });
+    card.addEventListener('dragover', (event) => {
+      if (!layoutUnlocked || !dragCardId || dragCardId === card.dataset.cardId) return;
+      event.preventDefault();
+      try { event.dataTransfer.dropEffect = 'move'; } catch (_) {}
+      card.classList.add('drag-over');
+    });
+    card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+    card.addEventListener('drop', (event) => {
+      if (!layoutUnlocked || !dragCardId) return;
+      event.preventDefault();
+      card.classList.remove('drag-over');
+      const fromId = dragCardId;
+      const toId = card.dataset.cardId;
+      if (!fromId || !toId || fromId === toId) return;
+      const state = currentLayoutState();
+      state.order = moveCardInOrder(state.order, fromId, toId);
+      saveAndApplyLayout(state);
+    });
+  }
+  window.addEventListener('resize', () => applyLayoutState(readLayoutState()));
+}
+initLayoutEditor();
+
 function esc(v) { return String(v ?? '-').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
 function isTimeLike(label, key) {
   const s = `${label || ''} ${key || ''}`.toLowerCase();
@@ -2147,13 +2360,13 @@ function radecText(pair, frame='J2000') {
   if (!Array.isArray(pair) || pair.length < 2) return '-';
   const a = Number(pair[0]), b = Number(pair[1]);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return '-';
-  return `${raHmsText(a)}, ${decDmsText(b)} ${frame || 'J2000'}`;
+  return `${raHmsText(a)}, ${decDmsText(b)}`;
 }
 function galText(pair, frame='galactic') {
   if (!Array.isArray(pair) || pair.length < 2) return '-';
   const a = Number(pair[0]), b = Number(pair[1]);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return '-';
-  return `${a.toFixed(4)}, ${b.toFixed(4)} ${frame || 'galactic'}`;
+  return `${a.toFixed(4)}°, ${b.toFixed(4)}°`;
 }
 function displayCoordPair(snapshot, key) {
   const value = snapshot?.display?.[key];
@@ -2272,15 +2485,25 @@ function geometryRows(snapshot) {
     rows.push([g.cos_correction ? 'map offset actual' : 'map offset', coordPairText(off, offFrame, 'arcsec')]);
     if (g.cos_correction) rows.push(['offset note', 'x is dLon*cos(lat); raw command dLon is not shown here']);
   }
+  const geomFrame = g.frame || '';
+  const geomUnit = g.unit || 'deg';
   if (g.target !== undefined) {
-    const label = mode === 'OFF' || mode === 'SKY' ? 'OFF/SKY target' : (obsType.includes('grid') ? 'absolute target' : 'target/ON');
-    rows.push([label, coordText(g.target)]);
+    const frame = coordFrame(g.target, g.target_frame || geomFrame);
+    const unit = g.target_unit || geomUnit;
+    const baseLabel = mode === 'OFF' || mode === 'SKY' ? 'OFF/SKY target' : (obsType.includes('grid') ? 'absolute target' : 'target/ON');
+    rows.push([baseLabel, coordPairText(pair(g.target), frame, unit)]);
   }
   if (g.reference !== undefined) {
-    const label = mode === 'ON' ? 'ON/reference center' : 'reference base';
-    rows.push([label, coordText(g.reference)]);
+    const frame = coordFrame(g.reference, g.reference_frame || geomFrame);
+    const unit = g.reference_unit || geomUnit;
+    const baseLabel = mode === 'ON' ? 'ON/ref.' : 'reference';
+    rows.push([baseLabel, coordPairText(pair(g.reference), frame, unit)]);
   }
-  if (g.start !== undefined || g.stop !== undefined) rows.push(['scan start', coordText(g.start)], ['scan stop', coordText(g.stop)]);
+  if (g.start !== undefined || g.stop !== undefined) {
+    const sf = coordFrame(g.start, g.start_frame || geomFrame);
+    const stf = coordFrame(g.stop, g.stop_frame || geomFrame);
+    rows.push(['scan start', coordPairText(pair(g.start), sf, g.start_unit || geomUnit)], ['scan stop', coordPairText(pair(g.stop), stf, g.stop_unit || geomUnit)]);
+  }
   if (g.cos_correction !== undefined) rows.push(['cos correction', g.cos_correction]);
   return rows.filter(r => r[1] !== undefined && r[1] !== null && r[1] !== '');
 }
@@ -2353,12 +2576,14 @@ function firstNumeric(obj, paths) {
   return Number.isFinite(n) ? n : null;
 }
 function temperatureCFromAny(value) {
+  if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
   // WeatherMsg uses K, but some future snapshots may already store degC.
   return n > 170 ? n - 273.15 : n;
 }
 function humidityPercentFromAny(value) {
+  if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
   // NECST WeatherMsg humidity is defined as a 0--1 fraction.  Some older
@@ -2375,7 +2600,7 @@ function weatherRowsForKey(snapshot, key, label) {
   const pres = Number(base.pressure_hpa ?? base.pressure_mbar ?? base.pressure);
   const wind = Number(base.wind_speed_mps ?? base.wind_speed);
   const wdir = Number(base.wind_direction_deg ?? base.wind_direction);
-  if (temp !== null) rows.push([`${label} temp.`, `${temp.toFixed(1)} °C`, '']);
+  if (temp !== null) rows.push([`${label} temperature`, `${temp.toFixed(1)} °C`, '']);
   if (hum !== null) rows.push([`${label} humidity`, `${hum.toFixed(0)} %`, '']);
   if (Number.isFinite(pres)) rows.push([`${label} pressure`, `${pres.toFixed(1)} hPa`, '']);
   if (Number.isFinite(wind)) rows.push([`${label} wind`, Number.isFinite(wdir) ? `${wind.toFixed(1)} m/s @ ${wdir.toFixed(0)}°` : `${wind.toFixed(1)} m/s`, '']);
@@ -2389,9 +2614,11 @@ function optionalWeatherRows(snapshot) {
   const env = snapshot || {};
   const tempRaw = firstNumeric(env, [['weather','temperature_c'], ['weather','temperature_degC'], ['weather','temperature_k'], ['weather','temperature'], ['environment','temperature_c'], ['environment','temperature_degC'], ['site','temperature_c']]);
   const temp = temperatureCFromAny(tempRaw);
+  const inTemp = temperatureCFromAny(firstNumeric(env, [['weather','in_temperature_c'], ['weather','in_temperature_degC'], ['weather','in_temperature_k'], ['weather','in_temperature'], ['environment','in_temperature_c'], ['environment','in_temperature_degC'], ['site','in_temperature_c']]));
   const hum = humidityPercentFromAny(firstNumeric(env, [['weather','humidity'], ['weather','relative_humidity'], ['weather','humidity_percent'], ['weather','relative_humidity_percent'], ['environment','humidity'], ['environment','relative_humidity'], ['environment','humidity_percent'], ['environment','relative_humidity_percent'], ['site','humidity'], ['site','humidity_percent']]));
   const pres = firstNumeric(env, [['weather','pressure_hpa'], ['weather','pressure_mbar'], ['environment','pressure_hpa'], ['environment','pressure_mbar'], ['site','pressure_hpa']]);
-  if (temp !== null) rows.push(['air temp.', `${temp.toFixed(1)} °C`, '']);
+  if (temp !== null) rows.push(['out temperature', `${temp.toFixed(1)} °C`, '']);
+  if (inTemp !== null) rows.push(['in temperature', `${inTemp.toFixed(1)} °C`, 'important']);
   if (hum !== null) rows.push(['humidity', `${hum.toFixed(0)} %`, '']);
   if (pres !== null) rows.push(['pressure', `${pres.toFixed(1)} hPa`, '']);
   return rows;
@@ -2528,6 +2755,28 @@ function commandQueueRows(snapshot, serverTimeUnix=null) {
   if (!isBlank(q.reason)) rows.push(['reason', q.reason, q.guard_latched ? 'warning' : 'muted']);
   return rows;
 }
+
+function shortPathText(v, maxLen=38) {
+  const s = String(v ?? '');
+  if (!s) return '-';
+  if (s.length <= maxLen) return s;
+  const parts = s.split('/').filter(Boolean);
+  if (parts.length >= 2) {
+    const tail = parts.slice(-2).join('/');
+    if (tail.length <= maxLen - 2) return '…/' + tail;
+  }
+  const head = Math.max(6, Math.floor((maxLen - 1) / 3));
+  const tail = Math.max(10, maxLen - head - 1);
+  return s.slice(0, head) + '…' + s.slice(-tail);
+}
+function compactSpectrometerTime(v) {
+  const s = String(v ?? '');
+  if (!s) return '-';
+  const m = s.match(/T(\\d\\d:\\d\\d:\\d\\d)(.*)$/);
+  if (m) return `${m[1]}${m[2] || ''}`;
+  return s.length > 20 ? shortPathText(s, 24) : s;
+}
+
 function spectrometerRows(snapshot, serverTimeUnix=null) {
   const sp = snapshot?.spectrometer || {};
   if (!sp || !Object.keys(sp).length) return [['status', 'not reported', 'muted'], ['source', 'SpectrometerStatus unavailable', 'muted']];
@@ -2538,21 +2787,19 @@ function spectrometerRows(snapshot, serverTimeUnix=null) {
   const dumpAge = Number(sp.last_dump_age_sec);
   const pubAge = ageSinceUnix(sp.publish_time_unix, serverTimeUnix);
   const missing = Number(sp.missing_board_count);
-  const modeBits = `${acquiring ? 'acquiring' : 'idle'} / ${recording ? 'recording' : 'no-rec'} / ${saving ? 'saving' : 'no-save'}`;
-  const statusRole = valid && acquiring && saving ? 'ok' : (valid ? 'warning' : 'muted');
   const dumpRole = Number.isFinite(dumpAge) ? ageRole(dumpAge, 1.5, 5.0) : 'muted';
   const rows = [
-    ['status', modeBits, statusRole],
-    ['last dump age', secText(dumpAge), dumpRole],
-    ['streams/boards', `${val(sp.n_streams)} streams, ${val(sp.n_boards)} boards`, ''],
-    ['missing boards', Number.isFinite(missing) ? String(missing) : '-', Number.isFinite(missing) && missing > 0 ? 'warning' : 'ok'],
+    ['dump input', acquiring ? `recent (${secText(dumpAge)})` : `idle/stale (${secText(dumpAge)})`, valid && acquiring ? dumpRole : (valid ? 'warning' : 'muted')],
+    ['recorder', recording ? 'active' : 'off', recording ? 'ok' : 'muted'],
+    ['save gate', saving ? 'allowed' : 'blocked', saving ? 'ok' : (valid ? 'warning' : 'muted')],
+    ['streams', `${val(sp.n_streams)} streams / ${val(sp.n_boards)} boards`, ''],
+    ['missing', Number.isFinite(missing) ? String(missing) : '-', Number.isFinite(missing) && missing > 0 ? 'warning' : 'ok'],
     ['metadata', [sp.metadata_position, sp.metadata_id].filter(x => !isBlank(x)).join(' / ') || '-', 'important'],
-    ['line index', isBlank(sp.line_index) || Number(sp.line_index) < 0 ? '-' : String(sp.line_index), ''],
-    ['TP/qlook ch', `TP ${val(sp.tp_range_start)}:${val(sp.tp_range_stop)}, qlook ${val(sp.qlook_ch_start)}:${val(sp.qlook_ch_stop)}`, ''],
+    ['line', isBlank(sp.line_index) || Number(sp.line_index) < 0 ? '-' : String(sp.line_index), ''],
+    ['channels', `TP ${val(sp.tp_range_start)}:${val(sp.tp_range_stop)}; qlook ${val(sp.qlook_ch_start)}:${val(sp.qlook_ch_stop)}`, ''],
     ['status age', secText(pubAge), ageRole(pubAge, 3.0, 10.0)]
   ];
-  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(2, 0, ['latest spec time', sp.latest_time_spectrometer, 'muted']);
-  if (!isBlank(sp.recorder_path)) rows.push(['record path', sp.recorder_path, 'muted']);
+  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(3, 0, ['spec clock', compactSpectrometerTime(sp.latest_time_spectrometer), 'muted']);
   if (!isBlank(sp.warning)) rows.push(['warning', sp.warning, 'warning']);
   return rows;
 }
@@ -2566,21 +2813,28 @@ function systemTraceRows(snapshot, serverTimeUnix=null) {
   const queueAge = ageSinceUnix(q.publish_time_unix, serverTimeUnix);
   const specAge = ageSinceUnix(sp.publish_time_unix, serverTimeUnix);
   const frac = a.control_section_fraction;
-  const rows = [
-    ['ROS live cache', snapshot?.live?.spin_mode || 'file-only/no-ros', snapshot?.live?.spin_mode === 'background-executor' ? 'ok' : 'warn'],
-    ['section source', a.control_status_basis || 'fallback/unknown', a.control_status_basis ? 'ok' : 'muted'],
-    ['section fresh', a.control_section_fresh === false ? 'stale; not used for tracking' : 'fresh/unknown', a.control_section_fresh === false ? 'warn' : 'ok'],
-    ['section id', shortUidText(a.control_section_uid), 'muted'],
-    ['section index', `plan ${val(a.control_section_plan_index)} / seq ${val(a.control_section_sequence_index)}`, 'muted'],
-    ['section progress', fractionPercentText(frac), Number.isFinite(Number(frac)) ? 'important' : 'muted'],
-    ['section age', secText(sectionAge), ageRole(sectionAge, 2.0, 5.0)],
-    ['pointing source', ant.pointing_basis || (ant.tracking_status_available ? 'legacy tracking' : 'none'), ant.tracking_status_available ? 'ok' : 'muted'],
-    ['pointing age', secText(pointingAge), ageRole(pointingAge, 2.0, 5.0)],
-    ['queue age', secText(queueAge), q.active ? ageRole(queueAge, 2.0, 5.0) : 'muted'],
-    ['spectrometer age', secText(specAge), sp.valid ? ageRole(specAge, 2.0, 5.0) : 'muted']
+  const liveMode = snapshot?.live?.spin_mode || 'file-only/no-ros';
+  const liveRole = snapshot?.live?.spin_mode === 'background-executor' ? 'ok' : 'warn';
+  const sectionBasis = a.control_status_basis || 'fallback/unknown';
+  const sectionFresh = a.control_section_fresh === false ? 'stale' : 'fresh/unknown';
+  const sectionFreshRole = a.control_section_fresh === false ? 'warn' : 'ok';
+  const sectionId = shortUidText(a.control_section_uid);
+  const planSeq = `plan ${val(a.control_section_plan_index)} / seq ${val(a.control_section_sequence_index)}`;
+  const durationText = a.control_section_duration_sec !== undefined ? secText(a.control_section_duration_sec) : '-';
+  const progressText = fractionPercentText(frac);
+  const pointingSource = ant.pointing_basis || (ant.tracking_status_available ? 'legacy tracking' : 'none');
+  const ageText = `sec ${secText(sectionAge)} / point ${secText(pointingAge)} / queue ${secText(queueAge)} / spec ${secText(specAge)}`;
+  const ages = [sectionAge, pointingAge, queueAge, specAge].filter(x => Number.isFinite(Number(x))).map(Number);
+  const maxAge = ages.length ? Math.max(...ages) : null;
+  return [
+    ['ROS/cache', liveMode, liveRole],
+    ['section', `${sectionBasis}; ${sectionFresh}`, sectionFreshRole],
+    ['sec id', sectionId, 'muted'],
+    ['sec index', planSeq, 'muted'],
+    ['dur/prog', `${durationText} / ${progressText}`, Number.isFinite(Number(frac)) ? 'important' : 'muted'],
+    ['ages', ageText, ageRole(maxAge, 2.0, 5.0)],
+    ['pointing', pointingSource, ant.tracking_status_available ? 'ok' : 'muted']
   ];
-  if (a.control_section_duration_sec !== undefined) rows.splice(5, 0, ['section duration', secText(a.control_section_duration_sec), '']);
-  return rows;
 }
 function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const a = snapshot?.antenna || {}; const g = snapshot?.geometry || {};
@@ -2599,8 +2853,8 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
     ['progress item', psummary?.progress || '-', 'important'],
     ['UTC', utcText(utcUnix), ''],
     ['LST', lstDisplayText(snapshot), ''],
-    ['target RA,Dec J2000', radec ? radecText(radec, 'J2000') : '-', ''],
-    ['target Galactic l,b', gal ? galText(gal, 'galactic') : '-', '']
+    ['Target RA, Dec', radec ? radecText(radec, 'J2000') : '-', ''],
+    ['Target L, B', gal ? galText(gal, 'galactic') : '-', '']
   ];
   return rows;
 }
@@ -2628,13 +2882,19 @@ function activityRows(snapshot) {
 }
 function weatherTemperatureRow(base, label) {
   const temp = temperatureCFromAny(base?.temperature_c ?? base?.temperature_degC ?? base?.temperature_k ?? base?.temperature);
-  return temp !== null ? [[`${label} temp.`, `${temp.toFixed(1)} °C`, label === 'in' ? 'important' : '']] : [];
+  return temp !== null ? [[`${label} temperature`, `${temp.toFixed(1)} °C`, label === 'in' ? 'important' : '']] : [];
 }
 function environmentRows(snapshot) {
   const rows = [];
   const w = snapshot?.weather || {};
   rows.push(...weatherRowsForKey(snapshot, 'out', 'out'));
   rows.push(...weatherTemperatureRow(w.in || {}, 'in'));
+  if (!rows.some(r => String(r[0] || '').startsWith('in temperature'))) {
+    rows.push(...weatherTemperatureRow({
+      temperature_c: w.out?.in_temperature_c ?? w.out?.in_temperature_degC,
+      temperature_k: w.out?.in_temperature_k ?? w.out?.in_temperature,
+    }, 'in'));
+  }
   if (!rows.length) {
     rows.push(...optionalWeatherRows(snapshot));
   }
@@ -3182,36 +3442,36 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   const liveEls = nowPoint ? renderNowMarker(currentRow, nowPoint, b, nowLabel) : '';
   let countText = '', note = '';
   if (ls.total) {
-    countText = `OTF lines: ${ls.done} done + ${ls.current} current + ${ls.remaining} remaining = ${ls.total}`;
-    if (nowPoint && telescopeCanOverlay) note = 'Line marker = live antenna projected on current line.';
+    countText = `OTF ${ls.done}/${ls.total} done, cur ${ls.current}, rem ${ls.remaining}`;
+    if (nowPoint && telescopeCanOverlay) note = 'marker: live antenna on current line';
     else if (nowPoint) {
       // Backward-compatible test/debug marker: Line marker uses ${lineProgress?.source || 'browser'} line timer.
       const src = String(lineProgress?.source || 'browser');
-      if (src === 'current-time' || src === 'section-status') note = `Line marker uses antenna section status (${src}); live antenna projection is unavailable.`;
-      else note = `Line marker uses ${src} line timer; live antenna projection is unavailable.`;
+      if (src === 'current-time' || src === 'section-status') note = `marker: section status (${src})`;
+      else note = `marker: ${src} timer`;
     }
-    else if (lineProgress?.waiting) note = `Line marker waits for line motion: stage=${lineProgress.stage}.`;
+    else if (lineProgress?.waiting) note = `marker waits: ${lineProgress.stage}`;
     else {
       const state = liveScanLineState(snapshot);
-      if (state.authoritative && !state.lineActive) note = `No current scan-line marker: antenna section is ${state.kind || state.basis}, not a science line.`;
-      else note = 'No line-position marker: antenna coordinates do not match this map and no reliable line timer is available.';
+      if (state.authoritative && !state.lineActive) note = `no marker: ${state.kind || state.basis}`;
+      else note = 'no reliable line marker';
     }
   } else if (obsType.includes('grid')) {
     const basisRows = onRows.length ? onRows : pointRows;
     const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
-    countText = `Grid ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}${visitPassText(c,u)}`;
-    note = 'Progress is ON-basis. Thin dashed path shows planned ON order; OFF/SKY is plotted as target-center offset when available and is not the denominator.';
+    countText = `Grid ON ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}${visitPassText(c,u)}`;
+    note = 'ON-basis; dashed line = planned ON order';
   } else if (obsType.includes('psw')) {
     const basisRows = onRows.length ? onRows : pointRows;
     const c = pointCounts(basisRows); const u = uniquePointCount(basisRows);
-    countText = `PSW ON visits: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}${visitPassText(c,u)}`;
-    note = 'Progress is ON-basis. OFF/HOT/SKY visits are labeled diamonds and are not the progress denominator.';
+    countText = `PSW ON ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}${visitPassText(c,u)}`;
+    note = 'ON-basis; OFF/HOT/SKY are labels';
   } else {
     const c = pointCounts(pointRows);
-    countText = `Point sequence: ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}`;
-    note = 'Current item is orange; OFF/SKY labels are grouped when repeated; HOT is hidden from the map.';
+    countText = `Point ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}`;
+    note = 'orange=current; HOT hidden';
   }
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.bottom+42}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">${esc(note)}</text></svg>`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.bottom+42}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">${esc(note)}</text></svg>`;
 }
 function skydipRowsFrom(snapshot, items, events) {
   const rows=[];
@@ -3251,7 +3511,7 @@ function renderSkydipSvg(snapshot, items, events) {
   const c = pointCounts(rows);
   const cur = rows.find(r=>r.status==='current');
   const curText = cur ? `Current elevation ${cur.y.toFixed(1)} deg at step ${cur.x}/${rows.length}` : `Elevation sequence ${rows.length} steps`;
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${grid}<polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.bottom+42}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-43}" font-size="11">Skydip: ${esc(curText)}; ${c.done} done + ${c.current} current + ${c.remaining} remaining = ${c.total}</text><text x="${PLOT.left}" y="${PLOT.h-22}" font-size="11">This is elevation vs. sequence order for sky-dipping; first HOT/load step is labelled when present.</text></svg>`;
+  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${grid}<polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.bottom+42}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">Skydip ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}: ${esc(curText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">elevation vs sequence; HOT/load labelled when present</text></svg>`;
 }
 async function update() {
   try {
@@ -3275,7 +3535,7 @@ async function update() {
     // position detail; show it in the Live Position card where the user can see
     // whether it is required for the current section.
     document.getElementById('message').innerHTML = msg;
-    kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), target_label: displayTarget(snap), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence, remaining_samples: timing.remaining_sample_count}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target_label'], ['elapsed [s]','elapsed_sec'], ['remaining≈ [s]','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA confidence','remaining_confidence'], ['ETA samples','remaining_samples']]);
+    kv('observation', {...obs, state: life.state, record_label: shortRecordName(obs.record_name), target_label: displayTarget(snap), elapsed_sec: timing.elapsed_sec, remaining_sec: timing.estimated_remaining_sec, remaining_method_label: compactMethod(timing.remaining_method), remaining_confidence: timing.remaining_confidence, remaining_samples: timing.remaining_sample_count}, [['state','state'], ['type','type'], ['record','record_label'], ['obsfile','obs_file'], ['target','target_label'], ['elapsed','elapsed_sec'], ['remaining≈','remaining_sec'], ['ETA source','remaining_method_label'], ['ETA conf.','remaining_confidence'], ['ETA samples','remaining_samples']]);
     document.querySelector('#observation div:nth-child(2)').innerHTML = `<span class=\"status ${stateClass(life.state)}\">${esc(life.state ?? '-')}</span>`;
     const statusEvents = s.status_events || s.events || [];
     const psummary = observerPlanSummary(snap, s.plan || {}, statusEvents);
@@ -3289,7 +3549,7 @@ async function update() {
     kvSmart('spectrometer', spectrometerRows(snap, s.server_time_unix));
     kvSmart('trace', systemTraceRows(snap, s.server_time_unix));
     kvSmart('environment', environmentRows(snap));
-    kv('paths', s.paths || {}, [['snapshot','snapshot'], ['events','events'], ['plan','plan']]);
+    kv('paths', {snapshot: shortPathText(s.paths?.snapshot, 46), events: shortPathText(s.paths?.events, 46), plan: shortPathText(s.paths?.plan, 46)}, [['snapshot','snapshot'], ['events','events'], ['plan','plan']]);
     const rows = (s.events || []).slice(-10).map(ev => {
       const t = typeof ev.time_unix === 'number' ? new Date(ev.time_unix*1000).toLocaleTimeString() : String(ev.seq ?? '');
       const name = String(ev.event ?? '').replace('integration_', 'int_').replace('plan_item_', 'item_');
