@@ -183,6 +183,214 @@ def apply_dynamic_remaining(snapshot: Optional[Dict[str, Any]]) -> Optional[Dict
         timing["estimated_remaining_sec"] = max(0.0, completion - time.time())
     return snapshot
 
+
+
+_RADEC_FRAMES = {"j2000", "radec", "ra/dec", "equatorial", "fk5", "icrs"}
+_GALACTIC_FRAMES = {"galactic", "gal", "lb", "l,b"}
+
+
+def _frame_token(frame: Any) -> str:
+    return str(frame or "").strip().lower().replace(" ", "")
+
+
+def _is_radec_frame(frame: Any) -> bool:
+    token = _frame_token(frame)
+    return token in _RADEC_FRAMES or "j2000" in token or "radec" in token or token.startswith("fk5")
+
+
+def _is_galactic_frame(frame: Any) -> bool:
+    token = _frame_token(frame)
+    return token in _GALACTIC_FRAMES or "gal" in token
+
+
+def _source_sky_coord_from_geometry(geom: Mapping[str, Any]) -> tuple[Optional[tuple[float, float]], str, str]:
+    """Return the best source/reference sky coordinate stored in progress geometry."""
+    for key in ("target", "reference"):
+        value = geom.get(key)
+        pair = _coord_pair(value)
+        if pair is None:
+            continue
+        frame = _coord_frame(value, str(geom.get("frame") or ""))
+        return pair, frame, key
+    return None, "", ""
+
+
+def _skycoord_from_lonlat_frame(lon_deg: float, lat_deg: float, frame: Any) -> Any:
+    """Create an Astropy SkyCoord for common NECST source coordinate frames.
+
+    RA/Dec <-> Galactic conversion must stay in Astropy rather than a hand-coded
+    browser rotation matrix.  The browser only formats fields already derived here.
+    """
+    from astropy import units as u  # type: ignore
+    from astropy.coordinates import FK5, SkyCoord  # type: ignore
+    from astropy.time import Time  # type: ignore
+
+    token = _frame_token(frame)
+    if token == "icrs":
+        return SkyCoord(ra=float(lon_deg) * u.deg, dec=float(lat_deg) * u.deg, frame="icrs")
+    if _is_radec_frame(frame):
+        return SkyCoord(
+            ra=float(lon_deg) * u.deg,
+            dec=float(lat_deg) * u.deg,
+            frame=FK5(equinox=Time("J2000")),
+        )
+    if _is_galactic_frame(frame):
+        return SkyCoord(l=float(lon_deg) * u.deg, b=float(lat_deg) * u.deg, frame="galactic")
+    return None
+
+
+def _derive_radec_galactic_from_geometry(geom: Mapping[str, Any]) -> Dict[str, Any]:
+    pair, frame, source_key = _source_sky_coord_from_geometry(geom)
+    out: Dict[str, Any] = {}
+    if pair is None:
+        return out
+    lon_deg, lat_deg = pair
+    if source_key:
+        out["source_coordinate_key"] = source_key
+    if frame:
+        out["source_coordinate_frame"] = frame
+
+    # Preserve native-frame values even when Astropy is unavailable.  This keeps
+    # LB->display and RA/Dec->display useful, while avoiding any self-written
+    # cross-frame conversion.
+    if _is_radec_frame(frame):
+        out["target_radec_j2000"] = [float(lon_deg) % 360.0, float(lat_deg), "J2000"]
+    if _is_galactic_frame(frame):
+        out["target_galactic_lb"] = [float(lon_deg) % 360.0, float(lat_deg), "galactic"]
+
+    try:
+        coord = _skycoord_from_lonlat_frame(float(lon_deg), float(lat_deg), frame)
+        if coord is None:
+            return out
+        from astropy import units as u  # type: ignore
+        from astropy.coordinates import FK5  # type: ignore
+        from astropy.time import Time  # type: ignore
+
+        fk5 = coord.transform_to(FK5(equinox=Time("J2000")))
+        gal = coord.galactic
+        out["target_radec_j2000"] = [
+            float(fk5.ra.to_value(u.deg)) % 360.0,
+            float(fk5.dec.to_value(u.deg)),
+            "J2000",
+        ]
+        out["target_galactic_lb"] = [
+            float(gal.l.to_value(u.deg)) % 360.0,
+            float(gal.b.to_value(u.deg)),
+            "galactic",
+        ]
+        out["coordinate_transform_backend"] = "astropy"
+    except Exception as exc:
+        # Progress display must never break an observation.  If Astropy is not
+        # importable in an offline analysis environment, browser/CLI simply show
+        # the native-frame coordinate and leave the cross-frame row blank.
+        out["coordinate_transform_backend"] = "unavailable"
+        out["coordinate_transform_note"] = f"Astropy coordinate transform unavailable: {exc.__class__.__name__}"
+    return out
+
+
+def _site_longitude_from_snapshot(snapshot: Mapping[str, Any]) -> Optional[float]:
+    for section, keys in (
+        ("site", ("longitude_deg", "lon_deg", "site_lon_deg")),
+        ("observer", ("longitude_deg", "lon_deg", "site_lon_deg")),
+        ("observation", ("site_longitude_deg", "longitude_deg", "lon_deg")),
+        ("telescope", ("longitude_deg", "lon_deg", "site_lon_deg")),
+    ):
+        obj = snapshot.get(section)
+        if not isinstance(obj, Mapping):
+            continue
+        for key in keys:
+            value = _finite_float(obj.get(key))
+            if value is not None:
+                return value
+    return None
+
+
+def _format_lst_hms(hours: Any) -> Optional[str]:
+    value = _finite_float(hours)
+    if value is None:
+        return None
+    value = value % 24.0
+    total = int(round(value * 3600.0)) % (24 * 3600)
+    h, rem = divmod(total, 3600)
+    m, s = divmod(rem, 60)
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
+
+def _lst_hours_with_neclib(unix_sec: float) -> Optional[float]:
+    """Use NECST/neclib's canonical Observer.lst when the runtime config exists."""
+    try:
+        from neclib.coordinates import Observer  # type: ignore
+        from necst import config as necst_config  # type: ignore
+
+        location = getattr(necst_config, "location", None)
+        if location is None:
+            return None
+        lst = Observer(location).lst(float(unix_sec))
+        if hasattr(lst, "hour"):
+            return float(lst.hour)
+        if hasattr(lst, "to_value"):
+            return float(lst.to_value("hourangle"))
+        return float(lst)
+    except Exception:
+        return None
+
+
+def _lst_hours_with_astropy(unix_sec: float, lon_deg: float) -> Optional[float]:
+    """Use Astropy for LST when neclib Observer is not importable."""
+    try:
+        from astropy import units as u  # type: ignore
+        from astropy.time import Time  # type: ignore
+
+        return float(Time(float(unix_sec), format="unix", scale="utc").sidereal_time("mean", longitude=float(lon_deg) * u.deg).hour)
+    except Exception:
+        return None
+
+
+def _derive_lst(snapshot: Mapping[str, Any], *, server_time_unix: Optional[float] = None) -> Dict[str, Any]:
+    timing = snapshot.get("time") if isinstance(snapshot.get("time"), Mapping) else {}
+    unix_sec = _finite_float(timing.get("updated_at_unix"))
+    if unix_sec is None:
+        unix_sec = _finite_float(server_time_unix)
+    if unix_sec is None:
+        return {}
+
+    lst_hours = _lst_hours_with_neclib(float(unix_sec))
+    backend = "neclib.Observer.lst" if lst_hours is not None else ""
+    lon_deg = _site_longitude_from_snapshot(snapshot)
+    if lst_hours is None and lon_deg is not None:
+        lst_hours = _lst_hours_with_astropy(float(unix_sec), float(lon_deg))
+        backend = "astropy.time.Time.sidereal_time" if lst_hours is not None else ""
+    text = _format_lst_hms(lst_hours)
+    if text is None:
+        return {}
+    out: Dict[str, Any] = {"lst_hours": float(lst_hours) % 24.0, "lst_hms": text}
+    if backend:
+        out["lst_backend"] = backend
+    if lon_deg is not None:
+        out["lst_longitude_deg"] = float(lon_deg)
+    return out
+
+
+def apply_display_derivations(snapshot: Optional[Dict[str, Any]], *, server_time_unix: Optional[float] = None) -> Optional[Dict[str, Any]]:
+    """Add display-only coordinate/LST derivations to a snapshot.
+
+    The progress sidecar remains the source of truth and keeps original frames.
+    Derived fields are added under ``snapshot["display"]`` so CLI/API/Web can
+    format the same values.  Cross-frame sky transforms are performed only by
+    Astropy; LST is taken from neclib Observer when available, otherwise Astropy.
+    """
+    if not isinstance(snapshot, dict):
+        return snapshot
+    out = copy.deepcopy(snapshot)
+    geom = out.get("geometry") if isinstance(out.get("geometry"), Mapping) else {}
+    display: Dict[str, Any] = {}
+    if isinstance(geom, Mapping):
+        display.update(_derive_radec_galactic_from_geometry(geom))
+    display.update(_derive_lst(out, server_time_unix=server_time_unix))
+    if display:
+        out.setdefault("display", {}).update(display)
+    return out
+
 def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
     """Return a display-only snapshot augmented with live ROS telemetry.
 
@@ -1120,7 +1328,7 @@ def cmd_once(args: argparse.Namespace) -> int:
     live = LiveRosCache(enabled=not args.no_ros)
     try:
         live.spin_once(0.05)
-        snapshot = apply_dynamic_remaining(merge_live_telemetry(read_json(current_snapshot_path(root)), live.snapshot()))
+        snapshot = apply_display_derivations(apply_dynamic_remaining(merge_live_telemetry(read_json(current_snapshot_path(root)), live.snapshot())))
         if args.json:
             print(json.dumps(snapshot or {}, ensure_ascii=False, indent=2, sort_keys=True))
             return 0
@@ -1140,7 +1348,7 @@ def cmd_watch(args: argparse.Namespace) -> int:
     try:
         while True:
             live.spin_once(0.0)
-            snapshot = apply_dynamic_remaining(merge_live_telemetry(read_json(current_snapshot_path(root)), live.snapshot()))
+            snapshot = apply_display_derivations(apply_dynamic_remaining(merge_live_telemetry(read_json(current_snapshot_path(root)), live.snapshot())))
             events_path = latest_events_path(root, snapshot)
             events = read_recent_events(events_path, args.events)
             plan_path = latest_plan_path(root, snapshot)
@@ -1241,7 +1449,11 @@ def build_state(root: Path, *, events_limit: int = 12, live: Optional[LiveRosCac
     raw_snapshot = read_json(snapshot_path)
     if live is not None:
         live.spin_once(0.0)
-    snapshot = apply_dynamic_remaining(merge_live_telemetry(raw_snapshot, live.snapshot() if live is not None else None))
+    server_time_unix = time.time()
+    snapshot = apply_display_derivations(
+        apply_dynamic_remaining(merge_live_telemetry(raw_snapshot, live.snapshot() if live is not None else None)),
+        server_time_unix=server_time_unix,
+    )
     events_path = latest_events_path(root, raw_snapshot if isinstance(raw_snapshot, dict) else None)
     plan_path = latest_plan_path(root, raw_snapshot if isinstance(raw_snapshot, dict) else None)
     plan = read_json(plan_path) if plan_path else None
@@ -1263,7 +1475,7 @@ def build_state(root: Path, *, events_limit: int = 12, live: Optional[LiveRosCac
         "status_events": all_events,
         "plan": plan or {},
         "rendered": render(snapshot if isinstance(snapshot, dict) else None, all_events, compact=True, full_plan=plan if isinstance(plan, dict) else None),
-        "server_time_unix": time.time(),
+        "server_time_unix": server_time_unix,
     }
 
 
@@ -1424,19 +1636,9 @@ function utcText(unixSec) {
   const n = Number(unixSec);
   return Number.isFinite(n) ? new Date(n*1000).toISOString().replace('T',' ').replace(/\\.\\d+Z$/,' UTC') : '-';
 }
-function lstText(unixSec, lonDeg) {
-  const t = Number(unixSec), lon = Number(lonDeg);
-  if (!Number.isFinite(t) || !Number.isFinite(lon)) return '-';
-  const jd = t / 86400.0 + 2440587.5;
-  const d = jd - 2451545.0;
-  let gmst = 18.697374558 + 24.06570982441908 * d;
-  gmst = ((gmst % 24) + 24) % 24;
-  let lst = gmst + lon / 15.0;
-  lst = ((lst % 24) + 24) % 24;
-  let h = Math.floor(lst), m = Math.floor((lst-h)*60), sec = Math.round((((lst-h)*60)-m)*60);
-  if (sec >= 60) { sec -= 60; m += 1; }
-  if (m >= 60) { m -= 60; h = (h + 1) % 24; }
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+function lstDisplayText(snapshot) {
+  const text = snapshot?.display?.lst_hms;
+  return isBlank(text) ? '-' : String(text);
 }
 function nestedGet(obj, paths) {
   for (const path of paths) {
@@ -1496,28 +1698,10 @@ function galText(pair, frame='galactic') {
   if (!Number.isFinite(a) || !Number.isFinite(b)) return '-';
   return `${a.toFixed(4)}, ${b.toFixed(4)} ${frame || 'galactic'}`;
 }
-function sphToVec(lonDeg, latDeg) {
-  const lon = lonDeg * Math.PI / 180.0, lat = latDeg * Math.PI / 180.0;
-  const cl = Math.cos(lat);
-  return [cl*Math.cos(lon), cl*Math.sin(lon), Math.sin(lat)];
+function displayCoordPair(snapshot, key) {
+  const value = snapshot?.display?.[key];
+  return pair(value);
 }
-function vecToSph(v) {
-  const r = Math.hypot(v[0], v[1], v[2]);
-  if (!Number.isFinite(r) || r <= 0) return null;
-  let lon = Math.atan2(v[1], v[0]) * 180.0 / Math.PI;
-  if (lon < 0) lon += 360.0;
-  const lat = Math.asin(Math.max(-1, Math.min(1, v[2]/r))) * 180.0 / Math.PI;
-  return [lon, lat];
-}
-const ICRS_TO_GAL = [
-  [-0.0548755604162154, -0.8734370902348850, -0.4838350155487132],
-  [ 0.4941094278755837, -0.4448296299600112,  0.7469822444972189],
-  [-0.8676661490190047, -0.1980763734312015,  0.4559837761750669],
-];
-function matVec(m, v) { return [m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2], m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2], m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]]; }
-function matTVec(m, v) { return [m[0][0]*v[0]+m[1][0]*v[1]+m[2][0]*v[2], m[0][1]*v[0]+m[1][1]*v[1]+m[2][1]*v[2], m[0][2]*v[0]+m[1][2]*v[1]+m[2][2]*v[2]]; }
-function radecToGalactic(p) { const q = pair(p); if (!q) return null; return vecToSph(matVec(ICRS_TO_GAL, sphToVec(q[0], q[1]))); }
-function galacticToRadec(p) { const q = pair(p); if (!q) return null; return vecToSph(matTVec(ICRS_TO_GAL, sphToVec(q[0], q[1]))); }
 function targetSkyPair(snapshot) {
   const g = snapshot?.geometry || {};
   return pair(g.target) ? {coord:g.target, frame:coordFrame(g.target, g.frame || '')}
@@ -1525,15 +1709,17 @@ function targetSkyPair(snapshot) {
     : null;
 }
 function targetRaDecPair(snapshot) {
+  const derived = displayCoordPair(snapshot, 'target_radec_j2000');
+  if (derived) return derived;
   const t = targetSkyPair(snapshot); if (!t) return null;
   if (frameLooksRadec(t.frame)) return pair(t.coord);
-  if (frameLooksGalactic(t.frame)) return galacticToRadec(t.coord);
   return null;
 }
 function targetGalPair(snapshot) {
+  const derived = displayCoordPair(snapshot, 'target_galactic_lb');
+  if (derived) return derived;
   const t = targetSkyPair(snapshot); if (!t) return null;
   if (frameLooksGalactic(t.frame)) return pair(t.coord);
-  if (frameLooksRadec(t.frame)) return radecToGalactic(t.coord);
   return null;
 }
 function coordPairText(pair, frame='', unit='deg') {
@@ -1828,7 +2014,6 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const phase = String(snapshot?.activity?.phase || snapshot?.plan?.mode || '').toUpperCase();
   const isCal = phase && phase !== 'ON';
   const utcUnix = Number(snapshot?.time?.updated_at_unix ?? serverTimeUnix);
-  const lonForLst = nestedGet(snapshot, [['site','longitude_deg'], ['site','lon_deg'], ['observer','longitude_deg'], ['observation','site_longitude_deg'], ['telescope','longitude_deg']]);
   const radec = targetRaDecPair(snapshot);
   const gal = targetGalPair(snapshot);
   const rows = [
@@ -1838,7 +2023,7 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
     [isCal ? 'calibration now' : (g.cos_correction ? 'map offset actual' : 'map offset'), isCal ? phase : (off ? coordPairText(off, frame, 'arcsec') : '-'), 'important'],
     ['progress item', psummary?.progress || '-', 'important'],
     ['UTC', utcText(utcUnix), ''],
-    ['LST', lstText(utcUnix, lonForLst), ''],
+    ['LST', lstDisplayText(snapshot), ''],
     ['target RA,Dec J2000', radec ? radecText(radec, 'J2000') : '-', ''],
     ['target Galactic l,b', gal ? galText(gal, 'galactic') : '-', '']
   ];
@@ -2218,13 +2403,15 @@ function median(xs) {
   const m = Math.floor(a.length/2);
   return a.length % 2 ? a[m] : 0.5*(a[m-1]+a[m]);
 }
-const lineMotionClock = {key:null, start:null};
+const lineMotionClock = {key:null, start:null, source:null};
 function lineMotionKey(snapshot, row) {
   const rec = snapshot?.observation?.record_name || '';
   const uid = snapshot?.plan?.item_uid || row?.item?.item_uid || '';
   const line = snapshot?.geometry?.current_line_index0 ?? row?.lineIndex ?? '';
   const id = snapshot?.data?.expected_metadata_id ?? snapshot?.plan?.obs_id ?? '';
-  return `${rec}|${uid}|${line}|${id}`;
+  const ctrl = snapshot?.live?.control || {};
+  const ctrlId = ctrl.id || snapshot?.activity?.control_id || '';
+  return `${rec}|${uid}|${line}|${id}|${ctrlId}`;
 }
 function isActualLineMotion(snapshot) {
   const drive = String(snapshot?.activity?.drive_kind || snapshot?.plan?.drive_kind || '').toLowerCase();
@@ -2235,6 +2422,10 @@ function isActualLineMotion(snapshot) {
   // Only the explicit line section should advance the marker on the map.
   return stage === 'line' || stage === 'scanning';
 }
+function currentLineIndex(snapshot, row) {
+  const line = Number(snapshot?.geometry?.current_line_index0 ?? row?.lineIndex);
+  return Number.isFinite(line) ? line : null;
+}
 function lineExpectedDurationSec(row) {
   if (!row?.a || !row?.b) return null;
   const speed = Number(row?.item?.geometry?.speed_deg_per_sec ?? row?.speed_deg_per_sec);
@@ -2243,14 +2434,32 @@ function lineExpectedDurationSec(row) {
   if (!Number.isFinite(length) || length <= 0) return null;
   return length / speed;
 }
-function lastLineDriveStartedAt(events) {
+function controlLineStartedAt(snapshot, row) {
+  const ctrl = snapshot?.live?.control || {};
+  const ctrlStage = String(ctrl.section_kind || snapshot?.activity?.control_section_kind || snapshot?.activity?.motion_stage || '').toLowerCase();
+  if (!(ctrlStage === 'line' || ctrlStage === 'scanning')) return null;
+  const wantedLine = currentLineIndex(snapshot, row);
+  const ctrlLine = Number(ctrl.line_index ?? snapshot?.geometry?.current_line_index0);
+  if (wantedLine !== null && Number.isFinite(ctrlLine) && ctrlLine !== wantedLine) return null;
+  const t = Number(ctrl.time_unix);
+  return Number.isFinite(t) ? t : null;
+}
+function lastMatchedLineDriveStartedAt(events, snapshot, row) {
   let t = null;
+  const wantedLine = currentLineIndex(snapshot, row);
+  const scanBlock = isOtfScanBlock(snapshot);
   for (const ev of events || []) {
     if (!ev || ev.event !== 'drive_started') continue;
     const drive = String(ev.drive_kind || '').toLowerCase();
     const stage = String(ev.motion_stage || '').toLowerCase();
     if (!(drive.includes('scan') || drive.includes('block'))) continue;
     if (!(stage === 'line' || stage === 'scanning')) continue;
+    const evLine = Number(ev.line_index ?? ev.line_index0 ?? ev.current_line_index0);
+    // A scan_block line event without a line index is ambiguous.  Reusing it
+    // for a later line makes the browser timer jump to 98% at line start.
+    if (scanBlock && wantedLine !== null) {
+      if (!Number.isFinite(evLine) || evLine !== wantedLine) continue;
+    }
     const et = Number(ev.time_unix);
     if (Number.isFinite(et)) t = et;
   }
@@ -2262,20 +2471,25 @@ function currentLineMotionProgress(snapshot, row, serverTimeUnix, events=null) {
   const now = Number.isFinite(serverTimeUnix) ? serverTimeUnix : Date.now()/1000;
   const key = lineMotionKey(snapshot, row);
   if (!isActualLineMotion(snapshot)) {
-    if (lineMotionClock.key !== key) { lineMotionClock.key = key; lineMotionClock.start = null; }
+    if (lineMotionClock.key !== key) { lineMotionClock.key = key; lineMotionClock.start = null; lineMotionClock.source = null; }
     return {fraction:null, waiting:true, stage, label:`line not started (${stage})`};
   }
-  const eventStart = lastLineDriveStartedAt(events);
+  const controlStart = controlLineStartedAt(snapshot, row);
+  const eventStart = controlStart ?? lastMatchedLineDriveStartedAt(events, snapshot, row);
+  const startSource = controlStart !== null ? 'control-status' : (eventStart !== null ? 'matched-event' : 'browser-observed');
   if (lineMotionClock.key !== key || lineMotionClock.start === null) {
-    lineMotionClock.key = key; lineMotionClock.start = eventStart || now;
-  } else if (eventStart && Math.abs(lineMotionClock.start - eventStart) > 0.2) {
+    lineMotionClock.key = key;
+    lineMotionClock.start = eventStart ?? now;
+    lineMotionClock.source = startSource;
+  } else if (eventStart !== null && Math.abs(lineMotionClock.start - eventStart) > 0.2) {
     lineMotionClock.start = eventStart;
+    lineMotionClock.source = startSource;
   }
   const duration = lineExpectedDurationSec(row);
   if (!duration) return {fraction:null, waiting:false, stage, label:'line section active; duration unknown'};
   const raw = (now - lineMotionClock.start) / duration;
   const fraction = Math.max(0, Math.min(0.98, raw));
-  return {fraction, rawFraction:raw, waiting:false, stage, duration, label:`Line ${(100*fraction).toFixed(0)}%`};
+  return {fraction, rawFraction:raw, waiting:false, stage, duration, source:lineMotionClock.source, label:`Line ${(100*fraction).toFixed(0)}%`};
 }
 function pointAtFraction(a, b, t) { return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]; }
 function renderNowMarker(row, p, b, label) {
@@ -2352,7 +2566,7 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   if (ls.total) {
     countText = `OTF lines: ${ls.done} done + ${ls.current} current + ${ls.remaining} remaining = ${ls.total}`;
     if (nowPoint && telescopeCanOverlay) note = 'Line marker = live antenna projected on current line.';
-    else if (nowPoint) note = 'Line marker uses motion_stage=line timer only.';
+    else if (nowPoint) note = `Line marker uses ${lineProgress?.source || 'browser'} line timer; live antenna projection is unavailable.`;
     else if (lineProgress?.waiting) note = `Line marker waits for line motion: stage=${lineProgress.stage}.`;
     else note = 'No line-position marker: antenna coordinates do not match this map and no reliable line timer is available.';
   } else if (obsType.includes('grid')) {
