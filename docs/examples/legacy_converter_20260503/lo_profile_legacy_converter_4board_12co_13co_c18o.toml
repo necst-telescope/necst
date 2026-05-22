@@ -1,0 +1,257 @@
+# lo_profile reconstructed from the legacy converter configs supplied on 2026-05-03.
+#
+# Uploaded legacy files used as input:
+#   12co10.conf, 13co10.conf, c18o10.conf,
+#   12co21.conf, 13co21.conf, c18o21.conf
+#
+# Frequency convention:
+#   - sg_devices.*.sg_set_frequency_ghz is the frequency sent to the physical SG.
+#   - lo_roles.*.expected_lo_frequency_ghz is the effective LO after multiplier.
+#   - 100 GHz-band first local: 104.5 GHz = 17.4166666667 GHz x 6.
+#   - 200 GHz-band first local: 225.0 GHz = 32.1428571429 GHz x 7.
+#   - Second locals are not multiplied: multiplier = 1.
+#
+# IMPORTANT:
+#   The sg_devices table keys must match the actual [signal_generator.<id>] names
+#   in the NECST telescope config, e.g. /root/.necst/OMU1p85m_config.toml.
+#   If your actual 200 GHz first-local SG ID is not "band6_1st", change both
+#   [sg_devices.band6_1st] and lo_roles.band6_1st.sg_id consistently.
+
+schema_version = "lo_profile_v2"
+profile_id = "legacy_converter_12co_13co_c18o_omu1p85m_2026_05_03"
+
+# -----------------------------------------------------------------------------
+# Physical signal generators
+# -----------------------------------------------------------------------------
+
+[sg_devices.band3_1st]
+control_adapter = "necst_commander_signal_generator_set_v1"
+sg_set_frequency_ghz = 17.416666666666668
+sg_set_power_dbm = 3.0
+frequency_tolerance_hz = 10.0
+power_tolerance_db = 0.5
+output_required = true
+
+[sg_devices.band6_1st]
+control_adapter = "necst_commander_signal_generator_set_v1"
+sg_set_frequency_ghz = 32.142857142857146
+sg_set_power_dbm = 3.0
+frequency_tolerance_hz = 10.0
+power_tolerance_db = 0.5
+output_required = true
+
+[sg_devices.band3_usb_2nd]
+control_adapter = "necst_commander_signal_generator_set_v1"
+sg_set_frequency_ghz = 11.6
+sg_set_power_dbm = 15.0
+frequency_tolerance_hz = 10.0
+power_tolerance_db = 0.5
+output_required = true
+
+[sg_devices.band6_usb_2nd]
+control_adapter = "necst_commander_signal_generator_set_v1"
+sg_set_frequency_ghz = 4.0
+sg_set_power_dbm = 3.0
+frequency_tolerance_hz = 10.0
+power_tolerance_db = 0.5
+output_required = true
+
+[sg_devices.band36_lsb_2nd]
+control_adapter = "necst_commander_signal_generator_set_v1"
+sg_set_frequency_ghz = 6.35
+sg_set_power_dbm = 15.0
+frequency_tolerance_hz = 10.0
+power_tolerance_db = 0.5
+output_required = true
+
+# -----------------------------------------------------------------------------
+# Logical LO roles
+# -----------------------------------------------------------------------------
+# lo_roles convert physical SG outputs into effective LO frequencies used by the
+# frequency-axis calculation.  The 1st locals are multiplied; the 2nd locals are
+# direct SG frequencies.
+
+[lo_roles.band3_1st]
+source = "sg_device"
+sg_id = "band3_1st"
+multiplier = 6
+expected_lo_frequency_ghz = 104.5
+
+[lo_roles.band6_1st]
+source = "sg_device"
+sg_id = "band6_1st"
+multiplier = 7
+expected_lo_frequency_ghz = 225.0
+
+[lo_roles.band3_usb_2nd_11p6]
+source = "sg_device"
+sg_id = "band3_usb_2nd"
+multiplier = 1
+expected_lo_frequency_ghz = 11.6
+
+[lo_roles.band6_usb_2nd_4p0]
+source = "sg_device"
+sg_id = "band6_usb_2nd"
+multiplier = 1
+expected_lo_frequency_ghz = 4.0
+
+[lo_roles.band36_lsb_2nd_6p35]
+source = "sg_device"
+sg_id = "band36_lsb_2nd"
+multiplier = 1
+expected_lo_frequency_ghz = 6.35
+
+# -----------------------------------------------------------------------------
+# LO chains
+# -----------------------------------------------------------------------------
+# signed_lo_sum_plus_if_v1 represents the legacy converter result as:
+#
+#   sky_frequency = signed_lo_sum + if_frequency_sign * IF
+#
+# The signs below are algebraic signs in the final summed expression.  They are
+# chosen to reproduce the uploaded legacy configs exactly.
+
+[lo_chains.rx100_12co10_usb_lsb]
+# legacy 12co10.conf: lo1=104.5 GHz USB, lo2=11.6 GHz LSB
+# sky = 104.5 + 11.6 - IF = 116.1 - IF
+formula_version = "signed_lo_sum_plus_if_v1"
+lo_roles = ["band3_1st", "band3_usb_2nd_11p6"]
+sideband_signs = [1, 1]
+if_frequency_sign = -1
+
+[lo_chains.rx100_13co_c18o10_usb_lsb]
+# legacy 13co10.conf / c18o10.conf: lo1=104.5 GHz USB, lo2=6.35 GHz LSB
+# sky = 104.5 + 6.35 - IF = 110.85 - IF
+formula_version = "signed_lo_sum_plus_if_v1"
+lo_roles = ["band3_1st", "band36_lsb_2nd_6p35"]
+sideband_signs = [1, 1]
+if_frequency_sign = -1
+
+[lo_chains.rx200_12co21_usb_usb]
+# legacy 12co21.conf: lo1=225.0 GHz USB, lo2=4.0 GHz USB
+# sky = 225.0 + 4.0 + IF = 229.0 + IF
+formula_version = "signed_lo_sum_plus_if_v1"
+lo_roles = ["band6_1st", "band6_usb_2nd_4p0"]
+sideband_signs = [1, 1]
+if_frequency_sign = 1
+
+[lo_chains.rx200_13co_c18o21_lsb_lsb]
+# legacy 13co21.conf / c18o21.conf: lo1=225.0 GHz LSB, lo2=6.35 GHz LSB
+# sky = 225.0 - 6.35 + IF = 218.65 + IF
+formula_version = "signed_lo_sum_plus_if_v1"
+lo_roles = ["band6_1st", "band36_lsb_2nd_6p35"]
+sideband_signs = [1, -1]
+if_frequency_sign = 1
+
+# -----------------------------------------------------------------------------
+# Frequency axis
+# -----------------------------------------------------------------------------
+# This reproduces the uploaded legacy converter configs: 0.0--2.5 GHz baseband,
+# 32768 channels, channel centers.
+
+[frequency_axes.xffts_2p5GHz_32768ch]
+definition_mode = "band_start_stop"
+nchan = 32768
+band_start_hz = 0.0
+band_stop_hz = 2500000000.0
+channel_origin = "center"
+reverse = false
+ctype1 = "FREQ"
+cunit1 = "Hz"
+specsys = "TOPOCENT"
+veldef = "RADIO"
+store_freq_column = false
+
+# -----------------------------------------------------------------------------
+# Stream groups reconstructed from the uploaded old converter configs
+# -----------------------------------------------------------------------------
+# The 13CO/C18O pairs share a board and LO chain.  Use recording_window_setup
+# multi_window products to split the two rest frequencies when needed.
+
+[stream_groups.xffts_board1_12co21]
+spectrometer_key = "xffts"
+backend = "XFFTS"
+sampler = "xffts-board1"
+frequency_axis_id = "xffts_2p5GHz_32768ch"
+frontend = "OMU1P85M"
+lo_chain = "rx200_12co21_usb_usb"
+rest_frequency_ghz = 230.538
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+
+  [[stream_groups.xffts_board1_12co21.streams]]
+  stream_id = "xffts_board1"
+  db_stream_name = "xffts-board1"
+  board_id = 1
+  fdnum = 0
+  ifnum = 0
+  plnum = 0
+  polariza = "XX"
+  beam_id = "B00"
+
+[stream_groups.xffts_board2_13co21_c18o21]
+spectrometer_key = "xffts"
+backend = "XFFTS"
+sampler = "xffts-board2"
+frequency_axis_id = "xffts_2p5GHz_32768ch"
+frontend = "OMU1P85M"
+lo_chain = "rx200_13co_c18o21_lsb_lsb"
+rest_frequency_ghz = 220.399
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+
+  [[stream_groups.xffts_board2_13co21_c18o21.streams]]
+  stream_id = "xffts_board2"
+  db_stream_name = "xffts-board2"
+  board_id = 2
+  fdnum = 0
+  ifnum = 0
+  plnum = 0
+  polariza = "XX"
+  beam_id = "B00"
+
+[stream_groups.xffts_board3_12co10]
+spectrometer_key = "xffts"
+backend = "XFFTS"
+sampler = "xffts-board3"
+frequency_axis_id = "xffts_2p5GHz_32768ch"
+frontend = "OMU1P85M"
+lo_chain = "rx100_12co10_usb_lsb"
+rest_frequency_ghz = 115.271
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+
+  [[stream_groups.xffts_board3_12co10.streams]]
+  stream_id = "xffts_board3"
+  db_stream_name = "xffts-board3"
+  board_id = 3
+  fdnum = 0
+  ifnum = 0
+  plnum = 0
+  polariza = "XX"
+  beam_id = "B00"
+
+[stream_groups.xffts_board4_13co10_c18o10]
+spectrometer_key = "xffts"
+backend = "XFFTS"
+sampler = "xffts-board4"
+frequency_axis_id = "xffts_2p5GHz_32768ch"
+frontend = "OMU1P85M"
+lo_chain = "rx100_13co_c18o10_usb_lsb"
+rest_frequency_ghz = 110.201
+use_for_convert = true
+use_for_sunscan = true
+use_for_fit = true
+
+  [[stream_groups.xffts_board4_13co10_c18o10.streams]]
+  stream_id = "xffts_board4"
+  db_stream_name = "xffts-board4"
+  board_id = 4
+  fdnum = 0
+  ifnum = 0
+  plnum = 0
+  polariza = "XX"
+  beam_id = "B00"

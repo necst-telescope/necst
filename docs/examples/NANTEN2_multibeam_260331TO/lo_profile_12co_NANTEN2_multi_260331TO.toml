@@ -1,0 +1,228 @@
+# Auto-generated from 12co-NANTEN2-multi_260331TO.conf3.txt
+# New split configuration example: stream truth + shared frequency/LO definitions.
+schema_version = "lo_profile_v2"
+profile_id = "12co_NANTEN2_multi_260331TO_equivalent_update11"
+
+[frequency_axes.xffts_2GHz_32768ch]
+definition_mode = "band_start_stop"
+nchan = 32768
+# Current resolver key is *_hz. Equivalent: 0.0 MHz to 2000.0 MHz.
+band_start_hz = 0.0
+band_stop_hz = 2000000000.0
+channel_origin = "center"
+reverse = false
+ctype1 = "FREQ"
+cunit1 = "Hz"
+specsys = "TOPOCENT"
+veldef = "RADIO"
+store_freq_column = false
+
+[lo_chains.rx115_12co_usb_usb]
+formula_version = "legacy_two_stage_sideband_v1"
+lo1_ghz = 104.67120198
+sb1 = "USB"
+lo2_mhz = 9500
+sb2 = "USB"
+
+[lo_chains.rx115_110_usb_usb]
+formula_version = "legacy_two_stage_sideband_v1"
+lo1_ghz = 104.67120198
+sb1 = "USB"
+lo2_mhz = 4000
+sb2 = "USB"
+
+[lo_chains.rx230_12co_usb_usb]
+formula_version = "legacy_two_stage_sideband_v1"
+lo1_ghz = 225.635994
+sb1 = "USB"
+lo2_mhz = 4500
+sb2 = "USB"
+
+[stream_groups.nanten2_xffts_12co115]
+spectrometer_key = "xffts"
+backend = "XFFTS"
+sampler = "XFFTS1"
+frequency_axis_id = "xffts_2GHz_32768ch"
+frontend = "RX115"
+lo_chain = "rx115_12co_usb_usb"
+rest_frequency_ghz = 115.2712018
+
+  [[stream_groups.nanten2_xffts_12co115.streams]]
+  stream_id = "2LU"
+  db_stream_name = "xffts-board1"
+  board_id = 1
+  fdnum = 2
+  ifnum = 0
+  plnum = 1
+  polariza = "LL"
+  beam_id = "B02"
+
+  [[stream_groups.nanten2_xffts_12co115.streams]]
+  stream_id = "2RU"
+  db_stream_name = "xffts-board3"
+  board_id = 3
+  fdnum = 2
+  ifnum = 0
+  plnum = 0
+  polariza = "RR"
+  beam_id = "B02"
+
+  [[stream_groups.nanten2_xffts_12co115.streams]]
+  stream_id = "3LU"
+  db_stream_name = "xffts-board5"
+  board_id = 5
+  fdnum = 3
+  ifnum = 0
+  plnum = 1
+  polariza = "LL"
+  beam_id = "B03"
+
+  [[stream_groups.nanten2_xffts_12co115.streams]]
+  stream_id = "3RU"
+  db_stream_name = "xffts-board7"
+  board_id = 7
+  fdnum = 3
+  ifnum = 0
+  plnum = 0
+  polariza = "RR"
+  beam_id = "B03"
+
+  [[stream_groups.nanten2_xffts_12co115.streams]]
+  stream_id = "4LU"
+  db_stream_name = "xffts-board9"
+  board_id = 9
+  fdnum = 4
+  ifnum = 0
+  plnum = 1
+  polariza = "LL"
+  beam_id = "B04"
+
+  [[stream_groups.nanten2_xffts_12co115.streams]]
+  stream_id = "4RU"
+  db_stream_name = "xffts-board11"
+  board_id = 11
+  fdnum = 4
+  ifnum = 0
+  plnum = 0
+  polariza = "RR"
+  beam_id = "B04"
+
+  [[stream_groups.nanten2_xffts_12co115.streams]]
+  stream_id = "5LU"
+  db_stream_name = "xffts-board13"
+  board_id = 13
+  fdnum = 5
+  ifnum = 0
+  plnum = 1
+  polariza = "LL"
+  beam_id = "B05"
+
+  [[stream_groups.nanten2_xffts_12co115.streams]]
+  stream_id = "5RU"
+  db_stream_name = "xffts-board15"
+  board_id = 15
+  fdnum = 5
+  ifnum = 0
+  plnum = 0
+  polariza = "RR"
+  beam_id = "B05"
+
+[stream_groups.nanten2_xffts_110ghz]
+spectrometer_key = "xffts"
+backend = "XFFTS"
+sampler = "XFFTS1"
+frequency_axis_id = "xffts_2GHz_32768ch"
+frontend = "RX115"
+lo_chain = "rx115_110_usb_usb"
+rest_frequency_ghz = 110.2013543
+
+  [[stream_groups.nanten2_xffts_110ghz.streams]]
+  stream_id = "2LL"
+  db_stream_name = "xffts-board2"
+  board_id = 2
+  fdnum = 2
+  ifnum = 1
+  plnum = 1
+  polariza = "LL"
+  frontend = "RX230"
+  beam_id = "B02"
+
+  [[stream_groups.nanten2_xffts_110ghz.streams]]
+  stream_id = "2RL"
+  db_stream_name = "xffts-board4"
+  board_id = 4
+  fdnum = 2
+  ifnum = 1
+  plnum = 0
+  polariza = "RR"
+  beam_id = "B02"
+
+  [[stream_groups.nanten2_xffts_110ghz.streams]]
+  stream_id = "3RL"
+  db_stream_name = "xffts-board8"
+  board_id = 8
+  fdnum = 3
+  ifnum = 1
+  plnum = 0
+  polariza = "RR"
+  beam_id = "B03"
+
+  [[stream_groups.nanten2_xffts_110ghz.streams]]
+  stream_id = "4LL"
+  db_stream_name = "xffts-board10"
+  board_id = 10
+  fdnum = 4
+  ifnum = 1
+  plnum = 1
+  polariza = "LL"
+  beam_id = "B04"
+
+  [[stream_groups.nanten2_xffts_110ghz.streams]]
+  stream_id = "4RL"
+  db_stream_name = "xffts-board12"
+  board_id = 12
+  fdnum = 4
+  ifnum = 1
+  plnum = 0
+  polariza = "RR"
+  beam_id = "B04"
+
+  [[stream_groups.nanten2_xffts_110ghz.streams]]
+  stream_id = "5LL"
+  db_stream_name = "xffts-board14"
+  board_id = 14
+  fdnum = 5
+  ifnum = 1
+  plnum = 1
+  polariza = "LL"
+  beam_id = "B05"
+
+  [[stream_groups.nanten2_xffts_110ghz.streams]]
+  stream_id = "5RL"
+  db_stream_name = "xffts-board16"
+  board_id = 16
+  fdnum = 5
+  ifnum = 1
+  plnum = 0
+  polariza = "RR"
+  beam_id = "B05"
+
+[stream_groups.nanten2_xffts_12co230]
+spectrometer_key = "xffts"
+backend = "XFFTS"
+sampler = "XFFTS1"
+frequency_axis_id = "xffts_2GHz_32768ch"
+frontend = "RX230"
+lo_chain = "rx230_12co_usb_usb"
+rest_frequency_ghz = 230.5380000
+
+  [[stream_groups.nanten2_xffts_12co230.streams]]
+  stream_id = "1LU"
+  db_stream_name = "xffts-board6"
+  board_id = 6
+  fdnum = 1
+  ifnum = 0
+  plnum = 1
+  polariza = "LL"
+  beam_id = "B01"
+

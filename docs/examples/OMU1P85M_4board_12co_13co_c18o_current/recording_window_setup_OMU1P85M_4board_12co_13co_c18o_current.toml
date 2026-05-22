@@ -1,0 +1,51 @@
+# Original file: recording_window_setup.toml
+# Recorded time: 1778574683.6392784
+# recording_window_setup paired with lo_profile_OMU1P85M_4board_12co_13co_c18o_current.toml.
+#
+# This file is optional for SG apply, but is useful when resolving a spectral
+# recording snapshot and saving velocity windows.  13CO/C18O pairs are represented
+# as multi_window products on the shared board.
+
+schema_version = "recording_window_setup_v2"
+setup_id = "omu1p85m_4board_12co_13co_c18o_current_windows_2026_05_12"
+
+[defaults]
+mode = "spectrum"
+velocity_frame = "LSRK"
+velocity_definition = "radio"
+reference_time_policy = "setup_resolve_time"
+
+[recording_groups.xffts_board1_12co21]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["xffts_board1"]
+windows = [
+  { window_id = "12CO_J2_1", line_name = "12CO J=2-1", rest_frequency_ghz = 230.5380000, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0, fdnum = 1, ifnum = 0, plnum = 0 },
+]
+
+[recording_groups.xffts_board2_13co21_c18o21]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["xffts_board2"]
+windows = [
+  { window_id = "13CO_J2_1", line_name = "13CO J=2-1", rest_frequency_ghz = 220.3986842, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0, fdnum = 1, ifnum = 1, plnum = 0 },
+  { window_id = "C18O_J2_1", line_name = "C18O J=2-1", rest_frequency_ghz = 219.5603541, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0, fdnum = 1, ifnum = 2, plnum = 0 },
+]
+
+[recording_groups.xffts_board3_12co10]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["xffts_board3"]
+windows = [
+  { window_id = "12CO_J1_0", line_name = "12CO J=1-0", rest_frequency_ghz = 115.2712018, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0, fdnum = 2, ifnum = 0, plnum = 0 },
+]
+
+[recording_groups.xffts_board4_13co10_c18o10]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["xffts_board4"]
+windows = [
+  { window_id = "13CO_J1_0", line_name = "13CO J=1-0", rest_frequency_ghz = 110.2013543, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0, fdnum = 2, ifnum = 1, plnum = 0 },
+  { window_id = "C18O_J1_0", line_name = "C18O J=1-0", rest_frequency_ghz = 109.7821734, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0, fdnum = 2, ifnum = 2, plnum = 0 },
+]
+
