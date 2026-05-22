@@ -1544,6 +1544,7 @@ def resolve_velocity_window_to_channels(
     """Resolve a velocity window to an inclusive/exclusive full-channel range.
 
     Direction definitions:
+
     - full channel index is zero-based;
     - output ``computed_ch_start`` is inclusive;
     - output ``computed_ch_stop`` is exclusive;
