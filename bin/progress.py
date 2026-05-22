@@ -1900,7 +1900,7 @@ _HTML_TEMPLATE = """<!doctype html>
 @media (prefers-color-scheme: dark) {
   :root { --bg:#1b1b20; --fg:#eceff4; --panel:#202028; --muted:#aeb6c2; --border:#c8d0dc44; --plot-text:#eceff4; }
 }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .42rem; line-height: 1.15; font-size:12.2px; background:var(--bg); color:var(--fg); }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .42rem; line-height: 1.15; font-size:12.2px; background:var(--bg); color:var(--fg); -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 header { display:flex; gap:1rem; align-items:baseline; justify-content:space-between; flex-wrap:wrap; }
 h1 { font-size:.98rem; margin:0 0 .18rem; }
 .grid {
@@ -1911,8 +1911,9 @@ h1 { font-size:.98rem; margin:0 0 .18rem; }
   gap: var(--grid-gap);
   align-items:stretch;
 }
-.card { border:1px solid var(--border); border-radius:8px; padding:.42rem .46rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:0; height:100%; box-sizing:border-box; position:relative; overflow:auto; overscroll-behavior:contain; }
-.card h2 { font-size:.84rem; margin:.01rem 0 .22rem; letter-spacing:.01em; }
+.card { border:1px solid var(--border); border-radius:8px; padding:.42rem .46rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:0; height:100%; box-sizing:border-box; position:relative; overflow:auto; overscroll-behavior:contain; font-size:var(--card-font-size, 12.2px); }
+.card-content { --card-visual-scale:1; transform-origin:top left; }
+.card h2 { font-size:1.10em; margin:.01rem 0 .22rem; letter-spacing:.01em; padding-right:3.9rem; }
 .kv { display:grid; grid-template-columns: 5.9rem minmax(0,1fr); gap:.06rem .28rem; align-items:baseline; }
 .obsview .kv { grid-template-columns: 5.8rem minmax(0,1fr); }
 .planinfoview .kv, .activityview .kv { grid-template-columns: 4.7rem minmax(0,1fr); }
@@ -1921,8 +1922,8 @@ h1 { font-size:.98rem; margin:0 0 .18rem; }
 .queueview .kv { grid-template-columns: 5.9rem minmax(0,1fr); }
 .spectrometerview .kv { grid-template-columns: 4.6rem minmax(0,1fr); }
 .traceview .kv { grid-template-columns: 4.6rem minmax(0,1fr); }
-.bigpos { grid-template-columns: 6.5rem minmax(0,1fr); font-size:.80rem; }
-.bigpos .v.important-pos { font-size:1.03rem; font-weight:700; }
+.bigpos { grid-template-columns: 6.5rem minmax(0,1fr); font-size:1.05em; }
+.bigpos .v.important-pos { font-size:1.35em; font-weight:700; }
 .v.ok-pos { color:var(--ok); font-weight:700; }
 .v.important-pos { font-weight:700; }
 .v.warning-pos { color:var(--warn); font-weight:800; }
@@ -1931,16 +1932,16 @@ h1 { font-size:.98rem; margin:0 0 .18rem; }
 .k { color:var(--muted); }
 .v { min-width:0; overflow-wrap:break-word; word-break:normal; }
 .traceview .v, .eventview .v { overflow-wrap:anywhere; }
-#trace .k, #trace .v { font-size:.76rem; line-height:1.05; }
+#trace .k, #trace .v { font-size:1.00em; line-height:1.05; }
 #paths .v { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .filesview .kv { grid-template-columns:4.2rem minmax(0,1fr); }
-#paths .k, #paths .v { font-size:.64rem; line-height:1.05; }
+#paths .k, #paths .v { font-size:.84em; line-height:1.05; }
 .status { font-weight:700; padding:.08rem .38rem; border-radius:999px; border:1px solid var(--border); }
 .status.running, .status.finished { color:var(--ok); } .status.error, .status.aborted { color:var(--err); } .status.cleanup { color:var(--warn); }
 .bar { width:100%; height:.86rem; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:#9992; margin-top:.35rem; }
 .fill { height:100%; width:0%; background:currentColor; color:var(--ok); transition:width .2s; }
-pre { white-space:pre-wrap; overflow:auto; max-height:7.2rem; margin:.12rem 0 0; font-size:.69rem; }
-table { border-collapse:collapse; width:100%; font-size:.69rem; table-layout:fixed; }
+pre { white-space:pre-wrap; overflow:auto; max-height:7.2rem; margin:.12rem 0 0; font-size:.91em; }
+table { border-collapse:collapse; width:100%; font-size:.91em; table-layout:fixed; }
 th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem .13rem; vertical-align:top; overflow:hidden; text-overflow:ellipsis; }
 #events { overflow:auto; max-height:7.2rem; }
 #events table { table-layout:auto; }
@@ -1950,17 +1951,18 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
 .plotbox { min-height: 210px; display:flex; align-items:center; justify-content:center; }
 .plotbox svg { width:100%; height:100%; max-height:none; color:var(--plot-text); }
 .plotbox svg text { fill: currentColor; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
-.legend { display:flex; gap:.45rem; flex-wrap:wrap; margin:.08rem 0 .14rem; font-size:.70rem; color:var(--muted); }
-.legend-note { flex-basis:auto; font-size:.68rem; }
+.legend { display:flex; gap:.45rem; flex-wrap:wrap; margin:.08rem 0 .14rem; font-size:.92em; color:var(--muted); }
+.legend-note { flex-basis:auto; font-size:.89em; }
 .dot { display:inline-block; width:.62rem; height:.62rem; border-radius:999px; vertical-align:-.06rem; margin-right:.18rem; }
 .small { font-size:.70rem; color:var(--muted); }
+.card .small { font-size:.92em; }
 .queueview, .spectrometerview, .traceview, .envview, .terminalview, .filesview, .eventview { min-height: 0; }
 .planview { min-height:0; }
 .planview .plotbox { min-height: 0; height: calc(100% - 3.0rem); }
 .planview svg { max-height:none; }
 #terminal { max-height: none; }
-.axis-label { font-size:11px; fill:currentColor; }
-.plot-note { font-size:11px; fill:currentColor; }
+.axis-label { font-size:var(--card-plot-font-size, 11px); fill:currentColor; }
+.plot-note { font-size:var(--card-plot-font-size, 11px); fill:currentColor; }
 .important { font-weight:700; color:var(--warn); }
 .critical { color:var(--err); font-weight:800; }
 .warning { margin:.25rem 0 .5rem; padding:.5rem .65rem; border:2px solid var(--err); border-radius:9px; background:#c1121f22; color:var(--fg); font-size:.98rem; font-weight:750; }
@@ -1999,10 +2001,37 @@ body.narrow-layout .kv, body.narrow-layout .bigpos, body.narrow-layout .obsview 
 .layout-btn:hover { background:#9992; }
 body.layout-unlocked .grid { background-image: linear-gradient(to right, #ff7f0e22 1px, transparent 1px), linear-gradient(to bottom, #ff7f0e18 1px, transparent 1px); background-size: calc((100% - 11*var(--grid-gap))/12 + var(--grid-gap)) calc(var(--grid-row-h) + var(--grid-gap)); }
 body.layout-unlocked .card { outline:1px dashed #ff7f0e88; cursor:grab; }
-body.layout-unlocked .card h2::after { content:"  drag / resize"; font-size:.64rem; color:var(--warn); font-weight:500; }
+body.layout-unlocked .card h2::after { content:"  drag / resize / font"; font-size:.64rem; color:var(--warn); font-weight:500; }
 body.layout-unlocked .card.dragging { opacity:.55; cursor:grabbing; }
 body.layout-unlocked .card.drag-over { outline:2px solid #ff7f0e; }
 body.layout-unlocked .plotbox, body.layout-unlocked pre, body.layout-unlocked table { pointer-events:none; }
+.card-font-tools { display:none; position:absolute; right:.30rem; top:.25rem; align-items:center; gap:.10rem; z-index:4; font-size:10px; line-height:1; touch-action:manipulation; }
+body.layout-unlocked .card-font-tools, .card:hover .card-font-tools { display:flex; }
+.card-font-btn, .card-font-reset { font:inherit; line-height:1; padding:.10rem .18rem; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--fg); cursor:pointer; opacity:.92; }
+.card-font-btn:hover, .card-font-reset:hover { background:#9992; }
+.card-font-reset { min-width:2.3rem; text-align:center; color:var(--muted); }
+body.safari-browser .card-font-reset { min-width:3.9rem; }
+body.safari-browser .card.safari-density-dense { padding:.32rem .34rem; }
+body.safari-browser .card.safari-density-compact { padding:.37rem .40rem; }
+body.safari-browser .card.safari-density-large { padding:.46rem .50rem; }
+body.safari-browser .card.safari-density-xlarge { padding:.52rem .56rem; }
+body.safari-browser .card.safari-density-dense .card-content { line-height:1.04; }
+body.safari-browser .card.safari-density-compact .card-content { line-height:1.08; }
+body.safari-browser .card.safari-density-large .card-content { line-height:1.20; }
+body.safari-browser .card.safari-density-xlarge .card-content { line-height:1.24; }
+body.safari-browser .card.safari-density-dense h2 { margin:0 0 .10rem; }
+body.safari-browser .card.safari-density-compact h2 { margin:0 0 .16rem; }
+body.safari-browser .card.safari-density-large h2 { margin:.02rem 0 .28rem; }
+body.safari-browser .card.safari-density-xlarge h2 { margin:.03rem 0 .34rem; }
+body.safari-browser .card.safari-density-dense .kv { gap:.025rem .18rem; }
+body.safari-browser .card.safari-density-compact .kv { gap:.04rem .23rem; }
+body.safari-browser .card.safari-density-large .kv { gap:.08rem .32rem; }
+body.safari-browser .card.safari-density-xlarge .kv { gap:.10rem .38rem; }
+body.safari-browser .card.safari-density-dense th, body.safari-browser .card.safari-density-dense td { padding:.055rem .075rem; }
+body.safari-browser .card.safari-density-compact th, body.safari-browser .card.safari-density-compact td { padding:.075rem .10rem; }
+body.safari-browser .card.safari-density-large th, body.safari-browser .card.safari-density-large td { padding:.13rem .16rem; }
+body.safari-browser .card.safari-density-xlarge th, body.safari-browser .card.safari-density-xlarge td { padding:.16rem .19rem; }
+body.layout-unlocked .card-font-tools { pointer-events:auto; }
 .resize-grip { display:none; position:absolute; right:2px; bottom:2px; width:15px; height:15px; border-right:2px solid var(--warn); border-bottom:2px solid var(--warn); opacity:.75; cursor:nwse-resize; border-radius:2px; }
 body.layout-unlocked .resize-grip { display:block; pointer-events:auto; }
 body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse-resize; }
@@ -2029,8 +2058,8 @@ body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse
 </div>
 <script>
 const refreshMs = __REFRESH_MS__;
-const layoutStorageKey = 'necst-progress-card-layout-v48';
-const oldLayoutStorageKeys = ['necst-progress-card-layout-v47', 'necst-progress-card-layout-v46', 'necst-progress-card-layout-v45', 'necst-progress-card-layout-v44', 'necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
+const layoutStorageKey = 'necst-progress-card-layout-v52';
+const oldLayoutStorageKeys = ['necst-progress-card-layout-v51', 'necst-progress-card-layout-v50', 'necst-progress-card-layout-v49', 'necst-progress-card-layout-v48', 'necst-progress-card-layout-v47', 'necst-progress-card-layout-v46', 'necst-progress-card-layout-v45', 'necst-progress-card-layout-v44', 'necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
 const defaultCardLayout = [
   {id:'position', col:3, row:12},
   {id:'observation', col:3, row:12},
@@ -2052,13 +2081,50 @@ let dragCardId = null;
 let activeResize = null;
 const defaultGridRowPx = 12.8;
 const minGridRowPx = 8.0;
-const maxGridRowPx = 24.0;
+const maxGridRowPx = 72.0;
 const gridRowStepPx = 1.0;
+const defaultCardFontScale = 1.0;
+const minCardFontScale = 0.70;
+const maxCardFontScale = 1.40;
+const cardFontScaleStep = 0.05;
+const supportsCssZoom = (() => { try { return !!(window.CSS && CSS.supports && CSS.supports('zoom', '1')); } catch (_) { return false; } })();
+const isSafariBrowser = (() => {
+  const ua = String(navigator.userAgent || '');
+  const vendor = String(navigator.vendor || '');
+  return /Safari/i.test(ua) && /Apple/i.test(vendor) && !/(Chrome|Chromium|CriOS|FxiOS|Edg|OPR|Android)/i.test(ua);
+})();
+const safariCardFontModes = [
+  {label:'Dense', scale:0.78, visual:0.86, className:'safari-density-dense', plotPx:9.5},
+  {label:'Compact', scale:0.90, visual:0.94, className:'safari-density-compact', plotPx:10.2},
+  {label:'Normal', scale:1.00, visual:1.00, className:'safari-density-normal', plotPx:11.0},
+  {label:'Large', scale:1.16, visual:1.12, className:'safari-density-large', plotPx:12.2},
+  {label:'XL', scale:1.32, visual:1.24, className:'safari-density-xlarge', plotPx:13.2}
+];
+const safariDensityClasses = safariCardFontModes.map(m => m.className);
 const narrowLayoutThresholdPx = 1100;
 function clampNumber(x, lo, hi) {
   const n = Number(x);
   if (!Number.isFinite(n)) return lo;
   return Math.max(lo, Math.min(hi, n));
+}
+function safariFontModeForScale(scale) {
+  const value = clampNumber(scale, minCardFontScale, maxCardFontScale);
+  let best = safariCardFontModes[0];
+  let bestDiff = Infinity;
+  for (const mode of safariCardFontModes) {
+    const diff = Math.abs(value - mode.scale);
+    if (diff < bestDiff) { best = mode; bestDiff = diff; }
+  }
+  return best;
+}
+function safariNextFontScale(current, direction) {
+  const mode = safariFontModeForScale(current);
+  const index = safariCardFontModes.findIndex(m => m.label === mode.label);
+  const nextIndex = clampNumber(index + direction, 0, safariCardFontModes.length - 1);
+  return safariCardFontModes[nextIndex].scale;
+}
+function cardFontReadout(scale) {
+  return isSafariBrowser ? safariFontModeForScale(scale).label : `${Math.round(clampNumber(scale, minCardFontScale, maxCardFontScale) * 100)}%`;
 }
 function applyGridRowHeight(rowPx) {
   const px = clampNumber(rowPx, minGridRowPx, maxGridRowPx);
@@ -2091,14 +2157,18 @@ function validLayoutOrder(order) {
 }
 function defaultLayoutState() {
   const sizes = {};
-  for (const spec of defaultCardLayout) sizes[spec.id] = {col: spec.col, row: spec.row};
-  return {order: defaultLayoutCards.slice(), sizes, rowPx: defaultGridRowPx};
+  const fontScales = {};
+  for (const spec of defaultCardLayout) {
+    sizes[spec.id] = {col: spec.col, row: spec.row};
+    fontScales[spec.id] = defaultCardFontScale;
+  }
+  return {order: defaultLayoutCards.slice(), sizes, rowPx: defaultGridRowPx, fontScales};
 }
 function normalizeLayoutState(raw) {
   const def = defaultLayoutState();
   if (Array.isArray(raw)) {
     const order = validLayoutOrder(raw);
-    return order ? {order, sizes: def.sizes, rowPx: def.rowPx} : def;
+    return order ? {order, sizes: def.sizes, rowPx: def.rowPx, fontScales: def.fontScales} : def;
   }
   if (!raw || typeof raw !== 'object') return def;
   const order = validLayoutOrder(raw.order) || def.order;
@@ -2110,8 +2180,13 @@ function normalizeLayoutState(raw) {
       row: clampNumber(src?.row ?? Math.round((src?.minHeight ?? spec.row * 22) / 22) ?? spec.row, 3, 60)
     };
   }
+  const fontScales = {};
+  for (const spec of defaultCardLayout) {
+    const rawFonts = raw.fontScales && typeof raw.fontScales === 'object' ? raw.fontScales : {};
+    fontScales[spec.id] = clampNumber(rawFonts[spec.id] ?? def.fontScales[spec.id], minCardFontScale, maxCardFontScale);
+  }
   const rowPx = clampNumber(raw.rowPx ?? raw.gridRowPx ?? def.rowPx, minGridRowPx, maxGridRowPx);
-  return {order, sizes, rowPx};
+  return {order, sizes, rowPx, fontScales};
 }
 function readLayoutState() {
   try {
@@ -2128,6 +2203,59 @@ function setCardDraggable(card, enabled) {
   card.draggable = !!enabled;
   card.setAttribute('aria-grabbed', enabled ? 'false' : 'false');
 }
+function ensureCardContentWrapper(card) {
+  if (!card) return null;
+  const existing = directChildByClass(card, 'card-content');
+  if (existing) return existing;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'card-content';
+  const children = Array.from(card.childNodes);
+  for (const child of children) {
+    if (child.nodeType === 1 && child.classList && (child.classList.contains('card-font-tools') || child.classList.contains('resize-grip'))) continue;
+    wrapper.appendChild(child);
+  }
+  card.insertBefore(wrapper, card.firstChild);
+  return wrapper;
+}
+function applyCardVisualScale(card, fontScale) {
+  if (!card) return;
+  const requestedScale = clampNumber(fontScale, minCardFontScale, maxCardFontScale);
+  const content = ensureCardContentWrapper(card);
+  card.classList.remove(...safariDensityClasses);
+  card.dataset.fontScale = String(requestedScale);
+  card.style.setProperty('--card-font-scale', String(requestedScale));
+  card.style.setProperty('--card-font-size', '12.2px');
+  card.style.setProperty('--card-plot-font-size', '11px');
+  card.style.fontSize = '12.2px';
+  if (!content) return;
+  content.style.transformOrigin = 'top left';
+  if (isSafariBrowser) {
+    // Safari showed non-linear behavior with continuous font-size/zoom scaling
+    // (for example, 70% becoming much smaller while nearby values barely changed).
+    // Keep Chrome/Firefox unchanged, but use discrete density modes and transform
+    // scaling only for Safari so the effect is visible and stable.
+    const mode = safariFontModeForScale(requestedScale);
+    card.classList.add(mode.className);
+    card.dataset.fontMode = mode.label;
+    card.style.setProperty('--card-plot-font-size', `${mode.plotPx}px`);
+    content.style.setProperty('--card-visual-scale', String(mode.visual));
+    content.style.zoom = '';
+    content.style.transform = mode.visual === 1 ? '' : `scale(${mode.visual})`;
+    content.style.width = mode.visual === 1 ? '' : `${(100 / Math.max(0.01, mode.visual)).toFixed(3)}%`;
+    return;
+  }
+  delete card.dataset.fontMode;
+  content.style.setProperty('--card-visual-scale', String(requestedScale));
+  if (supportsCssZoom) {
+    content.style.zoom = String(requestedScale);
+    content.style.transform = '';
+    content.style.width = '';
+  } else {
+    content.style.zoom = '';
+    content.style.transform = `scale(${requestedScale})`;
+    content.style.width = `${(100 / Math.max(0.01, requestedScale)).toFixed(3)}%`;
+  }
+}
 function applyLayoutState(state) {
   const valid = normalizeLayoutState(state);
   applyGridRowHeight(valid.rowPx);
@@ -2136,6 +2264,7 @@ function applyLayoutState(state) {
   valid.order.forEach((cardId, index) => {
     const el = document.querySelector(`[data-card-id="${cardId}"]`);
     if (!el) return;
+    ensureCardContentWrapper(el);
     const size = valid.sizes[cardId] || {col: 3, row: 8};
     const storedCol = clampNumber(size.col, 1, 12);
     const col = clampNumber(storedCol, 1, Math.max(1, maxCols));
@@ -2145,6 +2274,10 @@ function applyLayoutState(state) {
     el.style.gridRow = `span ${row}`;
     el.dataset.layoutCol = String(storedCol);
     el.dataset.layoutRow = String(row);
+    const fontScale = clampNumber(valid.fontScales?.[cardId] ?? defaultCardFontScale, minCardFontScale, maxCardFontScale);
+    applyCardVisualScale(el, fontScale);
+    const fontReadout = directChildByClass(el, 'card-font-tools')?.querySelector('.card-font-reset');
+    if (fontReadout) fontReadout.textContent = cardFontReadout(fontScale);
     el.style.minHeight = '';
     delete el.dataset.layoutMinHeight;
   });
@@ -2155,16 +2288,18 @@ function currentLayoutState() {
   cards.sort((a, b) => Number(a.style.order || 0) - Number(b.style.order || 0));
   const order = validLayoutOrder(cards.map(c => c.dataset.cardId)) || readLayoutState().order || def.order;
   const sizes = {};
+  const fontScales = {};
   for (const spec of defaultCardLayout) {
     const card = document.querySelector(`[data-card-id="${spec.id}"]`);
     sizes[spec.id] = {
       col: clampNumber(card?.dataset.layoutCol ?? spec.col, 1, 12),
       row: clampNumber(card?.dataset.layoutRow ?? spec.row ?? 8, 3, 60)
     };
+    fontScales[spec.id] = clampNumber(card?.dataset.fontScale ?? def.fontScales[spec.id], minCardFontScale, maxCardFontScale);
   }
   const cssRow = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--grid-row-h'));
   const rowPx = clampNumber(cssRow || def.rowPx, minGridRowPx, maxGridRowPx);
-  return {order, sizes, rowPx};
+  return {order, sizes, rowPx, fontScales};
 }
 function moveCardInOrder(order, fromId, toId) {
   const next = order.slice();
@@ -2187,8 +2322,15 @@ function setLayoutUnlocked(enabled) {
   const btn = document.getElementById('layoutToggle');
   if (btn) btn.textContent = layoutUnlocked ? 'Layout: unlocked' : 'Layout: locked';
 }
+function directChildByClass(parent, className) {
+  if (!parent || !parent.children) return null;
+  for (const child of parent.children) {
+    if (child.classList && child.classList.contains(className)) return child;
+  }
+  return null;
+}
 function ensureResizeGrip(card) {
-  if (card.querySelector(':scope > .resize-grip')) return;
+  if (directChildByClass(card, 'resize-grip')) return;
   const grip = document.createElement('div');
   grip.className = 'resize-grip';
   grip.title = 'Drag to resize this card in grid columns/rows; Reset layout restores defaults';
@@ -2242,7 +2384,51 @@ function ensureResizeGrip(card) {
   grip.addEventListener('dragstart', (event) => event.preventDefault());
   card.appendChild(grip);
 }
+function setCardFontScale(card, scale) {
+  if (!card || !card.dataset.cardId) return;
+  const state = currentLayoutState();
+  const id = card.dataset.cardId;
+  state.fontScales[id] = clampNumber(scale, minCardFontScale, maxCardFontScale);
+  saveAndApplyLayout(state);
+}
+function ensureCardFontControls(card) {
+  if (directChildByClass(card, 'card-font-tools')) return;
+  const tools = document.createElement('div');
+  tools.className = 'card-font-tools';
+  tools.title = 'Per-card visual text scale. Values are saved in this browser; Reset layout restores defaults.';
+  const dec = document.createElement('button');
+  dec.type = 'button';
+  dec.className = 'card-font-btn';
+  dec.textContent = 'A−';
+  dec.title = 'Make this card font smaller';
+  const reset = document.createElement('button');
+  reset.type = 'button';
+  reset.className = 'card-font-reset';
+  reset.textContent = '100%';
+  reset.title = 'Reset this card font size';
+  const inc = document.createElement('button');
+  inc.type = 'button';
+  inc.className = 'card-font-btn';
+  inc.textContent = 'A+';
+  inc.title = 'Make this card font larger';
+  const stopBubble = (event) => { event.stopPropagation(); };
+  const stopDrag = (event) => { event.preventDefault(); event.stopPropagation(); };
+  const handleClick = (event) => { event.preventDefault(); event.stopPropagation(); };
+  for (const el of [dec, reset, inc, tools]) {
+    el.draggable = false;
+    el.addEventListener('pointerdown', stopBubble);
+    el.addEventListener('mousedown', stopBubble);
+    el.addEventListener('touchstart', stopBubble, {passive:true});
+    el.addEventListener('dragstart', stopDrag);
+  }
+  dec.addEventListener('click', (event) => { handleClick(event); const cur = clampNumber(card.dataset.fontScale ?? defaultCardFontScale, minCardFontScale, maxCardFontScale); setCardFontScale(card, isSafariBrowser ? safariNextFontScale(cur, -1) : cur - cardFontScaleStep); });
+  reset.addEventListener('click', (event) => { handleClick(event); setCardFontScale(card, defaultCardFontScale); });
+  inc.addEventListener('click', (event) => { handleClick(event); const cur = clampNumber(card.dataset.fontScale ?? defaultCardFontScale, minCardFontScale, maxCardFontScale); setCardFontScale(card, isSafariBrowser ? safariNextFontScale(cur, +1) : cur + cardFontScaleStep); });
+  tools.append(dec, reset, inc);
+  card.appendChild(tools);
+}
 function initLayoutEditor() {
+  document.body.classList.toggle('safari-browser', isSafariBrowser);
   applyLayoutState(readLayoutState());
   const toggle = document.getElementById('layoutToggle');
   const reset = document.getElementById('layoutReset');
@@ -2265,6 +2451,8 @@ function initLayoutEditor() {
     setLayoutUnlocked(false);
   });
   for (const card of document.querySelectorAll('.card[data-card-id]')) {
+    ensureCardContentWrapper(card);
+    ensureCardFontControls(card);
     ensureResizeGrip(card);
     setCardDraggable(card, false);
     card.addEventListener('dragstart', (event) => {
