@@ -26,6 +26,7 @@ from .spectral_recording_sequence import (
     save_sidecars_with_commander,
     set_gate_with_commander,
     clear_setup_with_commander,
+    run_sg_preflight_with_commander,
     reject_legacy_recording_kwargs_for_setup,
     SpectralRecordingObservationSetup,
 )
@@ -74,6 +75,24 @@ class FileBasedObservation(Observation):
         if setup is None:
             return
         reject_legacy_recording_kwargs_for_setup(self._kwargs, setup)
+        sg_results = run_sg_preflight_with_commander(self.com, setup)
+        if sg_results:
+            failed = [
+                sg_id
+                for sg_id, result in sg_results.items()
+                if not bool(result.get("success", False))
+            ]
+            if failed:
+                self.logger.warning(
+                    "SG preflight completed with warnings only; "
+                    f"policy={setup.sg_preflight_policy!r}, failed={failed}"
+                )
+            else:
+                self.logger.info(
+                    "SG preflight completed before recorder start; "
+                    f"policy={setup.sg_preflight_policy!r}, "
+                    f"scope={setup.sg_preflight_scope!r}, n_sg={len(sg_results)}"
+                )
         apply_setup_with_commander(self.com, setup)
         self._spectral_recording_setup = setup
         self._spectral_recording_gate_open = False
