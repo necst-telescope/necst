@@ -1895,6 +1895,7 @@ _HTML_TEMPLATE = """<!doctype html>
   color-scheme: light dark;
   --ok:#1a7f37; --warn:#b54708; --err:#c1121f;
   --bg:#ffffff; --fg:#1f2328; --panel:#ffffff; --muted:#606975; --border:#8c959f55; --plot-text:#1f2328;
+  --grid-row-h: 12.8px; --grid-gap: .38rem;
 }
 @media (prefers-color-scheme: dark) {
   :root { --bg:#1b1b20; --fg:#eceff4; --panel:#202028; --muted:#aeb6c2; --border:#c8d0dc44; --plot-text:#eceff4; }
@@ -1906,8 +1907,8 @@ h1 { font-size:.98rem; margin:0 0 .18rem; }
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-auto-flow: row dense;
-  grid-auto-rows: 1.05rem;
-  gap: .38rem;
+  grid-auto-rows: var(--grid-row-h);
+  gap: var(--grid-gap);
   align-items:stretch;
 }
 .card { border:1px solid var(--border); border-radius:8px; padding:.42rem .46rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:0; height:100%; box-sizing:border-box; position:relative; overflow:auto; overscroll-behavior:contain; }
@@ -1915,10 +1916,10 @@ h1 { font-size:.98rem; margin:0 0 .18rem; }
 .kv { display:grid; grid-template-columns: 5.9rem minmax(0,1fr); gap:.06rem .28rem; align-items:baseline; }
 .obsview .kv { grid-template-columns: 5.8rem minmax(0,1fr); }
 .planinfoview .kv, .activityview .kv { grid-template-columns: 4.7rem minmax(0,1fr); }
-.envview .kv { grid-template-columns: 6.0rem minmax(0,1fr); }
+.envview .kv { grid-template-columns: 4.9rem minmax(0,1fr); }
 .geometryview .kv { grid-template-columns: 5.0rem minmax(0,1fr); }
 .queueview .kv { grid-template-columns: 5.9rem minmax(0,1fr); }
-.spectrometerview .kv { grid-template-columns: 5.1rem minmax(0,1fr); }
+.spectrometerview .kv { grid-template-columns: 4.6rem minmax(0,1fr); }
 .traceview .kv { grid-template-columns: 4.6rem minmax(0,1fr); }
 .bigpos { grid-template-columns: 6.5rem minmax(0,1fr); font-size:.80rem; }
 .bigpos .v.important-pos { font-size:1.03rem; font-weight:700; }
@@ -1947,7 +1948,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
 #events th:nth-child(2), #events td:nth-child(2) { width:7.6rem; }
 #events th:nth-child(3), #events td:nth-child(3) { width:auto; }
 .plotbox { min-height: 210px; display:flex; align-items:center; justify-content:center; }
-.plotbox svg { width:100%; height:auto; max-height:34vh; color:var(--plot-text); }
+.plotbox svg { width:100%; height:100%; max-height:none; color:var(--plot-text); }
 .plotbox svg text { fill: currentColor; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
 .legend { display:flex; gap:.45rem; flex-wrap:wrap; margin:.08rem 0 .14rem; font-size:.70rem; color:var(--muted); }
 .legend-note { flex-basis:auto; font-size:.68rem; }
@@ -1956,7 +1957,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
 .queueview, .spectrometerview, .traceview, .envview, .terminalview, .filesview, .eventview { min-height: 0; }
 .planview { min-height:0; }
 .planview .plotbox { min-height: 0; height: calc(100% - 3.0rem); }
-.planview svg { max-height: 31vh; }
+.planview svg { max-height:none; }
 #terminal { max-height: none; }
 .axis-label { font-size:11px; fill:currentColor; }
 .plot-note { font-size:11px; fill:currentColor; }
@@ -1966,28 +1967,37 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
 .notice { margin:.25rem 0 .5rem; padding:.42rem .55rem; border:1px solid var(--border); border-radius:9px; background:#9991; }
 @media (min-width: 1500px) {
   .planview .plotbox { min-height: 200px; }
-  .planview svg { max-height: 29vh; }
+  .planview svg { max-height:none; }
 }
 @media (max-width: 1100px) {
   .grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .planview .plotbox { min-height: 210px; }
-  .planview svg { max-height: 32vh; }
+  .planview svg { max-height:none; }
 }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   body { padding: .45rem; }
-  .grid { grid-template-columns: minmax(0, 1fr); }
-  .card[data-card-id] { grid-column: 1 / -1 !important; grid-row:auto !important; min-height:auto !important; height:auto !important; }
+  /* Narrow browser windows must fall back to a normal vertical dashboard.
+     Keep user-defined order via flexbox order, but ignore grid row/column spans.
+     Without this, grid-auto-rows makes each auto-placed card collapse to one
+     tiny row when the viewport becomes narrow. */
+  .grid { display:flex; flex-direction:column; gap:.45rem; grid-template-columns:none; grid-auto-rows:auto; }
+  .card[data-card-id] { grid-column:auto !important; grid-row:auto !important; min-height:auto !important; height:auto !important; overflow:visible; }
   .plotbox { min-height: 260px; }
-  .planview .plotbox { min-height: 270px; }
-  .planview svg { max-height: 48vh; }
+  .planview .plotbox { height:min(72vw, 430px) !important; min-height:270px; }
+  .planview svg { max-height:none; }
   .kv, .bigpos, .obsview .kv, .planinfoview .kv, .activityview .kv { grid-template-columns: 7.0rem minmax(0, 1fr); }
 }
+body.narrow-layout .grid { display:flex; flex-direction:column; gap:.45rem; grid-template-columns:none; grid-auto-rows:auto; }
+body.narrow-layout .card[data-card-id] { grid-column:auto !important; grid-row:auto !important; min-height:auto !important; height:auto !important; overflow:visible; }
+body.narrow-layout .plotbox { min-height:260px; }
+body.narrow-layout .planview .plotbox { height:min(72vw, 430px) !important; min-height:270px; }
+body.narrow-layout .kv, body.narrow-layout .bigpos, body.narrow-layout .obsview .kv, body.narrow-layout .planinfoview .kv, body.narrow-layout .activityview .kv { grid-template-columns:7.0rem minmax(0, 1fr); }
 
 .header-tools { display:flex; align-items:center; gap:.55rem; flex-wrap:wrap; justify-content:flex-end; }
 .layout-tools { display:inline-flex; align-items:center; gap:.22rem; }
 .layout-btn { font:inherit; font-size:.70rem; line-height:1.05; padding:.16rem .36rem; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--fg); cursor:pointer; }
 .layout-btn:hover { background:#9992; }
-body.layout-unlocked .grid { background-image: linear-gradient(to right, #ff7f0e22 1px, transparent 1px), linear-gradient(to bottom, #ff7f0e18 1px, transparent 1px); background-size: calc((100% - 11*.38rem)/12 + .38rem) calc(1.05rem + .38rem); }
+body.layout-unlocked .grid { background-image: linear-gradient(to right, #ff7f0e22 1px, transparent 1px), linear-gradient(to bottom, #ff7f0e18 1px, transparent 1px); background-size: calc((100% - 11*var(--grid-gap))/12 + var(--grid-gap)) calc(var(--grid-row-h) + var(--grid-gap)); }
 body.layout-unlocked .card { outline:1px dashed #ff7f0e88; cursor:grab; }
 body.layout-unlocked .card h2::after { content:"  drag / resize"; font-size:.64rem; color:var(--warn); font-weight:500; }
 body.layout-unlocked .card.dragging { opacity:.55; cursor:grabbing; }
@@ -2000,7 +2010,7 @@ body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse
 </style>
 </head>
 <body>
-<header><h1>NECST Observation Progress</h1><div class="header-tools small"><span>Auto refresh: __REFRESH_MS__ ms</span><span class="layout-tools"><button type="button" id="layoutToggle" class="layout-btn" title="Unlock card layout editing">Layout: locked</button><button type="button" id="layoutReset" class="layout-btn" title="Restore the standard v44 card order and grid sizes">Reset layout</button></span><a href="/api/state">JSON</a></div></header>
+<header><h1>NECST Observation Progress</h1><div class="header-tools small"><span>Auto refresh: __REFRESH_MS__ ms</span><span class="layout-tools"><button type="button" id="layoutRowMinus" class="layout-btn" title="Make grid rows shorter">Row -</button><button type="button" id="layoutRowPlus" class="layout-btn" title="Make grid rows taller">Row +</button><button type="button" id="layoutToggle" class="layout-btn" title="Unlock card layout editing">Layout: locked</button><button type="button" id="layoutReset" class="layout-btn" title="Restore the standard card order and grid sizes">Reset layout</button></span><a href="/api/state">JSON</a></div></header>
 <div id=\"message\" class=\"small\">Loading...</div>
 <div class=\"grid\">
 <section class="card obsview" data-card-id="observation"><h2>Observation</h2><div class=\"kv\" id=\"observation\"></div></section>
@@ -2019,8 +2029,8 @@ body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse
 </div>
 <script>
 const refreshMs = __REFRESH_MS__;
-const layoutStorageKey = 'necst-progress-card-layout-v44';
-const oldLayoutStorageKeys = ['necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
+const layoutStorageKey = 'necst-progress-card-layout-v48';
+const oldLayoutStorageKeys = ['necst-progress-card-layout-v47', 'necst-progress-card-layout-v46', 'necst-progress-card-layout-v45', 'necst-progress-card-layout-v44', 'necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
 const defaultCardLayout = [
   {id:'position', col:3, row:12},
   {id:'observation', col:3, row:12},
@@ -2040,10 +2050,30 @@ const defaultLayoutCards = defaultCardLayout.map(x => x.id);
 let layoutUnlocked = false;
 let dragCardId = null;
 let activeResize = null;
+const defaultGridRowPx = 12.8;
+const minGridRowPx = 8.0;
+const maxGridRowPx = 24.0;
+const gridRowStepPx = 1.0;
+const narrowLayoutThresholdPx = 1100;
 function clampNumber(x, lo, hi) {
   const n = Number(x);
   if (!Number.isFinite(n)) return lo;
   return Math.max(lo, Math.min(hi, n));
+}
+function applyGridRowHeight(rowPx) {
+  const px = clampNumber(rowPx, minGridRowPx, maxGridRowPx);
+  document.documentElement.style.setProperty('--grid-row-h', `${px}px`);
+  return px;
+}
+function viewportWidthForLayout() {
+  const visual = window.visualViewport && Number.isFinite(window.visualViewport.width) ? window.visualViewport.width : Infinity;
+  const inner = Number.isFinite(window.innerWidth) ? window.innerWidth : Infinity;
+  const client = document.documentElement && Number.isFinite(document.documentElement.clientWidth) ? document.documentElement.clientWidth : Infinity;
+  return Math.min(visual, inner, client);
+}
+function updateNarrowLayoutClass() {
+  const width = viewportWidthForLayout();
+  document.body.classList.toggle('narrow-layout', width <= narrowLayoutThresholdPx);
 }
 function gridColumnCount() {
   const grid = document.querySelector('.grid');
@@ -2062,13 +2092,13 @@ function validLayoutOrder(order) {
 function defaultLayoutState() {
   const sizes = {};
   for (const spec of defaultCardLayout) sizes[spec.id] = {col: spec.col, row: spec.row};
-  return {order: defaultLayoutCards.slice(), sizes};
+  return {order: defaultLayoutCards.slice(), sizes, rowPx: defaultGridRowPx};
 }
 function normalizeLayoutState(raw) {
   const def = defaultLayoutState();
   if (Array.isArray(raw)) {
     const order = validLayoutOrder(raw);
-    return order ? {order, sizes: def.sizes} : def;
+    return order ? {order, sizes: def.sizes, rowPx: def.rowPx} : def;
   }
   if (!raw || typeof raw !== 'object') return def;
   const order = validLayoutOrder(raw.order) || def.order;
@@ -2080,7 +2110,8 @@ function normalizeLayoutState(raw) {
       row: clampNumber(src?.row ?? Math.round((src?.minHeight ?? spec.row * 22) / 22) ?? spec.row, 3, 60)
     };
   }
-  return {order, sizes};
+  const rowPx = clampNumber(raw.rowPx ?? raw.gridRowPx ?? def.rowPx, minGridRowPx, maxGridRowPx);
+  return {order, sizes, rowPx};
 }
 function readLayoutState() {
   try {
@@ -2099,17 +2130,20 @@ function setCardDraggable(card, enabled) {
 }
 function applyLayoutState(state) {
   const valid = normalizeLayoutState(state);
+  applyGridRowHeight(valid.rowPx);
+  updateNarrowLayoutClass();
   const maxCols = gridColumnCount();
   valid.order.forEach((cardId, index) => {
     const el = document.querySelector(`[data-card-id="${cardId}"]`);
     if (!el) return;
     const size = valid.sizes[cardId] || {col: 3, row: 8};
-    const col = clampNumber(size.col, 1, Math.max(1, maxCols));
+    const storedCol = clampNumber(size.col, 1, 12);
+    const col = clampNumber(storedCol, 1, Math.max(1, maxCols));
     const row = clampNumber(size.row ?? 8, 3, 60);
     el.style.order = String(index);
     el.style.gridColumn = `span ${col}`;
     el.style.gridRow = `span ${row}`;
-    el.dataset.layoutCol = String(col);
+    el.dataset.layoutCol = String(storedCol);
     el.dataset.layoutRow = String(row);
     el.style.minHeight = '';
     delete el.dataset.layoutMinHeight;
@@ -2128,7 +2162,9 @@ function currentLayoutState() {
       row: clampNumber(card?.dataset.layoutRow ?? spec.row ?? 8, 3, 60)
     };
   }
-  return {order, sizes};
+  const cssRow = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--grid-row-h'));
+  const rowPx = clampNumber(cssRow || def.rowPx, minGridRowPx, maxGridRowPx);
+  return {order, sizes, rowPx};
 }
 function moveCardInOrder(order, fromId, toId) {
   const next = order.slice();
@@ -2210,7 +2246,19 @@ function initLayoutEditor() {
   applyLayoutState(readLayoutState());
   const toggle = document.getElementById('layoutToggle');
   const reset = document.getElementById('layoutReset');
+  const rowMinus = document.getElementById('layoutRowMinus');
+  const rowPlus = document.getElementById('layoutRowPlus');
   if (toggle) toggle.addEventListener('click', () => setLayoutUnlocked(!layoutUnlocked));
+  if (rowMinus) rowMinus.addEventListener('click', () => {
+    const st = currentLayoutState();
+    st.rowPx = clampNumber(st.rowPx - gridRowStepPx, minGridRowPx, maxGridRowPx);
+    saveAndApplyLayout(st);
+  });
+  if (rowPlus) rowPlus.addEventListener('click', () => {
+    const st = currentLayoutState();
+    st.rowPx = clampNumber(st.rowPx + gridRowStepPx, minGridRowPx, maxGridRowPx);
+    saveAndApplyLayout(st);
+  });
   if (reset) reset.addEventListener('click', () => {
     try { localStorage.removeItem(layoutStorageKey); for (const key of oldLayoutStorageKeys) localStorage.removeItem(key); } catch (_) {}
     applyLayoutState(defaultLayoutState());
@@ -2249,7 +2297,9 @@ function initLayoutEditor() {
       saveAndApplyLayout(state);
     });
   }
-  window.addEventListener('resize', () => applyLayoutState(readLayoutState()));
+  const onViewportResize = () => applyLayoutState(readLayoutState());
+  window.addEventListener('resize', onViewportResize);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', onViewportResize);
 }
 initLayoutEditor();
 
@@ -2575,12 +2625,31 @@ function firstNumeric(obj, paths) {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
-function temperatureCFromAny(value) {
+function temperatureCFromAny(value, options={}) {
   if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
-  // WeatherMsg uses K, but some future snapshots may already store degC.
-  return n > 170 ? n - 273.15 : n;
+  const keyHint = String(options.keyHint || '').toLowerCase();
+  const kelvin = options.unit === 'K' || /_k$|temperature_k|in_temperature_k/.test(keyHint);
+  // A WeatherMsg field that was never filled often arrives as 0.0.
+  // For Kelvin fields, <=100 K is not a plausible ambient value and is
+  // treated as missing rather than displayed as -273.1 C or 0.0 C.
+  if (kelvin) return n > 100 ? n - 273.15 : null;
+  if (options.missingZero && Math.abs(n) < 1e-12) return null;
+  // Backward-compatible heuristic for legacy snapshots without explicit units.
+  if (n > 170) return n - 273.15;
+  return n;
+}
+function firstPresent(obj, keys) {
+  if (!obj || typeof obj !== 'object') return {value: null, key: ''};
+  for (const key of keys) {
+    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') return {value: obj[key], key};
+  }
+  return {value: null, key: ''};
+}
+function temperatureCFromKeys(obj, keys, options={}) {
+  const got = firstPresent(obj, keys);
+  return temperatureCFromAny(got.value, {...options, keyHint: got.key});
 }
 function humidityPercentFromAny(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -2595,15 +2664,23 @@ function weatherRowsForKey(snapshot, key, label) {
   const w = snapshot?.weather || {};
   const base = w[key] || {};
   const rows = [];
-  const temp = temperatureCFromAny(base.temperature_c ?? base.temperature_degC ?? base.temperature_k ?? base.temperature);
+  const prefix = label === 'out' ? 'out' : label;
+  const temp = temperatureCFromKeys(base, ['temperature_c','temperature_degC','temperature_k','temperature']);
   const hum = humidityPercentFromAny(base.humidity ?? base.relative_humidity ?? base.humidity_percent ?? base.relative_humidity_percent);
   const pres = Number(base.pressure_hpa ?? base.pressure_mbar ?? base.pressure);
   const wind = Number(base.wind_speed_mps ?? base.wind_speed);
   const wdir = Number(base.wind_direction_deg ?? base.wind_direction);
-  if (temp !== null) rows.push([`${label} temperature`, `${temp.toFixed(1)} °C`, '']);
-  if (hum !== null) rows.push([`${label} humidity`, `${hum.toFixed(0)} %`, '']);
-  if (Number.isFinite(pres)) rows.push([`${label} pressure`, `${pres.toFixed(1)} hPa`, '']);
-  if (Number.isFinite(wind)) rows.push([`${label} wind`, Number.isFinite(wdir) ? `${wind.toFixed(1)} m/s @ ${wdir.toFixed(0)}°` : `${wind.toFixed(1)} m/s`, '']);
+  if (temp !== null) rows.push([`${prefix} temp.`, `${temp.toFixed(1)} °C`, '']);
+  if (hum !== null) rows.push([`${prefix} humid.`, `${hum.toFixed(0)} %`, '']);
+  if (Number.isFinite(pres)) rows.push([`${prefix} press.`, `${pres.toFixed(1)} hPa`, '']);
+  // If a site has no wind sensor, WeatherMsg defaults commonly appear as 0/0.
+  // Show that as missing rather than as a real direction.  Real non-zero wind
+  // still displays normally.
+  if (Number.isFinite(wind) && Math.abs(wind) > 1e-12) {
+    rows.push([`${prefix} wind`, Number.isFinite(wdir) ? `${wind.toFixed(1)} m/s @ ${wdir.toFixed(0)}°` : `${wind.toFixed(1)} m/s`, '']);
+  } else if (Number.isFinite(wind) || Number.isFinite(wdir)) {
+    rows.push([`${prefix} wind`, '-', 'muted']);
+  }
   return rows;
 }
 function optionalWeatherRows(snapshot) {
@@ -2614,13 +2691,14 @@ function optionalWeatherRows(snapshot) {
   const env = snapshot || {};
   const tempRaw = firstNumeric(env, [['weather','temperature_c'], ['weather','temperature_degC'], ['weather','temperature_k'], ['weather','temperature'], ['environment','temperature_c'], ['environment','temperature_degC'], ['site','temperature_c']]);
   const temp = temperatureCFromAny(tempRaw);
-  const inTemp = temperatureCFromAny(firstNumeric(env, [['weather','in_temperature_c'], ['weather','in_temperature_degC'], ['weather','in_temperature_k'], ['weather','in_temperature'], ['environment','in_temperature_c'], ['environment','in_temperature_degC'], ['site','in_temperature_c']]));
+  const inTempRaw = firstNumeric(env, [['weather','in_temperature_c'], ['weather','in_temperature_degC'], ['weather','in_temperature_k'], ['weather','in_temperature'], ['environment','in_temperature_c'], ['environment','in_temperature_degC'], ['site','in_temperature_c']]);
+  const inTemp = temperatureCFromAny(inTempRaw, {missingZero: true});
   const hum = humidityPercentFromAny(firstNumeric(env, [['weather','humidity'], ['weather','relative_humidity'], ['weather','humidity_percent'], ['weather','relative_humidity_percent'], ['environment','humidity'], ['environment','relative_humidity'], ['environment','humidity_percent'], ['environment','relative_humidity_percent'], ['site','humidity'], ['site','humidity_percent']]));
   const pres = firstNumeric(env, [['weather','pressure_hpa'], ['weather','pressure_mbar'], ['environment','pressure_hpa'], ['environment','pressure_mbar'], ['site','pressure_hpa']]);
-  if (temp !== null) rows.push(['out temperature', `${temp.toFixed(1)} °C`, '']);
-  if (inTemp !== null) rows.push(['in temperature', `${inTemp.toFixed(1)} °C`, 'important']);
-  if (hum !== null) rows.push(['humidity', `${hum.toFixed(0)} %`, '']);
-  if (pres !== null) rows.push(['pressure', `${pres.toFixed(1)} hPa`, '']);
+  if (temp !== null) rows.push(['out temp.', `${temp.toFixed(1)} °C`, '']);
+  if (inTemp !== null) rows.push(['in temp.', `${inTemp.toFixed(1)} °C`, 'important']);
+  if (hum !== null) rows.push(['out humid.', `${hum.toFixed(0)} %`, '']);
+  if (pres !== null) rows.push(['out press.', `${pres.toFixed(1)} hPa`, '']);
   return rows;
 }
 function isOtfScanBlock(snapshot) {
@@ -2789,17 +2867,16 @@ function spectrometerRows(snapshot, serverTimeUnix=null) {
   const missing = Number(sp.missing_board_count);
   const dumpRole = Number.isFinite(dumpAge) ? ageRole(dumpAge, 1.5, 5.0) : 'muted';
   const rows = [
-    ['dump input', acquiring ? `recent (${secText(dumpAge)})` : `idle/stale (${secText(dumpAge)})`, valid && acquiring ? dumpRole : (valid ? 'warning' : 'muted')],
-    ['recorder', recording ? 'active' : 'off', recording ? 'ok' : 'muted'],
-    ['save gate', saving ? 'allowed' : 'blocked', saving ? 'ok' : (valid ? 'warning' : 'muted')],
-    ['streams', `${val(sp.n_streams)} streams / ${val(sp.n_boards)} boards`, ''],
+    ['dump', acquiring ? `recent (${secText(dumpAge)})` : `idle/stale (${secText(dumpAge)})`, valid && acquiring ? dumpRole : (valid ? 'warning' : 'muted')],
+    ['rec/save', `${recording ? 'active' : 'off'} / ${saving ? 'allowed' : 'blocked'}`, recording && saving ? 'ok' : (valid ? 'warning' : 'muted')],
+    ['streams', `${val(sp.n_streams)} str / ${val(sp.n_boards)} boards`, ''],
     ['missing', Number.isFinite(missing) ? String(missing) : '-', Number.isFinite(missing) && missing > 0 ? 'warning' : 'ok'],
-    ['metadata', [sp.metadata_position, sp.metadata_id].filter(x => !isBlank(x)).join(' / ') || '-', 'important'],
+    ['meta', [sp.metadata_position, sp.metadata_id].filter(x => !isBlank(x)).join(' / ') || '-', 'important'],
     ['line', isBlank(sp.line_index) || Number(sp.line_index) < 0 ? '-' : String(sp.line_index), ''],
-    ['channels', `TP ${val(sp.tp_range_start)}:${val(sp.tp_range_stop)}; qlook ${val(sp.qlook_ch_start)}:${val(sp.qlook_ch_stop)}`, ''],
-    ['status age', secText(pubAge), ageRole(pubAge, 3.0, 10.0)]
+    ['ch', `TP ${val(sp.tp_range_start)}:${val(sp.tp_range_stop)}; q ${val(sp.qlook_ch_start)}:${val(sp.qlook_ch_stop)}`, ''],
+    ['age', secText(pubAge), ageRole(pubAge, 3.0, 10.0)]
   ];
-  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(3, 0, ['spec clock', compactSpectrometerTime(sp.latest_time_spectrometer), 'muted']);
+  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(2, 0, ['clock', compactSpectrometerTime(sp.latest_time_spectrometer), 'muted']);
   if (!isBlank(sp.warning)) rows.push(['warning', sp.warning, 'warning']);
   return rows;
 }
@@ -2881,20 +2958,22 @@ function activityRows(snapshot) {
   return rows.filter(r => !isBlank(r[1]));
 }
 function weatherTemperatureRow(base, label) {
-  const temp = temperatureCFromAny(base?.temperature_c ?? base?.temperature_degC ?? base?.temperature_k ?? base?.temperature);
-  return temp !== null ? [[`${label} temperature`, `${temp.toFixed(1)} °C`, label === 'in' ? 'important' : '']] : [];
+  const temp = temperatureCFromKeys(base || {}, ['temperature_c','temperature_degC','temperature_k','temperature'], {missingZero: label === 'in'});
+  return temp !== null ? [[`${label} temp.`, `${temp.toFixed(1)} °C`, label === 'in' ? 'important' : '']] : [];
 }
 function environmentRows(snapshot) {
   const rows = [];
   const w = snapshot?.weather || {};
   rows.push(...weatherRowsForKey(snapshot, 'out', 'out'));
-  rows.push(...weatherTemperatureRow(w.in || {}, 'in'));
-  if (!rows.some(r => String(r[0] || '').startsWith('in temperature'))) {
-    rows.push(...weatherTemperatureRow({
+  let inRows = weatherTemperatureRow(w.in || {}, 'in');
+  if (!inRows.length) {
+    inRows = weatherTemperatureRow({
       temperature_c: w.out?.in_temperature_c ?? w.out?.in_temperature_degC,
       temperature_k: w.out?.in_temperature_k ?? w.out?.in_temperature,
-    }, 'in'));
+    }, 'in');
   }
+  if (inRows.length) rows.push(...inRows);
+  else if (rows.length || w.out || w.in) rows.push(['in temp.', '-', 'muted']);
   if (!rows.length) {
     rows.push(...optionalWeatherRows(snapshot));
   }
@@ -2987,7 +3066,7 @@ function statusFor(item, snapshot, events) {
   if (!finalState && ((cur && (uid === cur || parent === cur)) || inRange(item, cr))) return 'current';
   return 'pending';
 }
-const PLOT = {w: 660, h: 460, left: 64, right: 612, top: 42, bottom: 330};
+const PLOT = {w: 660, h: 460, left: 64, right: 612, top: 42, bottom: 362};
 function sx(x, bounds) { return PLOT.left + (x-bounds.xmin) * (PLOT.right-PLOT.left) / Math.max(1e-9, bounds.xmax-bounds.xmin); }
 function sy(y, bounds) { return PLOT.bottom - (y-bounds.ymin) * (PLOT.bottom-PLOT.top) / Math.max(1e-9, bounds.ymax-bounds.ymin); }
 function colorFor(status) { return status === 'done' ? '#2ca02c' : status === 'current' ? '#ff7f0e' : '#bdbdbd'; }
