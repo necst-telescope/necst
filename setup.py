@@ -53,7 +53,7 @@ setup(
             "necst-antenna-az-unwrap-state=necst.ctrl.antenna.az_unwrap:main",
             "necst-stop=necst.core.emergency:main_stop",
             "necst-abort=necst.core.emergency:main_abort",
-            "necst-mount-point=necst.core.emergency:main_mount_point",
+            "necst-mount-move=necst.core.emergency:main_mount_move",
         ],
     },
 )

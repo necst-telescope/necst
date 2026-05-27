@@ -299,7 +299,7 @@ class Commander(PrivilegedNode):
                 self.logger.debug("Mount point tracking OK")
                 return
             pytime.sleep(0.05)
-        raise NECSTTimeoutError("Couldn't confirm mount-point convergence")
+        raise NECSTTimeoutError("Couldn't confirm mount-move target convergence")
 
     def observation_abort(
         self,

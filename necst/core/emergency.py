@@ -117,16 +117,30 @@ def main_abort(argv: Optional[list[str]] = None) -> int:
         _shutdown_if_needed(should_shutdown)
 
 
-def main_mount_point(argv: Optional[list[str]] = None) -> int:
+def main_mount_move(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="necst-mount-point",
+        prog="necst-mount-move",
         description=(
             "Move to an explicit mount mechanical Az/El using direct raw AltAz "
-            "pointing. Az is not wrapped: --az 360 means mount Az=360 deg."
+            "pointing. Az is not wrapped: Az=360 means mount Az=360 deg."
         ),
     )
-    parser.add_argument("--az", type=float, required=True, help="Mount Az [deg].")
-    parser.add_argument("--el", type=float, required=True, help="Mount El [deg].")
+    parser.add_argument(
+        "az_pos",
+        nargs="?",
+        type=float,
+        metavar="AZ",
+        help="Mount Az [deg]. Example: necst-mount-move 360 50",
+    )
+    parser.add_argument(
+        "el_pos",
+        nargs="?",
+        type=float,
+        metavar="EL",
+        help="Mount El [deg]. Example: necst-mount-move 360 50",
+    )
+    parser.add_argument("--az", type=float, default=None, help="Mount Az [deg].")
+    parser.add_argument("--el", type=float, default=None, help="Mount El [deg].")
     parser.add_argument(
         "--no-wait",
         action="store_true",
@@ -145,9 +159,24 @@ def main_mount_point(argv: Optional[list[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    print("Mount point command")
-    print(f"  target Az = {args.az:.6f} deg")
-    print(f"  target El = {args.el:.6f} deg")
+    positional_given = (args.az_pos is not None) or (args.el_pos is not None)
+    options_given = (args.az is not None) or (args.el is not None)
+    if positional_given and options_given:
+        parser.error("use either positional AZ EL or --az/--el, not both")
+    if positional_given:
+        if args.az_pos is None or args.el_pos is None:
+            parser.error("positional form requires exactly two values: AZ EL")
+        az, el = float(args.az_pos), float(args.el_pos)
+    else:
+        if (args.az is None) != (args.el is None):
+            parser.error("--az and --el must be specified together")
+        if args.az is None or args.el is None:
+            parser.error("missing target: use 'necst-mount-move AZ EL' or '--az AZ --el EL'")
+        az, el = float(args.az), float(args.el)
+
+    print("Mount move command")
+    print(f"  target Az = {az:.6f} deg")
+    print(f"  target El = {el:.6f} deg")
     print("  frame     = altaz")
     print("  direct    = true")
     print("  az mode   = mount")
@@ -162,7 +191,7 @@ def main_mount_point(argv: Optional[list[str]] = None) -> int:
             return 2
         cmd_id = com.antenna(
             "point",
-            target=(float(args.az), float(args.el), "altaz"),
+            target=(az, el, "altaz"),
             unit="deg",
             direct_mode=True,
             az_target_mode="mount",
@@ -171,9 +200,7 @@ def main_mount_point(argv: Optional[list[str]] = None) -> int:
         print(f"command id: {cmd_id}")
         if not args.no_wait:
             try:
-                com.wait_mount_point(
-                    float(args.az), float(args.el), timeout_sec=args.timeout_sec
-                )
+                com.wait_mount_point(az, el, timeout_sec=args.timeout_sec)
             except KeyboardInterrupt:
                 print("interrupted: sending antenna stop...", file=sys.stderr)
                 com.antenna("stop")
