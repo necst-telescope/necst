@@ -1,13 +1,17 @@
 """Interface to send command to any remotely controlled part of telescope."""
 
+import json
 import math
 import time as pytime
+import uuid
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 from neclib.core import read
 from neclib.utils import ConditionChecker, ParameterList
+from std_msgs.msg import String
+
 from necst_msgs.msg import (
     AlertMsg,
     Binning,
@@ -103,6 +107,7 @@ class Commander(PrivilegedNode):
             "timeonly": topic.timeonly,
             "tp_mode": topic.tp_mode,
             "observation_progress": topic.observation_progress,
+            "observation_abort": topic.observation_abort,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -160,6 +165,170 @@ class Commander(PrivilegedNode):
         self.savespec = True
         self.tp_mode = False
         self.tp_range = []
+        # Observation runners may set these to make blocking Commander.wait()
+        # calls abortable.  They are intentionally opt-in so standalone Commander
+        # use and legacy observations keep their previous behavior.
+        self.abort_checker = None
+        self.abort_exception_factory = None
+
+    def _raise_if_abort_requested(self) -> None:
+        checker = getattr(self, "abort_checker", None)
+        if not callable(checker):
+            return
+        try:
+            requested = bool(checker())
+        except Exception:
+            requested = False
+        if not requested:
+            return
+        factory = getattr(self, "abort_exception_factory", None)
+        if callable(factory):
+            exc = factory()
+            if isinstance(exc, BaseException):
+                raise exc
+        raise RuntimeError("Observation abort requested")
+
+    @staticmethod
+    def _normalize_az_target_mode(mode: Optional[str]) -> str:
+        value = str(mode or "auto").strip().lower()
+        aliases = {
+            "": "auto",
+            "auto": "auto",
+            "sky": "sky",
+            "modulo": "sky",
+            "mount": "mount",
+            "mechanical": "mount",
+            "machine": "mount",
+        }
+        if value not in aliases:
+            raise ValueError(
+                f"Invalid az_target_mode={mode!r}; use 'auto', 'sky', or 'mount'."
+            )
+        return aliases[value]
+
+    @staticmethod
+    def _is_raw_numeric_altaz_point(
+        *,
+        target,
+        name,
+        offset,
+        reference,
+        start,
+        stop,
+    ) -> bool:
+        if target is None or name is not None or offset is not None or reference is not None:
+            return False
+        if start is not None or stop is not None:
+            return False
+        try:
+            frame = str(target[2]).strip().lower()
+            float(target[0])
+            float(target[1])
+        except Exception:
+            return False
+        return frame in {"altaz", "azel", "horizontal"}
+
+    def _resolve_commander_az_target_mode(
+        self,
+        *,
+        requested: Optional[str],
+        target,
+        name,
+        offset,
+        reference,
+        start,
+        stop,
+        direct_mode: bool,
+    ) -> str:
+        mode = self._normalize_az_target_mode(requested)
+        raw_altaz_point = self._is_raw_numeric_altaz_point(
+            target=target,
+            name=name,
+            offset=offset,
+            reference=reference,
+            start=start,
+            stop=stop,
+        )
+        if mode == "auto":
+            return "mount" if (bool(direct_mode) and raw_altaz_point) else "sky"
+        if mode == "mount":
+            if not raw_altaz_point:
+                raise ValueError(
+                    "az_target_mode='mount' is only valid for raw numeric AltAz point "
+                    "commands without name, offset, reference, or scan endpoints."
+                )
+            if not bool(direct_mode):
+                raise ValueError(
+                    "az_target_mode='mount' requires direct_mode=True because mount Az "
+                    "is an explicit mechanical angle."
+                )
+        return mode
+
+    def wait_mount_point(
+        self,
+        az_deg: float,
+        el_deg: float,
+        *,
+        timeout_sec: Optional[Union[int, float]] = None,
+    ) -> None:
+        """Wait for a direct mount-Az point command using non-wrapped Az error.
+
+        TrackingStatus intentionally treats sky azimuths modulo 360 unless an
+        absolute-encoder unwrap status is active.  A manual mount command such as
+        Az=360 deg must not be considered complete at Az=0 deg, so this helper
+        compares the encoder directly against the requested mechanical Az.
+        """
+        start = pytime.monotonic()
+        checker = ConditionChecker(10, reset_on_failure=True)
+        threshold = float(config.antenna_pointing_accuracy.to_value("deg"))
+        target_az = float(az_deg)
+        target_el = float(el_deg)
+        while (timeout_sec is None) or (pytime.monotonic() - start < float(timeout_sec)):
+            self._raise_if_abort_requested()
+            enc = self.get_message("encoder", timeout_sec=0.2)
+            daz = float(enc.lon) - target_az
+            del_ = float(enc.lat) - target_el
+            cos_el = math.cos(math.radians(float(enc.lat)))
+            error = ((daz * cos_el) ** 2 + del_**2) ** 0.5
+            self.logger.debug(
+                f"Mount point error={error:9.5f}deg "
+                f"(daz={daz:9.5f}, del={del_:9.5f})",
+                throttle_duration_sec=0.3,
+            )
+            if checker.check(error < threshold):
+                self.logger.debug("Mount point tracking OK")
+                return
+            pytime.sleep(0.05)
+        raise NECSTTimeoutError("Couldn't confirm mount-point convergence")
+
+    def observation_abort(
+        self,
+        *,
+        reason: str = "",
+        requester: str = "commander",
+        repeat: int = 3,
+        interval_sec: float = 0.1,
+    ) -> str:
+        """Publish an observation abort request.
+
+        This does not perform cleanup itself.  A running Observation instance
+        subscribes to the request and enters its own cleanup path, preserving
+        recorder/spectral-gate/metadata state as far as possible.
+        """
+        request_id = f"abort-{uuid.uuid4()}"
+        payload = {
+            "request_id": request_id,
+            "time_unix": pytime.time(),
+            "requester": str(requester or "commander"),
+            "reason": str(reason or "operator requested abort"),
+        }
+        msg = String(data=json.dumps(payload, ensure_ascii=False, sort_keys=True))
+        n = max(1, int(repeat))
+        for i in range(n):
+            self.publisher["observation_abort"].publish(msg)
+            if i + 1 < n:
+                pytime.sleep(max(0.0, float(interval_sec)))
+        return request_id
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
@@ -240,6 +409,7 @@ class Commander(PrivilegedNode):
         direct_mode: bool = False,
         cos_correction: bool = False,
         az_target_mode: str = "auto",
+        timeout_sec: Optional[Union[int, float]] = None,
     ) -> None:
         """Control antenna direction and motion.
 
@@ -376,6 +546,16 @@ class Commander(PrivilegedNode):
             return pytime.sleep(0.5)
 
         elif CMD == "POINT":
+            effective_az_target_mode = self._resolve_commander_az_target_mode(
+                requested=az_target_mode,
+                target=target,
+                name=name,
+                offset=offset,
+                reference=reference,
+                start=start,
+                stop=stop,
+                direct_mode=direct_mode,
+            )
             kwargs = {}
             if name is not None:
                 kwargs.update(name=name)
@@ -413,14 +593,19 @@ class Commander(PrivilegedNode):
                 if hasattr(_tmp, "cos_correction"):
                     kwargs.update(cos_correction=bool(cos_correction))
                 if hasattr(_tmp, "az_target_mode"):
-                    kwargs.update(az_target_mode=str(az_target_mode or "auto"))
+                    kwargs.update(az_target_mode=str(effective_az_target_mode))
             except Exception:
                 pass
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
-                self.wait("antenna")
+                if effective_az_target_mode == "mount" and target is not None:
+                    self.wait_mount_point(
+                        float(target[0]), float(target[1]), timeout_sec=timeout_sec
+                    )
+                else:
+                    self.wait("antenna", timeout_sec=timeout_sec)
             return res.id
 
         elif CMD == "SCAN":
@@ -479,7 +664,7 @@ class Commander(PrivilegedNode):
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
             self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={ts:.6f}")
             if wait:
-                self.wait("antenna", mode="control", id=res.id)
+                self.wait("antenna", mode="control", id=res.id, timeout_sec=timeout_sec)
             return res.id
 
         elif CMD == "ERROR":
@@ -905,6 +1090,7 @@ class Commander(PrivilegedNode):
 
         if MODE == "ERROR":
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+                self._raise_if_abort_requested()
                 try:
                     error = ERROR_GETTER("error")
                     self.logger.debug(
@@ -920,6 +1106,7 @@ class Commander(PrivilegedNode):
         elif MODE == "CONTROL":
             experienced = False
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+                self._raise_if_abort_requested()
                 now = pytime.time()
                 try:
                     error = ERROR_GETTER("error")

@@ -254,6 +254,8 @@ class topic:
     observation_progress = Topic(
         String, "observation_progress", qos.reliable_latched, namespace.core
     )
+    # Volatile on purpose: an old abort request must not abort a future observation.
+    observation_abort = Topic(String, "observation_abort", qos.reliable, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     pid_log = Topic(CalcLog, "pid_log", qos.realtime, namespace.antenna)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
