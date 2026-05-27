@@ -239,6 +239,7 @@ class Commander(PrivilegedNode):
         margin: Optional[float] = None,
         direct_mode: bool = False,
         cos_correction: bool = False,
+        az_target_mode: str = "auto",
     ) -> None:
         """Control antenna direction and motion.
 
@@ -267,6 +268,12 @@ class Commander(PrivilegedNode):
             Whether to wait for the command to be completed.
         speed
             Speed of the scan in ``unit``/s.
+        az_target_mode
+            Azimuth target interpretation for raw AltAz point commands.
+            ``"auto"`` keeps observation/scan commands as sky coordinates and
+            treats direct raw AltAz point commands as mount coordinates;
+            ``"sky"`` means modulo sky azimuth; ``"mount"`` means continuous
+            mount azimuth.
 
         Notes
         -----
@@ -400,13 +407,13 @@ class Commander(PrivilegedNode):
                     direct_mode=direct_mode,
                 )
 
-            # Propagate optional cos correction for longitude offsets.
-            # Backward compatible:
-            # only set if the service definition includes the field.
+            # Propagate optional fields in a backward compatible way.
             try:
                 _tmp = CoordinateCommand.Request()
                 if hasattr(_tmp, "cos_correction"):
                     kwargs.update(cos_correction=bool(cos_correction))
+                if hasattr(_tmp, "az_target_mode"):
+                    kwargs.update(az_target_mode=str(az_target_mode or "auto"))
             except Exception:
                 pass
             req = CoordinateCommand.Request(**kwargs)
@@ -424,6 +431,10 @@ class Commander(PrivilegedNode):
                 _tmp = CoordinateCommand.Request()
                 if hasattr(_tmp, "cos_correction"):
                     scan_kwargs.update(cos_correction=bool(cos_correction))
+                if hasattr(_tmp, "az_target_mode"):
+                    # Scans are observation-style sky coordinates unless explicitly
+                    # overridden by a developer.
+                    scan_kwargs.update(az_target_mode=str(az_target_mode or "sky"))
             except Exception:
                 pass
 

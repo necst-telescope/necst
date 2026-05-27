@@ -8,6 +8,8 @@ from collections import deque
 import threading
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
+
 from neclib.coordinates import (
     CoordinateGeneratorManager,
     DriveLimitChecker,
@@ -42,6 +44,7 @@ class HorizontalCoord(AlertHandlerNode):
         self.enc_az = self.enc_el = None
         self.enc_time = 0
         self.direct_mode = None
+        self.az_target_mode = "sky"
 
         self.finder = PathFinder(
             config.location, config.antenna_pointing_parameter_path
@@ -205,7 +208,9 @@ class HorizontalCoord(AlertHandlerNode):
             f"relative="
             f"{all(len(x) == 2 for x in (request.offset_lon, request.offset_lat))},"
             f"named={request.name != ''}, speed={request.speed}, "
-            f"direct_mode={request.direct_mode}, now={now:.6f}"
+            f"direct_mode={request.direct_mode}, "
+            f"az_target_mode={getattr(request, 'az_target_mode', '')!r}, "
+            f"now={now:.6f}"
         )
         self.logger.warning(
             f"prefill_on_accept: exec_id={self._current_exec_id},"
@@ -244,7 +249,7 @@ class HorizontalCoord(AlertHandlerNode):
         for attr in ("lon", "lat", "offset_lon", "offset_lat"):
             if hasattr(req, attr):
                 pieces.append(f"{attr}={_safe_list(req, attr)!r}")
-        for attr in ("speed", "margin", "direct_mode", "obsfreq"):
+        for attr in ("speed", "margin", "direct_mode", "az_target_mode", "obsfreq"):
             if hasattr(req, attr):
                 pieces.append(f"{attr}={getattr(req, attr)!r}")
         if hasattr(req, "sections"):
@@ -300,6 +305,10 @@ class HorizontalCoord(AlertHandlerNode):
         else:
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
+        # scan_block sections are observation-derived scan coordinates.  Keep the
+        # existing sky/modulo optimization regardless of direct_mode so a section
+        # endpoint at 360 deg does not request an unintended full mount revolution.
+        self.az_target_mode = "sky"
 
         sections = [self._convert_scan_block_section(section) for section in msg.sections]
         if len(sections) == 0:
@@ -400,6 +409,69 @@ class HorizontalCoord(AlertHandlerNode):
 
         response.id = self._current_exec_id or self._idle_exec_id
         return response
+
+    def _normalize_az_target_mode(self, mode: Any) -> str:
+        mode = str(mode or "auto").strip().lower()
+        aliases = {
+            "": "auto",
+            "auto": "auto",
+            "sky": "sky",
+            "mount": "mount",
+            "mechanical": "mount",
+            "machine": "mount",
+        }
+        try:
+            return aliases[mode]
+        except KeyError as exc:
+            raise ValueError(
+                f"Invalid az_target_mode={mode!r}; use 'auto', 'sky', or 'mount'."
+            ) from exc
+
+    def _is_raw_altaz_point_command(self, msg: CoordinateCommand.Request) -> bool:
+        target_coord = (msg.lon, msg.lat)
+        offset_coord = (msg.offset_lon, msg.offset_lat)
+        target_scan = all(len(x) == 2 for x in target_coord)
+        offset_scan = all(len(x) == 2 for x in offset_coord)
+        named = msg.name != ""
+        with_offset = any(len(x) != 0 for x in offset_coord)
+        frame = str(getattr(msg, "frame", "")).strip().lower()
+        return (
+            (not target_scan)
+            and (not offset_scan)
+            and (not named)
+            and (not with_offset)
+            and (len(msg.lon) == 1)
+            and (len(msg.lat) == 1)
+            and frame in {"altaz", "azel", "horizontal"}
+        )
+
+    def _resolve_az_target_mode(self, msg: CoordinateCommand.Request) -> str:
+        requested = self._normalize_az_target_mode(getattr(msg, "az_target_mode", "auto"))
+        is_raw_altaz_point = self._is_raw_altaz_point_command(msg)
+
+        if requested == "auto":
+            # Backward safety rule:
+            # - manual/direct raw AltAz point commands are mount mechanical angles;
+            # - observation-derived coordinates, named targets, offsets, and scans
+            #   remain sky modulo coordinates.
+            if bool(getattr(msg, "direct_mode", False)) and is_raw_altaz_point:
+                return "mount"
+            return "sky"
+
+        if requested == "mount":
+            if not is_raw_altaz_point:
+                raise ValueError(
+                    "az_target_mode='mount' is only valid for raw numeric AltAz point "
+                    "commands without name, offset, or scan endpoints. Use "
+                    "az_target_mode='sky' for observation coordinates."
+                )
+            if not bool(getattr(msg, "direct_mode", False)):
+                raise ValueError(
+                    "az_target_mode='mount' requires direct_mode=True because "
+                    "mount Az is an explicit continuous mechanical angle and must "
+                    "not be modified by pointing/atmospheric correction."
+                )
+        return requested
 
     def _prefill_current_execution(
         self,
@@ -802,6 +874,13 @@ class HorizontalCoord(AlertHandlerNode):
         else:
             self.direct_mode = False
         self.finder.direct_mode = self.direct_mode
+        self.az_target_mode = self._resolve_az_target_mode(msg)
+        self.logger.info(
+            "Resolved az_target_mode: "
+            f"requested={getattr(msg, 'az_target_mode', '')!r}, "
+            f"resolved={self.az_target_mode!r}, frame={msg.frame!r}, "
+            f"direct_mode={msg.direct_mode}"
+        )
 
         if (not scan) and (not named) and (not with_offset):
             self.logger.debug(f"Got POINT-TO-COORD command: {msg}")
@@ -1037,12 +1116,41 @@ class HorizontalCoord(AlertHandlerNode):
         enc_az = 180 if self.enc_az is None else self.enc_az
         enc_el = 45 if self.enc_el is None else self.enc_el
 
-        _az = self.optimizer["az"].optimize(enc_az, az.to_value("deg"), unit="deg")
+        if self.az_target_mode == "mount":
+            _az = self._validate_mount_az_target(az)
+        else:
+            _az = self.optimizer["az"].optimize(enc_az, az.to_value("deg"), unit="deg")
         _el = self.optimizer["el"].optimize(enc_el, el.to_value("deg"), unit="deg")
 
         if (_az is not None) and (_el is not None):
             return _az, _el
         return [], []
+
+    def _validate_mount_az_target(self, az):
+        """Validate explicit mount azimuth without modulo candidate selection.
+
+        ``az_target_mode='mount'`` means the numeric Az value is already the
+        intended continuous mount coordinate.  Do not call DriveLimitChecker here,
+        because it intentionally treats 0, 360, -360, ... as equivalent sky
+        azimuths and would convert e.g. target=360 near current=-5 into target=0.
+        """
+        az_q = az.to("deg") if hasattr(az, "to") else az
+        az_deg = np.asanyarray(az_q.to_value("deg") if hasattr(az_q, "to_value") else az_q)
+        critical = self.optimizer["az"].limit
+        warning = self.optimizer["az"].preferred_limit
+        critical_lower = critical.lower.to_value("deg")
+        critical_upper = critical.upper.to_value("deg")
+        warning_lower = warning.lower.to_value("deg")
+        warning_upper = warning.upper.to_value("deg")
+        if not bool(((critical_lower <= az_deg) & (az_deg <= critical_upper)).all()):
+            self.logger.warning(
+                "Mount Az target is out of critical drive range: "
+                f"target={az_q}, limit={critical}"
+            )
+            return None
+        if not bool(((warning_lower <= az_deg) & (az_deg <= warning_upper)).all()):
+            self.logger.warning("Mount Az target nears drive range limit.")
+        return az_q
 
     def _update_weather(self, msg: WeatherMsg) -> None:
         if (self.last_status is not None) and (self.last_status.tight):
