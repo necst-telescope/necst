@@ -27,7 +27,7 @@ def _shutdown_if_needed(should_shutdown: bool) -> None:
 
 def main_stop(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="necst-stop",
+        prog="necst stop",
         description=(
             "Stop antenna drive immediately. This is an antenna stop, not an "
             "observation-cleanup abort."
@@ -55,7 +55,7 @@ def main_stop(argv: Optional[list[str]] = None) -> int:
 
 def main_abort(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="necst-abort",
+        prog="necst abort",
         description=(
             "Request cooperative observation abort and, by default, stop antenna "
             "motion to make blocking point/scan waits return promptly."
@@ -68,7 +68,7 @@ def main_abort(argv: Optional[list[str]] = None) -> int:
     )
     parser.add_argument(
         "--requester",
-        default="necst-abort",
+        default="necst abort",
         help="Requester name written to the abort request payload.",
     )
     parser.add_argument(
@@ -119,7 +119,7 @@ def main_abort(argv: Optional[list[str]] = None) -> int:
 
 def main_mount_move(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="necst-mount-move",
+        prog="necst mount-move",
         description=(
             "Move to an explicit mount mechanical Az/El using direct raw AltAz "
             "pointing. Az is not wrapped: Az=360 means mount Az=360 deg."
@@ -130,14 +130,14 @@ def main_mount_move(argv: Optional[list[str]] = None) -> int:
         nargs="?",
         type=float,
         metavar="AZ",
-        help="Mount Az [deg]. Example: necst-mount-move 360 50",
+        help="Mount Az [deg]. Example: necst mount-move 360 50",
     )
     parser.add_argument(
         "el_pos",
         nargs="?",
         type=float,
         metavar="EL",
-        help="Mount El [deg]. Example: necst-mount-move 360 50",
+        help="Mount El [deg]. Example: necst mount-move 360 50",
     )
     parser.add_argument("--az", type=float, default=None, help="Mount Az [deg].")
     parser.add_argument("--el", type=float, default=None, help="Mount El [deg].")
@@ -171,7 +171,7 @@ def main_mount_move(argv: Optional[list[str]] = None) -> int:
         if (args.az is None) != (args.el is None):
             parser.error("--az and --el must be specified together")
         if args.az is None or args.el is None:
-            parser.error("missing target: use 'necst-mount-move AZ EL' or '--az AZ --el EL'")
+            parser.error("missing target: use 'necst mount-move AZ EL' or '--az AZ --el EL'")
         az, el = float(args.az), float(args.el)
 
     print("Mount move command")

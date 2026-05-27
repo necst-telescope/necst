@@ -51,9 +51,6 @@ setup(
             "necst-spectral-validate=necst.rx.spectral_recording_setup:main_validate",
             "necst-lo-profile=necst.rx.spectral_recording_sg:main_lo_profile",
             "necst-antenna-az-unwrap-state=necst.ctrl.antenna.az_unwrap:main",
-            "necst-stop=necst.core.emergency:main_stop",
-            "necst-abort=necst.core.emergency:main_abort",
-            "necst-mount-move=necst.core.emergency:main_mount_move",
         ],
     },
 )
