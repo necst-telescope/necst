@@ -42,6 +42,10 @@ class DomeTrackingStatus(Node):
         self.create_timer(1 / config.dome_command_frequency, self.dome_status)
         self.create_timer(1 / config.dome_command_frequency, self.dome_sync_status)
 
+    @staticmethod
+    def _az_diff_deg(a: float, b: float) -> float:
+        return abs(((float(a) - float(b) + 180.0) % 360.0) - 180.0)
+
     def dome_status(self) -> None:
         now = time.time()
         if all(not isinstance(x, CoordMsg) for x in self.dome_enc):
@@ -65,7 +69,7 @@ class DomeTrackingStatus(Node):
             self.sync_checker.check(False)
             msg = TrackingStatus(ok=False, error=9999.0, time=now)
         else:
-            error = np.abs(self.antenna_cmd[0].lon - self.dome_enc[0].lon)
+            error = self._az_diff_deg(self.antenna_cmd[0].lon, self.dome_enc[0].lon)
             ok = self.sync_checker.check(error < self.limit)
             msg = TrackingStatus(ok=ok, error=error, time=now)
         self.error_pub.publish(msg)

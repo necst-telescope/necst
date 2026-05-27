@@ -405,25 +405,113 @@ def apply_display_derivations(snapshot: Optional[Dict[str, Any]], *, server_time
         out.setdefault("display", {}).update(display)
     return out
 
+def _live_payload_has_position(live_payload: Mapping[str, Any]) -> bool:
+    """Return True when live ROS telemetry has enough antenna data to display.
+
+    Observation progress files may legitimately be absent while the telescope is
+    idle.  In that case the dashboard should still show current encoder Az/El
+    when ROS is running, but it must not fabricate an observation merely because
+    unrelated topics such as weather or queue status are available.
+    """
+    if not isinstance(live_payload, Mapping):
+        return False
+    pointing = live_payload.get("pointing_status") if isinstance(live_payload.get("pointing_status"), Mapping) else {}
+    encoder = live_payload.get("encoder") if isinstance(live_payload.get("encoder"), Mapping) else {}
+
+    # An idle snapshot must represent the actual telescope position.  A live
+    # command-only sample may be stale or merely the last target, so it must not
+    # fabricate an "idle antenna position" when no encoder/pointing encoder value
+    # is available.
+    for payload, keys in (
+        (pointing, ("enc_az_deg", "enc_el_deg")),
+        (encoder, ("encoder_lon_deg", "encoder_lat_deg")),
+    ):
+        if any(_finite_float(payload.get(key)) is not None for key in keys):
+            return True
+    return False
+
+
+def make_idle_live_snapshot(live_payload: Mapping[str, Any], *, now_unix: Optional[float] = None) -> Dict[str, Any]:
+    """Build a minimal display-only snapshot for idle live telemetry.
+
+    This snapshot is used only by progress.py.  It is not written back to
+    ``current_observation_progress.json`` and therefore does not affect the
+    observation runtime.
+    """
+    now = float(now_unix if now_unix is not None else time.time())
+    return {
+        "observation": {
+            "type": "idle",
+            "record_name": "-",
+            "obs_file": "-",
+            "target": "-",
+        },
+        "lifecycle": {
+            "state": "idle",
+            "status": "idle",
+        },
+        "plan": {
+            "label": "no active observation",
+            "mode": "-",
+            "role": "idle",
+            "total": 0,
+        },
+        "activity": {
+            "phase": "IDLE",
+            "drive_kind": "idle",
+            "motion_stage": "idle",
+            "data_state": "no active observation",
+        },
+        "geometry": {
+            "kind": "idle",
+            "frame": "altaz",
+            "unit": "deg",
+        },
+        "data": {
+            "expected_metadata_position": "-",
+            "expected_metadata_id": "-",
+        },
+        "time": {
+            "updated_at_unix": now,
+            "elapsed_sec": None,
+            "estimated_remaining_sec": None,
+            "remaining_method": "idle/live-telemetry",
+            "remaining_confidence": "n/a",
+        },
+        "display": {
+            "idle_live_telemetry": True,
+            "idle_message": "No active observation; showing live antenna telemetry.",
+        },
+    }
+
+
 def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
     """Return a display-only snapshot augmented with live ROS telemetry.
 
-    The progress JSON files remain the source of truth.  Live ROS values are
-    merged only in the CLI/web process so the observation runtime stays free of
-    high-frequency subscriptions.  This is especially important for scan_block:
-    the sidecar knows the current block, while the antenna ControlStatus topic
-    knows the fine section/line currently being executed.
+    The progress JSON files remain the source of truth while an observation is
+    active.  Live ROS values are merged only in the CLI/web process so the
+    observation runtime stays free of high-frequency subscriptions.
+
+    If no progress snapshot exists but live antenna position telemetry is
+    available, return a minimal ``idle`` snapshot so observers can still see
+    current encoder Az/El before starting an observation.  This idle snapshot is
+    display-only and is never written to disk.
     """
-    if not isinstance(snapshot, dict) or not live:
+    if not live:
         return snapshot
-    out = copy.deepcopy(snapshot)
     live_payload = dict(live)
+    if not isinstance(snapshot, dict):
+        if not _live_payload_has_position(live_payload):
+            return snapshot
+        snapshot = make_idle_live_snapshot(live_payload)
+    out = copy.deepcopy(snapshot)
     out["live"] = live_payload
 
     antenna_update: Dict[str, Any] = {}
     cmd = live_payload.get("command") if isinstance(live_payload.get("command"), dict) else {}
     enc = live_payload.get("encoder") if isinstance(live_payload.get("encoder"), dict) else {}
     pointing = live_payload.get("pointing_status") if isinstance(live_payload.get("pointing_status"), dict) else {}
+    az_unwrap = live_payload.get("az_unwrap_status") if isinstance(live_payload.get("az_unwrap_status"), dict) else {}
     if pointing:
         antenna_update["pointing_status_available"] = True
         antenna_update["pointing_status_valid"] = bool(pointing.get("valid", False))
@@ -458,6 +546,14 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
             antenna_update.update(cmd)
         if enc:
             antenna_update.update(enc)
+    if az_unwrap and az_unwrap.get("enabled"):
+        antenna_update["az_unwrap"] = dict(az_unwrap)
+        antenna_update["az_unwrap_enabled"] = True
+        antenna_update["az_unwrap_valid"] = bool(az_unwrap.get("valid", False))
+        antenna_update["az_unwrap_branch"] = az_unwrap.get("branch")
+        antenna_update["az_unwrap_raw_az_deg"] = az_unwrap.get("raw_az_deg")
+        antenna_update["az_unwrap_state"] = az_unwrap.get("state")
+        antenna_update["az_unwrap_reason"] = az_unwrap.get("reason")
     tracking = live_payload.get("tracking") if isinstance(live_payload.get("tracking"), dict) else {}
     if tracking:
         terr = _finite_float(tracking.get("error_deg"))
@@ -600,6 +696,7 @@ class LiveRosCache:
         self.tracking: Dict[str, Any] = {}
         self.section_status: Dict[str, Any] = {}
         self.pointing_status: Dict[str, Any] = {}
+        self.az_unwrap_status: Dict[str, Any] = {}
         self.queue_status: Dict[str, Any] = {}
         self.spectrometer_status: Dict[str, Any] = {}
         self.weather: Dict[str, Dict[str, Any]] = {}
@@ -710,6 +807,25 @@ class LiveRosCache:
                     "basis": str(getattr(msg, "basis", "")),
                 }
 
+            def az_unwrap_status_cb(msg: Any) -> None:
+                self.az_unwrap_status = {
+                    "enabled": bool(getattr(msg, "enabled", False)),
+                    "valid": bool(getattr(msg, "valid", False)),
+                    "mode": str(getattr(msg, "mode", "")),
+                    "state": str(getattr(msg, "state", "")),
+                    "reason": str(getattr(msg, "reason", "")),
+                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
+                    "encoder_time_unix": _finite_float(getattr(msg, "encoder_time_unix", None)),
+                    "raw_az_deg": _finite_float(getattr(msg, "raw_az_deg", None)),
+                    "modulo_az_deg": _finite_float(getattr(msg, "modulo_az_deg", None)),
+                    "continuous_az_deg": _finite_float(getattr(msg, "continuous_az_deg", None)),
+                    "branch": int(getattr(msg, "branch", 0)),
+                    "branch_nonzero": bool(getattr(msg, "branch_nonzero", False)),
+                    "branch_changed": bool(getattr(msg, "branch_changed", False)),
+                    "state_age_sec": _finite_float(getattr(msg, "state_age_sec", None)),
+                    "persist_age_sec": _finite_float(getattr(msg, "persist_age_sec", None)),
+                }
+
             def queue_status_cb(msg: Any) -> None:
                 self.queue_status = {
                     "active": bool(getattr(msg, "active", False)),
@@ -791,6 +907,7 @@ class LiveRosCache:
             for topic_obj, callback in (
                 (getattr(topic, "antenna_section_status", None), section_status_cb),
                 (getattr(topic, "antenna_pointing_status", None), pointing_status_cb),
+                (getattr(topic, "antenna_az_unwrap_status", None), az_unwrap_status_cb),
                 (getattr(topic, "antenna_command_queue_status", None), queue_status_cb),
                 (getattr(topic, "spectrometer_status", None), spectrometer_status_cb),
             ):
@@ -880,6 +997,8 @@ class LiveRosCache:
                 payload["section_status"] = dict(self.section_status)
             if self.pointing_status:
                 payload["pointing_status"] = dict(self.pointing_status)
+            if self.az_unwrap_status:
+                payload["az_unwrap_status"] = dict(self.az_unwrap_status)
             if self.queue_status:
                 payload["queue_status"] = dict(self.queue_status)
             if self.spectrometer_status:
@@ -1426,6 +1545,25 @@ def geometry_offset_arcsec_text(geom: Mapping[str, Any]) -> str:
     return f"({x:.1f}, {y:.1f}) arcsec{suffix}"
 
 
+def az_unwrap_compact_text(antenna: Mapping[str, Any]) -> str:
+    if not antenna or not antenna.get("az_unwrap_enabled"):
+        return ""
+    branch = antenna.get("az_unwrap_branch")
+    raw = _finite_float(antenna.get("az_unwrap_raw_az_deg"))
+    state = compact_value(antenna.get("az_unwrap_state"))
+    if branch is None:
+        return "unwrap ?"
+    try:
+        b = int(branch)
+    except Exception:
+        return f"unwrap {compact_value(branch)}"
+    if b == 0:
+        return f"unwrap 0" if state in {"-", "ok"} else f"unwrap 0 {state}"
+    raw_text = "" if raw is None else f" raw={raw:.3f}deg"
+    state_text = "" if state in {"-", "ok"} else f" {state}"
+    return f"unwrap {b:+d}{raw_text}{state_text}"
+
+
 def azel_text(lon: Any, lat: Any, frame: Any = "altaz") -> str:
     try:
         x = float(lon)
@@ -1649,6 +1787,9 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
             lines.append(frame_line(f"cmd  : {azel_text(cmd_lon, cmd_lat, antenna.get('command_frame'))}"))
         if enc_lon is not None or enc_lat is not None:
             lines.append(frame_line(f"enc  : {azel_text(enc_lon, enc_lat, antenna.get('encoder_frame'))}"))
+        unwrap_text = az_unwrap_compact_text(antenna)
+        if unwrap_text:
+            lines.append(frame_line(f"az   : {unwrap_text}"))
         if antenna.get("tracking_status_available"):
             terr = _finite_float(antenna.get("tracking_error_deg"))
             age = _finite_float(antenna.get("tracking_status_age_sec"))
@@ -2036,6 +2177,7 @@ body.layout-unlocked .card-font-tools { pointer-events:auto; }
 body.layout-unlocked .resize-grip { display:block; pointer-events:auto; }
 body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse-resize; }
 .err { color:var(--err); font-weight:700; }
+.unwrap-badges{display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.15rem}.nowrap{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -2682,6 +2824,17 @@ function azElText(lon, lat, frame='altaz') {
   if (f === 'altaz' || f === 'alt-az' || f === 'azel') return `Az ${x.toFixed(3)}°, El ${y.toFixed(3)}°`;
   return `${String(frame || 'coord')} lon ${x.toFixed(3)}°, lat ${y.toFixed(3)}°`;
 }
+function azUnwrapBadgeHtml(a) {
+  if (!a || !a.az_unwrap_enabled) return '';
+  const b = Number(a.az_unwrap_branch);
+  const raw = Number(a.az_unwrap_raw_az_deg);
+  const state = String(a.az_unwrap_state || '');
+  const role = !a.az_unwrap_valid ? 'warning' : (b !== 0 ? 'important' : 'muted');
+  const main = Number.isFinite(b) ? `unwrap ${b > 0 ? '+' : ''}${b}` : 'unwrap ?';
+  const rawBadge = Number.isFinite(raw) && b !== 0 ? `<span class="badge nowrap muted">raw ${raw.toFixed(3)}°</span>` : '';
+  const stateBadge = state && state !== 'ok' ? `<span class="badge nowrap warning">${esc(state)}</span>` : '';
+  return `<div class="unwrap-badges"><span class="badge nowrap ${role}">${esc(main)}</span>${rawBadge}${stateBadge}</div>`;
+}
 function usableText(v) { const t = val(v); return (!t || t === '-' || t === 'None' || t === 'null' || t === 'unknown') ? '' : t; }
 function inferTargetFromName(text) {
   const raw = usableText(text);
@@ -2707,6 +2860,10 @@ function kvSmart(id, rows) {
     const label = Array.isArray(row) ? row[0] : '-';
     const raw = Array.isArray(row) ? row[1] : row;
     const role = Array.isArray(row) ? (row[2] || '') : '';
+    if (role === 'html') {
+      el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v">${raw ?? '-'}</div>`);
+      continue;
+    }
     const cls = role ? ` ${role}-pos` : '';
     el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v${cls}" title="${esc(raw ?? '-')}">${esc(raw ?? '-')}</div>`);
   }
@@ -3112,6 +3269,7 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const gal = targetGalPair(snapshot);
   const rows = [
     ['Encoder Az/El', azElText(a.encoder_lon_deg, a.encoder_lat_deg, a.encoder_frame), 'important'],
+    ...(a.az_unwrap_enabled ? [['Az unwrap', azUnwrapBadgeHtml(a), 'html']] : []),
     ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame), ''],
     ...officialTrackingRows(a, snapshot),
     [isCal ? 'calibration now' : (g.cos_correction ? 'map offset actual' : 'map offset'), isCal ? phase : (off ? coordPairText(off, frame, 'arcsec') : '-'), 'important'],
@@ -3794,7 +3952,9 @@ async function update() {
     const timing = snap.time || {};
     const finalState = ['finished','error','aborted'].includes(String(life.state || '').toLowerCase());
     let msg = s.ok ? '' : '<span class=\"err\">Progress snapshot has errors or is missing.</span>';
-    if (finalState) {
+    if (snap?.display?.idle_live_telemetry) {
+      msg += '<div class=\"notice\"><span class=\"muted\">No active observation.</span> Showing live antenna telemetry from ROS.</div>';
+    } else if (finalState) {
       const updated = typeof timing.updated_at_unix === 'number' ? new Date(timing.updated_at_unix*1000).toLocaleTimeString() : '-';
       msg += `<div class=\"notice\"><span class=\"important\">This observation is ${esc(life.state)}.</span> Last update: ${esc(updated)}. Waiting for the next observation snapshot.</div>`;
     }

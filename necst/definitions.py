@@ -117,6 +117,7 @@ class topic:
 
     from necst_msgs.msg import (
         AlertMsg,
+        AntennaAzUnwrapStatus,
         AntennaCommandQueueStatus,
         AntennaPointingStatus,
         AntennaSectionStatus,
@@ -157,6 +158,9 @@ class topic:
 
     # raw_coord = Topic(CoordCmdMsg, "raw_coord", qos.reliable, namespace.antenna)
     antenna_encoder = Topic(CoordMsg, "encoder", qos.realtime, namespace.antenna)
+    antenna_az_unwrap_status = Topic(
+        AntennaAzUnwrapStatus, "az_unwrap_status", qos.realtime, namespace.antenna
+    )
     antenna_speed_cmd = Topic(
         TimedAzElFloat64, "speed", qos.realtime, namespace.antenna
     )

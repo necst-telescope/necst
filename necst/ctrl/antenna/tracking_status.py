@@ -3,7 +3,7 @@ import math
 
 from neclib.data import LinearExtrapolate
 from neclib.utils import ConditionChecker, ParameterList
-from necst_msgs.msg import AntennaPointingStatus, CoordMsg, TrackingStatus
+from necst_msgs.msg import AntennaAzUnwrapStatus, AntennaPointingStatus, CoordMsg, TrackingStatus
 from rclpy.node import Node
 
 from ... import config, namespace, topic
@@ -22,6 +22,7 @@ class AntennaTrackingStatus(Node):
 
         self.cmd = ParameterList.new(2, CoordMsg)
         self.enc = ParameterList.new(1, CoordMsg)
+        self.az_unwrap_status = None
 
         self.threshold = config.antenna_pointing_accuracy.to_value("deg").item()
         self.coord_ext = LinearExtrapolate(
@@ -33,10 +34,23 @@ class AntennaTrackingStatus(Node):
         self._pointing_status_period = 0.2
         self._last_pointing_status_publish = 0.0
         topic.antenna_encoder.subscription(self, lambda msg: self.enc.push(msg))
+        topic.antenna_az_unwrap_status.subscription(self, self._update_az_unwrap_status)
         topic.altaz_cmd.subscription(self, lambda msg: self.cmd.push(msg))
         self.create_timer(
             1 / config.antenna_command_frequency, self.antenna_tracking_status
         )
+
+    def _update_az_unwrap_status(self, msg: AntennaAzUnwrapStatus) -> None:
+        self.az_unwrap_status = msg
+
+    def _az_unwrap_active_for(self, enc_time: float, now: float) -> bool:
+        msg = self.az_unwrap_status
+        if msg is None:
+            return False
+        if not bool(getattr(msg, "enabled", False)) or not bool(getattr(msg, "valid", False)):
+            return False
+        t = float(getattr(msg, "encoder_time_unix", float("nan")))
+        return abs(t - float(enc_time)) < 1.0 and (now - float(getattr(msg, "publish_time_unix", now))) < 2.0
 
     @staticmethod
     def _nan() -> float:
@@ -102,7 +116,10 @@ class AntennaTrackingStatus(Node):
         enc = self.enc[0]
         cmd = self.coord_ext(CoordMsg(time=enc.time), self.cmd)
 
-        daz = ((enc.lon - cmd.lon + 180.0) % 360.0) - 180.0
+        if self._az_unwrap_active_for(enc.time, now):
+            daz = enc.lon - cmd.lon
+        else:
+            daz = ((enc.lon - cmd.lon + 180.0) % 360.0) - 180.0
         del_ = enc.lat - cmd.lat
         cos_el = math.cos(math.radians(enc.lat))
         daz_cos_el = daz * cos_el

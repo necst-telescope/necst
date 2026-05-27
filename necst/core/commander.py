@@ -625,7 +625,7 @@ class Commander(PrivilegedNode):
         elif CMD == "SYNC":
             if dome_sync:
                 enc = self.get_message("encoder", timeout_sec=10)
-                antenna_az = enc.lon
+                antenna_az = enc.lon % 360.0
                 kwargs = {}
                 kwargs.update(
                     lon=[float(antenna_az)],
