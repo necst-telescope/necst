@@ -37,9 +37,18 @@ class AntennaEncoderController(DeviceNode):
             return
         # Publish unwrap status before the continuous encoder sample so
         # tracking_status can select direct-difference Az error for the same
-        # encoder timestamp without a one-sample race.
+        # encoder timestamp without a one-sample race.  Status publication must
+        # never suppress the encoder topic; if a status message ever fails
+        # validation, log it and keep publishing the finite continuous encoder
+        # sample.
         if unwrap_status.enabled:
-            self.unwrap_publisher.publish(unwrap_status)
+            try:
+                self.unwrap_publisher.publish(unwrap_status)
+            except Exception as exc:
+                self.get_logger().error(
+                    f"Az unwrap status publish failed; continuing encoder publish: {exc}",
+                    throttle_duration_sec=1,
+                )
         msg = CoordMsg(
             lon=az,
             lat=el,

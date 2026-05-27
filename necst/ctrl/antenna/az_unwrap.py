@@ -419,6 +419,23 @@ class AzUnwrapRuntime:
         else:
             self.writer.submit(payload)
 
+    @staticmethod
+    def _finite_float(value: Any, *, unknown: float = -1.0) -> float:
+        """Return a finite float suitable for ROS message float64 fields.
+
+        ROS 2 message field validation rejects NaN and infinities even though
+        they are Python floats.  Use a documented finite sentinel for unknown
+        status-only quantities so a status publish failure can never suppress
+        the encoder topic.
+        """
+        try:
+            value_f = float(value)
+        except Exception:
+            return float(unknown)
+        if math.isfinite(value_f):
+            return value_f
+        return float(unknown)
+
     def _make_status(
         self,
         *,
@@ -433,7 +450,9 @@ class AzUnwrapRuntime:
         state: str,
         reason: str,
     ) -> AntennaAzUnwrapStatus:
-        persist_age = float("nan")
+        # -1.0 means "not persisted yet".  Do not use NaN/inf here: rclpy
+        # validates float64 assignment and will reject non-finite values.
+        persist_age = -1.0
         if math.isfinite(self.writer.last_persist_time):
             persist_age = max(0.0, now - self.writer.last_persist_time)
         state_age = 0.0 if not math.isfinite(self._last_state_time) else max(0.0, now - self._last_state_time)
@@ -443,30 +462,30 @@ class AzUnwrapRuntime:
             mode=str(self.mode)[:32],
             state=str(state)[:32],
             reason=str(reason)[:128],
-            publish_time_unix=float(now),
-            encoder_time_unix=float(encoder_time),
-            raw_az_deg=float(raw_az),
-            modulo_az_deg=float(modulo_az),
-            continuous_az_deg=float(continuous_az),
+            publish_time_unix=self._finite_float(now),
+            encoder_time_unix=self._finite_float(encoder_time),
+            raw_az_deg=self._finite_float(raw_az),
+            modulo_az_deg=self._finite_float(modulo_az),
+            continuous_az_deg=self._finite_float(continuous_az),
             branch=int(branch),
             branch_nonzero=bool(branch != 0),
             branch_changed=bool(branch_changed),
-            period_deg=float(self.cfg.period_deg),
-            drive_min_deg=float(self.cfg.drive_min_deg),
-            drive_max_deg=float(self.cfg.drive_max_deg),
-            state_age_sec=float(state_age),
-            persist_age_sec=float(persist_age),
+            period_deg=self._finite_float(self.cfg.period_deg),
+            drive_min_deg=self._finite_float(self.cfg.drive_min_deg),
+            drive_max_deg=self._finite_float(self.cfg.drive_max_deg),
+            state_age_sec=self._finite_float(state_age),
+            persist_age_sec=self._finite_float(persist_age),
         )
 
     def _error_status(self, now: float, encoder_time: float, raw_az: float, state: str, reason: str) -> AntennaAzUnwrapStatus:
         previous = self.unwrapper.previous_continuous_deg
-        continuous = float("nan") if previous is None else float(previous)
+        continuous = -1.0 if previous is None else float(previous)
         branch = 0 if self.unwrapper.previous_branch is None else int(self.unwrapper.previous_branch)
         return self._make_status(
             now=now,
             encoder_time=encoder_time,
             raw_az=float(raw_az),
-            modulo_az=float("nan"),
+            modulo_az=-1.0,
             continuous_az=continuous,
             branch=branch,
             branch_changed=False,
