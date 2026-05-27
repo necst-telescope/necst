@@ -325,6 +325,12 @@ class Observation(ABC):
                 )
                 self.logger.info(f"Record name: \033[1m{self.record_name!r}\033[0m")
                 _cleanup_step("install signal handlers", rclpy.install_signal_handlers)
+                if isinstance(original_exc, ObservationAbort):
+                    self.logger.warning(f"Observation aborted: {original_exc}")
+                    raise SystemExit(130) from None
+                if isinstance(original_exc, KeyboardInterrupt):
+                    self.logger.warning("Observation aborted by KeyboardInterrupt.")
+                    raise SystemExit(130) from None
                 if cleanup_errors and original_exc is None:
                     labels = ", ".join(label for label, _ in cleanup_errors)
                     raise RuntimeError(
