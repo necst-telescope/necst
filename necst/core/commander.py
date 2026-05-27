@@ -527,23 +527,33 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "STOP":
+            # Emergency/manual stop must not depend on speed telemetry.  The
+            # original implementation tried to read ``speed`` before publishing
+            # the stop alert, which could fail when a newly started CLI had not
+            # received the speed topic yet.  For STOP, the safest first action is
+            # to publish the existing manual_stop alert as a short pulse.  The
+            # antenna control/PID nodes react to the critical alert by discarding
+            # queued commands and triggering their guard-condition stop path.
+            #
+            # This is a stop *request*, not a stop confirmation.  It deliberately
+            # does not read speed and therefore cannot fail just because speed
+            # telemetry is unavailable.
             msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
-            checker = ConditionChecker(5, reset_on_failure=True)
-            now = pytime.time()
-            current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
-            # TODO: Add timeout handler
-            while not checker.check(
-                (abs(current_speed.az) < 1e-5) and (abs(current_speed.el) < 1e-5)
-            ):
+            clear_msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
+            try:
+                command_frequency = float(config.antenna_command_frequency)
+            except Exception:
+                command_frequency = 10.0
+            publish_interval = max(0.02, min(0.1, 1.0 / max(command_frequency, 1.0)))
+            pulse_sec = max(0.3, 3.0 * publish_interval)
+            deadline = pytime.time() + pulse_sec
+            while pytime.time() < deadline:
                 self.publisher["alert_stop"].publish(msg)
-                current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
-                pytime.sleep(1 / config.antenna_command_frequency)
-
-            msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
-            self.publisher["alert_stop"].publish(msg)
-
-            # Ensure the next command is executed after the lift of alert
-            return pytime.sleep(0.5)
+                pytime.sleep(publish_interval)
+            self.publisher["alert_stop"].publish(clear_msg)
+            # Give the clear publication a small chance to leave the process
+            # before short-lived CLI wrappers destroy the node.
+            return pytime.sleep(0.05)
 
         elif CMD == "POINT":
             effective_az_target_mode = self._resolve_commander_az_target_mode(
