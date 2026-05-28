@@ -31,9 +31,16 @@ class AntennaEncoderController(DeviceNode):
                 raw_az, el_deg=el, encoder_time=record_time
             )
         except RuntimeError as exc:
-            self.get_logger().error(f"Az unwrap failed; encoder sample suppressed: {exc}", throttle_duration_sec=1)
-            if self.az_unwrap._last_status is not None:
-                self.unwrap_publisher.publish(self.az_unwrap._last_status)
+            last_status = self.az_unwrap._last_status
+            log_method = self.get_logger().error
+            if last_status is not None and getattr(last_status, "state", "") == "startup-raw-wait":
+                log_method = self.get_logger().warning
+            log_method(
+                f"Az unwrap failed; encoder sample suppressed: {exc}",
+                throttle_duration_sec=1,
+            )
+            if last_status is not None:
+                self.unwrap_publisher.publish(last_status)
             return
         # Publish unwrap status before the continuous encoder sample so
         # tracking_status can select direct-difference Az error for the same

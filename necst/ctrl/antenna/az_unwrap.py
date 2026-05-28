@@ -21,6 +21,7 @@ from neclib.coordinates.angle_unwrap import (
     BranchJumpError,
     NoValidBranchError,
     RawAngleRangeError,
+    normalize_absolute_modulo_raw,
 )
 from necst_msgs.msg import AntennaAzUnwrapStatus
 
@@ -85,7 +86,7 @@ def _drive_range_deg() -> Tuple[float, float]:
     return float(_to_float(lo, "deg", 0.0)), float(_to_float(hi, "deg", 360.0))
 
 
-def load_az_unwrap_config() -> tuple[AbsoluteModuloUnwrapConfig, Optional[Path], float, float, float, str, str]:
+def load_az_unwrap_config() -> tuple[AbsoluteModuloUnwrapConfig, Optional[Path], float, float, float, str, str, int]:
     root = getattr(config, "antenna_encoder_unwrap", None)
     az = _cfg_get(root, "az", root)
     enabled = _to_bool(_cfg_get(az, "enabled", False), False)
@@ -114,7 +115,23 @@ def load_az_unwrap_config() -> tuple[AbsoluteModuloUnwrapConfig, Optional[Path],
     state_raw_tol_value = _cfg_get(az, "state_raw_tolerance", _cfg_get(az, "state_raw_tolerance_deg", 5.0))
     state_raw_tolerance_deg = float(_to_float(state_raw_tol_value, "deg", 5.0))
     startup_policy = str(_cfg_get(az, "startup_policy", "recover_if_raw_matches" if cfg.enabled else "pass_through"))
-    return cfg, state_path, heartbeat_sec, state_warn_age_sec, state_raw_tolerance_deg, mode, startup_policy
+    startup_discard_raw_out_of_range_samples = int(
+        _cfg_get(
+            az,
+            "startup_discard_raw_out_of_range_samples",
+            _cfg_get(az, "startup_discard_out_of_range_samples", 3),
+        )
+    )
+    return (
+        cfg,
+        state_path,
+        heartbeat_sec,
+        state_warn_age_sec,
+        state_raw_tolerance_deg,
+        mode,
+        startup_policy,
+        max(0, startup_discard_raw_out_of_range_samples),
+    )
 
 
 class AtomicStateWriter:
@@ -212,6 +229,7 @@ class AzUnwrapRuntime:
             self.state_raw_tolerance_deg,
             self.mode,
             self.startup_policy,
+            self.startup_discard_raw_out_of_range_samples,
         ) = load_az_unwrap_config()
         self.enabled = bool(self.cfg.enabled)
         if self.enabled and self.state_path is None:
@@ -230,6 +248,7 @@ class AzUnwrapRuntime:
         self._startup_state_note: Optional[str] = None
         self._startup_initialized = not self.enabled
         self._last_state_reload_time = 0.0
+        self._startup_raw_out_of_range_discards = 0
         self.unwrapper = AbsoluteModuloUnwrapper(self.cfg, previous_continuous_deg=None)
 
     def _load_previous_payload(self) -> Optional[dict]:
@@ -291,15 +310,65 @@ class AzUnwrapRuntime:
         except Exception:
             return None
 
+    def _raw_within_nominal_range(self, raw_az_deg: float) -> bool:
+        try:
+            raw = float(raw_az_deg)
+        except Exception:
+            return False
+        if not math.isfinite(raw):
+            return False
+        eps = 1e-9
+        return (float(self.cfg.raw_min_deg) - eps) <= raw <= (float(self.cfg.raw_max_deg) + eps)
+
+    def _raw_range_is_full_period(self) -> bool:
+        return abs(
+            (float(self.cfg.raw_max_deg) - float(self.cfg.raw_min_deg))
+            - float(self.cfg.period_deg)
+        ) <= 1e-9
+
+    def _startup_should_discard_nominal_out_of_range_raw(self, raw_az_deg: float) -> bool:
+        """Suppress the first few finite periodic aliases after node startup.
+
+        RS-232C devices can leave a stale or partial response in the input stream
+        immediately after opening the port.  Values such as 727 deg can be a
+        harmless 2*360+7 deg alias, but they can also be a startup garbage read.
+        Before the unwrap branch is initialized, discard a small configurable
+        number of finite out-of-nominal-range samples.  After that grace window,
+        the normal modulo-aware unwrap logic may initialize from a finite alias.
+        """
+        if self._startup_initialized:
+            return False
+        if self.startup_discard_raw_out_of_range_samples <= 0:
+            return False
+        if not self._raw_range_is_full_period():
+            return False
+        if self._raw_within_nominal_range(raw_az_deg):
+            return False
+        # Non-finite values are handled by the unwrap validator, not by this
+        # startup alias grace path.
+        try:
+            raw = float(raw_az_deg)
+        except Exception:
+            return False
+        if not math.isfinite(raw):
+            return False
+        if self._startup_raw_out_of_range_discards >= self.startup_discard_raw_out_of_range_samples:
+            return False
+        self._startup_raw_out_of_range_discards += 1
+        return True
+
     def _raw_matches_previous_payload(self, raw_az_deg: float, payload: dict) -> bool:
         try:
             previous_raw = float(payload.get("raw_az_deg"))
+            current_modulo = normalize_absolute_modulo_raw(float(raw_az_deg), self.cfg)
+            previous_modulo = normalize_absolute_modulo_raw(previous_raw, self.cfg)
         except Exception:
             return False
-        # raw is an absolute-modulo value; compare on the period circle so values
-        # near 0/360 are treated correctly.
+        # raw is an absolute-modulo value; compare calibrated modulo positions on
+        # the period circle so values near 0/360 and startup aliases such as
+        # 727 deg (= 2 * 360 + 7 deg) are treated correctly.
         period = float(self.cfg.period_deg)
-        delta = ((float(raw_az_deg) - previous_raw + 0.5 * period) % period) - 0.5 * period
+        delta = ((current_modulo - previous_modulo + 0.5 * period) % period) - 0.5 * period
         return abs(delta) <= float(self.state_raw_tolerance_deg)
 
     def _initialize_startup_branch(self, raw_az_deg: float) -> None:
@@ -344,6 +413,28 @@ class AzUnwrapRuntime:
             return float(raw_az_deg), status
 
         try:
+            if self._startup_should_discard_nominal_out_of_range_raw(raw_az_deg):
+                raw = float(raw_az_deg)
+                folded = normalize_absolute_modulo_raw(raw, self.cfg)
+                status = self._make_status(
+                    now=now,
+                    encoder_time=encoder_time,
+                    raw_az=raw,
+                    modulo_az=folded,
+                    continuous_az=-1.0,
+                    branch=0,
+                    branch_changed=False,
+                    valid=False,
+                    state="startup-raw-wait",
+                    reason=(
+                        f"startup raw Az {raw:.6f} deg is outside nominal "
+                        f"range [{self.cfg.raw_min_deg:.6f}, {self.cfg.raw_max_deg:.6f}] deg; "
+                        f"discarded {self._startup_raw_out_of_range_discards}/"
+                        f"{self.startup_discard_raw_out_of_range_samples} before alias acceptance"
+                    ),
+                )
+                self._last_status = status
+                raise RuntimeError(status.reason)
             self._initialize_startup_branch(raw_az_deg)
             result = self.unwrapper.unwrap(raw_az_deg)
             state = "ok"
@@ -481,11 +572,15 @@ class AzUnwrapRuntime:
         previous = self.unwrapper.previous_continuous_deg
         continuous = -1.0 if previous is None else float(previous)
         branch = 0 if self.unwrapper.previous_branch is None else int(self.unwrapper.previous_branch)
+        try:
+            modulo = normalize_absolute_modulo_raw(float(raw_az), self.cfg)
+        except Exception:
+            modulo = -1.0
         return self._make_status(
             now=now,
             encoder_time=encoder_time,
             raw_az=float(raw_az),
-            modulo_az=-1.0,
+            modulo_az=modulo,
             continuous_az=continuous,
             branch=branch,
             branch_changed=False,
@@ -498,18 +593,17 @@ class AzUnwrapRuntime:
 
 def _manual_state_payload(cfg: AbsoluteModuloUnwrapConfig, mode: str, *, raw_az: Optional[float], continuous_az: Optional[float], branch: Optional[int]) -> dict:
     def _check_raw_range(raw: float) -> None:
-        if not (cfg.raw_min_deg <= float(raw) <= cfg.raw_max_deg):
-            raise ValueError(
-                f"manual raw Az {float(raw):.6f} deg is outside raw range "
-                f"[{cfg.raw_min_deg:.6f}, {cfg.raw_max_deg:.6f}] deg"
-            )
+        try:
+            normalize_absolute_modulo_raw(float(raw), cfg)
+        except RawAngleRangeError as exc:
+            raise ValueError(f"manual raw Az is unusable: {exc}") from exc
 
     if continuous_az is None:
         if raw_az is None or branch is None:
             raise ValueError("manual initialization requires --continuous-az or both --raw-az and --branch")
         raw_az = float(raw_az)
         _check_raw_range(raw_az)
-        modulo = ((cfg.sign * raw_az + cfg.zero_offset_deg - cfg.raw_min_deg) % cfg.period_deg) + cfg.raw_min_deg
+        modulo = normalize_absolute_modulo_raw(raw_az, cfg)
         continuous_az = modulo + int(branch) * cfg.period_deg
     else:
         continuous_az = float(continuous_az)
@@ -528,7 +622,7 @@ def _manual_state_payload(cfg: AbsoluteModuloUnwrapConfig, mode: str, *, raw_az:
         else:
             raw_az = float(raw_az)
             _check_raw_range(raw_az)
-            raw_modulo = ((cfg.sign * raw_az + cfg.zero_offset_deg - cfg.raw_min_deg) % cfg.period_deg) + cfg.raw_min_deg
+            raw_modulo = normalize_absolute_modulo_raw(raw_az, cfg)
             if abs(raw_modulo - modulo) > 1e-6:
                 raise ValueError(
                     f"manual raw_az={raw_az:.6f} deg is inconsistent with "
@@ -575,7 +669,16 @@ def main(argv=None) -> int:
     setp.add_argument("--branch", type=int, default=None, help="desired branch; requires --raw-az when --continuous-az is omitted")
     args = parser.parse_args(argv)
 
-    cfg, state_path, _heartbeat, _state_warn_age, _state_raw_tolerance, mode, _startup_policy = load_az_unwrap_config()
+    (
+        cfg,
+        state_path,
+        _heartbeat,
+        _state_warn_age,
+        _state_raw_tolerance,
+        mode,
+        _startup_policy,
+        _startup_discard_raw_out_of_range_samples,
+    ) = load_az_unwrap_config()
     if state_path is None:
         raise SystemExit("antenna_encoder_unwrap.az.state_path is not configured")
     if args.cmd == "status":

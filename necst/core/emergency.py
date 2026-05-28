@@ -34,6 +34,16 @@ def main_stop(argv: Optional[list[str]] = None) -> int:
         ),
     )
     parser.add_argument(
+        "--confirm-timeout-sec",
+        type=float,
+        default=2.0,
+        help=(
+            "Seconds to keep publishing stop while trying to confirm zero speed "
+            "from telemetry (default: 2).  If speed telemetry is unavailable, "
+            "the stop alert is still sent and left asserted."
+        ),
+    )
+    parser.add_argument(
         "--settle-sec",
         type=float,
         default=0.0,
@@ -44,7 +54,7 @@ def main_stop(argv: Optional[list[str]] = None) -> int:
     should_shutdown = _ensure_rclpy()
     com = Commander()
     try:
-        com.antenna("stop")
+        com.antenna("stop", timeout_sec=max(0.0, float(args.confirm_timeout_sec)))
         if args.settle_sec > 0:
             time.sleep(float(args.settle_sec))
         return 0
