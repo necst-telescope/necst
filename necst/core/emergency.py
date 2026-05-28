@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 import time
 from typing import Optional
@@ -40,8 +39,8 @@ def main_stop(argv: Optional[list[str]] = None) -> int:
         default=1.0,
         help=(
             "Compatibility name for the bounded stop-request duration in seconds "
-            "(default: 1).  This command does not read speed telemetry; it publishes "
-            "the existing Commander manual_stop request path."
+            "(default: 1).  This command no longer reads speed telemetry; it only "
+            "publishes the existing Commander manual_stop request path."
         ),
     )
     parser.add_argument(
@@ -50,51 +49,18 @@ def main_stop(argv: Optional[list[str]] = None) -> int:
         default=0.0,
         help="Extra seconds to keep the command process alive after stop (default: 0).",
     )
-    parser.add_argument(
-        "--no-force-exit",
-        action="store_true",
-        help=(
-            "Debug only: use normal destroy_node()/rclpy.shutdown() cleanup instead "
-            "of os._exit() after publishing the stop request."
-        ),
-    )
     args = parser.parse_args(argv)
 
-    def _stage(message: str) -> None:
-        print(f"[necst stop] {message}", file=sys.stderr, flush=True)
-
-    com = None
-    should_shutdown = False
+    should_shutdown = _ensure_rclpy()
+    com = Commander()
     try:
-        _stage("initializing rclpy")
-        should_shutdown = _ensure_rclpy()
-        _stage("creating Commander")
-        com = Commander()
-        _stage("publishing Commander antenna stop request")
         com.antenna("stop", timeout_sec=max(0.0, float(args.confirm_timeout_sec)))
-        _stage("Commander antenna stop request returned")
         if args.settle_sec > 0:
-            _stage(f"settling for {float(args.settle_sec):.3f} sec")
             time.sleep(float(args.settle_sec))
-        if args.no_force_exit:
-            _stage("normal cleanup requested")
-            return 0
-        _stage("force exiting without ROS2 cleanup")
-        os._exit(0)
-    except KeyboardInterrupt:
-        _stage("interrupted")
-        os._exit(130)
-    except BaseException as exc:
-        _stage(f"failed: {exc.__class__.__name__}: {exc}")
-        os._exit(1)
+        return 0
     finally:
-        if args.no_force_exit:
-            if com is not None:
-                _stage("destroy_node")
-                com.destroy_node()
-            if should_shutdown:
-                _stage("rclpy.shutdown")
-                _shutdown_if_needed(should_shutdown)
+        com.destroy_node()
+        _shutdown_if_needed(should_shutdown)
 
 
 def main_abort(argv: Optional[list[str]] = None) -> int:
@@ -244,7 +210,9 @@ def main_mount_move(argv: Optional[list[str]] = None) -> int:
         print(f"command id: {cmd_id}")
         if not args.no_wait:
             try:
-                com.wait_mount_point(az, el, timeout_sec=args.timeout_sec)
+                com.wait_mount_point(
+                    az, el, command_id=cmd_id, timeout_sec=args.timeout_sec
+                )
             except KeyboardInterrupt:
                 print("interrupted: sending antenna stop...", file=sys.stderr)
                 com.antenna("stop")

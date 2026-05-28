@@ -116,6 +116,10 @@ class Commander(PrivilegedNode):
             "encoder": _SubscriptionCfg(topic.antenna_encoder, 1),
             "altaz": _SubscriptionCfg(topic.altaz_cmd, 1),
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
+            # Subscribe to the same manual_stop alert that `necst stop` publishes.
+            # This lets blocking waits such as `necst mount-move` return when
+            # another terminal stops the antenna before it reaches the target.
+            "alert_stop": _SubscriptionCfg(topic.manual_stop_alert, 8),
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
             "mirror_m2": _SubscriptionCfg(topic.mirror_m2_status, 1),
             "mirror_m4": _SubscriptionCfg(topic.mirror_m4_status, 1),
@@ -170,6 +174,12 @@ class Commander(PrivilegedNode):
         # use and legacy observations keep their previous behavior.
         self.abort_checker = None
         self.abort_exception_factory = None
+        # Latched locally when this Commander observes a manual antenna stop
+        # request from any process.  ParameterList keeps only recent messages,
+        # so a short True->False stop pulse can otherwise be missed by a
+        # polling wait loop.
+        self._manual_antenna_stop_seen = False
+        self._manual_antenna_stop_time = None
 
     def _raise_if_abort_requested(self) -> None:
         checker = getattr(self, "abort_checker", None)
@@ -269,6 +279,7 @@ class Commander(PrivilegedNode):
         az_deg: float,
         el_deg: float,
         *,
+        command_id: Optional[str] = None,
         timeout_sec: Optional[Union[int, float]] = None,
     ) -> None:
         """Wait for a direct mount-Az point command using non-wrapped Az error.
@@ -277,14 +288,54 @@ class Commander(PrivilegedNode):
         absolute-encoder unwrap status is active.  A manual mount command such as
         Az=360 deg must not be considered complete at Az=0 deg, so this helper
         compares the encoder directly against the requested mechanical Az.
+
+        If another terminal issues ``necst stop`` while this wait is active, the
+        antenna intentionally stops before reaching the target.  In that case the
+        old implementation waited forever because the geometric convergence
+        condition could never become true.  We therefore also watch the control
+        status and the manual_stop alert and return as soon as the command is
+        externally interrupted or the controller leaves the requested command id.
         """
         start = pytime.monotonic()
         checker = ConditionChecker(10, reset_on_failure=True)
         threshold = float(config.antenna_pointing_accuracy.to_value("deg"))
         target_az = float(az_deg)
         target_el = float(el_deg)
+        experienced_control_id = command_id is None
         while (timeout_sec is None) or (pytime.monotonic() - start < float(timeout_sec)):
             self._raise_if_abort_requested()
+
+            if self._manual_antenna_stop_seen:
+                self.logger.warning(
+                    "Mount point wait interrupted by manual antenna stop"
+                    + (
+                        f" at {self._manual_antenna_stop_time:.6f}"
+                        if self._manual_antenna_stop_time is not None
+                        else ""
+                    )
+                )
+                return
+
+            try:
+                ctrl = self.get_message("antenna_control", timeout_sec=0.01)
+                ctrl_id = str(getattr(ctrl, "id", "") or "")
+                if command_id is not None:
+                    if ctrl_id == str(command_id):
+                        experienced_control_id = True
+                    elif experienced_control_id:
+                        self.logger.warning(
+                            "Mount point wait interrupted: control id changed "
+                            f"from {command_id!r} to {ctrl_id!r}"
+                        )
+                        return
+                if experienced_control_id and (not bool(getattr(ctrl, "controlled", True))):
+                    self.logger.warning(
+                        "Mount point wait interrupted: antenna controller is idle"
+                    )
+                    return
+            except NECSTTimeoutError:
+                pass
+
             enc = self.get_message("encoder", timeout_sec=0.2)
             daz = float(enc.lon) - target_az
             del_ = float(enc.lat) - target_el
@@ -334,6 +385,16 @@ class Commander(PrivilegedNode):
         if key not in self.parameters:
             self.parameters[key] = ParameterList.new(keep, None)
         self.parameters[key].push(msg)
+        if key == "alert_stop":
+            try:
+                targets = list(getattr(msg, "target", []))
+                applies_to_antenna = (not targets) or (namespace.antenna in targets)
+                if applies_to_antenna and bool(getattr(msg, "critical", False)):
+                    self._manual_antenna_stop_seen = True
+                    self._manual_antenna_stop_time = pytime.time()
+            except Exception:
+                # Status callbacks must never break topic ingestion.
+                pass
 
     def __check_topic(self) -> None:
         for k, v in self.__publisher.items():
