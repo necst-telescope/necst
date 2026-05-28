@@ -32,7 +32,6 @@ from necst_msgs.msg import (
     Spectral,
     TimeOnly,
     TPModeMsg,
-    TimedAzElFloat64,
 )
 from necst_msgs.srv import (
     ApplySpectralRecordingSetup,
@@ -528,42 +527,38 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "STOP":
-            # Operator stop must not depend on receiving speed telemetry.
-            # Publish a bounded manual_stop pulse and direct zero speed commands,
-            # then clear manual_stop by default so the next command is not blocked.
+            # Keep the already-working stop request path from the legacy
+            # Commander implementation, but remove the telemetry confirmation
+            # loop.  The old code waited for /ctrl/antenna/speed to become
+            # zero; on short-lived `necst stop` processes that topic may be
+            # unavailable or stale, causing the command to hang even though
+            # the antenna has already received the manual_stop alert.
+            #
+            # Semantics:
+            #   - publish manual_stop=True repeatedly for a bounded interval
+            #   - do not read speed or actual_speed
+            #   - clear manual_stop before returning
+            #
+            # This is the extracted "stopping part" of the existing stop path:
+            # the same alert_stop publisher and AlertMsg target are used; only
+            # the post-request speed-confirmation wait has been removed.
+            request_sec = 1.0 if timeout_sec is None else max(0.0, float(timeout_sec))
+            interval = max(0.01, min(0.1, 1 / config.antenna_command_frequency))
             stop_msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
             clear_msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
-            if "stop_speed_cmd" not in self.publisher:
-                self.publisher["stop_speed_cmd"] = topic.antenna_speed_cmd.publisher(self)
 
-            try:
-                scan_interval = float(config.ros_topic_scan_interval_sec)
-            except Exception:
-                scan_interval = 1.0
-            pulse_sec = (
-                max(1.2, scan_interval + 0.25)
-                if timeout_sec is None
-                else max(0.0, float(timeout_sec))
-            )
-            interval = max(0.01, min(0.1, 1 / config.antenna_command_frequency))
-            deadline = pytime.monotonic() + pulse_sec
+            deadline = pytime.monotonic() + request_sec
             first = True
-
             while first or (pytime.monotonic() < deadline):
                 first = False
                 self.publisher["alert_stop"].publish(stop_msg)
-                self.publisher["stop_speed_cmd"].publish(
-                    TimedAzElFloat64(az=0.0, el=0.0, time=pytime.time())
-                )
                 pytime.sleep(interval)
 
-            # Default stop is a pulse, not a latched manual_stop state.
-            # Always clear manual_stop before returning; operator-level latching
-            # is available from `necst stop --hold`.
+            # Default `necst stop` is not a latched interlock.  It is a bounded
+            # stop request and then release, so the next explicit command is not
+            # blocked by stale manual_stop state.  Repeat the clear a few times
+            # to tolerate best-effort delivery.
             for _ in range(3):
-                self.publisher["stop_speed_cmd"].publish(
-                    TimedAzElFloat64(az=0.0, el=0.0, time=pytime.time())
-                )
                 self.publisher["alert_stop"].publish(clear_msg)
                 pytime.sleep(interval)
             return None
