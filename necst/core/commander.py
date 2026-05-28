@@ -32,6 +32,7 @@ from necst_msgs.msg import (
     Spectral,
     TimeOnly,
     TPModeMsg,
+    TimedAzElFloat64,
 )
 from necst_msgs.srv import (
     ApplySpectralRecordingSetup,
@@ -527,58 +528,45 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "STOP":
+            # Operator stop must not depend on receiving speed telemetry.
+            # Publish a bounded manual_stop pulse and direct zero speed commands,
+            # then clear manual_stop by default so the next command is not blocked.
             stop_msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
             clear_msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
-            checker = ConditionChecker(5, reset_on_failure=True)
-            interval = 1 / config.antenna_command_frequency
-            confirm_timeout_sec = 2.0 if timeout_sec is None else float(timeout_sec)
-            confirm_deadline = pytime.monotonic() + max(0.0, confirm_timeout_sec)
-            saw_speed_topic = False
+            if "stop_speed_cmd" not in self.publisher:
+                self.publisher["stop_speed_cmd"] = topic.antenna_speed_cmd.publisher(self)
 
-            # Publish the stop alert before trying to read the speed topic.  The
-            # previous implementation read ``speed`` first, so a transient lack
-            # of speed messages made ``necst stop`` or Ctrl-C handling fail
-            # before the stop alert was ever sent.
-            self.publisher["alert_stop"].publish(stop_msg)
+            try:
+                scan_interval = float(config.ros_topic_scan_interval_sec)
+            except Exception:
+                scan_interval = 1.0
+            pulse_sec = (
+                max(1.2, scan_interval + 0.25)
+                if timeout_sec is None
+                else max(0.0, float(timeout_sec))
+            )
+            interval = max(0.01, min(0.1, 1 / config.antenna_command_frequency))
+            deadline = pytime.monotonic() + pulse_sec
+            first = True
 
-            while True:
-                try:
-                    current_speed = self.get_message(
-                        "speed", time=pytime.time(), timeout_sec=0.1
-                    )
-                    saw_speed_topic = True
-                    stopped = (abs(current_speed.az) < 1e-5) and (
-                        abs(current_speed.el) < 1e-5
-                    )
-                    if checker.check(stopped):
-                        self.publisher["alert_stop"].publish(clear_msg)
-                        # Ensure the next command is executed after the lift of alert.
-                        return pytime.sleep(0.5)
-                except NECSTTimeoutError:
-                    # Continue publishing the stop alert.  Missing speed
-                    # telemetry must not prevent the emergency stop request
-                    # itself from being delivered.
-                    checker.check(False)
-
-                if pytime.monotonic() >= confirm_deadline:
-                    if saw_speed_topic:
-                        self.logger.warning(
-                            "Antenna stop alert was sent, but stopped speed could "
-                            "not be confirmed within "
-                            f"{confirm_timeout_sec:.2f} sec; keeping manual_stop "
-                            "asserted."
-                        )
-                    else:
-                        self.logger.warning(
-                            "Antenna stop alert was sent, but no speed topic was "
-                            "received within "
-                            f"{confirm_timeout_sec:.2f} sec; keeping manual_stop "
-                            "asserted."
-                        )
-                    return None
-
+            while first or (pytime.monotonic() < deadline):
+                first = False
                 self.publisher["alert_stop"].publish(stop_msg)
+                self.publisher["stop_speed_cmd"].publish(
+                    TimedAzElFloat64(az=0.0, el=0.0, time=pytime.time())
+                )
                 pytime.sleep(interval)
+
+            # Default stop is a pulse, not a latched manual_stop state.
+            # Always clear manual_stop before returning; operator-level latching
+            # is available from `necst stop --hold`.
+            for _ in range(3):
+                self.publisher["stop_speed_cmd"].publish(
+                    TimedAzElFloat64(az=0.0, el=0.0, time=pytime.time())
+                )
+                self.publisher["alert_stop"].publish(clear_msg)
+                pytime.sleep(interval)
+            return None
 
         elif CMD == "POINT":
             effective_az_target_mode = self._resolve_commander_az_target_mode(
