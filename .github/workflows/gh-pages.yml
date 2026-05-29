@@ -10,7 +10,7 @@ jobs:
     name: BuildAndPublishDocumentation
     runs-on: ubuntu-latest
     container:
-      image: ros:humble-ros-base
+      image: ros:jazzy-ros-base
     env:
       PACKAGE_NAME: necst
       PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
