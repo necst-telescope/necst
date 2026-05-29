@@ -3,6 +3,7 @@ max-line-length = 200
 extend-ignore = E203
 exclude =
     .venv,
-    *.pyi
+    *.pyi,
+    docs
 per-file-ignores =
     bin/progress.py:E501
