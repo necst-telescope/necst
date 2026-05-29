@@ -15,6 +15,10 @@ from ...rx.spectral_recording_setup import (
     sha256_text,
     validate_snapshot,
 )
+from ...rx.spectral_recording_sg import (
+    run_sg_preflight,
+    select_sg_preflight_plan,
+)
 from .pointing_reference_beam import (
     attach_pointing_reference_to_snapshot,
     build_pointing_reference_context,
@@ -35,10 +39,22 @@ class SpectralRecordingObservationSetup:
     snapshot_toml: str
     sidecars: Tuple[Tuple[str, str], ...] = field(default_factory=tuple)
     setup_override_policy: str = "strict"
+    sg_preflight_policy: str = "none"
+    sg_preflight_scope: str = "active_lo_chains"
+    sg_preflight_plan: Tuple[Tuple[str, Mapping[str, Any]], ...] = field(
+        default_factory=tuple
+    )
+    sg_preflight_timeout_sec: float = 10.0
+    sg_preflight_allow_command_echo: bool = False
 
     @property
     def strict(self) -> bool:
         return self.setup_override_policy == "strict"
+
+    @property
+    def sg_preflight_enabled(self) -> bool:
+        policy = str(self.sg_preflight_policy or "none").strip().lower()
+        return policy not in {"", "none", "off", "false", "0"}
 
 
 def _truthy(value: Any) -> bool:
@@ -53,6 +69,36 @@ def _optional_str(params: Mapping[str, Any], *keys: str) -> Optional[str]:
     for key in keys:
         if key in params and params[key] not in (None, ""):
             return str(params[key])
+    return None
+
+
+def _optional_float(params: Mapping[str, Any], key: str, default: float) -> float:
+    value = params.get(key, None)
+    if value in (None, ""):
+        return float(default)
+    return float(value)
+
+
+def _optional_bool(params: Mapping[str, Any], key: str, default: bool = False) -> bool:
+    value = params.get(key, None)
+    if value in (None, ""):
+        return bool(default)
+    return _truthy(value)
+
+
+def _optional_str_list(
+    params: Mapping[str, Any], *keys: str
+) -> Optional[Tuple[str, ...]]:
+    for key in keys:
+        if key not in params or params[key] in (None, ""):
+            continue
+        value = params[key]
+        if isinstance(value, str):
+            parts = [part.strip() for part in value.replace(";", ",").split(",")]
+            return tuple(part for part in parts if part)
+        if isinstance(value, (list, tuple)):
+            return tuple(str(item) for item in value if item not in (None, ""))
+        return (str(value),)
     return None
 
 
@@ -434,6 +480,37 @@ def build_spectral_recording_observation_setup(
     if policy == "legacy":
         return None
 
+    sg_preflight_policy = (
+        (_optional_str(params, "sg_preflight_policy") or "none").strip().lower()
+    )
+    if sg_preflight_policy in {"", "off", "false", "0"}:
+        sg_preflight_policy = "none"
+    if sg_preflight_policy not in {
+        "none",
+        "verify_only",
+        "apply_and_verify",
+        "warn_only",
+    }:
+        raise ValueError(
+            "Unsupported sg_preflight_policy: "
+            f"{sg_preflight_policy!r}; expected none, verify_only, apply_and_verify, or warn_only"
+        )
+    sg_preflight_ids = _optional_str_list(params, "sg_preflight_ids", "sg_preflight_id")
+    sg_preflight_scope = (
+        (
+            _optional_str(params, "sg_preflight_scope")
+            or ("explicit_sg_ids" if sg_preflight_ids else "active_lo_chains")
+        )
+        .strip()
+        .lower()
+    )
+    sg_preflight_timeout_sec = _optional_float(params, "sg_preflight_timeout_sec", 10.0)
+    sg_preflight_allow_command_echo = _optional_bool(
+        params,
+        "sg_preflight_allow_command_echo",
+        False,
+    )
+
     pointing_reference_context = build_pointing_reference_context(
         params,
         obs_file=obs_file,
@@ -492,6 +569,23 @@ def build_spectral_recording_observation_setup(
         validate_snapshot(snapshot)
         snapshot_toml = dumps_toml(snapshot)
 
+    sg_preflight_plan: Tuple[Tuple[str, Mapping[str, Any]], ...] = ()
+    if sg_preflight_policy != "none":
+        lo_path_for_preflight = _resolve_path(lo_ref, base_dir=base_dir)
+        if lo_path_for_preflight is None:
+            raise ValueError(
+                "sg_preflight_policy requires lo_profile/lo_profile_path in .obs parameters. "
+                "A standalone spectral_recording_snapshot does not safely define SG set/apply commands."
+            )
+        lo_profile_for_preflight = read_toml(lo_path_for_preflight)
+        plan = select_sg_preflight_plan(
+            lo_profile=lo_profile_for_preflight,
+            snapshot=snapshot,
+            scope=sg_preflight_scope,
+            sg_ids=sg_preflight_ids,
+        )
+        sg_preflight_plan = tuple((sg_id, plan[sg_id]) for sg_id in sorted(plan))
+
     sidecars[_CANONICAL_SIDECAR_NAMES["snapshot"]] = snapshot_toml
     ordered_sidecars = tuple((name, sidecars[name]) for name in sorted(sidecars))
     setup_hash = str(snapshot.get("canonical_snapshot_sha256") or "")
@@ -505,6 +599,11 @@ def build_spectral_recording_observation_setup(
         snapshot_toml=snapshot_toml,
         sidecars=ordered_sidecars,
         setup_override_policy=policy,
+        sg_preflight_policy=sg_preflight_policy,
+        sg_preflight_scope=sg_preflight_scope,
+        sg_preflight_plan=sg_preflight_plan,
+        sg_preflight_timeout_sec=sg_preflight_timeout_sec,
+        sg_preflight_allow_command_echo=sg_preflight_allow_command_echo,
     )
 
 
@@ -541,6 +640,29 @@ def reject_legacy_recording_kwargs_for_setup(
             "spectral recording setup cannot be combined with legacy observation kwargs: "
             + ", ".join(conflicts)
         )
+
+
+def run_sg_preflight_with_commander(
+    com: Any, setup: SpectralRecordingObservationSetup
+) -> Dict[str, Dict[str, Any]]:
+    """Run optional observation-time SG preflight before recorder startup.
+
+    When `sg_preflight_policy` is omitted or `none`, this function does nothing
+    and preserves the pre-u14_v12 behaviour exactly.  The caller can log the
+    returned per-SG results; strict failures raise before the spectral recorder
+    setup is applied.
+    """
+
+    if not setup.sg_preflight_enabled:
+        return {}
+    plan = {sg_id: dict(entry) for sg_id, entry in setup.sg_preflight_plan}
+    return run_sg_preflight(
+        com,
+        plan=plan,
+        policy=setup.sg_preflight_policy,
+        timeout_sec=setup.sg_preflight_timeout_sec,
+        allow_command_echo=setup.sg_preflight_allow_command_echo,
+    )
 
 
 def apply_setup_with_commander(

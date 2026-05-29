@@ -10,7 +10,14 @@ from typing import Dict, List, Optional, Tuple
 from neclib.data import Resize
 from neclib.recorders import NECSTDBWriter, Recorder
 from neclib.utils import ConditionChecker
-from necst_msgs.msg import Binning, ControlStatus, Sampling, Spectral, TPModeMsg
+from necst_msgs.msg import (
+    Binning,
+    ControlStatus,
+    Sampling,
+    Spectral,
+    SpectrometerStatus,
+    TPModeMsg,
+)
 from rclpy.publisher import Publisher
 
 from .. import config, namespace, service, topic
@@ -181,9 +188,16 @@ class SpectralData(DeviceNode):
         self._fetch_max_packets_per_timer = fetch_limit if fetch_limit > 0 else 1
 
         self.publisher: Dict[int, Publisher] = {}
+        self.status_publisher = topic.spectrometer_status.publisher(self)
         self.create_timer(1, self.stream)
+        self.create_timer(1, self.publish_spectrometer_status)
 
         self.last_data = {}
+        self._last_dump_time: float = 0.0
+        self._last_dump_receive_time: float = 0.0
+        self._last_record_time: float = 0.0
+        self._last_stream_time: float = 0.0
+        self._latest_time_spectrometer: str = ""
         record_root = os.environ.get("NECST_RECORD_ROOT", None)
         self.recorder = Recorder(record_root or Path.home() / "data")
         if not any(isinstance(w, NECSTDBWriter) for w in self.recorder.writers):
@@ -441,6 +455,12 @@ class SpectralData(DeviceNode):
         for key, packet in batch.items():
             self.last_data[key] = packet
             timestamp, _time_spectrometer, data = packet
+            self._last_dump_time = float(timestamp)
+            # Use local receipt wall time for health/staleness.  Some spectrometer
+            # timestamps can have site/UTC offsets during setup; using them for
+            # age would falsely mark a live spectrometer as stale.
+            self._last_dump_receive_time = pytime.time()
+            self._latest_time_spectrometer = _fit_string(str(_time_spectrometer), 32)
             for board_id, _data in data.items():
                 self.resizers[key][board_id].push(_data, timestamp)
 
@@ -473,6 +493,91 @@ class SpectralData(DeviceNode):
                     integ=float(self.resizers[key][board_id].keep_duration),
                 )
                 self.publisher[_id].publish(msg)
+                self._last_stream_time = now
+
+    def publish_spectrometer_status(self) -> None:
+        """Publish lightweight acquisition/recording health without spectral arrays."""
+        now = pytime.time()
+        metadata = self.metadata.get(now)
+        section = self.control_section.get(now)
+        last_dump_age = (
+            (now - self._last_dump_receive_time)
+            if self._last_dump_receive_time
+            else float("nan")
+        )
+        queue_sizes = []
+        for q in self.data_queue.values():
+            try:
+                queue_sizes.append(int(q.qsize()))
+            except Exception:
+                pass
+        n_boards = 0
+        for packet in self.last_data.values():
+            try:
+                n_boards += len(packet[2])
+            except Exception:
+                pass
+        missing_board_count = 0
+        if self.io:
+            # If a stream has no recent data packet, count it as a missing stream.
+            missing_board_count = sum(1 for key in self.io if key not in self.last_data)
+        active_setup = self.spectral_recording_runtime.active_setup
+        saving_enabled = True
+        warning = ""
+        if active_setup is not None:
+            try:
+                saving_enabled = bool(active_setup.check_save_allowed())
+            except Exception as exc:
+                saving_enabled = False
+                warning = str(exc)
+        if not getattr(self.recorder, "is_recording", False):
+            saving_enabled = False
+        tp_start = -1
+        tp_stop = -1
+        if self.tp_range and len(self.tp_range) >= 2:
+            tp_start, tp_stop = int(self.tp_range[0]), int(self.tp_range[1])
+        recorder_path = ""
+        try:
+            recorder_path = _fit_string(str(getattr(self.recorder, "root", "")), 128)
+        except Exception:
+            recorder_path = ""
+        self.status_publisher.publish(
+            SpectrometerStatus(
+                valid=True,
+                recorder_active=bool(getattr(self.recorder, "is_recording", False)),
+                saving_enabled=bool(saving_enabled),
+                acquiring=bool(
+                    self._last_dump_time
+                    and last_dump_age == last_dump_age
+                    and last_dump_age < 5.0
+                ),
+                publish_time_unix=now,
+                last_dump_time_unix=float(self._last_dump_time or float("nan")),
+                last_record_time_unix=float(self._last_record_time or float("nan")),
+                last_stream_time_unix=float(self._last_stream_time or float("nan")),
+                last_dump_age_sec=float(last_dump_age),
+                latest_time_spectrometer=_fit_string(
+                    self._latest_time_spectrometer, 32
+                ),
+                record_every_n=int(config.record_every_n_spectral_data or 1),
+                data_queue_size_max=max(queue_sizes) if queue_sizes else 0,
+                n_streams=int(len(self.io)),
+                n_boards=int(n_boards),
+                missing_board_count=int(missing_board_count),
+                tp_mode=bool(self.tp_mode),
+                tp_range_start=int(tp_start),
+                tp_range_stop=int(tp_stop),
+                qlook_ch_start=int(self.qlook_ch_range[0]),
+                qlook_ch_stop=int(self.qlook_ch_range[1]),
+                metadata_position=_fit_string(metadata.position, 8),
+                metadata_id=_fit_string(metadata.id, 16),
+                section_kind=_fit_string(section.kind, 64),
+                section_label=_fit_string(section.label, 64),
+                line_index=int(section.line_index),
+                recorder_path=recorder_path,
+                warning=_fit_string(warning, 128),
+            )
+        )
 
     def _spectral_chunk(self, msg: Spectral) -> List[Dict[str, object]]:
         fields = msg.get_fields_and_field_types()
@@ -681,6 +786,7 @@ class SpectralData(DeviceNode):
                         self._record_legacy_stream(
                             key, board_id, spectral_data, time, time_spectrometer
                         )
+                        self._last_record_time = float(time)
                     else:
                         self._record_active_stream(
                             key=key,
@@ -689,6 +795,7 @@ class SpectralData(DeviceNode):
                             time=time,
                             time_spectrometer=time_spectrometer,
                         )
+                        self._last_record_time = float(time)
                         if active_setup.fatal_error:
                             self.logger.error(
                                 "Active spectral recording error latched; stopping this record tick: "

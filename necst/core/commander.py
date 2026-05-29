@@ -1,13 +1,17 @@
 """Interface to send command to any remotely controlled part of telescope."""
 
+import json
 import math
 import time as pytime
+import uuid
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 from neclib.core import read
 from neclib.utils import ConditionChecker, ParameterList
+from std_msgs.msg import String
+
 from necst_msgs.msg import (
     AlertMsg,
     Binning,
@@ -102,6 +106,8 @@ class Commander(PrivilegedNode):
             "dome_oc": topic.dome_oc,
             "timeonly": topic.timeonly,
             "tp_mode": topic.tp_mode,
+            "observation_progress": topic.observation_progress,
+            "observation_abort": topic.observation_abort,
         }
         self.publisher: Dict[str, Publisher] = {}
 
@@ -110,6 +116,10 @@ class Commander(PrivilegedNode):
             "encoder": _SubscriptionCfg(topic.antenna_encoder, 1),
             "altaz": _SubscriptionCfg(topic.altaz_cmd, 1),
             "speed": _SubscriptionCfg(topic.antenna_speed_cmd, 1),
+            # Subscribe to the same manual_stop alert that `necst stop` publishes.
+            # This lets blocking waits such as `necst mount-move` return when
+            # another terminal stops the antenna before it reaches the target.
+            "alert_stop": _SubscriptionCfg(topic.manual_stop_alert, 8),
             "chopper": _SubscriptionCfg(topic.chopper_status, 1),
             "mirror_m2": _SubscriptionCfg(topic.mirror_m2_status, 1),
             "mirror_m4": _SubscriptionCfg(topic.mirror_m4_status, 1),
@@ -159,11 +169,241 @@ class Commander(PrivilegedNode):
         self.savespec = True
         self.tp_mode = False
         self.tp_range = []
+        # Observation runners may set these to make blocking Commander.wait()
+        # calls abortable.  They are intentionally opt-in so standalone Commander
+        # use and legacy observations keep their previous behavior.
+        self.abort_checker = None
+        self.abort_exception_factory = None
+        # Latched locally when this Commander observes a manual antenna stop
+        # request from any process.  ParameterList keeps only recent messages,
+        # so a short True->False stop pulse can otherwise be missed by a
+        # polling wait loop.
+        self._manual_antenna_stop_seen = False
+        self._manual_antenna_stop_time = None
+
+    def _raise_if_abort_requested(self) -> None:
+        checker = getattr(self, "abort_checker", None)
+        if not callable(checker):
+            return
+        try:
+            requested = bool(checker())
+        except Exception:
+            requested = False
+        if not requested:
+            return
+        factory = getattr(self, "abort_exception_factory", None)
+        if callable(factory):
+            exc = factory()
+            if isinstance(exc, BaseException):
+                raise exc
+        raise RuntimeError("Observation abort requested")
+
+    @staticmethod
+    def _normalize_az_target_mode(mode: Optional[str]) -> str:
+        value = str(mode or "auto").strip().lower()
+        aliases = {
+            "": "auto",
+            "auto": "auto",
+            "sky": "sky",
+            "modulo": "sky",
+            "mount": "mount",
+            "mechanical": "mount",
+            "machine": "mount",
+        }
+        if value not in aliases:
+            raise ValueError(
+                f"Invalid az_target_mode={mode!r}; use 'auto', 'sky', or 'mount'."
+            )
+        return aliases[value]
+
+    @staticmethod
+    def _is_raw_numeric_altaz_point(
+        *,
+        target,
+        name,
+        offset,
+        reference,
+        start,
+        stop,
+    ) -> bool:
+        if (
+            target is None
+            or name is not None
+            or offset is not None
+            or reference is not None
+        ):
+            return False
+        if start is not None or stop is not None:
+            return False
+        try:
+            frame = str(target[2]).strip().lower()
+            float(target[0])
+            float(target[1])
+        except Exception:
+            return False
+        return frame in {"altaz", "azel", "horizontal"}
+
+    def _resolve_commander_az_target_mode(
+        self,
+        *,
+        requested: Optional[str],
+        target,
+        name,
+        offset,
+        reference,
+        start,
+        stop,
+        direct_mode: bool,
+    ) -> str:
+        mode = self._normalize_az_target_mode(requested)
+        raw_altaz_point = self._is_raw_numeric_altaz_point(
+            target=target,
+            name=name,
+            offset=offset,
+            reference=reference,
+            start=start,
+            stop=stop,
+        )
+        if mode == "auto":
+            return "mount" if (bool(direct_mode) and raw_altaz_point) else "sky"
+        if mode == "mount":
+            if not raw_altaz_point:
+                raise ValueError(
+                    "az_target_mode='mount' is only valid for raw numeric AltAz point "
+                    "commands without name, offset, reference, or scan endpoints."
+                )
+            if not bool(direct_mode):
+                raise ValueError(
+                    "az_target_mode='mount' requires direct_mode=True because mount Az "
+                    "is an explicit mechanical angle."
+                )
+        return mode
+
+    def wait_mount_point(
+        self,
+        az_deg: float,
+        el_deg: float,
+        *,
+        command_id: Optional[str] = None,
+        timeout_sec: Optional[Union[int, float]] = None,
+    ) -> None:
+        """Wait for a direct mount-Az point command using non-wrapped Az error.
+
+        TrackingStatus intentionally treats sky azimuths modulo 360 unless an
+        absolute-encoder unwrap status is active.  A manual mount command such as
+        Az=360 deg must not be considered complete at Az=0 deg, so this helper
+        compares the encoder directly against the requested mechanical Az.
+
+        If another terminal issues ``necst stop`` while this wait is active, the
+        antenna intentionally stops before reaching the target.  In that case the
+        old implementation waited forever because the geometric convergence
+        condition could never become true.  We therefore also watch the control
+        status and the manual_stop alert and return as soon as the command is
+        externally interrupted or the controller leaves the requested command id.
+        """
+        start = pytime.monotonic()
+        checker = ConditionChecker(10, reset_on_failure=True)
+        threshold = float(config.antenna_pointing_accuracy.to_value("deg"))
+        target_az = float(az_deg)
+        target_el = float(el_deg)
+        experienced_control_id = command_id is None
+        while (timeout_sec is None) or (
+            pytime.monotonic() - start < float(timeout_sec)
+        ):
+            self._raise_if_abort_requested()
+
+            if self._manual_antenna_stop_seen:
+                self.logger.warning(
+                    "Mount point wait interrupted by manual antenna stop"
+                    + (
+                        f" at {self._manual_antenna_stop_time:.6f}"
+                        if self._manual_antenna_stop_time is not None
+                        else ""
+                    )
+                )
+                return
+
+            try:
+                ctrl = self.get_message("antenna_control", timeout_sec=0.01)
+                ctrl_id = str(getattr(ctrl, "id", "") or "")
+                if command_id is not None:
+                    if ctrl_id == str(command_id):
+                        experienced_control_id = True
+                    elif experienced_control_id:
+                        self.logger.warning(
+                            "Mount point wait interrupted: control id changed "
+                            f"from {command_id!r} to {ctrl_id!r}"
+                        )
+                        return
+                if experienced_control_id and (
+                    not bool(getattr(ctrl, "controlled", True))
+                ):
+                    self.logger.warning(
+                        "Mount point wait interrupted: antenna controller is idle"
+                    )
+                    return
+            except NECSTTimeoutError:
+                pass
+
+            enc = self.get_message("encoder", timeout_sec=0.2)
+            daz = float(enc.lon) - target_az
+            del_ = float(enc.lat) - target_el
+            cos_el = math.cos(math.radians(float(enc.lat)))
+            error = ((daz * cos_el) ** 2 + del_**2) ** 0.5
+            self.logger.debug(
+                f"Mount point error={error:9.5f}deg "
+                f"(daz={daz:9.5f}, del={del_:9.5f})",
+                throttle_duration_sec=0.3,
+            )
+            if checker.check(error < threshold):
+                self.logger.debug("Mount point tracking OK")
+                return
+            pytime.sleep(0.05)
+        raise NECSTTimeoutError("Couldn't confirm mount-move target convergence")
+
+    def observation_abort(
+        self,
+        *,
+        reason: str = "",
+        requester: str = "commander",
+        repeat: int = 3,
+        interval_sec: float = 0.1,
+    ) -> str:
+        """Publish an observation abort request.
+
+        This does not perform cleanup itself.  A running Observation instance
+        subscribes to the request and enters its own cleanup path, preserving
+        recorder/spectral-gate/metadata state as far as possible.
+        """
+        request_id = f"abort-{uuid.uuid4()}"
+        payload = {
+            "request_id": request_id,
+            "time_unix": pytime.time(),
+            "requester": str(requester or "commander"),
+            "reason": str(reason or "operator requested abort"),
+        }
+        msg = String(data=json.dumps(payload, ensure_ascii=False, sort_keys=True))
+        n = max(1, int(repeat))
+        for i in range(n):
+            self.publisher["observation_abort"].publish(msg)
+            if i + 1 < n:
+                pytime.sleep(max(0.0, float(interval_sec)))
+        return request_id
 
     def __callback(self, msg: Any, *, key: str, keep: int = 1) -> None:
         if key not in self.parameters:
             self.parameters[key] = ParameterList.new(keep, None)
         self.parameters[key].push(msg)
+        if key == "alert_stop":
+            try:
+                targets = list(getattr(msg, "target", []))
+                applies_to_antenna = (not targets) or (namespace.antenna in targets)
+                if applies_to_antenna and bool(getattr(msg, "critical", False)):
+                    self._manual_antenna_stop_seen = True
+                    self._manual_antenna_stop_time = pytime.time()
+            except Exception:
+                # Status callbacks must never break topic ingestion.
+                pass
 
     def __check_topic(self) -> None:
         for k, v in self.__publisher.items():
@@ -238,6 +478,8 @@ class Commander(PrivilegedNode):
         margin: Optional[float] = None,
         direct_mode: bool = False,
         cos_correction: bool = False,
+        az_target_mode: str = "auto",
+        timeout_sec: Optional[Union[int, float]] = None,
     ) -> None:
         """Control antenna direction and motion.
 
@@ -266,6 +508,12 @@ class Commander(PrivilegedNode):
             Whether to wait for the command to be completed.
         speed
             Speed of the scan in ``unit``/s.
+        az_target_mode
+            Azimuth target interpretation for raw AltAz point commands.
+            ``"auto"`` keeps observation/scan commands as sky coordinates and
+            treats direct raw AltAz point commands as mount coordinates;
+            ``"sky"`` means modulo sky azimuth; ``"mount"`` means continuous
+            mount azimuth.
 
         Notes
         -----
@@ -349,25 +597,55 @@ class Commander(PrivilegedNode):
         """
         CMD = cmd.upper()
         if CMD == "STOP":
-            msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
-            checker = ConditionChecker(5, reset_on_failure=True)
-            now = pytime.time()
-            current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
-            # TODO: Add timeout handler
-            while not checker.check(
-                (abs(current_speed.az) < 1e-5) and (abs(current_speed.el) < 1e-5)
-            ):
-                self.publisher["alert_stop"].publish(msg)
-                current_speed = self.get_message("speed", time=now, timeout_sec=0.1)
-                pytime.sleep(1 / config.antenna_command_frequency)
+            # Keep the already-working stop request path from the legacy
+            # Commander implementation, but remove the telemetry confirmation
+            # loop.  The old code waited for /ctrl/antenna/speed to become
+            # zero; on short-lived `necst stop` processes that topic may be
+            # unavailable or stale, causing the command to hang even though
+            # the antenna has already received the manual_stop alert.
+            #
+            # Semantics:
+            #   - publish manual_stop=True repeatedly for a bounded interval
+            #   - do not read speed or actual_speed
+            #   - clear manual_stop before returning
+            #
+            # This is the extracted "stopping part" of the existing stop path:
+            # the same alert_stop publisher and AlertMsg target are used; only
+            # the post-request speed-confirmation wait has been removed.
+            request_sec = 1.0 if timeout_sec is None else max(0.0, float(timeout_sec))
+            interval = max(0.01, min(0.1, 1 / config.antenna_command_frequency))
+            stop_msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
+            clear_msg = AlertMsg(
+                critical=False, warning=False, target=[namespace.antenna]
+            )
 
-            msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
-            self.publisher["alert_stop"].publish(msg)
+            deadline = pytime.monotonic() + request_sec
+            first = True
+            while first or (pytime.monotonic() < deadline):
+                first = False
+                self.publisher["alert_stop"].publish(stop_msg)
+                pytime.sleep(interval)
 
-            # Ensure the next command is executed after the lift of alert
-            return pytime.sleep(0.5)
+            # Default `necst stop` is not a latched interlock.  It is a bounded
+            # stop request and then release, so the next explicit command is not
+            # blocked by stale manual_stop state.  Repeat the clear a few times
+            # to tolerate best-effort delivery.
+            for _ in range(3):
+                self.publisher["alert_stop"].publish(clear_msg)
+                pytime.sleep(interval)
+            return None
 
         elif CMD == "POINT":
+            effective_az_target_mode = self._resolve_commander_az_target_mode(
+                requested=az_target_mode,
+                target=target,
+                name=name,
+                offset=offset,
+                reference=reference,
+                start=start,
+                stop=stop,
+                direct_mode=direct_mode,
+            )
             kwargs = {}
             if name is not None:
                 kwargs.update(name=name)
@@ -399,20 +677,25 @@ class Commander(PrivilegedNode):
                     direct_mode=direct_mode,
                 )
 
-            # Propagate optional cos correction for longitude offsets.
-            # Backward compatible:
-            # only set if the service definition includes the field.
+            # Propagate optional fields in a backward compatible way.
             try:
                 _tmp = CoordinateCommand.Request()
                 if hasattr(_tmp, "cos_correction"):
                     kwargs.update(cos_correction=bool(cos_correction))
+                if hasattr(_tmp, "az_target_mode"):
+                    kwargs.update(az_target_mode=str(effective_az_target_mode))
             except Exception:
                 pass
             req = CoordinateCommand.Request(**kwargs)
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
-                self.wait("antenna")
+                if effective_az_target_mode == "mount" and target is not None:
+                    self.wait_mount_point(
+                        float(target[0]), float(target[1]), timeout_sec=timeout_sec
+                    )
+                else:
+                    self.wait("antenna", timeout_sec=timeout_sec)
             return res.id
 
         elif CMD == "SCAN":
@@ -423,6 +706,10 @@ class Commander(PrivilegedNode):
                 _tmp = CoordinateCommand.Request()
                 if hasattr(_tmp, "cos_correction"):
                     scan_kwargs.update(cos_correction=bool(cos_correction))
+                if hasattr(_tmp, "az_target_mode"):
+                    # Scans are observation-style sky coordinates unless explicitly
+                    # overridden by a developer.
+                    scan_kwargs.update(az_target_mode=str(az_target_mode or "sky"))
             except Exception:
                 pass
 
@@ -467,7 +754,7 @@ class Commander(PrivilegedNode):
             self.publisher["cmd_trans"].publish(Boolean(data=True, time=ts))
             self.logger.warning(f"cmd_trans sent for scan id={res.id}, now={ts:.6f}")
             if wait:
-                self.wait("antenna", mode="control", id=res.id)
+                self.wait("antenna", mode="control", id=res.id, timeout_sec=timeout_sec)
             return res.id
 
         elif CMD == "ERROR":
@@ -624,7 +911,7 @@ class Commander(PrivilegedNode):
         elif CMD == "SYNC":
             if dome_sync:
                 enc = self.get_message("encoder", timeout_sec=10)
-                antenna_az = enc.lon
+                antenna_az = enc.lon % 360.0
                 kwargs = {}
                 kwargs.update(
                     lon=[float(antenna_az)],
@@ -893,6 +1180,7 @@ class Commander(PrivilegedNode):
 
         if MODE == "ERROR":
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+                self._raise_if_abort_requested()
                 try:
                     error = ERROR_GETTER("error")
                     self.logger.debug(
@@ -908,6 +1196,7 @@ class Commander(PrivilegedNode):
         elif MODE == "CONTROL":
             experienced = False
             while (timeout_sec is None) or (pytime.monotonic() - start < timeout_sec):
+                self._raise_if_abort_requested()
                 now = pytime.time()
                 try:
                     error = ERROR_GETTER("error")

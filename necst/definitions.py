@@ -96,9 +96,9 @@ class qos:
         ).liveliness_lease_duration
 
         logger.debug(
-            f"QoS profile for topic {topicname!r}:\n\t{reliability = }\n"  # noqa: E251,E202
-            f"\t{durability = }\n\t{deadline = }\n\t{liveliness = }\n"  # noqa: E251,E202
-            f"\t{lease_duration = }\n\thistory = KEEP_LAST (default)\n\tdepth = 10"  # noqa: E251,E202
+            f"QoS profile for topic {topicname!r}:\n\treliability={reliability}\n"
+            f"\tdurability={durability}\n\tdeadline={deadline}\n\tliveliness={liveliness}\n"
+            f"\tlease_duration={lease_duration}\n\thistory=KEEP_LAST (default)\n\tdepth=10"
         )
 
         return QoSProfile(
@@ -113,8 +113,14 @@ class qos:
 
 
 class topic:
+    from std_msgs.msg import String
+
     from necst_msgs.msg import (
         AlertMsg,
+        AntennaAzUnwrapStatus,
+        AntennaCommandQueueStatus,
+        AntennaPointingStatus,
+        AntennaSectionStatus,
         Binning,
         Boolean,
         CalcLog,
@@ -139,6 +145,7 @@ class topic:
         Sampling,
         SISBias,
         Spectral,
+        SpectrometerStatus,
         TimedAzElFloat64,
         TimedAzElInt64,
         TimeOnly,
@@ -151,6 +158,9 @@ class topic:
 
     # raw_coord = Topic(CoordCmdMsg, "raw_coord", qos.reliable, namespace.antenna)
     antenna_encoder = Topic(CoordMsg, "encoder", qos.realtime, namespace.antenna)
+    antenna_az_unwrap_status = Topic(
+        AntennaAzUnwrapStatus, "az_unwrap_status", qos.realtime, namespace.antenna
+    )
     antenna_speed_cmd = Topic(
         TimedAzElFloat64, "speed", qos.realtime, namespace.antenna
     )
@@ -179,6 +189,15 @@ class topic:
     )
     antenna_control_status = Topic(
         ControlStatus, "controlled", qos.reliable, namespace.antenna
+    )
+    antenna_section_status = Topic(
+        AntennaSectionStatus, "section_status", qos.realtime, namespace.antenna
+    )
+    antenna_command_queue_status = Topic(
+        AntennaCommandQueueStatus,
+        "command_queue_status",
+        qos.realtime,
+        namespace.antenna,
     )
     pid_param = Topic(PIDMsg, "pid_param", qos.reliable, namespace.antenna)
     chopper_cmd = Topic(ChopperMsg, "chopper_cmd", qos.reliable, namespace.calib)
@@ -223,6 +242,9 @@ class topic:
     antenna_tracking = Topic(
         TrackingStatus, "tracking_status", qos.realtime, namespace.antenna
     )
+    antenna_pointing_status = Topic(
+        AntennaPointingStatus, "pointing_status", qos.realtime, namespace.antenna
+    )
     antenna_cmd_transition = Topic(
         Boolean, "cmd_trans", qos.reliable, namespace.antenna
     )
@@ -232,6 +254,11 @@ class topic:
     )
     spectra_rec = Topic(Sampling, "spectra_record", qos.reliable, namespace.rx)
     obsmode = Topic(ObservingMode, "observing_mode", qos.realtime, namespace.core)
+    observation_progress = Topic(
+        String, "observation_progress", qos.reliable_latched, namespace.core
+    )
+    # Volatile on purpose: an old abort request must not abort a future observation.
+    observation_abort = Topic(String, "observation_abort", qos.reliable, namespace.core)
     channel_binning = Topic(Binning, "channel_binning", qos.reliable, namespace.rx)
     pid_log = Topic(CalcLog, "pid_log", qos.realtime, namespace.antenna)
     powermeter = Topic(DeviceReading, "powermeter", qos.realtime, namespace.rx, True)
@@ -269,6 +296,9 @@ class topic:
         TimeOnly, "com_delay_get_time", qos.realtime, namespace.core
     )
     tp_mode = Topic(TPModeMsg, "tp_mode", qos.realtime, namespace.core)
+    spectrometer_status = Topic(
+        SpectrometerStatus, "spectrometer_status", qos.realtime, namespace.rx
+    )
 
 
 class service:
