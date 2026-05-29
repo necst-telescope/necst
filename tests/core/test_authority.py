@@ -1,5 +1,4 @@
 import pytest
-from rclpy.exceptions import InvalidHandle
 
 from necst.core import Authorizer, PrivilegedNode, require_privilege
 from necst.utils import get_absolute_name, spinning
@@ -144,22 +143,10 @@ class TestAuthority(TesterNode):
             assert auth_client.get_privilege() is True
             assert auth_server.approved == auth_client.identity
 
-        # ROS 2 Jazzy raises InvalidHandle more eagerly than Humble when a node or
-        # an executor is destroyed while background callbacks are winding down.
-        # This test intentionally models Ctrl-C-like teardown, so either the old
-        # post-destroy stale-state assertion path or Jazzy's InvalidHandle path is
-        # acceptable here.  The production code should still release the local
-        # privilege flag before destruction.
-        destroy_error = None
-        try:
-            destroy([auth_server, auth_client])
-        except InvalidHandle as exc:
-            destroy_error = exc
+        destroy([auth_server, auth_client])
 
         assert auth_client.has_privilege is False
-        if destroy_error is not None:
-            return
-        with pytest.raises((AssertionError, InvalidHandle)):
+        with pytest.raises(AssertionError):
             assert auth_server.approved is None, "Cannot communicate after Ctrl-C"
 
     def test_ignore_unresponsive_privileged_node(self):
@@ -181,7 +168,7 @@ class TestAuthority(TesterNode):
 
     def test_server_singleton(self):
         initial = Authorizer()
-        with pytest.raises(InvalidHandle):
+        with pytest.raises(RuntimeError, match="Authority server is already running"):
             Authorizer()
 
         with spinning([initial]):

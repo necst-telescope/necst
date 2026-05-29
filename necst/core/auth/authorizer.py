@@ -42,9 +42,16 @@ class Authorizer(Node):
     def __init__(self, **kwargs) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace, **kwargs)
         self.logger = self.get_logger()
-        self._check_singleton()
-
         self.__approved: Optional[str] = None
+        self._ping_node = None
+        self._ping_executor = None
+        self.ping_cli = None
+        self.request_srv = None
+
+        if self._has_duplicate_authorizer():
+            self.logger.error("Authority server is already running. Destroying this.")
+            self.destroy_node()
+            raise RuntimeError("Authority server is already running")
 
         self.request_srv = service.privilege_request.service(
             self, self._authorize, callback_group=MutuallyExclusiveCallbackGroup()
@@ -83,13 +90,23 @@ class Authorizer(Node):
         if timeout_sec is None:
             timeout_sec = config.ros_service_timeout_sec
 
-        if not utils.wait_for_server_to_pick_up(self.ping_cli, timeout_sec=timeout_sec):
-            self.logger.info("Ping server on current privileged node is unreachable.")
+        ping_cli = self.ping_cli
+        ping_executor = self._ping_executor
+        if ping_cli is None or ping_executor is None:
+            self.logger.info("Ping client is not available.")
             return False
 
-        request = Empty.Request()
-        future = self.ping_cli.call_async(request)
-        self._ping_executor.spin_until_future_complete(future, timeout_sec)
+        try:
+            if not utils.wait_for_server_to_pick_up(ping_cli, timeout_sec=timeout_sec):
+                self.logger.info("Ping server on current privileged node is unreachable.")
+                return False
+
+            request = Empty.Request()
+            future = ping_cli.call_async(request)
+            ping_executor.spin_until_future_complete(future, timeout_sec)
+        except (InvalidHandle, RuntimeError):
+            self.logger.info("Ping client/executor was invalid while checking privilege.")
+            return False
 
         if not future.done():
             self.logger.info("Ping request to current privileged node timed out.")
@@ -162,25 +179,37 @@ class Authorizer(Node):
 
         self._ping_node = None
         self._ping_executor = None
-        super().destroy_node()
+        self.ping_cli = None
+        try:
+            super().destroy_node()
+        except (InvalidHandle, RuntimeError):
+            pass
 
-    def _check_singleton(self) -> None:
-        """Check if this server node is duplicated.
+    def _has_duplicate_authorizer(self) -> bool:
+        """Return ``True`` if another authorizer node is already visible.
 
-        If this node isn't singleton, creating service server in ``__init__`` will fail,
-        so this method isn't necessarily required. This method just issues error message
-        to the console.
-
+        This check is only a user-friendly guard.  The actual uniqueness is still
+        enforced by the ROS service name.  The important point is to stop ``__init__``
+        immediately when a duplicate is detected; continuing after destroying this
+        node creates services on an invalid Jazzy handle.
         """
-        reachable_nodes = self.get_node_names_and_namespaces()
+        try:
+            reachable_nodes = self.get_node_names_and_namespaces()
+        except (InvalidHandle, RuntimeError):
+            return False
         match = [
             nodename
-            for nodename, namespace in reachable_nodes
-            if (nodename == self.NodeName) and (namespace == self.Namespace)
+            for nodename, namespace_ in reachable_nodes
+            if (nodename == self.NodeName) and (namespace_ == self.Namespace)
         ]
-        if len(match) > 1:
-            self.logger.error("Authority server is already running. Destroying this...")
+        return len(match) > 1
+
+    def _check_singleton(self) -> None:
+        """Backward-compatible singleton check wrapper."""
+        if self._has_duplicate_authorizer():
+            self.logger.error("Authority server is already running. Destroying this.")
             self.destroy_node()
+            raise RuntimeError("Authority server is already running")
 
 
 def main(args=None) -> None:

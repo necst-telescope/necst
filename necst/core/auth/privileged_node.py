@@ -105,7 +105,10 @@ class PrivilegedNode(ServerNode):
                 self._set_privilege(False)
         else:
             if self.ping_srv is not None:
-                self.ping_srv.destroy()
+                try:
+                    self.destroy_service(self.ping_srv)
+                except (InvalidHandle, RuntimeError):
+                    pass
             self.ping_srv = None
 
     def _send_request(self, request: Any, client: Client) -> Any:

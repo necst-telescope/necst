@@ -1,5 +1,5 @@
 import time
-from threading import Event, Thread
+from threading import Event, Thread, current_thread
 from typing import Optional, Type
 
 import rclpy
@@ -42,6 +42,7 @@ class ServerNode(Node):
         executor.add_node(self)
         self.thread = None
         self.event = None
+        self._servernode_destroyed = False
 
     def start_server(self) -> None:
         self.stop_server()
@@ -60,23 +61,36 @@ class ServerNode(Node):
     def stop_server(self) -> None:
         if self.event is not None:
             self.event.set()
-        if self.thread is not None:
-            self.thread.join()
+        if self.thread is not None and self.thread is not current_thread():
+            self.thread.join(timeout=2.0)
         self.event = None
         self.thread = None
 
     def destroy_node(self) -> None:
+        if getattr(self, "_servernode_destroyed", False):
+            return
+        self._servernode_destroyed = True
+
         self.stop_server()
-        for node in list(self._executor.get_nodes()):
+        executor = getattr(self, "_executor", None)
+        if executor is not None:
             try:
-                self.executor.remove_node(node)
+                nodes = list(executor.get_nodes())
+            except (InvalidHandle, RuntimeError):
+                nodes = []
+            for node in nodes:
+                try:
+                    executor.remove_node(node)
+                except (InvalidHandle, RuntimeError):
+                    pass
+            try:
+                executor.shutdown()
             except (InvalidHandle, RuntimeError):
                 pass
         try:
-            self.executor.shutdown()
+            super().destroy_node()
         except (InvalidHandle, RuntimeError):
             pass
-        super().destroy_node()
 
     def wait_until_future_complete(
         self, future: Future, timeout_sec: Optional[float] = None
