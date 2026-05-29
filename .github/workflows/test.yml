@@ -26,7 +26,6 @@ jobs:
         uses: ./.github/actions/setup-necst
       - name: Install test dependency
         run: |
-          python3 -m pip install --upgrade pip --break-system-packages
           python3 -m pip install --break-system-packages \
           black==24.3.0 \
           flake8==7.1.0 \
