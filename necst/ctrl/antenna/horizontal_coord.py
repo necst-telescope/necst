@@ -70,9 +70,9 @@ class HorizontalCoord(AlertHandlerNode):
         self._gen_lock = threading.RLock()
 
         # TODO: Add the following parameters to the config
-        self._min_buffer_sec = 0.5
-        self._max_buffer_sec = 3.0
-        self._max_groups_per_convert = 10
+        self._min_buffer_sec = config.antenna.min_buffer_sec
+        self._max_buffer_sec = config.antenna.max_buffer_sec
+        self._max_groups_per_convert = config.antenna.max_groups_per_convert
 
         self.tracking_ok = False
         self.executing_generator = CoordinateGeneratorManager()
