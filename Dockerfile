@@ -16,7 +16,7 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 COPY . $ROS2_WS/src/necst/
 
 RUN pip install setuptools==70.3.0 --break-system-packages
-#RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git --break-system-packages)
+RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git --break-system-packages)
 RUN pip install ipython \
     --break-system-packages \
     --ignore-installed psutil
