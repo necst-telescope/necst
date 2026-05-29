@@ -7,3 +7,4 @@ exclude =
     docs
 per-file-ignores =
     bin/progress.py:E501
+ignore = Q000,D100,D104,D107,I100,I201
