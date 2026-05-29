@@ -1,10 +1,9 @@
 [flake8]
-max-line-length = 200
-extend-ignore = E203
-exclude =
-    .venv,
-    *.pyi,
-    docs
-per-file-ignores =
-    bin/progress.py:E501
-ignore = Q000,D100,D104,D107,I100,I201
+  max-line-length = 200
+  extend-ignore = E203,Q,D,I
+  exclude =
+      .venv,
+      *.pyi
+  per-file-ignores =
+      bin/progress.py:E501
+  
