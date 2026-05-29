@@ -120,7 +120,7 @@ def send_request(
         raise RuntimeError("Service client not spinning.")
 
     future = client.call_async(request)
-    node.executor.spin_until_future_complete(future, timeout_sec)
+    rclpy.spin_until_future_complete(node, future)
 
     result = future.result()
     if result is None:
