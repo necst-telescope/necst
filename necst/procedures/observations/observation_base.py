@@ -216,6 +216,11 @@ class Observation(ABC):
                 self._raise_if_abort_requested()
                 run_completed = True
             finally:
+                self.com.record("stop")
+                self.com.record("tp_mode", tp_mode=False, tp_range=[])
+                self.com.record("savespec", save=True)
+                self.com.antenna("stop")
+                if hasattr(config, "spectrometer"):
                 cleanup_errors = []
                 original_exc = sys.exc_info()[1]
                 if original_exc is None and run_completed:
