@@ -11,7 +11,8 @@ jobs:
     name: ROSPackagePythonTesting
     runs-on: ubuntu-latest
     container:
-      image: ros:humble-ros-base
+      image: ros:jazzy
+
     env:
       PACKAGE_NAME: necst
       PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
