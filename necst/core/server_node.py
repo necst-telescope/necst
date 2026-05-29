@@ -1,9 +1,10 @@
 import time
-from threading import Event, Thread
+from threading import Event, Thread, current_thread
 from typing import Optional, Type
 
 import rclpy
-from rclpy.executors import Executor, MultiThreadedExecutor
+from rclpy.executors import Executor, ExternalShutdownException, MultiThreadedExecutor
+from rclpy.exceptions import InvalidHandle
 from rclpy.node import Node
 from rclpy.task import Future
 
@@ -41,6 +42,7 @@ class ServerNode(Node):
         executor.add_node(self)
         self.thread = None
         self.event = None
+        self._servernode_destroyed = False
 
     def start_server(self) -> None:
         self.stop_server()
@@ -50,22 +52,45 @@ class ServerNode(Node):
 
     def __spin(self) -> None:
         while rclpy.ok() and (self.event is not None) and (not self.event.is_set()):
-            self.executor.spin_once(0.1)
+            try:
+                self.executor.spin_once(0.1)
+            except (ExternalShutdownException, InvalidHandle, RuntimeError):
+                break
             # Timeout=0 significantly affects system performance.
 
     def stop_server(self) -> None:
         if self.event is not None:
             self.event.set()
-        if self.thread is not None:
-            self.thread.join()
+        if self.thread is not None and self.thread is not current_thread():
+            self.thread.join(timeout=2.0)
         self.event = None
         self.thread = None
 
     def destroy_node(self) -> None:
+        if getattr(self, "_servernode_destroyed", False):
+            return
+        self._servernode_destroyed = True
+
         self.stop_server()
-        [self.executor.remove_node(node) for node in self._executor.get_nodes()]
-        self.executor.shutdown()
-        super().destroy_node()
+        executor = getattr(self, "_executor", None)
+        if executor is not None:
+            try:
+                nodes = list(executor.get_nodes())
+            except (InvalidHandle, RuntimeError):
+                nodes = []
+            for node in nodes:
+                try:
+                    executor.remove_node(node)
+                except (InvalidHandle, RuntimeError):
+                    pass
+            try:
+                executor.shutdown()
+            except (InvalidHandle, RuntimeError):
+                pass
+        try:
+            super().destroy_node()
+        except (InvalidHandle, RuntimeError):
+            pass
 
     def wait_until_future_complete(
         self, future: Future, timeout_sec: Optional[float] = None

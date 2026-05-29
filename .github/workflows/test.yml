@@ -11,7 +11,8 @@ jobs:
     name: ROSPackagePythonTesting
     runs-on: ubuntu-latest
     container:
-      image: ros:humble-ros-base
+      image: ros:jazzy
+
     env:
       PACKAGE_NAME: necst
       PACKAGE_PATH: ros2_ws/src/${{ github.event.repository.name }}
@@ -25,13 +26,14 @@ jobs:
         uses: ./.github/actions/setup-necst
       - name: Install test dependency
         run: |
-          pip install \
-            "black==24.3.0" \
-            "flake8==7.1.0" \
-            "myst-parser==0.18.0" \
-            "pydata-sphinx-theme==0.7.2" \
-            "pytest-cov==3.0.0" \
-            "sphinx==5.0.0"
+          python3 -m pip install --break-system-packages \
+          black==24.3.0 \
+          flake8==7.1.0 \
+          myst-parser==0.18.0 \
+          pydata-sphinx-theme==0.7.2 \
+          pytest-cov==3.0.0 \
+          sphinx==5.0.0
+
       - name: Lint with Flake8
         run: python3 -m flake8 docs tests ${PACKAGE_NAME}
       - name: Format with Black
@@ -43,7 +45,7 @@ jobs:
           . install/setup.bash
           cd src/necst
           echo $TELESCOPE
-          cat /usr/local/lib/python3.10/dist-packages/neclib/devices/__init__.py
+          cat /usr/local/lib/python3.12/dist-packages/neclib/devices/__init__.py
           python3 -m pytest --cov --cov-report xml -v tests
         env:
             TELESCOPE: NANTEN2

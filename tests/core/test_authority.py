@@ -1,5 +1,4 @@
 import pytest
-from rclpy.exceptions import InvalidHandle
 
 from necst.core import Authorizer, PrivilegedNode, require_privilege
 from necst.utils import get_absolute_name, spinning
@@ -169,7 +168,7 @@ class TestAuthority(TesterNode):
 
     def test_server_singleton(self):
         initial = Authorizer()
-        with pytest.raises(InvalidHandle):
+        with pytest.raises(RuntimeError, match="Authority server is already running"):
             Authorizer()
 
         with spinning([initial]):

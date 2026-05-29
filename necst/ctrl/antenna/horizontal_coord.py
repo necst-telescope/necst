@@ -61,7 +61,7 @@ class HorizontalCoord(AlertHandlerNode):
 
         self.publisher = topic.altaz_cmd.publisher(self)
         topic.antenna_encoder.subscription(self, self._update_enc)
-        topic.weather.subscription(self, self._update_weather)
+        topic.weather["out"].subscription(self, self._update_weather)
         topic.antenna_cmd_transition.subscription(self, self.next)
         service.raw_coord.service(self, self._update_cmd)
         service.scan_block.service(self, self._update_scan_block_cmd)
