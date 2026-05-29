@@ -65,6 +65,7 @@ class Authorizer(Node):
         self._ping_node = rclpy.create_node(
             f"{self.NodeName}_ping_client_{uuid.uuid4().hex[:8]}",
             namespace=self.Namespace,
+            context=self.context,
         )
         self._ping_executor = SingleThreadedExecutor()
         self._ping_executor.add_node(self._ping_node)
