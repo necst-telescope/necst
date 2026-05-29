@@ -24,10 +24,10 @@ jobs:
         uses: ./.github/actions/setup-necst
       - name: Install correct versions of pip and setuptools
         run: |
-            pip install setuptools==70.3.0
+            pip install setuptools==70.3.0 --break-system-packages
       - name: Install dependencies
         run: |
-          pip3 install \
+          python3 -m pip install --break-system-packages\
             "myst-parser==0.18.0" \
             "pydata-sphinx-theme==0.7.2" \
             "sphinx==5.0.0" \
