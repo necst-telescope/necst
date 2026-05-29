@@ -4,9 +4,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.procedures.observations.file_based &#8212; necst 4.0.19 documentation</title>
+    <title>necst.procedures.observations.file_based &#8212; necst 4.0.20 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -123,7 +123,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.19</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -214,6 +214,11 @@
     </a>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.emergency.html">
+     necst.core.emergency
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.recorder.html">
      necst.core.recorder
     </a>
@@ -245,6 +250,11 @@
      </i>
     </label>
     <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.antenna.az_unwrap.html">
+       necst.ctrl.antenna.az_unwrap
+      </a>
+     </li>
      <li class="toctree-l3">
       <a class="reference internal" href="necst.ctrl.antenna.encoder.html">
        necst.ctrl.antenna.encoder
@@ -295,6 +305,11 @@
      <li class="toctree-l3">
       <a class="reference internal" href="necst.ctrl.calibrator.chopper.html">
        necst.ctrl.calibrator.chopper
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.calibrator.sim_devices.html">
+       necst.ctrl.calibrator.sim_devices
       </a>
      </li>
     </ul>
@@ -420,6 +435,11 @@
     </label>
     <ul>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.measurement.knife_edge.html">
+       necst.procedures.measurement.knife_edge
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.measurement.measurement_base.html">
        necst.procedures.measurement.measurement_base
       </a>
@@ -457,13 +477,28 @@
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.observation_base.html">
+       necst.procedures.observations.observation_base
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.optical_pointing.html">
        necst.procedures.observations.optical_pointing
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.pointing_reference_beam.html">
+       necst.procedures.observations.pointing_reference_beam
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.position_switching.html">
        necst.procedures.observations.position_switching
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.progress.html">
+       necst.procedures.observations.progress
       </a>
      </li>
      <li class="toctree-l3">
@@ -476,12 +511,12 @@
        necst.procedures.observations.skydip
       </a>
      </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.spectral_recording_sequence.html">
+       necst.procedures.observations.spectral_recording_sequence
+      </a>
+     </li>
     </ul>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.procedures.observation_base.html">
-     necst.procedures.observation_base
-    </a>
    </li>
   </ul>
  </li>
@@ -533,6 +568,21 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.sis_bias.html">
      necst.rx.sis_bias
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectral_recording_runtime.html">
+     necst.rx.spectral_recording_runtime
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectral_recording_setup.html">
+     necst.rx.spectral_recording_setup
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectral_recording_sg.html">
+     necst.rx.spectral_recording_sg
     </a>
    </li>
    <li class="toctree-l2">
@@ -627,9 +677,9 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="necst.procedures.observations.file_based.FileBasedObservation">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FileBasedObservation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="necst.procedures.observation_base.html#necst.procedures.observation_base.Observation" title="necst.procedures.observation_base.Observation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Observation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="necst.procedures.observations.observation_base.html#necst.procedures.observations.observation_base.Observation" title="necst.procedures.observations.observation_base.Observation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Observation</span></code></a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p>
 </dd>
 </dl>
@@ -639,13 +689,89 @@
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.FileBasedObservation.before_record_controls">
+<span class="sig-name descname"><span class="pre">before_record_controls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation.before_record_controls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation.before_record_controls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook after privilege acquisition and before legacy record controls.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.FileBasedObservation.after_record_start">
+<span class="sig-name descname"><span class="pre">after_record_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation.after_record_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation.after_record_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook after recorder start and default parameter-file sidecars.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.FileBasedObservation.before_record_stop">
+<span class="sig-name descname"><span class="pre">before_record_stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation.before_record_stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation.before_record_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook before recorder stop in the cleanup path.</p>
+<p>Implementations must not clear active spectral-recording setup here,
+because the recorder may still be running until <code class="docutils literal notranslate"><span class="pre">record(&quot;stop&quot;)</span></code>
+returns.  Use <a class="reference internal" href="#necst.procedures.observations.file_based.FileBasedObservation.after_record_stop" title="necst.procedures.observations.file_based.FileBasedObservation.after_record_stop"><code class="xref py py-meth docutils literal notranslate"><span class="pre">after_record_stop()</span></code></a> for deactivation that is safe
+only after recorder stop.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.FileBasedObservation.after_record_stop">
+<span class="sig-name descname"><span class="pre">after_record_stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation.after_record_stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation.after_record_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook after recorder stop in the cleanup path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.FileBasedObservation.allow_legacy_recording_cleanup_controls">
+<span class="sig-name descname"><span class="pre">allow_legacy_recording_cleanup_controls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation.allow_legacy_recording_cleanup_controls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation.allow_legacy_recording_cleanup_controls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether cleanup may send legacy TP/binning reset commands.</p>
+<p>File-based spectral-recording setup observations override this to prevent
+legacy controls from being sent while an active setup remains uncleared
+after an uncertain recorder-stop failure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.FileBasedObservation.allow_legacy_recording_startup_controls">
+<span class="sig-name descname"><span class="pre">allow_legacy_recording_startup_controls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation.allow_legacy_recording_startup_controls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation.allow_legacy_recording_startup_controls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether startup may send legacy recorder-control commands.</p>
+<p>File-based spectral-recording setup mode overrides this after setup
+application so inactive CLI defaults such as <code class="docutils literal notranslate"><span class="pre">ch=None</span></code> or
+<code class="docutils literal notranslate"><span class="pre">tp_mode=False</span></code> are consumed without sending old recorder controls.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="necst.procedures.observations.file_based.FileBasedObservation.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation.run" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#FileBasedObservation.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.FileBasedObservation.run" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>file</strong> (<em>Union</em><em>[</em><em>PathLike</em><em>, </em><em>str</em><em>, </em><em>IO</em><em>]</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -658,7 +784,7 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OTF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#OTF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.OTF" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#necst.procedures.observations.file_based.FileBasedObservation" title="necst.procedures.observations.file_based.FileBasedObservation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileBasedObservation</span></code></a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p>
 </dd>
 </dl>
@@ -680,7 +806,7 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RadioPointing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#RadioPointing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.RadioPointing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#necst.procedures.observations.file_based.FileBasedObservation" title="necst.procedures.observations.file_based.FileBasedObservation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileBasedObservation</span></code></a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p>
 </dd>
 </dl>
@@ -693,6 +819,50 @@
 <dt class="sig sig-object py" id="necst.procedures.observations.file_based.RadioPointing.SpecParser">
 <span class="sig-name descname"><span class="pre">SpecParser</span></span><a class="headerlink" href="#necst.procedures.observations.file_based.RadioPointing.SpecParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">RadioPointingSpec</span></code></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.PSW">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PSW</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#PSW"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.PSW" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#necst.procedures.observations.file_based.FileBasedObservation" title="necst.procedures.observations.file_based.FileBasedObservation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileBasedObservation</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.PSW.observation_type">
+<span class="sig-name descname"><span class="pre">observation_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PSW'</span></em><a class="headerlink" href="#necst.procedures.observations.file_based.PSW.observation_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.PSW.SpecParser">
+<span class="sig-name descname"><span class="pre">SpecParser</span></span><a class="headerlink" href="#necst.procedures.observations.file_based.PSW.SpecParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">PSWSpec</span></code></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.Grid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/procedures/observations/file_based.html#Grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.procedures.observations.file_based.Grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#necst.procedures.observations.file_based.FileBasedObservation" title="necst.procedures.observations.file_based.FileBasedObservation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileBasedObservation</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>record_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.Grid.observation_type">
+<span class="sig-name descname"><span class="pre">observation_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Grid'</span></em><a class="headerlink" href="#necst.procedures.observations.file_based.Grid.observation_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="necst.procedures.observations.file_based.Grid.SpecParser">
+<span class="sig-name descname"><span class="pre">SpecParser</span></span><a class="headerlink" href="#necst.procedures.observations.file_based.Grid.SpecParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">GridSpec</span></code></p>
 </dd></dl>
 
 </dd></dl>

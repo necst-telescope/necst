@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.core.auth.authorizer &#8212; necst 4.0.19 documentation</title>
+    <title>necst.core.auth.authorizer &#8212; necst 4.0.20 documentation</title>
     
   <link href="../../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -120,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.19</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -162,7 +162,7 @@
 
 
 <div class="viewcode-block" id="Authorizer"><a class="viewcode-back" href="../../../../_source/necst.core.auth.authorizer.html#necst.core.auth.authorizer.Authorizer">[docs]</a><span class="k">class</span> <span class="nc">Authorizer</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Singleton privilege server.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Singleton privilege server.</span>
 
 <span class="sd">    To interact with this server, subclass `PrivilegeNode`.</span>
 
@@ -202,11 +202,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">approved</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Identity string of currently privileged node.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Identity string of currently privileged node.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__approved</span>
 
     <span class="k">def</span> <span class="nf">_ping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Assume auth ping server only responds if it has privilege.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assume auth ping server only responds if it has privilege.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checking status of current privileged node...&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">wait_for_server_to_pick_up</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ping_cli</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ping server on current privileged node is unreachable.&quot;</span><span class="p">)</span>
@@ -219,7 +219,7 @@
             <span class="k">raise</span> <span class="n">NECSTAuthorityError</span><span class="p">(</span><span class="s2">&quot;Authorizer isn&#39;t spinning.&quot;</span><span class="p">)</span>
         <span class="n">request</span> <span class="o">=</span> <span class="n">Empty</span><span class="o">.</span><span class="n">Request</span><span class="p">()</span>
         <span class="n">future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ping_cli</span><span class="o">.</span><span class="n">call_async</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">spin_until_future_complete</span><span class="p">(</span><span class="n">future</span><span class="p">,</span> <span class="n">timeout_sec</span><span class="p">)</span>
+        <span class="n">rclpy</span><span class="o">.</span><span class="n">spin_until_future_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">future</span><span class="p">)</span>
         <span class="c1"># NOTE: Use of `rclpy.spin_until_future_complete(self, future, self.executor)`</span>
         <span class="c1"># will cause deadlock. Reason unknown.</span>
 
@@ -265,7 +265,7 @@
         <span class="k">return</span> <span class="n">response</span>
 
     <span class="k">def</span> <span class="nf">_check_singleton</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Check if this server node is duplicated.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if this server node is duplicated.</span>
 
 <span class="sd">        If this node isn&#39;t singleton, creating service server in ``__init__`` will fail,</span>
 <span class="sd">        so this method isn&#39;t necessarily required. This method just issues error message</span>

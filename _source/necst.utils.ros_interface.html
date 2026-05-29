@@ -4,9 +4,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>necst.utils.ros_interface &#8212; necst 4.0.19 documentation</title>
+    <title>necst.utils.ros_interface &#8212; necst 4.0.20 documentation</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -123,7 +123,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.19</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -214,6 +214,11 @@
     </a>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.emergency.html">
+     necst.core.emergency
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="necst.core.recorder.html">
      necst.core.recorder
     </a>
@@ -245,6 +250,11 @@
      </i>
     </label>
     <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.antenna.az_unwrap.html">
+       necst.ctrl.antenna.az_unwrap
+      </a>
+     </li>
      <li class="toctree-l3">
       <a class="reference internal" href="necst.ctrl.antenna.encoder.html">
        necst.ctrl.antenna.encoder
@@ -295,6 +305,11 @@
      <li class="toctree-l3">
       <a class="reference internal" href="necst.ctrl.calibrator.chopper.html">
        necst.ctrl.calibrator.chopper
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.ctrl.calibrator.sim_devices.html">
+       necst.ctrl.calibrator.sim_devices
       </a>
      </li>
     </ul>
@@ -420,6 +435,11 @@
     </label>
     <ul>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.measurement.knife_edge.html">
+       necst.procedures.measurement.knife_edge
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.measurement.measurement_base.html">
        necst.procedures.measurement.measurement_base
       </a>
@@ -457,13 +477,28 @@
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.observation_base.html">
+       necst.procedures.observations.observation_base
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.optical_pointing.html">
        necst.procedures.observations.optical_pointing
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.pointing_reference_beam.html">
+       necst.procedures.observations.pointing_reference_beam
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="necst.procedures.observations.position_switching.html">
        necst.procedures.observations.position_switching
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.progress.html">
+       necst.procedures.observations.progress
       </a>
      </li>
      <li class="toctree-l3">
@@ -476,12 +511,12 @@
        necst.procedures.observations.skydip
       </a>
      </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="necst.procedures.observations.spectral_recording_sequence.html">
+       necst.procedures.observations.spectral_recording_sequence
+      </a>
+     </li>
     </ul>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="necst.procedures.observation_base.html">
-     necst.procedures.observation_base
-    </a>
    </li>
   </ul>
  </li>
@@ -533,6 +568,21 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.rx.sis_bias.html">
      necst.rx.sis_bias
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectral_recording_runtime.html">
+     necst.rx.spectral_recording_runtime
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectral_recording_setup.html">
+     necst.rx.spectral_recording_setup
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.rx.spectral_recording_sg.html">
+     necst.rx.spectral_recording_sg
     </a>
    </li>
    <li class="toctree-l2">
@@ -635,13 +685,13 @@
 </pre></div>
 </div>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>interface</strong> (<em>Any</em>) – </p></li>
 <li><p><strong>sep</strong> (<em>str</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
@@ -658,13 +708,13 @@
 </pre></div>
 </div>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>S</em>) – </p></li>
 <li><p><strong>namespace</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>S</em></p>
 </dd>
 </dl>
@@ -682,13 +732,13 @@
 </pre></div>
 </div>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>client</strong> (<em>Client</em>) – </p></li>
 <li><p><strong>timeout_sec</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
@@ -699,7 +749,7 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qos_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">rclpy.qos.QoSProfile</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">support_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#Topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.Topic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">T</span></code>]</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>msg_type</strong> (<em>Any</em>) – </p></li>
 <li><p><strong>topic</strong> (<em>str</em>) – </p></li>
@@ -738,13 +788,13 @@
 <dt class="sig sig-object py" id="necst.utils.ros_interface.Topic.subscription">
 <span class="sig-name descname"><span class="pre">subscription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#Topic.subscription"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.Topic.subscription" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>node</strong> (<em>Node</em>) – </p></li>
 <li><p><strong>callback</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>None</em><em>]</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Subscription</em></p>
 </dd>
 </dl>
@@ -754,10 +804,10 @@
 <dt class="sig sig-object py" id="necst.utils.ros_interface.Topic.publisher">
 <span class="sig-name descname"><span class="pre">publisher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#Topic.publisher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.Topic.publisher" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>node</strong> (<em>Node</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Publisher</em></p>
 </dd>
 </dl>
@@ -767,10 +817,10 @@
 <dt class="sig sig-object py" id="necst.utils.ros_interface.Topic.get_children">
 <span class="sig-name descname"><span class="pre">get_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#Topic.get_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.Topic.get_children" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>node</strong> (<em>Node</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Dict</em>[str, <a class="reference internal" href="#necst.utils.ros_interface.Topic" title="necst.utils.ros_interface.Topic"><em>Topic</em></a>]</p>
 </dd>
 </dl>
@@ -783,7 +833,7 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Service</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">srv_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">srv_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qos_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">rclpy.qos.QoSProfile</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">NoneType</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#Service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.Service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">T</span></code>]</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>srv_type</strong> (<em>Any</em>) – </p></li>
 <li><p><strong>srv_name</strong> (<em>str</em>) – </p></li>
@@ -816,13 +866,13 @@
 <dt class="sig sig-object py" id="necst.utils.ros_interface.Service.service">
 <span class="sig-name descname"><span class="pre">service</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#Service.service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.Service.service" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>node</strong> (<em>Node</em>) – </p></li>
 <li><p><strong>callback</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>, </em><em>Any</em><em>]</em><em>, </em><em>Any</em><em>]</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Service</em></p>
 </dd>
 </dl>
@@ -832,10 +882,10 @@
 <dt class="sig sig-object py" id="necst.utils.ros_interface.Service.client">
 <span class="sig-name descname"><span class="pre">client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#Service.client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.Service.client" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>node</strong> (<em>Node</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Client</em></p>
 </dd>
 </dl>
@@ -847,10 +897,10 @@
 <dt class="sig sig-object py" id="necst.utils.ros_interface.import_msg">
 <span class="sig-name descname"><span class="pre">import_msg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#import_msg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.import_msg" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Any</em></p>
 </dd>
 </dl>
@@ -860,10 +910,10 @@
 <dt class="sig sig-object py" id="necst.utils.ros_interface.serialize">
 <span class="sig-name descname"><span class="pre">serialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/utils/ros_interface.html#serialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.utils.ros_interface.serialize" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>msg</strong> (<em>Any</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Generator</em>[<em>Dict</em>[str, <em>Any</em>], None, None]</p>
 </dd>
 </dl>

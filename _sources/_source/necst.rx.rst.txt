@@ -31,6 +31,9 @@ Submodules
    necst.rx.powermeter
    necst.rx.signal_generator
    necst.rx.sis_bias
+   necst.rx.spectral_recording_runtime
+   necst.rx.spectral_recording_setup
+   necst.rx.spectral_recording_sg
    necst.rx.spectrometer
    necst.rx.thermometer
    necst.rx.vacuum_gauge
@@ -48,6 +51,9 @@ Submodules
    necst.rx.powermeter
    necst.rx.signal_generator
    necst.rx.sis_bias
+   necst.rx.spectral_recording_runtime
+   necst.rx.spectral_recording_setup
+   necst.rx.spectral_recording_sg
    necst.rx.spectrometer
    necst.rx.thermometer
    necst.rx.vacuum_gauge

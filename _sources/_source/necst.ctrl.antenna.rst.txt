@@ -23,6 +23,7 @@ Submodules
 
 .. autosummary::
 
+   necst.ctrl.antenna.az_unwrap
    necst.ctrl.antenna.encoder
    necst.ctrl.antenna.horizontal_coord
    necst.ctrl.antenna.motor
@@ -36,6 +37,7 @@ Submodules
    :titlesonly:
    :hidden:
 
+   necst.ctrl.antenna.az_unwrap
    necst.ctrl.antenna.encoder
    necst.ctrl.antenna.horizontal_coord
    necst.ctrl.antenna.motor

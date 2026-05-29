@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.ctrl.antenna.weather_station &#8212; necst 4.0.19 documentation</title>
+    <title>necst.ctrl.antenna.weather_station &#8212; necst 4.0.20 documentation</title>
     
   <link href="../../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -120,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.19</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -149,7 +149,6 @@
   <h1>Source code for necst.ctrl.antenna.weather_station</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">time</span>
 
-<span class="kn">import</span> <span class="nn">rclpy</span>
 <span class="kn">from</span> <span class="nn">neclib.devices</span> <span class="kn">import</span> <span class="n">WeatherStation</span>
 <span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">WeatherMsg</span>
 
@@ -164,35 +163,27 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeName</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span> <span class="o">=</span> <span class="n">topic</span><span class="o">.</span><span class="n">weather</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">thermo</span> <span class="o">=</span> <span class="n">WeatherStation</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">)</span>
 
 <div class="viewcode-block" id="WeatherStationReader.stream"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.weather_station.html#necst.ctrl.antenna.weather_station.WeatherStationReader.stream">[docs]</a>    <span class="k">def</span> <span class="nf">stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="n">WeatherMsg</span><span class="p">(</span>
-            <span class="n">temperature</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_temperature</span><span class="p">()</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;K&quot;</span><span class="p">)),</span>
-            <span class="n">pressure</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_pressure</span><span class="p">()</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;hPa&quot;</span><span class="p">)),</span>
-            <span class="n">humidity</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_humidity</span><span class="p">()),</span>
-            <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.weather_station.html#necst.ctrl.antenna.weather_station.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="n">rclpy</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
-    <span class="n">node</span> <span class="o">=</span> <span class="n">WeatherStationReader</span><span class="p">()</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">rclpy</span><span class="o">.</span><span class="n">spin</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
-        <span class="k">pass</span>
-    <span class="k">finally</span><span class="p">:</span>
-        <span class="n">node</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span>
-        <span class="n">rclpy</span><span class="o">.</span><span class="n">try_shutdown</span><span class="p">()</span></div>
-
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">main</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">thermo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">topic</span><span class="o">.</span><span class="n">weather</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">WeatherMsg</span><span class="p">(</span>
+                <span class="n">temperature</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_temperature</span><span class="p">()</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;K&quot;</span><span class="p">)),</span>
+                <span class="n">in_temperature</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_in_temperature</span><span class="p">()</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;K&quot;</span><span class="p">)),</span>
+                <span class="n">pressure</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_pressure</span><span class="p">()</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;hPa&quot;</span><span class="p">)),</span>
+                <span class="n">humidity</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_humidity</span><span class="p">()),</span>
+                <span class="n">in_humidity</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_in_humidity</span><span class="p">()),</span>
+                <span class="n">wind_speed</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_wind_speed</span><span class="p">()</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;m/s&quot;</span><span class="p">)),</span>
+                <span class="n">wind_direction</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_wind_direction</span><span class="p">()</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg&quot;</span><span class="p">)),</span>
+                <span class="n">rain_rate</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">thermo</span><span class="o">.</span><span class="n">get_rain_rate</span><span class="p">()),</span>
+                <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div></div>
 </pre></div>
 
               </div>

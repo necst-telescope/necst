@@ -25,10 +25,14 @@ Submodules
 
    necst.procedures.observations.file_based
    necst.procedures.observations.hot_monitor
+   necst.procedures.observations.observation_base
    necst.procedures.observations.optical_pointing
+   necst.procedures.observations.pointing_reference_beam
    necst.procedures.observations.position_switching
+   necst.procedures.observations.progress
    necst.procedures.observations.rsky
    necst.procedures.observations.skydip
+   necst.procedures.observations.spectral_recording_sequence
 
 .. toctree::
    :maxdepth: 4
@@ -37,7 +41,11 @@ Submodules
 
    necst.procedures.observations.file_based
    necst.procedures.observations.hot_monitor
+   necst.procedures.observations.observation_base
    necst.procedures.observations.optical_pointing
+   necst.procedures.observations.pointing_reference_beam
    necst.procedures.observations.position_switching
+   necst.procedures.observations.progress
    necst.procedures.observations.rsky
    necst.procedures.observations.skydip
+   necst.procedures.observations.spectral_recording_sequence

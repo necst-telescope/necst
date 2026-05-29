@@ -1,0 +1,7 @@
+necst.procedures.observations.progress
+======================================
+
+.. automodule:: necst.procedures.observations.progress
+   :members:
+   :undoc-members:
+   :show-inheritance:

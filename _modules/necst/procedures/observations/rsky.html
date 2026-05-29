@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>necst.procedures.observations.rsky &#8212; necst 4.0.19 documentation</title>
+    <title>necst.procedures.observations.rsky &#8212; necst 4.0.20 documentation</title>
     
   <link href="../../../../_static/css/theme.css" rel="stylesheet">
   <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -120,7 +120,7 @@
             <!-- Only show if we have sidebars configured, else just a small margin  -->
             <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
 <!-- This will display the version of the docs -->
-<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.19</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -149,17 +149,59 @@
   <h1>Source code for necst.procedures.observations.rsky</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">..observation_base</span> <span class="kn">import</span> <span class="n">Observation</span>
+<span class="kn">from</span> <span class="nn">.observation_base</span> <span class="kn">import</span> <span class="n">Observation</span>
 
 
 <div class="viewcode-block" id="RSky"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.rsky.html#necst.procedures.observations.rsky.RSky">[docs]</a><span class="k">class</span> <span class="nc">RSky</span><span class="p">(</span><span class="n">Observation</span><span class="p">):</span>
     <span class="n">observation_type</span> <span class="o">=</span> <span class="s2">&quot;RSky&quot;</span>
 
 <div class="viewcode-block" id="RSky.run"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.rsky.html#necst.procedures.observations.rsky.RSky.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">integ_time</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">plan</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;item_uid&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;rsky:</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">:HOT&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;index0&quot;</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">idx</span><span class="p">,</span>
+                    <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span>
+                    <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;HOT </span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;HOT&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;calibration&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;obs_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span>
+                    <span class="s2">&quot;drive_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;hold&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;integration_sec&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">integ_time</span><span class="p">),</span>
+                    <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;current_position&quot;</span><span class="p">,</span> <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="s2">&quot;deg&quot;</span><span class="p">},</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">plan</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;item_uid&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;rsky:</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">:SKY&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;index0&quot;</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span>
+                    <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;SKY </span><span class="si">{</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;SKY&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;calibration&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;obs_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span>
+                    <span class="s2">&quot;drive_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;hold&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;integration_sec&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">integ_time</span><span class="p">),</span>
+                    <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;current_sky_position&quot;</span><span class="p">,</span> <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="s2">&quot;deg&quot;</span><span class="p">},</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">set_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">observation_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">observation_type</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">th/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> sequence&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">hot</span><span class="p">(</span><span class="n">integ_time</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sky</span><span class="p">(</span><span class="n">integ_time</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span></div></div>
+            <span class="n">hot_item</span> <span class="o">=</span> <span class="n">plan</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">idx</span><span class="p">]</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">item</span><span class="p">(</span><span class="o">**</span><span class="n">hot_item</span><span class="p">):</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;hold&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;tracking&quot;</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">hot_item</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">hot</span><span class="p">(</span><span class="n">integ_time</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">hot_item</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">])</span>
+            <span class="n">sky_item</span> <span class="o">=</span> <span class="n">plan</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">item</span><span class="p">(</span><span class="o">**</span><span class="n">sky_item</span><span class="p">):</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">drive</span><span class="p">(</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;hold&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;tracking&quot;</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">sky_item</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sky</span><span class="p">(</span><span class="n">integ_time</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">sky_item</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">])</span></div></div>
 </pre></div>
 
               </div>

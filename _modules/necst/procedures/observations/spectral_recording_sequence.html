@@ -1,0 +1,925 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>necst.procedures.observations.spectral_recording_sequence &#8212; necst 4.0.20 documentation</title>
+    
+  <link href="../../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css" />
+    
+  <link rel="preload" as="script" href="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../../../../index.html">
+<p class="title">necst</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../index.html">
+  Home
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../_source/necst.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/necst-telescope/necst" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/necst/" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fas fa-cubes"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
+<!-- This will display the version of the docs -->
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for necst.procedures.observations.spectral_recording_sequence</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Observation-flow helper for spectral-recording setup sidecars and gate control.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">_datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">...rx.spectral_recording_setup</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">dumps_toml</span><span class="p">,</span>
+    <span class="n">load_and_resolve_spectral_recording_setup</span><span class="p">,</span>
+    <span class="n">read_toml</span><span class="p">,</span>
+    <span class="n">sha256_text</span><span class="p">,</span>
+    <span class="n">validate_snapshot</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">...rx.spectral_recording_sg</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">run_sg_preflight</span><span class="p">,</span>
+    <span class="n">select_sg_preflight_plan</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.pointing_reference_beam</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">attach_pointing_reference_to_snapshot</span><span class="p">,</span>
+    <span class="n">build_pointing_reference_context</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_CANONICAL_SIDECAR_NAMES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;snapshot&quot;</span><span class="p">:</span> <span class="s2">&quot;spectral_recording_snapshot.toml&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;lo_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;lo_profile.toml&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;recording_window_setup&quot;</span><span class="p">:</span> <span class="s2">&quot;recording_window_setup.toml&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;beam_model&quot;</span><span class="p">:</span> <span class="s2">&quot;beam_model.toml&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="SpectralRecordingObservationSetup"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.spectral_recording_sequence.html#necst.procedures.observations.spectral_recording_sequence.SpectralRecordingObservationSetup">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">SpectralRecordingObservationSetup</span><span class="p">:</span>
+    <span class="n">setup_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">setup_hash</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">snapshot_toml</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">sidecars</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">tuple</span><span class="p">)</span>
+    <span class="n">setup_override_policy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;strict&quot;</span>
+    <span class="n">sg_preflight_policy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+    <span class="n">sg_preflight_scope</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active_lo_chains&quot;</span>
+    <span class="n">sg_preflight_plan</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="nb">tuple</span>
+    <span class="p">)</span>
+    <span class="n">sg_preflight_timeout_sec</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span>
+    <span class="n">sg_preflight_allow_command_echo</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">strict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_override_policy</span> <span class="o">==</span> <span class="s2">&quot;strict&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sg_preflight_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sg_preflight_policy</span> <span class="ow">or</span> <span class="s2">&quot;none&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">policy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">}</span></div>
+
+
+<span class="k">def</span> <span class="nf">_truthy</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">,</span> <span class="s2">&quot;enable&quot;</span><span class="p">,</span> <span class="s2">&quot;enabled&quot;</span><span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_optional_str</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="n">keys</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">params</span> <span class="ow">and</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_optional_float</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_optional_bool</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_truthy</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_optional_str_list</span><span class="p">(</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="n">keys</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span> <span class="ow">or</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">part</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span> <span class="k">if</span> <span class="n">part</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span> <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),)</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_resolve_path</span><span class="p">(</span><span class="n">path_text</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">base_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path_text</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path_text</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">is_absolute</span><span class="p">():</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">base_dir</span> <span class="o">/</span> <span class="n">path</span>
+    <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_quantity_to_float</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;to_value&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_site_from_params_or_config</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_site_lat_deg&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;site_lat_deg&quot;</span><span class="p">)),</span> <span class="s2">&quot;deg&quot;</span>
+    <span class="p">)</span>
+    <span class="n">lon</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_site_lon_deg&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;site_lon_deg&quot;</span><span class="p">)),</span> <span class="s2">&quot;deg&quot;</span>
+    <span class="p">)</span>
+    <span class="n">elev</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_site_elev_m&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;site_elev_m&quot;</span><span class="p">)),</span> <span class="s2">&quot;m&quot;</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">lat</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">lon</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">lat</span>
+            <span class="k">if</span> <span class="n">lat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">_quantity_to_float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="s2">&quot;lat&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">lon</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">lon</span>
+            <span class="k">if</span> <span class="n">lon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">_quantity_to_float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">elev</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">elev</span>
+            <span class="k">if</span> <span class="n">elev</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">_quantity_to_float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;m&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">lat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="s2">&quot;site_lat_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">lon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="s2">&quot;site_lon_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lon</span><span class="p">)</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;site_elev_m&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mf">0.0</span> <span class="k">if</span> <span class="n">elev</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">elev</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="n">_SOLAR_SYSTEM_TARGETS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;sun&quot;</span><span class="p">:</span> <span class="s2">&quot;sun&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;moon&quot;</span><span class="p">:</span> <span class="s2">&quot;moon&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mercury&quot;</span><span class="p">:</span> <span class="s2">&quot;mercury&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;venus&quot;</span><span class="p">:</span> <span class="s2">&quot;venus&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mars&quot;</span><span class="p">:</span> <span class="s2">&quot;mars&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;jupiter&quot;</span><span class="p">:</span> <span class="s2">&quot;jupiter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;saturn&quot;</span><span class="p">:</span> <span class="s2">&quot;saturn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;uranus&quot;</span><span class="p">:</span> <span class="s2">&quot;uranus&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;neptune&quot;</span><span class="p">:</span> <span class="s2">&quot;neptune&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_site_to_earth_location</span><span class="p">(</span><span class="n">site</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an Astropy EarthLocation from a site dict, or None.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">{</span><span class="s2">&quot;site_lat_deg&quot;</span><span class="p">,</span> <span class="s2">&quot;site_lon_deg&quot;</span><span class="p">}</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">site</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">EarthLocation</span>  <span class="c1"># type: ignore</span>
+        <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>  <span class="c1"># type: ignore</span>
+
+        <span class="k">return</span> <span class="n">EarthLocation</span><span class="p">(</span>
+            <span class="n">lat</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;site_lat_deg&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+            <span class="n">lon</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;site_lon_deg&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">site</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;site_elev_m&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_skycoord_to_icrs_deg</span><span class="p">(</span><span class="n">coord</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>  <span class="c1"># type: ignore</span>
+
+        <span class="n">icrs</span> <span class="o">=</span> <span class="n">coord</span><span class="o">.</span><span class="n">icrs</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;ra_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">icrs</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">)),</span>
+            <span class="s2">&quot;dec_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">icrs</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">)),</span>
+        <span class="p">}</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+
+<span class="k">def</span> <span class="nf">_icrs_from_lon_lat_frame</span><span class="p">(</span>
+    <span class="n">lon_deg</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">lat_deg</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">frame</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">reference_time_utc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">site</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert explicit longitude/latitude in a known frame to ICRS.&quot;&quot;&quot;</span>
+
+    <span class="n">frame_l</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">AltAz</span><span class="p">,</span> <span class="n">SkyCoord</span>  <span class="c1"># type: ignore</span>
+        <span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>  <span class="c1"># type: ignore</span>
+        <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>  <span class="c1"># type: ignore</span>
+
+        <span class="k">if</span> <span class="n">frame_l</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;fk5&quot;</span><span class="p">,</span> <span class="s2">&quot;icrs&quot;</span><span class="p">,</span> <span class="s2">&quot;j2000&quot;</span><span class="p">,</span> <span class="s2">&quot;radec&quot;</span><span class="p">,</span> <span class="s2">&quot;equatorial&quot;</span><span class="p">}:</span>
+            <span class="n">astropy_frame</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;icrs&quot;</span> <span class="k">if</span> <span class="n">frame_l</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;icrs&quot;</span><span class="p">,</span> <span class="s2">&quot;j2000&quot;</span><span class="p">,</span> <span class="s2">&quot;radec&quot;</span><span class="p">,</span> <span class="s2">&quot;equatorial&quot;</span><span class="p">}</span> <span class="k">else</span> <span class="s2">&quot;fk5&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">_skycoord_to_icrs_deg</span><span class="p">(</span>
+                <span class="n">SkyCoord</span><span class="p">(</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">lon_deg</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="n">astropy_frame</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">frame_l</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;galactic&quot;</span><span class="p">,</span> <span class="s2">&quot;gal&quot;</span><span class="p">}:</span>
+            <span class="k">return</span> <span class="n">_skycoord_to_icrs_deg</span><span class="p">(</span>
+                <span class="n">SkyCoord</span><span class="p">(</span>
+                    <span class="n">l</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">lon_deg</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s2">&quot;galactic&quot;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">frame_l</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;altaz&quot;</span><span class="p">,</span> <span class="s2">&quot;azel&quot;</span><span class="p">,</span> <span class="s2">&quot;az_el&quot;</span><span class="p">}:</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="n">_site_to_earth_location</span><span class="p">(</span><span class="n">site</span> <span class="ow">or</span> <span class="p">{})</span>
+            <span class="k">if</span> <span class="n">location</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">reference_time_utc</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{}</span>
+            <span class="n">obstime</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">reference_time_utc</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;+00:00&quot;</span><span class="p">))</span>
+            <span class="n">altaz</span> <span class="o">=</span> <span class="n">AltAz</span><span class="p">(</span>
+                <span class="n">az</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">lon_deg</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+                <span class="n">alt</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+                <span class="n">obstime</span><span class="o">=</span><span class="n">obstime</span><span class="p">,</span>
+                <span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">_skycoord_to_icrs_deg</span><span class="p">(</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">altaz</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">frame_l</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;fk5&quot;</span><span class="p">,</span> <span class="s2">&quot;icrs&quot;</span><span class="p">,</span> <span class="s2">&quot;j2000&quot;</span><span class="p">,</span> <span class="s2">&quot;radec&quot;</span><span class="p">,</span> <span class="s2">&quot;equatorial&quot;</span><span class="p">}:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ra_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">lon_deg</span><span class="p">),</span> <span class="s2">&quot;dec_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="p">{}</span>
+
+
+<span class="k">def</span> <span class="nf">_reference_icrs_from_params_or_obsspec</span><span class="p">(</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">obsspec</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">reference_time_utc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">site</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve the velocity-reference direction to ICRS degrees.</span>
+
+<span class="sd">    This helper is intentionally deterministic:</span>
+
+<span class="sd">    - Explicit RA/Dec parameters are used directly.</span>
+<span class="sd">    - Explicit lon/lat/frame parameters are converted with Astropy when needed.</span>
+<span class="sd">    - Explicit `.obs` reference coordinates are used when available, including</span>
+<span class="sd">      Galactic coordinates.</span>
+<span class="sd">    - Solar-system body names are resolved with Astropy&#39;s built-in ephemeris.</span>
+<span class="sd">    - Arbitrary target names are not sent to network/Sesame resolvers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ra</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_ra_deg&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_ra_deg&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">dec</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_dec_deg&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_dec_deg&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">ra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ra_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="s2">&quot;dec_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">dec</span><span class="p">)}</span>
+
+    <span class="n">l_deg</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_l_deg&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_l_deg&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">b_deg</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_b_deg&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_b_deg&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">l_deg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">b_deg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">converted</span> <span class="o">=</span> <span class="n">_icrs_from_lon_lat_frame</span><span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">l_deg</span><span class="p">),</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">b_deg</span><span class="p">),</span>
+            <span class="s2">&quot;galactic&quot;</span><span class="p">,</span>
+            <span class="n">reference_time_utc</span><span class="o">=</span><span class="n">reference_time_utc</span><span class="p">,</span>
+            <span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">converted</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">converted</span>
+
+    <span class="n">lon</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_lon_deg&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_lon_deg&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_lat_deg&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_lat_deg&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_frame&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_frame&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">lon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">lat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">frame</span><span class="p">:</span>
+        <span class="n">converted</span> <span class="o">=</span> <span class="n">_icrs_from_lon_lat_frame</span><span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">lon</span><span class="p">),</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">lat</span><span class="p">),</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">frame</span><span class="p">),</span>
+            <span class="n">reference_time_utc</span><span class="o">=</span><span class="n">reference_time_utc</span><span class="p">,</span>
+            <span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">converted</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">converted</span>
+
+    <span class="n">reference</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obsspec</span><span class="p">,</span> <span class="s2">&quot;_reference&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">ref_lon</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span><span class="n">reference</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+        <span class="n">ref_lat</span> <span class="o">=</span> <span class="n">_quantity_to_float</span><span class="p">(</span><span class="n">reference</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;deg&quot;</span><span class="p">)</span>
+        <span class="n">ref_frame</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">reference</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ref_lon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ref_lat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">converted</span> <span class="o">=</span> <span class="n">_icrs_from_lon_lat_frame</span><span class="p">(</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">ref_lon</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">ref_lat</span><span class="p">),</span>
+                <span class="n">ref_frame</span><span class="p">,</span>
+                <span class="n">reference_time_utc</span><span class="o">=</span><span class="n">reference_time_utc</span><span class="p">,</span>
+                <span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">converted</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">converted</span>
+
+    <span class="n">target_name</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;velocity_reference_target&quot;</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_target&quot;</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obsspec</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">target_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">target_name</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_SOLAR_SYSTEM_TARGETS</span> <span class="ow">and</span> <span class="n">reference_time_utc</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">get_body</span><span class="p">,</span> <span class="n">get_sun</span>  <span class="c1"># type: ignore</span>
+                <span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>  <span class="c1"># type: ignore</span>
+
+                <span class="n">obstime</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">reference_time_utc</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;+00:00&quot;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;sun&quot;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">_skycoord_to_icrs_deg</span><span class="p">(</span><span class="n">get_sun</span><span class="p">(</span><span class="n">obstime</span><span class="p">))</span>
+                <span class="n">location</span> <span class="o">=</span> <span class="n">_site_to_earth_location</span><span class="p">(</span><span class="n">site</span> <span class="ow">or</span> <span class="p">{})</span>
+                <span class="k">return</span> <span class="n">_skycoord_to_icrs_deg</span><span class="p">(</span>
+                    <span class="n">get_body</span><span class="p">(</span><span class="n">_SOLAR_SYSTEM_TARGETS</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">obstime</span><span class="p">,</span> <span class="n">location</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="c1"># Do not silently resolve arbitrary target names here.  Network/Sesame name</span>
+    <span class="c1"># resolution is intentionally avoided in the observation-time setup resolver.</span>
+    <span class="k">return</span> <span class="p">{}</span>
+
+
+<span class="k">def</span> <span class="nf">_build_velocity_reference_context</span><span class="p">(</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">obsspec</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the reference context used by observation-time LSRK window resolution.</span>
+
+<span class="sd">    The reference time is the setup resolution time, i.e. the command-time before</span>
+<span class="sd">    the recorder starts.  The reference direction is determined in this order:</span>
+
+<span class="sd">    1. explicit velocity_reference_ra_deg/velocity_reference_dec_deg,</span>
+<span class="sd">    2. explicit velocity_reference_l_deg/velocity_reference_b_deg or</span>
+<span class="sd">       velocity_reference_lon_deg/lat_deg/frame,</span>
+<span class="sd">    3. explicit `.obs` reference coordinates, including Galactic coordinates,</span>
+<span class="sd">    4. deterministic solar-system body names such as Sun or Moon.</span>
+
+<span class="sd">    Arbitrary target names are not resolved via network catalogs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">now</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">_datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;+00:00&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">reference_time_utc</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;velocity_reference_time_utc&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vlsr_reference_time_utc&quot;</span><span class="p">,</span> <span class="n">now</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">site</span> <span class="o">=</span> <span class="n">_site_from_params_or_config</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">_reference_icrs_from_params_or_obsspec</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">,</span>
+        <span class="n">obsspec</span><span class="p">,</span>
+        <span class="n">reference_time_utc</span><span class="o">=</span><span class="n">reference_time_utc</span><span class="p">,</span>
+        <span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">{</span><span class="s2">&quot;ra_deg&quot;</span><span class="p">,</span> <span class="s2">&quot;dec_deg&quot;</span><span class="p">}</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">{</span>
+        <span class="s2">&quot;site_lat_deg&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;site_lon_deg&quot;</span><span class="p">,</span>
+    <span class="p">}</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">site</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;reference_time_utc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reference_time_utc</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;reference_time_policy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;setup_resolve_time_utc&quot;</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;reference_coordinate_policy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;explicit_or_obs_reference_or_solar_system_body&quot;</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span> <span class="nf">_obs_base_dir</span><span class="p">(</span><span class="n">obs_file</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">obs_file</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">parent</span> <span class="o">==</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span>
+
+
+<div class="viewcode-block" id="build_spectral_recording_observation_setup"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.spectral_recording_sequence.html#necst.procedures.observations.spectral_recording_sequence.build_spectral_recording_observation_setup">[docs]</a><span class="k">def</span> <span class="nf">build_spectral_recording_observation_setup</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">obs_file</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">default_setup_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">obsspec</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpectralRecordingObservationSetup</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a spectral-recording setup from `.obs` parameters.</span>
+
+<span class="sd">    If no spectral-recording parameter is present, return None and preserve the</span>
+<span class="sd">    legacy observation flow.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">params</span> <span class="ow">or</span> <span class="p">{})</span>
+    <span class="n">snapshot_ref</span> <span class="o">=</span> <span class="n">_optional_str</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">,</span> <span class="s2">&quot;spectral_recording_snapshot&quot;</span><span class="p">,</span> <span class="s2">&quot;spectral_recording_snapshot_path&quot;</span>
+    <span class="p">)</span>
+    <span class="n">lo_ref</span> <span class="o">=</span> <span class="n">_optional_str</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;lo_profile&quot;</span><span class="p">,</span> <span class="s2">&quot;lo_profile_path&quot;</span><span class="p">)</span>
+    <span class="n">rec_ref</span> <span class="o">=</span> <span class="n">_optional_str</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">,</span> <span class="s2">&quot;recording_window_setup&quot;</span><span class="p">,</span> <span class="s2">&quot;recording_window_setup_path&quot;</span>
+    <span class="p">)</span>
+    <span class="n">beam_ref</span> <span class="o">=</span> <span class="n">_optional_str</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;beam_model&quot;</span><span class="p">,</span> <span class="s2">&quot;beam_model_path&quot;</span><span class="p">)</span>
+    <span class="n">_optional_str</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;pointing_reference_beam_id&quot;</span><span class="p">)</span>
+    <span class="n">explicit_enable</span> <span class="o">=</span> <span class="n">_truthy</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spectral_recording&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span> <span class="ow">or</span> <span class="n">_truthy</span><span class="p">(</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_spectral_recording_setup&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ``beam_model`` can be used only for pointing-reference-beam correction or</span>
+    <span class="c1"># as optional stream geometry for spectral recording.  By itself it does not</span>
+    <span class="c1"># define a spectral setup.  A lo_profile or an existing snapshot is the</span>
+    <span class="c1"># actual stream-truth input; when no beam_model is supplied, spectral setup</span>
+    <span class="c1"># resolution falls back to B00=(0,0) and rejects non-B00 stream beams.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">explicit_enable</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">((</span><span class="n">snapshot_ref</span><span class="p">,</span> <span class="n">lo_ref</span><span class="p">,</span> <span class="n">rec_ref</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">_obs_base_dir</span><span class="p">(</span><span class="n">obs_file</span><span class="p">)</span>
+    <span class="n">setup_id</span> <span class="o">=</span> <span class="n">_optional_str</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;spectral_recording_setup_id&quot;</span><span class="p">,</span> <span class="s2">&quot;setup_id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span>
+        <span class="n">default_setup_id</span>
+    <span class="p">)</span>
+    <span class="n">policy</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_optional_str</span><span class="p">(</span>
+            <span class="n">params</span><span class="p">,</span> <span class="s2">&quot;setup_override_policy&quot;</span><span class="p">,</span> <span class="s2">&quot;spectral_recording_setup_override_policy&quot;</span>
+        <span class="p">)</span>
+        <span class="ow">or</span> <span class="s2">&quot;strict&quot;</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">policy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;strict&quot;</span><span class="p">,</span> <span class="s2">&quot;warn&quot;</span><span class="p">,</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;legacy&quot;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported setup_override_policy: </span><span class="si">{</span><span class="n">policy</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">policy</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">sg_preflight_policy</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">_optional_str</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;sg_preflight_policy&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;none&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">sg_preflight_policy</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">}:</span>
+        <span class="n">sg_preflight_policy</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+    <span class="k">if</span> <span class="n">sg_preflight_policy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span>
+        <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;verify_only&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;apply_and_verify&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;warn_only&quot;</span><span class="p">,</span>
+    <span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Unsupported sg_preflight_policy: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sg_preflight_policy</span><span class="si">!r}</span><span class="s2">; expected none, verify_only, apply_and_verify, or warn_only&quot;</span>
+        <span class="p">)</span>
+    <span class="n">sg_preflight_ids</span> <span class="o">=</span> <span class="n">_optional_str_list</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;sg_preflight_ids&quot;</span><span class="p">,</span> <span class="s2">&quot;sg_preflight_id&quot;</span><span class="p">)</span>
+    <span class="n">sg_preflight_scope</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span>
+            <span class="n">_optional_str</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;sg_preflight_scope&quot;</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="s2">&quot;explicit_sg_ids&quot;</span> <span class="k">if</span> <span class="n">sg_preflight_ids</span> <span class="k">else</span> <span class="s2">&quot;active_lo_chains&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">sg_preflight_timeout_sec</span> <span class="o">=</span> <span class="n">_optional_float</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">&quot;sg_preflight_timeout_sec&quot;</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+    <span class="n">sg_preflight_allow_command_echo</span> <span class="o">=</span> <span class="n">_optional_bool</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">,</span>
+        <span class="s2">&quot;sg_preflight_allow_command_echo&quot;</span><span class="p">,</span>
+        <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">pointing_reference_context</span> <span class="o">=</span> <span class="n">build_pointing_reference_context</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">,</span>
+        <span class="n">obs_file</span><span class="o">=</span><span class="n">obs_file</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">velocity_reference_context</span> <span class="o">=</span> <span class="n">_build_velocity_reference_context</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">obsspec</span><span class="p">)</span>
+
+    <span class="n">sidecars</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">snapshot_path</span> <span class="o">=</span> <span class="n">_resolve_path</span><span class="p">(</span><span class="n">snapshot_ref</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">snapshot_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">snapshot_toml</span> <span class="o">=</span> <span class="n">snapshot_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">snapshot</span> <span class="o">=</span> <span class="n">read_toml</span><span class="p">(</span><span class="n">snapshot_path</span><span class="p">)</span>
+        <span class="n">validate_snapshot</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+        <span class="n">beam_path</span> <span class="o">=</span> <span class="n">_resolve_path</span><span class="p">(</span><span class="n">beam_ref</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">beam_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sidecars</span><span class="p">[</span><span class="n">_CANONICAL_SIDECAR_NAMES</span><span class="p">[</span><span class="s2">&quot;beam_model&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">beam_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lo_path</span> <span class="o">=</span> <span class="n">_resolve_path</span><span class="p">(</span><span class="n">lo_ref</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">)</span>
+        <span class="n">beam_path</span> <span class="o">=</span> <span class="n">_resolve_path</span><span class="p">(</span><span class="n">beam_ref</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">)</span>
+        <span class="n">rec_path</span> <span class="o">=</span> <span class="n">_resolve_path</span><span class="p">(</span><span class="n">rec_ref</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lo_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Spectral recording setup requires either spectral_recording_snapshot &quot;</span>
+                <span class="s2">&quot;or lo_profile. beam_model is optional only for B00=(0,0) stream geometry.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">snapshot</span> <span class="o">=</span> <span class="n">load_and_resolve_spectral_recording_setup</span><span class="p">(</span>
+            <span class="n">lo_profile_path</span><span class="o">=</span><span class="n">lo_path</span><span class="p">,</span>
+            <span class="n">recording_window_setup_path</span><span class="o">=</span><span class="n">rec_path</span><span class="p">,</span>
+            <span class="n">beam_model_path</span><span class="o">=</span><span class="n">beam_path</span><span class="p">,</span>
+            <span class="n">setup_id</span><span class="o">=</span><span class="n">setup_id</span><span class="p">,</span>
+            <span class="n">setup_override_policy</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span>
+            <span class="n">velocity_reference_context</span><span class="o">=</span><span class="n">velocity_reference_context</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">validate_snapshot</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+        <span class="n">snapshot_toml</span> <span class="o">=</span> <span class="n">dumps_toml</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+        <span class="n">sidecars</span><span class="p">[</span><span class="n">_CANONICAL_SIDECAR_NAMES</span><span class="p">[</span><span class="s2">&quot;lo_profile&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">lo_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span>
+            <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">rec_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sidecars</span><span class="p">[</span><span class="n">_CANONICAL_SIDECAR_NAMES</span><span class="p">[</span><span class="s2">&quot;recording_window_setup&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">rec_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">beam_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sidecars</span><span class="p">[</span><span class="n">_CANONICAL_SIDECAR_NAMES</span><span class="p">[</span><span class="s2">&quot;beam_model&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">beam_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pointing_reference_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">snapshot</span> <span class="o">=</span> <span class="n">attach_pointing_reference_to_snapshot</span><span class="p">(</span>
+            <span class="n">snapshot</span><span class="p">,</span>
+            <span class="n">pointing_reference_context</span><span class="p">,</span>
+            <span class="n">dumps_toml_func</span><span class="o">=</span><span class="n">dumps_toml</span><span class="p">,</span>
+            <span class="n">sha256_text_func</span><span class="o">=</span><span class="n">sha256_text</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">validate_snapshot</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+        <span class="n">snapshot_toml</span> <span class="o">=</span> <span class="n">dumps_toml</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+
+    <span class="n">sg_preflight_plan</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="k">if</span> <span class="n">sg_preflight_policy</span> <span class="o">!=</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+        <span class="n">lo_path_for_preflight</span> <span class="o">=</span> <span class="n">_resolve_path</span><span class="p">(</span><span class="n">lo_ref</span><span class="p">,</span> <span class="n">base_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lo_path_for_preflight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;sg_preflight_policy requires lo_profile/lo_profile_path in .obs parameters. &quot;</span>
+                <span class="s2">&quot;A standalone spectral_recording_snapshot does not safely define SG set/apply commands.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">lo_profile_for_preflight</span> <span class="o">=</span> <span class="n">read_toml</span><span class="p">(</span><span class="n">lo_path_for_preflight</span><span class="p">)</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">select_sg_preflight_plan</span><span class="p">(</span>
+            <span class="n">lo_profile</span><span class="o">=</span><span class="n">lo_profile_for_preflight</span><span class="p">,</span>
+            <span class="n">snapshot</span><span class="o">=</span><span class="n">snapshot</span><span class="p">,</span>
+            <span class="n">scope</span><span class="o">=</span><span class="n">sg_preflight_scope</span><span class="p">,</span>
+            <span class="n">sg_ids</span><span class="o">=</span><span class="n">sg_preflight_ids</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">sg_preflight_plan</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">sg_id</span><span class="p">,</span> <span class="n">plan</span><span class="p">[</span><span class="n">sg_id</span><span class="p">])</span> <span class="k">for</span> <span class="n">sg_id</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">plan</span><span class="p">))</span>
+
+    <span class="n">sidecars</span><span class="p">[</span><span class="n">_CANONICAL_SIDECAR_NAMES</span><span class="p">[</span><span class="s2">&quot;snapshot&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">snapshot_toml</span>
+    <span class="n">ordered_sidecars</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">sidecars</span><span class="p">[</span><span class="n">name</span><span class="p">])</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sidecars</span><span class="p">))</span>
+    <span class="n">setup_hash</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canonical_snapshot_sha256&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">setup_hash</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Resolved snapshot does not contain canonical_snapshot_sha256.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">SpectralRecordingObservationSetup</span><span class="p">(</span>
+        <span class="n">setup_id</span><span class="o">=</span><span class="n">setup_id</span><span class="p">,</span>
+        <span class="n">setup_hash</span><span class="o">=</span><span class="n">setup_hash</span><span class="p">,</span>
+        <span class="n">snapshot_toml</span><span class="o">=</span><span class="n">snapshot_toml</span><span class="p">,</span>
+        <span class="n">sidecars</span><span class="o">=</span><span class="n">ordered_sidecars</span><span class="p">,</span>
+        <span class="n">setup_override_policy</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span>
+        <span class="n">sg_preflight_policy</span><span class="o">=</span><span class="n">sg_preflight_policy</span><span class="p">,</span>
+        <span class="n">sg_preflight_scope</span><span class="o">=</span><span class="n">sg_preflight_scope</span><span class="p">,</span>
+        <span class="n">sg_preflight_plan</span><span class="o">=</span><span class="n">sg_preflight_plan</span><span class="p">,</span>
+        <span class="n">sg_preflight_timeout_sec</span><span class="o">=</span><span class="n">sg_preflight_timeout_sec</span><span class="p">,</span>
+        <span class="n">sg_preflight_allow_command_echo</span><span class="o">=</span><span class="n">sg_preflight_allow_command_echo</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="reject_legacy_recording_kwargs_for_setup"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.spectral_recording_sequence.html#necst.procedures.observations.spectral_recording_sequence.reject_legacy_recording_kwargs_for_setup">[docs]</a><span class="k">def</span> <span class="nf">reject_legacy_recording_kwargs_for_setup</span><span class="p">(</span>
+    <span class="n">kwargs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">setup</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpectralRecordingObservationSetup</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reject active legacy per-observation spectral controls in setup mode.</span>
+
+<span class="sd">    In setup mode, stream-local saved channel windows and TP policy are already</span>
+<span class="sd">    encoded in the resolved snapshot. Accepting legacy ``ch``/``tp_mode``/</span>
+<span class="sd">    ``tp_range`` controls would be ambiguous and can appear to succeed while</span>
+<span class="sd">    being ignored by SpectralData.</span>
+
+<span class="sd">    Command-line wrappers often pass inactive defaults such as ``ch=None`` even</span>
+<span class="sd">    when the user did not request legacy binning.  Those inert defaults must not</span>
+<span class="sd">    disable spectral-recording setup mode.  This function therefore rejects only</span>
+<span class="sd">    values that would actually trigger the legacy controls in</span>
+<span class="sd">    :meth:`Observation.execute`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">setup</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">conflicts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ch&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">conflicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;ch&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tp_mode&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)):</span>
+        <span class="n">conflicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;tp_mode&quot;</span><span class="p">)</span>
+    <span class="n">tp_range</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tp_range&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tp_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp_range</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">conflicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;tp_range&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">conflicts</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;spectral recording setup cannot be combined with legacy observation kwargs: &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">conflicts</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="run_sg_preflight_with_commander"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.spectral_recording_sequence.html#necst.procedures.observations.spectral_recording_sequence.run_sg_preflight_with_commander">[docs]</a><span class="k">def</span> <span class="nf">run_sg_preflight_with_commander</span><span class="p">(</span>
+    <span class="n">com</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">setup</span><span class="p">:</span> <span class="n">SpectralRecordingObservationSetup</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run optional observation-time SG preflight before recorder startup.</span>
+
+<span class="sd">    When `sg_preflight_policy` is omitted or `none`, this function does nothing</span>
+<span class="sd">    and preserves the pre-u14_v12 behaviour exactly.  The caller can log the</span>
+<span class="sd">    returned per-SG results; strict failures raise before the spectral recorder</span>
+<span class="sd">    setup is applied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">setup</span><span class="o">.</span><span class="n">sg_preflight_enabled</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">plan</span> <span class="o">=</span> <span class="p">{</span><span class="n">sg_id</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span> <span class="k">for</span> <span class="n">sg_id</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">setup</span><span class="o">.</span><span class="n">sg_preflight_plan</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">run_sg_preflight</span><span class="p">(</span>
+        <span class="n">com</span><span class="p">,</span>
+        <span class="n">plan</span><span class="o">=</span><span class="n">plan</span><span class="p">,</span>
+        <span class="n">policy</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">sg_preflight_policy</span><span class="p">,</span>
+        <span class="n">timeout_sec</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">sg_preflight_timeout_sec</span><span class="p">,</span>
+        <span class="n">allow_command_echo</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">sg_preflight_allow_command_echo</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="apply_setup_with_commander"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.spectral_recording_sequence.html#necst.procedures.observations.spectral_recording_sequence.apply_setup_with_commander">[docs]</a><span class="k">def</span> <span class="nf">apply_setup_with_commander</span><span class="p">(</span>
+    <span class="n">com</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">setup</span><span class="p">:</span> <span class="n">SpectralRecordingObservationSetup</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">apply_spectral_recording_setup</span><span class="p">(</span>
+        <span class="n">snapshot_toml</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">snapshot_toml</span><span class="p">,</span>
+        <span class="n">snapshot_sha256</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">setup_hash</span><span class="p">,</span>
+        <span class="n">setup_id</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">setup_id</span><span class="p">,</span>
+        <span class="n">strict</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">strict</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">response</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">success</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to apply spectral recording setup: &quot;</span> <span class="o">+</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">errors</span><span class="p">))</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="save_sidecars_with_commander"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.spectral_recording_sequence.html#necst.procedures.observations.spectral_recording_sequence.save_sidecars_with_commander">[docs]</a><span class="k">def</span> <span class="nf">save_sidecars_with_commander</span><span class="p">(</span>
+    <span class="n">com</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">setup</span><span class="p">:</span> <span class="n">SpectralRecordingObservationSetup</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">content</span> <span class="ow">in</span> <span class="n">setup</span><span class="o">.</span><span class="n">sidecars</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">response</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">success</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to save spectral recording sidecar </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="set_gate_with_commander"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.spectral_recording_sequence.html#necst.procedures.observations.spectral_recording_sequence.set_gate_with_commander">[docs]</a><span class="k">def</span> <span class="nf">set_gate_with_commander</span><span class="p">(</span>
+    <span class="n">com</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">setup</span><span class="p">:</span> <span class="n">SpectralRecordingObservationSetup</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">allow_save</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">set_spectral_recording_gate</span><span class="p">(</span>
+        <span class="n">setup_id</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">setup_id</span><span class="p">,</span>
+        <span class="n">setup_hash</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">setup_hash</span><span class="p">,</span>
+        <span class="n">allow_save</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">allow_save</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">response</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">success</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;open&quot;</span> <span class="k">if</span> <span class="n">allow_save</span> <span class="k">else</span> <span class="s2">&quot;close&quot;</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Failed to </span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2"> spectral recording setup gate: &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">errors</span><span class="p">))</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="clear_setup_with_commander"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.spectral_recording_sequence.html#necst.procedures.observations.spectral_recording_sequence.clear_setup_with_commander">[docs]</a><span class="k">def</span> <span class="nf">clear_setup_with_commander</span><span class="p">(</span>
+    <span class="n">com</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">setup</span><span class="p">:</span> <span class="n">SpectralRecordingObservationSetup</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">clear_spectral_recording_setup</span><span class="p">(</span>
+        <span class="n">setup_id</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">setup_id</span><span class="p">,</span>
+        <span class="n">setup_hash</span><span class="o">=</span><span class="n">setup</span><span class="o">.</span><span class="n">setup_hash</span><span class="p">,</span>
+        <span class="n">strict</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">strict</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">response</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">success</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to clear spectral recording setup: &quot;</span> <span class="o">+</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">errors</span><span class="p">))</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+</pre></div>
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, NECST Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

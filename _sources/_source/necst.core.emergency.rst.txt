@@ -1,0 +1,7 @@
+necst.core.emergency
+====================
+
+.. automodule:: necst.core.emergency
+   :members:
+   :undoc-members:
+   :show-inheritance:

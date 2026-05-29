@@ -1,0 +1,7 @@
+necst.rx.spectral\_recording\_setup
+===================================
+
+.. automodule:: necst.rx.spectral_recording_setup
+   :members:
+   :undoc-members:
+   :show-inheritance:

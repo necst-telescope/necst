@@ -23,6 +23,7 @@ Submodules
 
 .. autosummary::
 
+   necst.procedures.measurement.knife_edge
    necst.procedures.measurement.measurement_base
    necst.procedures.measurement.sis_iv
    necst.procedures.measurement.sis_tuning
@@ -32,6 +33,7 @@ Submodules
    :titlesonly:
    :hidden:
 
+   necst.procedures.measurement.knife_edge
    necst.procedures.measurement.measurement_base
    necst.procedures.measurement.sis_iv
    necst.procedures.measurement.sis_tuning

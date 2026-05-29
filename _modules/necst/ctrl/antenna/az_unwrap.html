@@ -1,0 +1,1033 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>necst.ctrl.antenna.az_unwrap &#8212; necst 4.0.20 documentation</title>
+    
+  <link href="../../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css" />
+    
+  <link rel="preload" as="script" href="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../../../../index.html">
+<p class="title">necst</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../index.html">
+  Home
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../_source/necst.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/necst-telescope/necst" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/necst/" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fas fa-cubes"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
+<!-- This will display the version of the docs -->
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for necst.ctrl.antenna.az_unwrap</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Runtime support for absolute-modulo azimuth encoder unwrapping.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">queue</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">neclib.coordinates.angle_unwrap</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AbsoluteModuloUnwrapConfig</span><span class="p">,</span>
+    <span class="n">AbsoluteModuloUnwrapper</span><span class="p">,</span>
+    <span class="n">AmbiguousBranchError</span><span class="p">,</span>
+    <span class="n">AngleUnwrapError</span><span class="p">,</span>
+    <span class="n">BranchJumpError</span><span class="p">,</span>
+    <span class="n">NoValidBranchError</span><span class="p">,</span>
+    <span class="n">RawAngleRangeError</span><span class="p">,</span>
+    <span class="n">normalize_absolute_modulo_raw</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">AntennaAzUnwrapStatus</span>
+
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">config</span>
+
+
+<span class="k">def</span> <span class="nf">_cfg_get</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span>
+    <span class="k">return</span> <span class="n">default</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">value</span>
+
+
+<span class="k">def</span> <span class="nf">_to_float</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;to_value&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">default</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span>
+
+
+<span class="k">def</span> <span class="nf">_to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">,</span> <span class="s2">&quot;enabled&quot;</span><span class="p">}</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_expand_path</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))))</span>
+
+
+<span class="k">def</span> <span class="nf">_drive_range_deg</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="n">drive</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;antenna_drive&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">crit</span> <span class="o">=</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">drive</span><span class="p">,</span> <span class="s2">&quot;critical_limit_az&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">crit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">360.0</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">crit</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">360.0</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">_to_float</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="n">_to_float</span><span class="p">(</span><span class="n">hi</span><span class="p">,</span> <span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="mf">360.0</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="load_az_unwrap_config"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.az_unwrap.html#necst.ctrl.antenna.az_unwrap.load_az_unwrap_config">[docs]</a><span class="k">def</span> <span class="nf">load_az_unwrap_config</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="p">(</span>
+    <span class="nb">tuple</span><span class="p">[</span>
+        <span class="n">AbsoluteModuloUnwrapConfig</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span>
+    <span class="p">]</span>
+<span class="p">):</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;antenna_encoder_unwrap&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">az</span> <span class="o">=</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;az&quot;</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
+    <span class="n">enabled</span> <span class="o">=</span> <span class="n">_to_bool</span><span class="p">(</span><span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;absolute_modulo&quot;</span> <span class="k">if</span> <span class="n">enabled</span> <span class="k">else</span> <span class="s2">&quot;pass_through&quot;</span><span class="p">))</span>
+    <span class="n">drive_min</span><span class="p">,</span> <span class="n">drive_max</span> <span class="o">=</span> <span class="n">_drive_range_deg</span><span class="p">()</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">AbsoluteModuloUnwrapConfig</span><span class="p">(</span>
+        <span class="n">enabled</span><span class="o">=</span><span class="n">enabled</span> <span class="ow">and</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;absolute_modulo&quot;</span><span class="p">,</span>
+        <span class="n">period_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span>
+            <span class="n">_to_float</span><span class="p">(</span>
+                <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;period&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;period_deg&quot;</span><span class="p">,</span> <span class="mf">360.0</span><span class="p">)),</span> <span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="mf">360.0</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">raw_min_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span>
+            <span class="n">_to_float</span><span class="p">(</span>
+                <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;raw_min&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;raw_min_deg&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span> <span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="mf">0.0</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">raw_max_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span>
+            <span class="n">_to_float</span><span class="p">(</span>
+                <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;raw_max&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;raw_max_deg&quot;</span><span class="p">,</span> <span class="mf">360.0</span><span class="p">)),</span>
+                <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+                <span class="mf">360.0</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">drive_min_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span>
+            <span class="n">_to_float</span><span class="p">(</span>
+                <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;drive_min&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;drive_min_deg&quot;</span><span class="p">,</span> <span class="n">drive_min</span><span class="p">)),</span>
+                <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+                <span class="n">drive_min</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">drive_max_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span>
+            <span class="n">_to_float</span><span class="p">(</span>
+                <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;drive_max&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;drive_max_deg&quot;</span><span class="p">,</span> <span class="n">drive_max</span><span class="p">)),</span>
+                <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+                <span class="n">drive_max</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">zero_offset_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span>
+            <span class="n">_to_float</span><span class="p">(</span>
+                <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;zero_offset&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;zero_offset_deg&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
+                <span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+                <span class="mf">0.0</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">sign</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;sign&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">max_jump_deg</span><span class="o">=</span><span class="n">_to_float</span><span class="p">(</span>
+            <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;max_jump&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;max_jump_deg&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span> <span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">state_path</span> <span class="o">=</span> <span class="n">_expand_path</span><span class="p">(</span><span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;state_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+    <span class="n">heartbeat_value</span> <span class="o">=</span> <span class="n">_cfg_get</span><span class="p">(</span>
+        <span class="n">az</span><span class="p">,</span>
+        <span class="s2">&quot;state_heartbeat_sec&quot;</span><span class="p">,</span>
+        <span class="n">_cfg_get</span><span class="p">(</span>
+            <span class="n">az</span><span class="p">,</span>
+            <span class="s2">&quot;persist_heartbeat_interval&quot;</span><span class="p">,</span>
+            <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;persist_heartbeat_interval_sec&quot;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">),</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">heartbeat_sec</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">_to_float</span><span class="p">(</span><span class="n">heartbeat_value</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">))</span>
+    <span class="n">state_warn_age_value</span> <span class="o">=</span> <span class="n">_cfg_get</span><span class="p">(</span>
+        <span class="n">az</span><span class="p">,</span> <span class="s2">&quot;state_warn_age_sec&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;state_warn_age&quot;</span><span class="p">,</span> <span class="mf">86400.0</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">state_warn_age_sec</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">_to_float</span><span class="p">(</span><span class="n">state_warn_age_value</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="mf">86400.0</span><span class="p">))</span>
+    <span class="n">state_raw_tol_value</span> <span class="o">=</span> <span class="n">_cfg_get</span><span class="p">(</span>
+        <span class="n">az</span><span class="p">,</span> <span class="s2">&quot;state_raw_tolerance&quot;</span><span class="p">,</span> <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;state_raw_tolerance_deg&quot;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">state_raw_tolerance_deg</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">_to_float</span><span class="p">(</span><span class="n">state_raw_tol_value</span><span class="p">,</span> <span class="s2">&quot;deg&quot;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">))</span>
+    <span class="n">startup_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+        <span class="n">_cfg_get</span><span class="p">(</span>
+            <span class="n">az</span><span class="p">,</span>
+            <span class="s2">&quot;startup_policy&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;recover_if_raw_matches&quot;</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">enabled</span> <span class="k">else</span> <span class="s2">&quot;pass_through&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">startup_discard_raw_out_of_range_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+        <span class="n">_cfg_get</span><span class="p">(</span>
+            <span class="n">az</span><span class="p">,</span>
+            <span class="s2">&quot;startup_discard_raw_out_of_range_samples&quot;</span><span class="p">,</span>
+            <span class="n">_cfg_get</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="s2">&quot;startup_discard_out_of_range_samples&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">cfg</span><span class="p">,</span>
+        <span class="n">state_path</span><span class="p">,</span>
+        <span class="n">heartbeat_sec</span><span class="p">,</span>
+        <span class="n">state_warn_age_sec</span><span class="p">,</span>
+        <span class="n">state_raw_tolerance_deg</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">,</span>
+        <span class="n">startup_policy</span><span class="p">,</span>
+        <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">startup_discard_raw_out_of_range_samples</span><span class="p">),</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AtomicStateWriter"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.az_unwrap.html#necst.ctrl.antenna.az_unwrap.AtomicStateWriter">[docs]</a><span class="k">class</span> <span class="nc">AtomicStateWriter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Low-rate atomic state persistence, isolated from encoder callbacks.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="p">:</span> <span class="s2">&quot;queue.Queue[Optional[dict]]&quot;</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_persist_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+                <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;az_unwrap_state_writer&quot;</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<div class="viewcode-block" id="AtomicStateWriter.submit"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.az_unwrap.html#necst.ctrl.antenna.az_unwrap.AtomicStateWriter.submit">[docs]</a>    <span class="k">def</span> <span class="nf">submit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">get_nowait</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put_nowait</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Full</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AtomicStateWriter.close"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.az_unwrap.html#necst.ctrl.antenna.az_unwrap.AtomicStateWriter.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_payload</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">final_payload</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">final_payload</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">get_nowait</span><span class="p">()</span>
+            <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">payload</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">fd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">tmp_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fd</span><span class="p">,</span> <span class="n">tmp_name</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkstemp</span><span class="p">(</span>
+                <span class="n">prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.tmp&quot;</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">tmp_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmp_name</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">fd</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">fsync</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dir_fd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">O_DIRECTORY</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">fsync</span><span class="p">(</span><span class="n">dir_fd</span><span class="p">)</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">dir_fd</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_persist_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">if</span> <span class="n">tmp_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">tmp_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">tmp_path</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AzUnwrapRuntime"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.az_unwrap.html#necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime">[docs]</a><span class="k">class</span> <span class="nc">AzUnwrapRuntime</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_path</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">heartbeat_sec</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_warn_age_sec</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_raw_tolerance_deg</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">startup_policy</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">startup_discard_raw_out_of_range_samples</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">load_az_unwrap_config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">enabled</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;antenna_encoder_unwrap.az.state_path is required when az unwrap is enabled&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">AtomicStateWriter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_path</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_state_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AntennaAzUnwrapStatus</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_previous_payload</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_age_sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_payload_age_sec</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_old</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_age_sec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_age_sec</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_warn_age_sec</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startup_state_note</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startup_initialized</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_state_reload_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startup_raw_out_of_range_discards</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unwrapper</span> <span class="o">=</span> <span class="n">AbsoluteModuloUnwrapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">,</span> <span class="n">previous_continuous_deg</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_load_previous_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enabled&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;period_deg&quot;</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drive_min_deg&quot;</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_min_deg</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drive_max_deg&quot;</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_max_deg</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;zero_offset_deg&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">zero_offset_deg</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">zero_offset_deg</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sign&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">sign</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">sign</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="c1"># Validate required numeric fields while loading.  Age is never a</span>
+            <span class="c1"># rejection condition here; old but self-consistent state is allowed</span>
+            <span class="c1"># and is exposed in progress as state=old.</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;raw_az_deg&quot;</span><span class="p">))</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;continuous_az_deg&quot;</span><span class="p">))</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;branch&quot;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">payload</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_refresh_previous_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">min_interval_sec</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reload the state file while waiting for manual branch initialization.</span>
+
+<span class="sd">        Normal operation never polls the state file.  This is used only before</span>
+<span class="sd">        startup has completed, so an operator can run the manual initialization</span>
+<span class="sd">        command after an ambiguous startup without restarting the encoder node.</span>
+<span class="sd">        The small throttle avoids accidental high-rate file I/O during a fault.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_state_reload_time</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_interval_sec</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_state_reload_time</span> <span class="o">=</span> <span class="n">now</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_previous_payload</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload</span> <span class="o">=</span> <span class="n">payload</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_age_sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_payload_age_sec</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_old</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_age_sec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_age_sec</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_warn_age_sec</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_state_payload_age_sec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">payload</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s2">&quot;persist_request_time_unix&quot;</span><span class="p">,</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;encoder_time_unix&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_raw_within_nominal_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-9</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">raw_min_deg</span><span class="p">)</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span>
+            <span class="o">&lt;=</span> <span class="n">raw</span>
+            <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">raw_max_deg</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_raw_range_is_full_period</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span>
+                <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">raw_max_deg</span><span class="p">)</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">raw_min_deg</span><span class="p">))</span>
+                <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="o">&lt;=</span> <span class="mf">1e-9</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_startup_should_discard_nominal_out_of_range_raw</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Suppress the first few finite periodic aliases after node startup.</span>
+
+<span class="sd">        RS-232C devices can leave a stale or partial response in the input stream</span>
+<span class="sd">        immediately after opening the port.  Values such as 727 deg can be a</span>
+<span class="sd">        harmless 2*360+7 deg alias, but they can also be a startup garbage read.</span>
+<span class="sd">        Before the unwrap branch is initialized, discard a small configurable</span>
+<span class="sd">        number of finite out-of-nominal-range samples.  After that grace window,</span>
+<span class="sd">        the normal modulo-aware unwrap logic may initialize from a finite alias.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_startup_initialized</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">startup_discard_raw_out_of_range_samples</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw_range_is_full_period</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw_within_nominal_range</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="c1"># Non-finite values are handled by the unwrap validator, not by this</span>
+        <span class="c1"># startup alias grace path.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_startup_raw_out_of_range_discards</span>
+            <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">startup_discard_raw_out_of_range_samples</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startup_raw_out_of_range_discards</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_raw_matches_previous_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">previous_raw</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;raw_az_deg&quot;</span><span class="p">))</span>
+            <span class="n">current_modulo</span> <span class="o">=</span> <span class="n">normalize_absolute_modulo_raw</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">)</span>
+            <span class="n">previous_modulo</span> <span class="o">=</span> <span class="n">normalize_absolute_modulo_raw</span><span class="p">(</span><span class="n">previous_raw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="c1"># raw is an absolute-modulo value; compare calibrated modulo positions on</span>
+        <span class="c1"># the period circle so values near 0/360 and startup aliases such as</span>
+        <span class="c1"># 727 deg (= 2 * 360 + 7 deg) are treated correctly.</span>
+        <span class="n">period</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span><span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">current_modulo</span> <span class="o">-</span> <span class="n">previous_modulo</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">period</span><span class="p">)</span> <span class="o">%</span> <span class="n">period</span>
+        <span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">period</span>
+        <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_raw_tolerance_deg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_startup_branch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_startup_initialized</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_previous_payload</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw_matches_previous_payload</span><span class="p">(</span>
+            <span class="n">raw_az_deg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload</span>
+        <span class="p">):</span>
+            <span class="n">previous</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload</span><span class="p">[</span><span class="s2">&quot;continuous_az_deg&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unwrapper</span> <span class="o">=</span> <span class="n">AbsoluteModuloUnwrapper</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">,</span> <span class="n">previous_continuous_deg</span><span class="o">=</span><span class="n">previous</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_startup_initialized</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_startup_state_note</span> <span class="o">=</span> <span class="s2">&quot;old&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload_old</span> <span class="k">else</span> <span class="s2">&quot;ok&quot;</span>
+            <span class="k">return</span>
+
+        <span class="c1"># No usable state file: allow automatic initialization only when the</span>
+        <span class="c1"># current raw reading maps to exactly one continuous branch.  If it maps</span>
+        <span class="c1"># to multiple branches, AbsoluteModuloUnwrapper.unwrap() will raise</span>
+        <span class="c1"># AmbiguousBranchError and the encoder sample is suppressed until manual</span>
+        <span class="c1"># initialization is performed.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unwrapper</span> <span class="o">=</span> <span class="n">AbsoluteModuloUnwrapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">,</span> <span class="n">previous_continuous_deg</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_startup_initialized</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_payload</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_startup_state_note</span> <span class="o">=</span> <span class="s2">&quot;auto-init&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_startup_state_note</span> <span class="o">=</span> <span class="s2">&quot;state-mismatch&quot;</span>
+
+<div class="viewcode-block" id="AzUnwrapRuntime.process"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.az_unwrap.html#necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">el_deg</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">encoder_time</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">AntennaAzUnwrapStatus</span><span class="p">]:</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_status</span><span class="p">(</span>
+                <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                <span class="n">encoder_time</span><span class="o">=</span><span class="n">encoder_time</span><span class="p">,</span>
+                <span class="n">raw_az</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">),</span>
+                <span class="n">modulo_az</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">),</span>
+                <span class="n">continuous_az</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">),</span>
+                <span class="n">branch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">branch_changed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">valid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">state</span><span class="o">=</span><span class="s2">&quot;disabled&quot;</span><span class="p">,</span>
+                <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;unwrap disabled&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_status</span> <span class="o">=</span> <span class="n">status</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">),</span> <span class="n">status</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_startup_should_discard_nominal_out_of_range_raw</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">):</span>
+                <span class="n">raw</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">)</span>
+                <span class="n">folded</span> <span class="o">=</span> <span class="n">normalize_absolute_modulo_raw</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">)</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_status</span><span class="p">(</span>
+                    <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                    <span class="n">encoder_time</span><span class="o">=</span><span class="n">encoder_time</span><span class="p">,</span>
+                    <span class="n">raw_az</span><span class="o">=</span><span class="n">raw</span><span class="p">,</span>
+                    <span class="n">modulo_az</span><span class="o">=</span><span class="n">folded</span><span class="p">,</span>
+                    <span class="n">continuous_az</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span>
+                    <span class="n">branch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">branch_changed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">valid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">state</span><span class="o">=</span><span class="s2">&quot;startup-raw-wait&quot;</span><span class="p">,</span>
+                    <span class="n">reason</span><span class="o">=</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;startup raw Az </span><span class="si">{</span><span class="n">raw</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> deg is outside nominal &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;range [</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">raw_min_deg</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">raw_max_deg</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">] deg; &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;discarded </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_startup_raw_out_of_range_discards</span><span class="si">}</span><span class="s2">/&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">startup_discard_raw_out_of_range_samples</span><span class="si">}</span><span class="s2"> before alias acceptance&quot;</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_last_status</span> <span class="o">=</span> <span class="n">status</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_startup_branch</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unwrapper</span><span class="o">.</span><span class="n">unwrap</span><span class="p">(</span><span class="n">raw_az_deg</span><span class="p">)</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;ok&quot;</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_startup_state_note</span> <span class="o">==</span> <span class="s2">&quot;old&quot;</span><span class="p">:</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;old&quot;</span>
+                <span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;recovered from old but raw-matching state file&quot;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_startup_state_note</span> <span class="o">==</span> <span class="s2">&quot;auto-init&quot;</span><span class="p">:</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;auto-init&quot;</span>
+                <span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;state file missing; unique branch auto-initialized&quot;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_startup_state_note</span> <span class="o">==</span> <span class="s2">&quot;state-mismatch&quot;</span><span class="p">:</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;auto-init&quot;</span>
+                <span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;state file ignored because raw did not match; unique branch auto-initialized&quot;</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_status</span><span class="p">(</span>
+                <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                <span class="n">encoder_time</span><span class="o">=</span><span class="n">encoder_time</span><span class="p">,</span>
+                <span class="n">raw_az</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">raw_deg</span><span class="p">,</span>
+                <span class="n">modulo_az</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">modulo_deg</span><span class="p">,</span>
+                <span class="n">continuous_az</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">continuous_deg</span><span class="p">,</span>
+                <span class="n">branch</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">branch</span><span class="p">,</span>
+                <span class="n">branch_changed</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">branch_changed</span><span class="p">,</span>
+                <span class="n">valid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+                <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_status</span> <span class="o">=</span> <span class="n">status</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">branch_changed</span>
+                <span class="ow">or</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_state_time</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_state_time</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heartbeat_sec</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_persist</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">continuous_deg</span><span class="p">,</span> <span class="n">status</span>
+        <span class="k">except</span> <span class="n">AmbiguousBranchError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="c1"># Keep startup open so a subsequently written manual state file can be</span>
+            <span class="c1"># picked up without restarting the encoder node.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_startup_initialized</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_error_status</span><span class="p">(</span>
+                <span class="n">now</span><span class="p">,</span> <span class="n">encoder_time</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">,</span> <span class="s2">&quot;ambiguous&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">NoValidBranchError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_startup_initialized</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_error_status</span><span class="p">(</span>
+                <span class="n">now</span><span class="p">,</span> <span class="n">encoder_time</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">,</span> <span class="s2">&quot;no-valid-branch&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">BranchJumpError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_error_status</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">encoder_time</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">,</span> <span class="s2">&quot;jump&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">RawAngleRangeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_error_status</span><span class="p">(</span>
+                <span class="n">now</span><span class="p">,</span> <span class="n">encoder_time</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">,</span> <span class="s2">&quot;raw-range&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">AngleUnwrapError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_error_status</span><span class="p">(</span>
+                <span class="n">now</span><span class="p">,</span> <span class="n">encoder_time</span><span class="p">,</span> <span class="n">raw_az_deg</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzUnwrapRuntime.close"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.az_unwrap.html#necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_status</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_status</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_persist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_status</span><span class="p">,</span> <span class="n">force_sync</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_persist</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">AntennaAzUnwrapStatus</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">force_sync</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">enabled</span><span class="p">),</span>
+            <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">mode</span><span class="p">),</span>
+            <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">state</span><span class="p">),</span>
+            <span class="s2">&quot;raw_az_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">raw_az_deg</span><span class="p">),</span>
+            <span class="s2">&quot;modulo_az_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">modulo_az_deg</span><span class="p">),</span>
+            <span class="s2">&quot;continuous_az_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">continuous_az_deg</span><span class="p">),</span>
+            <span class="s2">&quot;branch&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">branch</span><span class="p">),</span>
+            <span class="s2">&quot;encoder_time_unix&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">encoder_time_unix</span><span class="p">),</span>
+            <span class="s2">&quot;persist_request_time_unix&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+            <span class="s2">&quot;period_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">period_deg</span><span class="p">),</span>
+            <span class="s2">&quot;drive_min_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">drive_min_deg</span><span class="p">),</span>
+            <span class="s2">&quot;drive_max_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">drive_max_deg</span><span class="p">),</span>
+            <span class="s2">&quot;zero_offset_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">zero_offset_deg</span><span class="p">),</span>
+            <span class="s2">&quot;sign&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">sign</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_state_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">force_sync</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_finite_float</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">unknown</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a finite float suitable for ROS message float64 fields.</span>
+
+<span class="sd">        ROS 2 message field validation rejects NaN and infinities even though</span>
+<span class="sd">        they are Python floats.  Use a documented finite sentinel for unknown</span>
+<span class="sd">        status-only quantities so a status publish failure can never suppress</span>
+<span class="sd">        the encoder topic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">value_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">value_f</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">value_f</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_status</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">now</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">encoder_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">raw_az</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">modulo_az</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">continuous_az</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">branch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">branch_changed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">valid</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AntennaAzUnwrapStatus</span><span class="p">:</span>
+        <span class="c1"># -1.0 means &quot;not persisted yet&quot;.  Do not use NaN/inf here: rclpy</span>
+        <span class="c1"># validates float64 assignment and will reject non-finite values.</span>
+        <span class="n">persist_age</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">last_persist_time</span><span class="p">):</span>
+            <span class="n">persist_age</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">last_persist_time</span><span class="p">)</span>
+        <span class="n">state_age</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_state_time</span><span class="p">)</span>
+            <span class="k">else</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_state_time</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">AntennaAzUnwrapStatus</span><span class="p">(</span>
+            <span class="n">enabled</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">),</span>
+            <span class="n">valid</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">valid</span><span class="p">),</span>
+            <span class="n">mode</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)[:</span><span class="mi">32</span><span class="p">],</span>
+            <span class="n">state</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">state</span><span class="p">)[:</span><span class="mi">32</span><span class="p">],</span>
+            <span class="n">reason</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">reason</span><span class="p">)[:</span><span class="mi">128</span><span class="p">],</span>
+            <span class="n">publish_time_unix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">now</span><span class="p">),</span>
+            <span class="n">encoder_time_unix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">encoder_time</span><span class="p">),</span>
+            <span class="n">raw_az_deg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">raw_az</span><span class="p">),</span>
+            <span class="n">modulo_az_deg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">modulo_az</span><span class="p">),</span>
+            <span class="n">continuous_az_deg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">continuous_az</span><span class="p">),</span>
+            <span class="n">branch</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">branch</span><span class="p">),</span>
+            <span class="n">branch_nonzero</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">branch</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="n">branch_changed</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">branch_changed</span><span class="p">),</span>
+            <span class="n">period_deg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span><span class="p">),</span>
+            <span class="n">drive_min_deg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_min_deg</span><span class="p">),</span>
+            <span class="n">drive_max_deg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_max_deg</span><span class="p">),</span>
+            <span class="n">state_age_sec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">state_age</span><span class="p">),</span>
+            <span class="n">persist_age_sec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">persist_age</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_error_status</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">encoder_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">raw_az</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AntennaAzUnwrapStatus</span><span class="p">:</span>
+        <span class="n">previous</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unwrapper</span><span class="o">.</span><span class="n">previous_continuous_deg</span>
+        <span class="n">continuous</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">previous</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">previous</span><span class="p">)</span>
+        <span class="n">branch</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mi">0</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unwrapper</span><span class="o">.</span><span class="n">previous_branch</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unwrapper</span><span class="o">.</span><span class="n">previous_branch</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">modulo</span> <span class="o">=</span> <span class="n">normalize_absolute_modulo_raw</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">raw_az</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">modulo</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_status</span><span class="p">(</span>
+            <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">encoder_time</span><span class="o">=</span><span class="n">encoder_time</span><span class="p">,</span>
+            <span class="n">raw_az</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">raw_az</span><span class="p">),</span>
+            <span class="n">modulo_az</span><span class="o">=</span><span class="n">modulo</span><span class="p">,</span>
+            <span class="n">continuous_az</span><span class="o">=</span><span class="n">continuous</span><span class="p">,</span>
+            <span class="n">branch</span><span class="o">=</span><span class="n">branch</span><span class="p">,</span>
+            <span class="n">branch_changed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">valid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_manual_state_payload</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="n">AbsoluteModuloUnwrapConfig</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">raw_az</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="n">continuous_az</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="n">branch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_check_raw_range</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">normalize_absolute_modulo_raw</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="p">),</span> <span class="n">cfg</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">RawAngleRangeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;manual raw Az is unusable: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+    <span class="k">if</span> <span class="n">continuous_az</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raw_az</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">branch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;manual initialization requires --continuous-az or both --raw-az and --branch&quot;</span>
+            <span class="p">)</span>
+        <span class="n">raw_az</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw_az</span><span class="p">)</span>
+        <span class="n">_check_raw_range</span><span class="p">(</span><span class="n">raw_az</span><span class="p">)</span>
+        <span class="n">modulo</span> <span class="o">=</span> <span class="n">normalize_absolute_modulo_raw</span><span class="p">(</span><span class="n">raw_az</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+        <span class="n">continuous_az</span> <span class="o">=</span> <span class="n">modulo</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">branch</span><span class="p">)</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">continuous_az</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">continuous_az</span><span class="p">)</span>
+        <span class="n">modulo</span> <span class="o">=</span> <span class="p">((</span><span class="n">continuous_az</span> <span class="o">-</span> <span class="n">cfg</span><span class="o">.</span><span class="n">raw_min_deg</span><span class="p">)</span> <span class="o">%</span> <span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span><span class="p">)</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">raw_min_deg</span>
+        <span class="n">derived_branch</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">continuous_az</span> <span class="o">-</span> <span class="n">modulo</span><span class="p">)</span> <span class="o">/</span> <span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">branch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">branch</span><span class="p">)</span> <span class="o">!=</span> <span class="n">derived_branch</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;manual branch </span><span class="si">{</span><span class="n">branch</span><span class="si">!r}</span><span class="s2"> is inconsistent with continuous_az=</span><span class="si">{</span><span class="n">continuous_az</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> deg &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(expected branch </span><span class="si">{</span><span class="n">derived_branch</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+        <span class="n">branch</span> <span class="o">=</span> <span class="n">derived_branch</span>
+        <span class="k">if</span> <span class="n">raw_az</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Invert calibrated_modulo = sign * raw + zero_offset modulo period.</span>
+            <span class="n">raw_az</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">sign</span> <span class="o">*</span> <span class="p">(</span><span class="n">modulo</span> <span class="o">-</span> <span class="n">cfg</span><span class="o">.</span><span class="n">zero_offset_deg</span><span class="p">)</span> <span class="o">-</span> <span class="n">cfg</span><span class="o">.</span><span class="n">raw_min_deg</span><span class="p">)</span>
+                <span class="o">%</span> <span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">raw_min_deg</span>
+            <span class="n">_check_raw_range</span><span class="p">(</span><span class="n">raw_az</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">raw_az</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw_az</span><span class="p">)</span>
+            <span class="n">_check_raw_range</span><span class="p">(</span><span class="n">raw_az</span><span class="p">)</span>
+            <span class="n">raw_modulo</span> <span class="o">=</span> <span class="n">normalize_absolute_modulo_raw</span><span class="p">(</span><span class="n">raw_az</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">raw_modulo</span> <span class="o">-</span> <span class="n">modulo</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-6</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;manual raw_az=</span><span class="si">{</span><span class="n">raw_az</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> deg is inconsistent with &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;continuous_az=</span><span class="si">{</span><span class="n">continuous_az</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> deg&quot;</span>
+                <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_min_deg</span> <span class="o">&lt;=</span> <span class="nb">float</span><span class="p">(</span><span class="n">continuous_az</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">drive_max_deg</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;manual continuous Az </span><span class="si">{</span><span class="n">continuous_az</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> deg is outside drive range &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_min_deg</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_max_deg</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">] deg&quot;</span>
+        <span class="p">)</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
+        <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="s2">&quot;manual&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;raw_az_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw_az</span><span class="p">),</span>
+        <span class="s2">&quot;modulo_az_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">modulo</span><span class="p">),</span>
+        <span class="s2">&quot;continuous_az_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">continuous_az</span><span class="p">),</span>
+        <span class="s2">&quot;branch&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">branch</span><span class="p">),</span>
+        <span class="s2">&quot;encoder_time_unix&quot;</span><span class="p">:</span> <span class="n">now</span><span class="p">,</span>
+        <span class="s2">&quot;persist_request_time_unix&quot;</span><span class="p">:</span> <span class="n">now</span><span class="p">,</span>
+        <span class="s2">&quot;period_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">period_deg</span><span class="p">),</span>
+        <span class="s2">&quot;drive_min_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_min_deg</span><span class="p">),</span>
+        <span class="s2">&quot;drive_max_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">drive_max_deg</span><span class="p">),</span>
+        <span class="s2">&quot;zero_offset_deg&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">zero_offset_deg</span><span class="p">),</span>
+        <span class="s2">&quot;sign&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">sign</span><span class="p">),</span>
+    <span class="p">}</span>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.az_unwrap.html#necst.ctrl.antenna.az_unwrap.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Small CLI for manual Az unwrap state inspection/initialization.&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">argparse</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Inspect or initialize NECST Az unwrap state file.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_subparsers</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="s2">&quot;cmd&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">sub</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;show current configured state file&quot;</span><span class="p">)</span>
+    <span class="n">setp</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;write a manual unwrap state&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_deg_arg</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">removesuffix</span><span class="p">(</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">removesuffix</span><span class="p">(</span><span class="s2">&quot;°&quot;</span><span class="p">))</span>
+
+    <span class="n">setp</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--raw-az&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">_deg_arg</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;current absolute modulo raw Az [deg]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">setp</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--continuous-az&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">_deg_arg</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;desired continuous Az [deg]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">setp</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--branch&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;desired branch; requires --raw-az when --continuous-az is omitted&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+
+    <span class="p">(</span>
+        <span class="n">cfg</span><span class="p">,</span>
+        <span class="n">state_path</span><span class="p">,</span>
+        <span class="n">_heartbeat</span><span class="p">,</span>
+        <span class="n">_state_warn_age</span><span class="p">,</span>
+        <span class="n">_state_raw_tolerance</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">,</span>
+        <span class="n">_startup_policy</span><span class="p">,</span>
+        <span class="n">_startup_discard_raw_out_of_range_samples</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">load_az_unwrap_config</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">state_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;antenna_encoder_unwrap.az.state_path is not configured&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cmd</span> <span class="o">==</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;enabled=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">enabled</span><span class="si">}</span><span class="s2"> mode=</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> state_path=</span><span class="si">{</span><span class="n">state_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">state_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;state file does not exist&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cmd</span> <span class="o">==</span> <span class="s2">&quot;set&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cfg</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;az unwrap is not enabled in the current config&quot;</span><span class="p">)</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">_manual_state_payload</span><span class="p">(</span>
+            <span class="n">cfg</span><span class="p">,</span>
+            <span class="n">mode</span><span class="p">,</span>
+            <span class="n">raw_az</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">raw_az</span><span class="p">,</span>
+            <span class="n">continuous_az</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">continuous_az</span><span class="p">,</span>
+            <span class="n">branch</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">branch</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">AtomicStateWriter</span><span class="p">(</span><span class="n">state_path</span><span class="p">)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;wrote </span><span class="si">{</span><span class="n">state_path</span><span class="si">}</span><span class="s2">: continuous=</span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;continuous_az_deg&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> deg branch=</span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;branch&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> raw=</span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;raw_az_deg&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> deg&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="mi">2</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, NECST Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+necst.rx.spectral\_recording\_sg
+================================
+
+.. automodule:: necst.rx.spectral_recording_sg
+   :members:
+   :undoc-members:
+   :show-inheritance:

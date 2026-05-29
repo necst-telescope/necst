@@ -1,0 +1,7 @@
+necst.procedures.observations.spectral\_recording\_sequence
+===========================================================
+
+.. automodule:: necst.procedures.observations.spectral_recording_sequence
+   :members:
+   :undoc-members:
+   :show-inheritance:

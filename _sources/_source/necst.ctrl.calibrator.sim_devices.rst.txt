@@ -1,7 +1,7 @@
-necst.procedures.observation\_base
+necst.ctrl.calibrator.sim\_devices
 ==================================
 
-.. automodule:: necst.procedures.observation_base
+.. automodule:: necst.ctrl.calibrator.sim_devices
    :members:
    :undoc-members:
    :show-inheritance:

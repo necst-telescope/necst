@@ -1,0 +1,907 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>necst.rx.spectral_recording_sg &#8212; necst 4.0.20 documentation</title>
+    
+  <link href="../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    
+  <link rel="preload" as="script" href="../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../../../index.html">
+<p class="title">necst</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../index.html">
+  Home
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../_source/necst.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/necst-telescope/necst" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/necst/" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fas fa-cubes"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
+<!-- This will display the version of the docs -->
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for necst.rx.spectral_recording_sg</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Signal-generator apply/verify helpers for spectral recording LO profiles.</span>
+
+<span class="sd">This module implements the PR3 SG layer without importing ROS at module import</span>
+<span class="sd">time.  The pure functions are unit-testable with fake readback objects; the CLI</span>
+<span class="sd">imports ``necst.core.Commander`` only when an actual apply/verify command is</span>
+<span class="sd">requested.</span>
+
+<span class="sd">Frequency convention</span>
+<span class="sd">--------------------</span>
+<span class="sd">``sg_set_frequency_hz`` in ``lo_profile.toml`` is the frequency sent to the</span>
+<span class="sd">physical signal generator.  Commander currently publishes ``LocalSignal.freq``</span>
+<span class="sd">in GHz, so readback objects with a ``freq`` attribute are interpreted as GHz</span>
+<span class="sd">unless an explicit ``frequency_hz``/``sg_readback_frequency_hz`` field exists.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">time</span> <span class="k">as</span> <span class="nn">pytime</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="k">try</span><span class="p">:</span>  <span class="c1"># direct script execution fallback</span>
+    <span class="kn">from</span> <span class="nn">.spectral_recording_setup</span> <span class="kn">import</span> <span class="n">read_toml</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="kn">from</span> <span class="nn">spectral_recording_setup</span> <span class="kn">import</span> <span class="n">read_toml</span>  <span class="c1"># type: ignore</span>
+
+
+<div class="viewcode-block" id="SpectralRecordingSGError"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.SpectralRecordingSGError">[docs]</a><span class="k">class</span> <span class="nc">SpectralRecordingSGError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base error for SG apply/verify failures.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="SpectralRecordingSGValidationError"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.SpectralRecordingSGValidationError">[docs]</a><span class="k">class</span> <span class="nc">SpectralRecordingSGValidationError</span><span class="p">(</span><span class="n">SpectralRecordingSGError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when a profile/readback pair violates strict SG semantics.&quot;&quot;&quot;</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_value</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">obj</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">default</span>
+
+
+<span class="k">def</span> <span class="nf">_readback_frequency_hz</span><span class="p">(</span><span class="n">readback</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">explicit</span> <span class="o">=</span> <span class="n">_get_value</span><span class="p">(</span>
+        <span class="n">readback</span><span class="p">,</span>
+        <span class="s2">&quot;sg_readback_frequency_hz&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;frequency_hz&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;freq_hz&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">explicit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">explicit</span><span class="p">)</span>
+
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">_get_value</span><span class="p">(</span><span class="n">readback</span><span class="p">,</span> <span class="s2">&quot;freq&quot;</span><span class="p">,</span> <span class="s2">&quot;frequency&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">freq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;Readback has no frequency field; expected frequency_hz or freq.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+    <span class="c1"># NECST LocalSignal.freq is currently expressed in GHz.  If a fake/device</span>
+    <span class="c1"># readback supplies a very large value, treat it as Hz for testability.</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.0e6</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">freq</span> <span class="o">*</span> <span class="mf">1.0e9</span>
+    <span class="k">return</span> <span class="n">freq</span>
+
+
+<span class="k">def</span> <span class="nf">_frequency_alias_hz</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">field_base</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">canonical</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">aliases</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">default</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve one frequency value from explicit unit-suffixed TOML keys.</span>
+
+<span class="sd">    The returned value is always Hz.  More than one alias is rejected because</span>
+<span class="sd">    accepting conflicting unit keys silently would be unsafe for SG control.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">found</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">table</span><span class="p">[</span><span class="n">name</span><span class="p">])</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">aliases</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">table</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">required</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">aliases</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">field_base</span><span class="si">}</span><span class="s2">: missing </span><span class="si">{</span><span class="n">canonical</span><span class="si">}</span><span class="s2">; expected one of </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">field_base</span><span class="si">}</span><span class="s2">: no default supplied for optional frequency </span><span class="si">{</span><span class="n">canonical</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">found</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">field_base</span><span class="si">}</span><span class="s2">: multiple frequency aliases for </span><span class="si">{</span><span class="n">canonical</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="s2">&quot;Specify exactly one unit-suffixed key.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">aliases</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_readback_power_dbm</span><span class="p">(</span><span class="n">readback</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_get_value</span><span class="p">(</span>
+        <span class="n">readback</span><span class="p">,</span> <span class="s2">&quot;power_dbm&quot;</span><span class="p">,</span> <span class="s2">&quot;sg_readback_power_dbm&quot;</span><span class="p">,</span> <span class="s2">&quot;power&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_readback_time</span><span class="p">(</span><span class="n">readback</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_get_value</span><span class="p">(</span><span class="n">readback</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;readback_time&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_readback_id</span><span class="p">(</span><span class="n">readback</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_get_value</span><span class="p">(</span><span class="n">readback</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;sg_id&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_readback_output</span><span class="p">(</span><span class="n">readback</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_get_value</span><span class="p">(</span>
+        <span class="n">readback</span><span class="p">,</span>
+        <span class="s2">&quot;output_status&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sg_output_status&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;output_enabled&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="sg_devices_from_profile"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.sg_devices_from_profile">[docs]</a><span class="k">def</span> <span class="nf">sg_devices_from_profile</span><span class="p">(</span><span class="n">lo_profile</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="n">devices</span> <span class="o">=</span> <span class="n">lo_profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sg_devices&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">devices</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;lo_profile.sg_devices must be a table.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">devices</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+<div class="viewcode-block" id="build_sg_apply_plan"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.build_sg_apply_plan">[docs]</a><span class="k">def</span> <span class="nf">build_sg_apply_plan</span><span class="p">(</span>
+    <span class="n">lo_profile</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">sg_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="n">devices</span> <span class="o">=</span> <span class="n">sg_devices_from_profile</span><span class="p">(</span><span class="n">lo_profile</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sg_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sg_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">devices</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown sg_id: </span><span class="si">{</span><span class="n">sg_id</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">devices</span> <span class="o">=</span> <span class="p">{</span><span class="n">sg_id</span><span class="p">:</span> <span class="n">devices</span><span class="p">[</span><span class="n">sg_id</span><span class="p">]}</span>
+
+    <span class="n">plan</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">dev</span> <span class="ow">in</span> <span class="n">devices</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">output_required</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_required&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        <span class="n">output_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_policy&quot;</span><span class="p">,</span> <span class="s2">&quot;require_off&quot;</span><span class="p">))</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;sg_id&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
+            <span class="s2">&quot;control_adapter&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span>
+                <span class="n">dev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;control_adapter&quot;</span><span class="p">,</span> <span class="s2">&quot;necst_commander_signal_generator_set_v1&quot;</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;sg_set_frequency_hz&quot;</span><span class="p">:</span> <span class="n">_frequency_alias_hz</span><span class="p">(</span>
+                <span class="n">dev</span><span class="p">,</span>
+                <span class="n">field_base</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;sg_devices.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">canonical</span><span class="o">=</span><span class="s2">&quot;sg_set_frequency_hz&quot;</span><span class="p">,</span>
+                <span class="n">aliases</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;sg_set_frequency_hz&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                    <span class="s2">&quot;sg_set_frequency_ghz&quot;</span><span class="p">:</span> <span class="mf">1.0e9</span><span class="p">,</span>
+                    <span class="s2">&quot;sg_set_frequency_mhz&quot;</span><span class="p">:</span> <span class="mf">1.0e6</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;sg_set_power_dbm&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sg_set_power_dbm&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
+            <span class="s2">&quot;frequency_tolerance_hz&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;frequency_tolerance_hz&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
+            <span class="s2">&quot;power_tolerance_db&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;power_tolerance_db&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
+            <span class="s2">&quot;output_required&quot;</span><span class="p">:</span> <span class="n">output_required</span><span class="p">,</span>
+            <span class="s2">&quot;output_policy&quot;</span><span class="p">:</span> <span class="n">output_policy</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;control_adapter&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;necst_commander_signal_generator_set_v1&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: unsupported control_adapter=</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;control_adapter&#39;</span><span class="p">]</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">output_required</span><span class="p">)</span> <span class="ow">and</span> <span class="n">output_policy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;require_off&quot;</span><span class="p">}:</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: output_policy must be ignore or require_off.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">plan</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span>
+    <span class="k">return</span> <span class="n">plan</span></div>
+
+
+<div class="viewcode-block" id="filter_sg_apply_plan"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.filter_sg_apply_plan">[docs]</a><span class="k">def</span> <span class="nf">filter_sg_apply_plan</span><span class="p">(</span>
+    <span class="n">plan</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">sg_ids</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a deterministic subset of an SG apply/verify plan.</span>
+
+<span class="sd">    Missing IDs are rejected so that a typo in `.obs` does not silently disable</span>
+<span class="sd">    SG preflight checks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">requested</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">sg_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">sg_id</span> <span class="ow">in</span> <span class="n">sg_ids</span><span class="p">]</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">sg_id</span> <span class="k">for</span> <span class="n">sg_id</span> <span class="ow">in</span> <span class="n">requested</span> <span class="k">if</span> <span class="n">sg_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">plan</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown sg_preflight_ids not present in lo_profile.sg_devices: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">sg_id</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">plan</span><span class="p">[</span><span class="n">sg_id</span><span class="p">])</span> <span class="k">for</span> <span class="n">sg_id</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">requested</span><span class="p">))}</span></div>
+
+
+<div class="viewcode-block" id="active_sg_ids_from_snapshot"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.active_sg_ids_from_snapshot">[docs]</a><span class="k">def</span> <span class="nf">active_sg_ids_from_snapshot</span><span class="p">(</span>
+    <span class="n">snapshot</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">fail_on_legacy_chain</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Infer active SG IDs from a resolved spectral-recording snapshot.</span>
+
+<span class="sd">    The active path is `streams -&gt; lo_chains -&gt; lo_roles -&gt; sg_id`.  Fixed LO</span>
+<span class="sd">    roles are intentionally skipped.  Legacy inline LO chains (`lo1_hz/sb1/...`)</span>
+<span class="sd">    do not encode which physical SG generated the LO; if such a chain is active</span>
+<span class="sd">    and `fail_on_legacy_chain` is true, raise a clear error instead of giving a</span>
+<span class="sd">    false sense that hardware was checked.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">streams</span> <span class="o">=</span> <span class="n">snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;streams&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">chains</span> <span class="o">=</span> <span class="n">snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lo_chains&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">roles</span> <span class="o">=</span> <span class="n">snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lo_roles&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;snapshot.streams must be a table for SG preflight&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chains</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;snapshot.lo_chains must be a table for SG preflight&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">roles</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;snapshot.lo_roles must be a table for SG preflight&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">active_chain_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">stream_id</span><span class="p">,</span> <span class="n">raw_stream</span> <span class="ow">in</span> <span class="n">streams</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_stream</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;snapshot.streams.</span><span class="si">{</span><span class="n">stream_id</span><span class="si">}</span><span class="s2"> must be a table&quot;</span>
+            <span class="p">)</span>
+        <span class="n">chain_id</span> <span class="o">=</span> <span class="n">raw_stream</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lo_chain&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chain_id</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;snapshot.streams.</span><span class="si">{</span><span class="n">stream_id</span><span class="si">}</span><span class="s2">.lo_chain is missing&quot;</span>
+            <span class="p">)</span>
+        <span class="n">active_chain_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">chain_id</span><span class="p">))</span>
+
+    <span class="n">active_sg_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">legacy_chain_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">chain_id</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">active_chain_ids</span><span class="p">)):</span>
+        <span class="n">raw_chain</span> <span class="o">=</span> <span class="n">chains</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">chain_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_chain</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;snapshot.streams references unknown lo_chain </span><span class="si">{</span><span class="n">chain_id</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">role_ids</span> <span class="o">=</span> <span class="n">raw_chain</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lo_roles&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">role_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="s2">&quot;legacy_local_oscillators&quot;</span> <span class="ow">in</span> <span class="n">raw_chain</span>
+                <span class="ow">or</span> <span class="s2">&quot;lo_frequencies_hz&quot;</span> <span class="ow">in</span> <span class="n">raw_chain</span>
+            <span class="p">):</span>
+                <span class="n">legacy_chain_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chain_id</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">role_ids</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">role_ids</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;snapshot.lo_chains.</span><span class="si">{</span><span class="n">chain_id</span><span class="si">}</span><span class="s2">.lo_roles must be an array&quot;</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">role_id</span> <span class="ow">in</span> <span class="n">role_ids</span><span class="p">:</span>
+            <span class="n">role_key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role_id</span><span class="p">)</span>
+            <span class="n">raw_role</span> <span class="o">=</span> <span class="n">roles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">role_key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_role</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;snapshot.lo_chains.</span><span class="si">{</span><span class="n">chain_id</span><span class="si">}</span><span class="s2"> references unknown lo_role </span><span class="si">{</span><span class="n">role_key</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">raw_role</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="s2">&quot;sg_device&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">source</span> <span class="o">==</span> <span class="s2">&quot;sg_device&quot;</span><span class="p">:</span>
+                <span class="n">sg_id</span> <span class="o">=</span> <span class="n">raw_role</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sg_id&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">sg_id</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;snapshot.lo_roles.</span><span class="si">{</span><span class="n">role_key</span><span class="si">}</span><span class="s2">.sg_id is missing&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">active_sg_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">sg_id</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">source</span> <span class="o">==</span> <span class="s2">&quot;fixed&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;snapshot.lo_roles.</span><span class="si">{</span><span class="n">role_key</span><span class="si">}</span><span class="s2">.source must be &#39;sg_device&#39; or &#39;fixed&#39;, got </span><span class="si">{</span><span class="n">source</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">legacy_chain_ids</span> <span class="ow">and</span> <span class="n">fail_on_legacy_chain</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;sg_preflight_scope=&#39;active_lo_chains&#39; cannot infer SG IDs from active legacy LO chains &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">legacy_chain_ids</span><span class="si">}</span><span class="s2">. Use role-based lo_chains with lo_roles.source=&#39;sg_device&#39;, &quot;</span>
+            <span class="s2">&quot;or set sg_preflight_ids explicitly.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">active_sg_ids</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="select_sg_preflight_plan"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.select_sg_preflight_plan">[docs]</a><span class="k">def</span> <span class="nf">select_sg_preflight_plan</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">lo_profile</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">snapshot</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active_lo_chains&quot;</span><span class="p">,</span>
+    <span class="n">sg_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the SG subset to check/set for observation-time preflight.&quot;&quot;&quot;</span>
+
+    <span class="n">full_plan</span> <span class="o">=</span> <span class="n">build_sg_apply_plan</span><span class="p">(</span><span class="n">lo_profile</span><span class="p">)</span>
+    <span class="n">scope_norm</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">scope</span> <span class="ow">or</span> <span class="s2">&quot;active_lo_chains&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">sg_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">explicit</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">sg_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">sg_id</span> <span class="ow">in</span> <span class="n">sg_ids</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">scope_norm</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span>
+            <span class="s2">&quot;explicit_sg_ids&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ids&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;active_lo_chains&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;all_sg_devices&quot;</span><span class="p">,</span>
+        <span class="p">}:</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unsupported sg_preflight_scope: </span><span class="si">{</span><span class="n">scope</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">scope_norm</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;active_lo_chains&quot;</span><span class="p">,</span> <span class="s2">&quot;all_sg_devices&quot;</span><span class="p">}</span> <span class="ow">and</span> <span class="n">explicit</span><span class="p">:</span>
+            <span class="c1"># Explicit IDs take precedence only when the caller intentionally</span>
+            <span class="c1"># passes them.  This allows `.obs` to use sg_preflight_ids without</span>
+            <span class="c1"># also setting scope=&#39;explicit_sg_ids&#39;.</span>
+            <span class="n">scope_norm</span> <span class="o">=</span> <span class="s2">&quot;explicit_sg_ids&quot;</span>
+    <span class="k">if</span> <span class="n">scope_norm</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;explicit_sg_ids&quot;</span><span class="p">,</span> <span class="s2">&quot;ids&quot;</span><span class="p">}:</span>
+        <span class="k">if</span> <span class="n">sg_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+                <span class="s2">&quot;sg_preflight_scope=&#39;explicit_sg_ids&#39; requires sg_preflight_ids&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">filter_sg_apply_plan</span><span class="p">(</span><span class="n">full_plan</span><span class="p">,</span> <span class="n">sg_ids</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">scope_norm</span> <span class="o">==</span> <span class="s2">&quot;all_sg_devices&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">sg_id</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">full_plan</span><span class="p">[</span><span class="n">sg_id</span><span class="p">])</span> <span class="k">for</span> <span class="n">sg_id</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">full_plan</span><span class="p">)}</span>
+    <span class="k">if</span> <span class="n">scope_norm</span> <span class="o">==</span> <span class="s2">&quot;active_lo_chains&quot;</span><span class="p">:</span>
+        <span class="n">active_ids</span> <span class="o">=</span> <span class="n">active_sg_ids_from_snapshot</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">fail_on_legacy_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filter_sg_apply_plan</span><span class="p">(</span><span class="n">full_plan</span><span class="p">,</span> <span class="n">active_ids</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Unsupported sg_preflight_scope: </span><span class="si">{</span><span class="n">scope</span><span class="si">!r}</span><span class="s2">&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="run_sg_preflight"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.run_sg_preflight">[docs]</a><span class="k">def</span> <span class="nf">run_sg_preflight</span><span class="p">(</span>
+    <span class="n">commander</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">plan</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">policy</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">timeout_sec</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+    <span class="n">allow_command_echo</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">poll_interval_sec</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Execute observation-time SG preflight.</span>
+
+<span class="sd">    Policies:</span>
+<span class="sd">    - none: do nothing.</span>
+<span class="sd">    - verify_only: read and strictly verify fresh SG readbacks.</span>
+<span class="sd">    - apply_and_verify: send set/stop according to the plan, then verify.</span>
+<span class="sd">    - warn_only: verify fresh readbacks but return failures instead of raising.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">policy_norm</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">policy</span> <span class="ow">or</span> <span class="s2">&quot;none&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">policy_norm</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">}:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">policy_norm</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;verify_only&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_and_verify&quot;</span><span class="p">,</span> <span class="s2">&quot;warn_only&quot;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;sg_preflight_policy must be one of none, verify_only, apply_and_verify, warn_only; &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">policy</span><span class="si">!r}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">results</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">failures</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sg_id</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">plan</span><span class="p">):</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">plan</span><span class="p">[</span><span class="n">sg_id</span><span class="p">]</span>
+        <span class="n">started</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">policy_norm</span> <span class="o">==</span> <span class="s2">&quot;apply_and_verify&quot;</span><span class="p">:</span>
+            <span class="n">apply_sg_plan_entry</span><span class="p">(</span><span class="n">commander</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">poll_sg_readback</span><span class="p">(</span>
+                <span class="n">commander</span><span class="p">,</span>
+                <span class="n">sg_id</span><span class="o">=</span><span class="n">sg_id</span><span class="p">,</span>
+                <span class="n">entry</span><span class="o">=</span><span class="n">entry</span><span class="p">,</span>
+                <span class="n">verify_started_at</span><span class="o">=</span><span class="n">started</span><span class="p">,</span>
+                <span class="n">timeout_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">timeout_sec</span><span class="p">),</span>
+                <span class="n">strict</span><span class="o">=</span><span class="p">(</span><span class="n">policy_norm</span> <span class="o">!=</span> <span class="s2">&quot;warn_only&quot;</span><span class="p">),</span>
+                <span class="n">allow_command_echo</span><span class="o">=</span><span class="n">allow_command_echo</span><span class="p">,</span>
+                <span class="n">poll_interval_sec</span><span class="o">=</span><span class="n">poll_interval_sec</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">SpectralRecordingSGValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">policy_norm</span> <span class="o">==</span> <span class="s2">&quot;warn_only&quot;</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;sg_id&quot;</span><span class="p">:</span> <span class="n">sg_id</span><span class="p">,</span>
+                    <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                    <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)],</span>
+                <span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+        <span class="n">results</span><span class="p">[</span><span class="n">sg_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)):</span>
+            <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sg_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">[])))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">failures</span> <span class="ow">and</span> <span class="n">policy_norm</span> <span class="o">!=</span> <span class="s2">&quot;warn_only&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;SG preflight failed: &quot;</span> <span class="o">+</span> <span class="s2">&quot; | &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">failures</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="apply_sg_plan_entry"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.apply_sg_plan_entry">[docs]</a><span class="k">def</span> <span class="nf">apply_sg_plan_entry</span><span class="p">(</span><span class="n">commander</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">entry</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">sg_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;sg_id&quot;</span><span class="p">])</span>
+    <span class="n">output_required</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_required&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">output_required</span><span class="p">:</span>
+        <span class="n">commander</span><span class="o">.</span><span class="n">signal_generator</span><span class="p">(</span>
+            <span class="s2">&quot;set&quot;</span><span class="p">,</span>
+            <span class="n">GHz</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;sg_set_frequency_hz&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="mf">1.0e9</span><span class="p">,</span>
+            <span class="n">dBm</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;sg_set_power_dbm&quot;</span><span class="p">]),</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">sg_id</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_policy&quot;</span><span class="p">,</span> <span class="s2">&quot;require_off&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="s2">&quot;require_off&quot;</span><span class="p">:</span>
+        <span class="n">commander</span><span class="o">.</span><span class="n">signal_generator</span><span class="p">(</span><span class="s2">&quot;stop&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">sg_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="verify_sg_readback"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.verify_sg_readback">[docs]</a><span class="k">def</span> <span class="nf">verify_sg_readback</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">sg_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">entry</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">readback</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">verify_started_at</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">allow_command_echo</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate one SG readback and return normalized values.</span>
+
+<span class="sd">    Strict mode requires an id match, non-stale timestamp, frequency tolerance,</span>
+<span class="sd">    power tolerance when power is present, and a real device readback unless</span>
+<span class="sd">    ``allow_command_echo`` is explicitly set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">warnings</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">rb_id</span> <span class="o">=</span> <span class="n">_readback_id</span><span class="p">(</span><span class="n">readback</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rb_id</span> <span class="o">!=</span> <span class="n">sg_id</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;id mismatch: expected </span><span class="si">{</span><span class="n">sg_id</span><span class="si">!r}</span><span class="s2">, got </span><span class="si">{</span><span class="n">rb_id</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">rb_time</span> <span class="o">=</span> <span class="n">_readback_time</span><span class="p">(</span><span class="n">readback</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rb_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;readback has no time field&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">rb_time</span> <span class="o">&lt;</span> <span class="n">verify_started_at</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;stale readback: readback_time=</span><span class="si">{</span><span class="n">rb_time</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> &lt; verify_started_at=</span><span class="si">{</span><span class="n">verify_started_at</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">rb_source</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+        <span class="n">_get_value</span><span class="p">(</span><span class="n">readback</span><span class="p">,</span> <span class="s2">&quot;readback_source&quot;</span><span class="p">,</span> <span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;device_readback&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="n">rb_source</span> <span class="o">==</span> <span class="s2">&quot;command_echo_detected&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">allow_command_echo</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">&quot;strict verify requires device_readback; command_echo_detected was returned&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">rb_source</span> <span class="o">==</span> <span class="s2">&quot;command_echo_detected&quot;</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">&quot;readback_source=command_echo_detected accepted by explicit override&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">expected_freq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;sg_set_frequency_hz&quot;</span><span class="p">])</span>
+    <span class="n">freq_tol</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;frequency_tolerance_hz&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+    <span class="n">rb_freq</span> <span class="o">=</span> <span class="n">_readback_frequency_hz</span><span class="p">(</span><span class="n">readback</span><span class="p">)</span>
+    <span class="n">freq_error</span> <span class="o">=</span> <span class="n">rb_freq</span> <span class="o">-</span> <span class="n">expected_freq</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">freq_error</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">freq_tol</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;frequency out of tolerance: expected=</span><span class="si">{</span><span class="n">expected_freq</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> Hz, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;readback=</span><span class="si">{</span><span class="n">rb_freq</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> Hz, error=</span><span class="si">{</span><span class="n">freq_error</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> Hz, tolerance=</span><span class="si">{</span><span class="n">freq_tol</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> Hz&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">rb_power</span> <span class="o">=</span> <span class="n">_readback_power_dbm</span><span class="p">(</span><span class="n">readback</span><span class="p">)</span>
+    <span class="n">expected_power</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sg_set_power_dbm&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+    <span class="n">power_tol</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;power_tolerance_db&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+    <span class="n">power_error</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">rb_power</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">power_error</span> <span class="o">=</span> <span class="n">rb_power</span> <span class="o">-</span> <span class="n">expected_power</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">power_error</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">power_tol</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;power out of tolerance: expected=</span><span class="si">{</span><span class="n">expected_power</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> dBm, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;readback=</span><span class="si">{</span><span class="n">rb_power</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> dBm, error=</span><span class="si">{</span><span class="n">power_error</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> dB, tolerance=</span><span class="si">{</span><span class="n">power_tol</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> dB&quot;</span>
+            <span class="p">)</span>
+
+    <span class="n">rb_output</span> <span class="o">=</span> <span class="n">_readback_output</span><span class="p">(</span><span class="n">readback</span><span class="p">)</span>
+    <span class="n">output_required</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_required&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+    <span class="n">output_policy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_policy&quot;</span><span class="p">,</span> <span class="s2">&quot;require_off&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">output_required</span> <span class="ow">and</span> <span class="n">rb_output</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;output_required=true but readback output is off&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">output_required</span><span class="p">)</span> <span class="ow">and</span> <span class="n">output_policy</span> <span class="o">==</span> <span class="s2">&quot;require_off&quot;</span> <span class="ow">and</span> <span class="n">rb_output</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">&quot;output_required=false/output_policy=require_off but readback output is on&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;sg_id&quot;</span><span class="p">:</span> <span class="n">sg_id</span><span class="p">,</span>
+        <span class="s2">&quot;readback_frequency_hz&quot;</span><span class="p">:</span> <span class="n">rb_freq</span><span class="p">,</span>
+        <span class="s2">&quot;frequency_error_hz&quot;</span><span class="p">:</span> <span class="n">freq_error</span><span class="p">,</span>
+        <span class="s2">&quot;readback_power_dbm&quot;</span><span class="p">:</span> <span class="n">rb_power</span><span class="p">,</span>
+        <span class="s2">&quot;power_error_db&quot;</span><span class="p">:</span> <span class="n">power_error</span><span class="p">,</span>
+        <span class="s2">&quot;readback_time&quot;</span><span class="p">:</span> <span class="n">rb_time</span><span class="p">,</span>
+        <span class="s2">&quot;readback_source&quot;</span><span class="p">:</span> <span class="n">rb_source</span><span class="p">,</span>
+        <span class="s2">&quot;output_status&quot;</span><span class="p">:</span> <span class="n">rb_output</span><span class="p">,</span>
+        <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="n">warnings</span><span class="p">,</span>
+        <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span>
+        <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">errors</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">errors</span> <span class="ow">and</span> <span class="n">strict</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span><span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errors</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<span class="k">def</span> <span class="nf">_candidate_readbacks</span><span class="p">(</span><span class="n">readback</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">sg_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return candidate readback objects from Commander output.</span>
+
+<span class="sd">    Commander variants may return a single LocalSignal-like object, a mapping</span>
+<span class="sd">    keyed by ``lo_signal.&lt;id&gt;``, or a mapping of multiple topic children.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">readback</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="n">exact_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;lo_signal.</span><span class="si">{</span><span class="n">sg_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">exact_key</span> <span class="ow">in</span> <span class="n">readback</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">readback</span><span class="p">[</span><span class="n">exact_key</span><span class="p">]]</span>
+        <span class="c1"># A mapping with scalar/message fields is itself a readback object.</span>
+        <span class="n">scalar_fields</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sg_id&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;freq&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;frequency&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;frequency_hz&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sg_readback_frequency_hz&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;time&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;readback_time&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;timestamp&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="n">readback</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">scalar_fields</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">readback</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">readback</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">readback</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="poll_sg_readback"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.poll_sg_readback">[docs]</a><span class="k">def</span> <span class="nf">poll_sg_readback</span><span class="p">(</span>
+    <span class="n">commander</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">sg_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">entry</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">verify_started_at</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">timeout_sec</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">allow_command_echo</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">poll_interval_sec</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Poll Commander until a fresh id-matching SG readback verifies or times out.&quot;&quot;&quot;</span>
+
+    <span class="n">deadline</span> <span class="o">=</span> <span class="n">verify_started_at</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">timeout_sec</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">last_errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">last_warnings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">attempts</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">attempts</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="n">commander</span><span class="o">.</span><span class="n">signal_generator</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">sg_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">_candidate_readbacks</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">sg_id</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">verify_sg_readback</span><span class="p">(</span>
+                    <span class="n">sg_id</span><span class="o">=</span><span class="n">sg_id</span><span class="p">,</span>
+                    <span class="n">entry</span><span class="o">=</span><span class="n">entry</span><span class="p">,</span>
+                    <span class="n">readback</span><span class="o">=</span><span class="n">candidate</span><span class="p">,</span>
+                    <span class="n">verify_started_at</span><span class="o">=</span><span class="n">verify_started_at</span><span class="p">,</span>
+                    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">allow_command_echo</span><span class="o">=</span><span class="n">allow_command_echo</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>  <span class="c1"># malformed candidate; keep polling until timeout</span>
+                <span class="n">last_errors</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)]</span>
+                <span class="k">continue</span>
+            <span class="n">last_errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+            <span class="n">last_warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warnings&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+            <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">):</span>
+                <span class="n">result</span><span class="p">[</span><span class="s2">&quot;attempts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attempts</span>
+                <span class="k">return</span> <span class="n">result</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="o">&gt;=</span> <span class="n">deadline</span><span class="p">:</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="n">last_errors</span> <span class="ow">or</span> <span class="p">[</span>
+                <span class="sa">f</span><span class="s2">&quot;timed out waiting for fresh SG readback for </span><span class="si">{</span><span class="n">sg_id</span><span class="si">!r}</span><span class="s2"> after </span><span class="si">{</span><span class="n">timeout_sec</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> s&quot;</span>
+            <span class="p">]</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">strict</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SpectralRecordingSGValidationError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;sg_id&quot;</span><span class="p">:</span> <span class="n">sg_id</span><span class="p">,</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;attempts&quot;</span><span class="p">:</span> <span class="n">attempts</span><span class="p">,</span>
+                <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="n">last_warnings</span><span class="p">,</span>
+                <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="n">pytime</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">poll_interval_sec</span><span class="p">),</span> <span class="n">deadline</span> <span class="o">-</span> <span class="n">now</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="summarize_lo_profile"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.summarize_lo_profile">[docs]</a><span class="k">def</span> <span class="nf">summarize_lo_profile</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">profile</span> <span class="o">=</span> <span class="n">read_toml</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">plan</span> <span class="o">=</span> <span class="n">build_sg_apply_plan</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sg_id,frequency_Hz,power_dBm,output_required,output_policy,tolerance_Hz&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">sg_id</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">plan</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sg_id</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;sg_set_frequency_hz&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;sg_set_power_dbm&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">,&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;output_required&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;output_policy&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;frequency_tolerance_hz&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_readback_to_dict</span><span class="p">(</span><span class="n">readback</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">readback</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">readback</span><span class="p">)</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;freq&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;frequency_hz&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;power&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;power_dbm&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;time&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;output_status&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">readback</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="n">fields</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">readback</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fields</span>
+
+
+<span class="k">def</span> <span class="nf">_build_parser</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s2">&quot;necst-lo-profile&quot;</span><span class="p">)</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_subparsers</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="s2">&quot;cmd&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s2">&quot;summary&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;lo_profile&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s2">&quot;apply&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;lo_profile&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--id&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;sg_id&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--verify&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--timeout-sec&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--allow-command-echo&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s2">&quot;verify&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;lo_profile&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--id&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;sg_id&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--timeout-sec&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--allow-command-echo&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span>
+
+
+<div class="viewcode-block" id="main_lo_profile"><a class="viewcode-back" href="../../../_source/necst.rx.spectral_recording_sg.html#necst.rx.spectral_recording_sg.main_lo_profile">[docs]</a><span class="k">def</span> <span class="nf">main_lo_profile</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">_build_parser</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cmd</span> <span class="o">==</span> <span class="s2">&quot;summary&quot;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">summarize_lo_profile</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">lo_profile</span><span class="p">))</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="n">profile</span> <span class="o">=</span> <span class="n">read_toml</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">lo_profile</span><span class="p">)</span>
+    <span class="n">plan</span> <span class="o">=</span> <span class="n">build_sg_apply_plan</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;sg_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="kn">from</span> <span class="nn">necst.core</span> <span class="kn">import</span> <span class="n">Commander</span>  <span class="c1"># imported lazily to keep pure tests ROS-free</span>
+    <span class="kn">import</span> <span class="nn">rclpy</span>  <span class="c1"># imported lazily so summary/pure helper tests do not require ROS</span>
+
+    <span class="n">should_shutdown</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">rclpy</span><span class="o">.</span><span class="n">ok</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">should_shutdown</span><span class="p">:</span>
+        <span class="n">rclpy</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+    <span class="n">commander</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">privilege_acquired</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">commander</span> <span class="o">=</span> <span class="n">Commander</span><span class="p">()</span>
+        <span class="n">privilege_acquired</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">commander</span><span class="o">.</span><span class="n">get_privilege</span><span class="p">())</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">sg_id</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">plan</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">started</span> <span class="o">=</span> <span class="n">pytime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cmd</span> <span class="o">==</span> <span class="s2">&quot;apply&quot;</span><span class="p">:</span>
+                <span class="n">apply_sg_plan_entry</span><span class="p">(</span><span class="n">commander</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">verify</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">cmd</span> <span class="o">!=</span> <span class="s2">&quot;verify&quot;</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                <span class="k">raise</span> <span class="n">SpectralRecordingSGError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">poll_sg_readback</span><span class="p">(</span>
+                <span class="n">commander</span><span class="p">,</span>
+                <span class="n">sg_id</span><span class="o">=</span><span class="n">sg_id</span><span class="p">,</span>
+                <span class="n">entry</span><span class="o">=</span><span class="n">entry</span><span class="p">,</span>
+                <span class="n">verify_started_at</span><span class="o">=</span><span class="n">started</span><span class="p">,</span>
+                <span class="n">timeout_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">timeout_sec</span><span class="p">),</span>
+                <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">allow_command_echo</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">allow_command_echo</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">sg_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+
+        <span class="k">if</span> <span class="n">results</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">commander</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">privilege_acquired</span>
+            <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">commander</span><span class="p">,</span> <span class="s2">&quot;quit_privilege&quot;</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">commander</span><span class="o">.</span><span class="n">quit_privilege</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="n">commander</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">commander</span><span class="p">,</span> <span class="s2">&quot;destroy_node&quot;</span><span class="p">):</span>
+            <span class="n">commander</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">should_shutdown</span><span class="p">:</span>
+            <span class="n">rclpy</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="n">main_lo_profile</span><span class="p">())</span>
+</pre></div>
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, NECST Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

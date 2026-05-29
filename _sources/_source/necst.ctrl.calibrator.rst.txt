@@ -24,6 +24,7 @@ Submodules
 .. autosummary::
 
    necst.ctrl.calibrator.chopper
+   necst.ctrl.calibrator.sim_devices
 
 .. toctree::
    :maxdepth: 4
@@ -31,3 +32,4 @@ Submodules
    :hidden:
 
    necst.ctrl.calibrator.chopper
+   necst.ctrl.calibrator.sim_devices

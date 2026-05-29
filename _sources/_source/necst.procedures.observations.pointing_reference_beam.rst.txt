@@ -1,0 +1,7 @@
+necst.procedures.observations.pointing\_reference\_beam
+=======================================================
+
+.. automodule:: necst.procedures.observations.pointing_reference_beam
+   :members:
+   :undoc-members:
+   :show-inheritance:
