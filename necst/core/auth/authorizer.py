@@ -99,14 +99,18 @@ class Authorizer(Node):
 
         try:
             if not utils.wait_for_server_to_pick_up(ping_cli, timeout_sec=timeout_sec):
-                self.logger.info("Ping server on current privileged node is unreachable.")
+                self.logger.info(
+                    "Ping server on current privileged node is unreachable."
+                )
                 return False
 
             request = Empty.Request()
             future = ping_cli.call_async(request)
             ping_executor.spin_until_future_complete(future, timeout_sec)
         except (InvalidHandle, RuntimeError):
-            self.logger.info("Ping client/executor was invalid while checking privilege.")
+            self.logger.info(
+                "Ping client/executor was invalid while checking privilege."
+            )
             return False
 
         if not future.done():
