@@ -5,7 +5,6 @@ sys.path.append("../")
 
 import necst  # noqa: E402
 
-
 # -- Project information -----------------------------------------------------
 
 project = "necst"

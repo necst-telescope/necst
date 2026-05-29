@@ -1,5 +1,4 @@
-"""NEw Control System for Telescope.
-"""
+"""NEw Control System for Telescope."""
 
 import os
 from importlib.metadata import version

@@ -19,7 +19,7 @@ import argparse
 import json
 import time as pytime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 try:  # direct script execution fallback
     from .spectral_recording_setup import read_toml
@@ -190,6 +190,227 @@ def build_sg_apply_plan(
             )
         plan[key] = entry
     return plan
+
+
+def filter_sg_apply_plan(
+    plan: Mapping[str, Mapping[str, Any]],
+    sg_ids: Iterable[str],
+) -> Dict[str, Dict[str, Any]]:
+    """Return a deterministic subset of an SG apply/verify plan.
+
+    Missing IDs are rejected so that a typo in `.obs` does not silently disable
+    SG preflight checks.
+    """
+
+    requested = [str(sg_id) for sg_id in sg_ids]
+    missing = [sg_id for sg_id in requested if sg_id not in plan]
+    if missing:
+        raise SpectralRecordingSGValidationError(
+            f"Unknown sg_preflight_ids not present in lo_profile.sg_devices: {missing}"
+        )
+    return {sg_id: dict(plan[sg_id]) for sg_id in sorted(dict.fromkeys(requested))}
+
+
+def active_sg_ids_from_snapshot(
+    snapshot: Mapping[str, Any],
+    *,
+    fail_on_legacy_chain: bool = True,
+) -> Tuple[str, ...]:
+    """Infer active SG IDs from a resolved spectral-recording snapshot.
+
+    The active path is `streams -> lo_chains -> lo_roles -> sg_id`.  Fixed LO
+    roles are intentionally skipped.  Legacy inline LO chains (`lo1_hz/sb1/...`)
+    do not encode which physical SG generated the LO; if such a chain is active
+    and `fail_on_legacy_chain` is true, raise a clear error instead of giving a
+    false sense that hardware was checked.
+    """
+
+    streams = snapshot.get("streams", {})
+    chains = snapshot.get("lo_chains", {})
+    roles = snapshot.get("lo_roles", {})
+    if not isinstance(streams, Mapping):
+        raise SpectralRecordingSGValidationError(
+            "snapshot.streams must be a table for SG preflight"
+        )
+    if not isinstance(chains, Mapping):
+        raise SpectralRecordingSGValidationError(
+            "snapshot.lo_chains must be a table for SG preflight"
+        )
+    if not isinstance(roles, Mapping):
+        raise SpectralRecordingSGValidationError(
+            "snapshot.lo_roles must be a table for SG preflight"
+        )
+
+    active_chain_ids = []
+    for stream_id, raw_stream in streams.items():
+        if not isinstance(raw_stream, Mapping):
+            raise SpectralRecordingSGValidationError(
+                f"snapshot.streams.{stream_id} must be a table"
+            )
+        chain_id = raw_stream.get("lo_chain")
+        if chain_id in (None, ""):
+            raise SpectralRecordingSGValidationError(
+                f"snapshot.streams.{stream_id}.lo_chain is missing"
+            )
+        active_chain_ids.append(str(chain_id))
+
+    active_sg_ids = set()
+    legacy_chain_ids = []
+    for chain_id in sorted(set(active_chain_ids)):
+        raw_chain = chains.get(chain_id)
+        if not isinstance(raw_chain, Mapping):
+            raise SpectralRecordingSGValidationError(
+                f"snapshot.streams references unknown lo_chain {chain_id!r}"
+            )
+        role_ids = raw_chain.get("lo_roles")
+        if role_ids is None:
+            if (
+                "legacy_local_oscillators" in raw_chain
+                or "lo_frequencies_hz" in raw_chain
+            ):
+                legacy_chain_ids.append(chain_id)
+            continue
+        if not isinstance(role_ids, Sequence) or isinstance(role_ids, (str, bytes)):
+            raise SpectralRecordingSGValidationError(
+                f"snapshot.lo_chains.{chain_id}.lo_roles must be an array"
+            )
+        for role_id in role_ids:
+            role_key = str(role_id)
+            raw_role = roles.get(role_key)
+            if not isinstance(raw_role, Mapping):
+                raise SpectralRecordingSGValidationError(
+                    f"snapshot.lo_chains.{chain_id} references unknown lo_role {role_key!r}"
+                )
+            source = str(raw_role.get("source", "sg_device"))
+            if source == "sg_device":
+                sg_id = raw_role.get("sg_id")
+                if sg_id in (None, ""):
+                    raise SpectralRecordingSGValidationError(
+                        f"snapshot.lo_roles.{role_key}.sg_id is missing"
+                    )
+                active_sg_ids.add(str(sg_id))
+            elif source == "fixed":
+                continue
+            else:
+                raise SpectralRecordingSGValidationError(
+                    f"snapshot.lo_roles.{role_key}.source must be 'sg_device' or 'fixed', got {source!r}"
+                )
+
+    if legacy_chain_ids and fail_on_legacy_chain:
+        raise SpectralRecordingSGValidationError(
+            "sg_preflight_scope='active_lo_chains' cannot infer SG IDs from active legacy LO chains "
+            f"{legacy_chain_ids}. Use role-based lo_chains with lo_roles.source='sg_device', "
+            "or set sg_preflight_ids explicitly."
+        )
+    return tuple(sorted(active_sg_ids))
+
+
+def select_sg_preflight_plan(
+    *,
+    lo_profile: Mapping[str, Any],
+    snapshot: Mapping[str, Any],
+    scope: str = "active_lo_chains",
+    sg_ids: Optional[Iterable[str]] = None,
+) -> Dict[str, Dict[str, Any]]:
+    """Build the SG subset to check/set for observation-time preflight."""
+
+    full_plan = build_sg_apply_plan(lo_profile)
+    scope_norm = str(scope or "active_lo_chains").strip().lower()
+    if sg_ids is not None:
+        explicit = [str(sg_id) for sg_id in sg_ids]
+        if scope_norm not in {
+            "explicit_sg_ids",
+            "ids",
+            "active_lo_chains",
+            "all_sg_devices",
+        }:
+            raise SpectralRecordingSGValidationError(
+                f"Unsupported sg_preflight_scope: {scope!r}"
+            )
+        if scope_norm in {"active_lo_chains", "all_sg_devices"} and explicit:
+            # Explicit IDs take precedence only when the caller intentionally
+            # passes them.  This allows `.obs` to use sg_preflight_ids without
+            # also setting scope='explicit_sg_ids'.
+            scope_norm = "explicit_sg_ids"
+    if scope_norm in {"explicit_sg_ids", "ids"}:
+        if sg_ids is None:
+            raise SpectralRecordingSGValidationError(
+                "sg_preflight_scope='explicit_sg_ids' requires sg_preflight_ids"
+            )
+        return filter_sg_apply_plan(full_plan, sg_ids)
+    if scope_norm == "all_sg_devices":
+        return {sg_id: dict(full_plan[sg_id]) for sg_id in sorted(full_plan)}
+    if scope_norm == "active_lo_chains":
+        active_ids = active_sg_ids_from_snapshot(snapshot, fail_on_legacy_chain=True)
+        return filter_sg_apply_plan(full_plan, active_ids)
+    raise SpectralRecordingSGValidationError(
+        f"Unsupported sg_preflight_scope: {scope!r}"
+    )
+
+
+def run_sg_preflight(
+    commander: Any,
+    *,
+    plan: Mapping[str, Mapping[str, Any]],
+    policy: str,
+    timeout_sec: float = 10.0,
+    allow_command_echo: bool = False,
+    poll_interval_sec: float = 0.1,
+) -> Dict[str, Dict[str, Any]]:
+    """Execute observation-time SG preflight.
+
+    Policies:
+    - none: do nothing.
+    - verify_only: read and strictly verify fresh SG readbacks.
+    - apply_and_verify: send set/stop according to the plan, then verify.
+    - warn_only: verify fresh readbacks but return failures instead of raising.
+    """
+
+    policy_norm = str(policy or "none").strip().lower()
+    if policy_norm in {"", "none", "off", "false", "0"}:
+        return {}
+    if policy_norm not in {"verify_only", "apply_and_verify", "warn_only"}:
+        raise SpectralRecordingSGValidationError(
+            "sg_preflight_policy must be one of none, verify_only, apply_and_verify, warn_only; "
+            f"got {policy!r}"
+        )
+
+    results: Dict[str, Dict[str, Any]] = {}
+    failures: List[str] = []
+    for sg_id in sorted(plan):
+        entry = plan[sg_id]
+        started = pytime.time()
+        if policy_norm == "apply_and_verify":
+            apply_sg_plan_entry(commander, entry)
+        try:
+            result = poll_sg_readback(
+                commander,
+                sg_id=sg_id,
+                entry=entry,
+                verify_started_at=started,
+                timeout_sec=float(timeout_sec),
+                strict=(policy_norm != "warn_only"),
+                allow_command_echo=allow_command_echo,
+                poll_interval_sec=poll_interval_sec,
+            )
+        except SpectralRecordingSGValidationError as exc:
+            if policy_norm == "warn_only":
+                result = {
+                    "sg_id": sg_id,
+                    "success": False,
+                    "warnings": [],
+                    "errors": [str(exc)],
+                }
+            else:
+                raise
+        results[sg_id] = dict(result)
+        if not bool(result.get("success", False)):
+            failures.append(f"{sg_id}: {'; '.join(map(str, result.get('errors', [])))}")
+    if failures and policy_norm != "warn_only":
+        raise SpectralRecordingSGValidationError(
+            "SG preflight failed: " + " | ".join(failures)
+        )
+    return results
 
 
 def apply_sg_plan_entry(commander: Any, entry: Mapping[str, Any]) -> None:

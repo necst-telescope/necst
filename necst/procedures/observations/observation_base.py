@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import time
@@ -13,6 +14,11 @@ from neclib.coordinates import PointingError
 
 from ... import config
 from ...core import Commander
+from .progress import NullProgressReporter, ObservationProgressReporter
+
+
+class ObservationAbort(RuntimeError):
+    """Raised when a running observation is asked to abort cooperatively."""
 
 
 class Observation(ABC):
@@ -55,16 +61,108 @@ class Observation(ABC):
         self._record_qualname = None
         self._kwargs = kwargs
         self._start: Optional[float] = None
+        self._abort_requested = False
+        self._abort_reason = ""
+        self._abort_request_id = ""
+        self._abort_subscription = None
+        self.progress = NullProgressReporter()
+
+    def _reset_abort_state(self) -> None:
+        self._abort_requested = False
+        self._abort_reason = ""
+        self._abort_request_id = ""
+
+    def _abort_exception(self) -> ObservationAbort:
+        reason = self._abort_reason or "observation abort requested"
+        if self._abort_request_id:
+            reason = f"{reason} (request_id={self._abort_request_id})"
+        return ObservationAbort(reason)
+
+    def _handle_abort_request(self, msg) -> None:
+        raw = getattr(msg, "data", "")
+        reason = "operator requested abort"
+        request_id = ""
+        try:
+            payload = json.loads(raw) if raw else {}
+            if isinstance(payload, dict):
+                reason = str(payload.get("reason") or reason)
+                request_id = str(payload.get("request_id") or "")
+        except Exception:
+            reason = str(raw or reason)
+        self._abort_requested = True
+        self._abort_reason = reason
+        self._abort_request_id = request_id
+        self.logger.warning(
+            "Observation abort requested"
+            + (f" request_id={request_id}" if request_id else "")
+            + f": {reason}"
+        )
+        try:
+            self.progress.update(
+                abort={
+                    "requested": True,
+                    "reason": reason,
+                    "request_id": request_id,
+                    "time_unix": time.time(),
+                }
+            )
+            self.progress.event("abort_requested", reason=reason, request_id=request_id)
+        except Exception:
+            pass
+
+    def _attach_abort_listener(self) -> None:
+        try:
+            from ... import topic
+
+            self._abort_subscription = topic.observation_abort.subscription(
+                self.com, self._handle_abort_request
+            )
+        except Exception as exc:
+            self._abort_subscription = None
+            self.logger.exception(f"Failed to attach observation-abort listener: {exc}")
+
+    def _abort_requested_now(self) -> bool:
+        return bool(self._abort_requested)
+
+    def _raise_if_abort_requested(self) -> None:
+        if self._abort_requested_now():
+            raise self._abort_exception()
+
+    def _sleep_with_abort(self, duration_sec: Union[int, float]) -> None:
+        end = time.monotonic() + max(0.0, float(duration_sec))
+        while True:
+            self._raise_if_abort_requested()
+            remaining = end - time.monotonic()
+            if remaining <= 0:
+                return
+            time.sleep(min(0.1, remaining))
 
     def execute(self) -> None:
         self._start = time.time()
+        run_completed = False
         with self.ros2env():
             self.com = Commander()
+            self._reset_abort_state()
+            self._attach_abort_listener()
+            self.com.abort_checker = self._abort_requested_now
+            self.com.abort_exception_factory = self._abort_exception
+            self.progress = ObservationProgressReporter(
+                observation_type=self.observation_type,
+                record_name=self.record_name,
+                obs_file=getattr(self, "_obs_file", None),
+                target=getattr(self, "target", None),
+                started_at_unix=self._start,
+                logger=self.logger,
+            )
+            self.progress.attach_commander(self.com)
             privileged = self.com.get_privilege()
             try:
                 if not privileged:
                     raise NECSTAuthorityError("Couldn't acquire privilege")
+                self.progress.set_lifecycle("initializing")
+                self._raise_if_abort_requested()
                 self.before_record_controls()
+                self._raise_if_abort_requested()
                 if "save" in self._kwargs.keys():
                     savespec = self._kwargs.pop("save")
                     self.com.record("savespec", save=savespec)
@@ -100,16 +198,23 @@ class Observation(ABC):
                             "spectral recording setup cannot be combined with legacy "
                             f"tp_mode={tp_mode!r}, tp_range={tp_range!r}"
                         )
+                self.progress.set_lifecycle("recording_starting")
+                self._raise_if_abort_requested()
                 self.com.metadata("set", position="", id="")
                 self.com.record("start", name=self.record_name)
                 self.record_parameter_files()
                 self.after_record_start()
+                self._raise_if_abort_requested()
+                self.progress.set_lifecycle("running")
                 rclpy.uninstall_signal_handlers()
                 # if hasattr(config, "dome"):
                 #    self.com.dome("sync", dome_sync=True)
                 #    self.com.dome("open")
                 #    self.logger.info("Dome opened")
+                self._raise_if_abort_requested()
                 self.run(**self._kwargs)
+                self._raise_if_abort_requested()
+                run_completed = True
             finally:
                 self.com.record("stop")
                 self.com.record("tp_mode", tp_mode=False, tp_range=[])
@@ -117,6 +222,12 @@ class Observation(ABC):
                 self.com.antenna("stop")
                 cleanup_errors = []
                 original_exc = sys.exc_info()[1]
+                if original_exc is None and run_completed:
+                    self.progress.set_lifecycle("cleanup")
+                elif isinstance(original_exc, (KeyboardInterrupt, ObservationAbort)):
+                    self.progress.set_lifecycle("aborted", error=repr(original_exc))
+                elif original_exc is not None:
+                    self.progress.set_lifecycle("error", error=repr(original_exc))
 
                 def _cleanup_step(label, func):
                     try:
@@ -128,6 +239,7 @@ class Observation(ABC):
                         self.logger.exception(f"Cleanup step failed: {label}: {exc}")
                         return None
 
+                _cleanup_step("save progress sidecars", self.progress.record_sidecars)
                 _cleanup_step("before_record_stop", self.before_record_stop)
 
                 record_stop_ok = False
@@ -185,6 +297,31 @@ class Observation(ABC):
                 #    self.com.dome("close")
                 #    self.logger.info("Dome closed")
                 #    self.com.dome("sync", dome_sync=False)
+                if cleanup_errors and original_exc is None:
+                    labels = ", ".join(label for label, _ in cleanup_errors)
+                    self.progress.set_lifecycle(
+                        "error", error=f"cleanup failed: {labels}"
+                    )
+                elif original_exc is None and run_completed:
+                    self.progress.set_lifecycle("finished")
+                # Try once more after the final lifecycle state is written.  The
+                # earlier sidecar save runs before recorder stop so at least a
+                # cleanup/error snapshot can be captured while recording is active;
+                # this second best-effort save makes the live/final state available
+                # to record sidecars too when the recorder still accepts file saves.
+                _cleanup_step(
+                    "save final progress sidecars", self.progress.record_sidecars
+                )
+                _cleanup_step(
+                    "copy final progress sidecars to local record directory",
+                    lambda: self.progress.copy_sidecars_to_local_record_dir(
+                        record_name=self.record_name
+                    ),
+                )
+                _cleanup_step(
+                    "detach abort checker",
+                    lambda: setattr(self.com, "abort_checker", None),
+                )
                 _cleanup_step("quit privilege", self.com.quit_privilege)
                 _cleanup_step("destroy commander", self.com.destroy_node)
                 _observing_duration = (time.time() - self._start) / 60
@@ -193,6 +330,12 @@ class Observation(ABC):
                 )
                 self.logger.info(f"Record name: \033[1m{self.record_name!r}\033[0m")
                 _cleanup_step("install signal handlers", rclpy.install_signal_handlers)
+                if isinstance(original_exc, ObservationAbort):
+                    self.logger.warning(f"Observation aborted: {original_exc}")
+                    raise SystemExit(130) from None
+                if isinstance(original_exc, KeyboardInterrupt):
+                    self.logger.warning("Observation aborted by KeyboardInterrupt.")
+                    raise SystemExit(130) from None
                 if cleanup_errors and original_exc is None:
                     labels = ", ".join(label for label, _ in cleanup_errors)
                     raise RuntimeError(
@@ -283,6 +426,9 @@ class Observation(ABC):
         id: Any,
         *,
         preserve_tracking: bool = False,
+        phase: str = "HOT",
+        location_context: Optional[str] = None,
+        geometry: Optional[dict] = None,
     ) -> None:
         # TODO: Remove this workaround, by attaching control section ID to spectra
         # metadata command; if it's "", don't require tight control
@@ -304,35 +450,91 @@ class Observation(ABC):
             )
 
         self.logger.info("Starting HOT...")
-        self.com.chopper("insert")
-        self.com.metadata("set", position="HOT", id=str(id))
-        time.sleep(integ_time)
-        self.com.metadata("set", position="", id=str(id))
-        self.com.chopper("remove")
+        with self.progress.integration(
+            phase=phase,
+            metadata_position="HOT",
+            id=id,
+            location_context=location_context,
+            geometry=geometry,
+            integ_time_sec=float(integ_time),
+        ):
+            self.com.chopper("insert")
+            self.com.metadata("set", position="HOT", id=str(id))
+            self._sleep_with_abort(integ_time)
+            self.com.metadata("set", position="", id=str(id))
+            self.com.chopper("remove")
         self.logger.debug("Complete HOT")
 
-    def sky(self, integ_time: Union[int, float], id: Any) -> None:
+    def sky(
+        self,
+        integ_time: Union[int, float],
+        id: Any,
+        *,
+        phase: str = "SKY",
+        location_context: Optional[str] = None,
+        geometry: Optional[dict] = None,
+    ) -> None:
         self.logger.info("Starting SKY...")
-        self.com.chopper("remove")
-        self.com.metadata("set", position="SKY", id=str(id))
-        time.sleep(integ_time)
-        self.com.metadata("set", position="", id=str(id))
+        with self.progress.integration(
+            phase=phase,
+            metadata_position="SKY",
+            id=id,
+            location_context=location_context,
+            geometry=geometry,
+            integ_time_sec=float(integ_time),
+        ):
+            self.com.chopper("remove")
+            self.com.metadata("set", position="SKY", id=str(id))
+            self._sleep_with_abort(integ_time)
+            self.com.metadata("set", position="", id=str(id))
         self.logger.debug("Complete SKY")
 
-    def off(self, integ_time: Union[int, float], id: Any) -> None:
+    def off(
+        self,
+        integ_time: Union[int, float],
+        id: Any,
+        *,
+        phase: str = "OFF",
+        location_context: Optional[str] = None,
+        geometry: Optional[dict] = None,
+    ) -> None:
         self.logger.info("Starting OFF...")
-        self.com.chopper("remove")
-        self.com.metadata("set", position="OFF", id=str(id))
-        time.sleep(integ_time)
-        self.com.metadata("set", position="", id=str(id))
+        with self.progress.integration(
+            phase=phase,
+            metadata_position="OFF",
+            id=id,
+            location_context=location_context,
+            geometry=geometry,
+            integ_time_sec=float(integ_time),
+        ):
+            self.com.chopper("remove")
+            self.com.metadata("set", position="OFF", id=str(id))
+            self._sleep_with_abort(integ_time)
+            self.com.metadata("set", position="", id=str(id))
         self.logger.debug("Complete OFF")
 
-    def on(self, integ_time: Union[int, float], id: Any) -> None:
+    def on(
+        self,
+        integ_time: Union[int, float],
+        id: Any,
+        *,
+        phase: str = "ON",
+        location_context: Optional[str] = None,
+        geometry: Optional[dict] = None,
+    ) -> None:
         self.logger.info("Starting ON...")
-        self.com.chopper("remove")
-        self.com.metadata("set", position="ON", id=str(id))
-        time.sleep(integ_time)
-        self.com.metadata("set", position="", id=str(id))
+        with self.progress.integration(
+            phase=phase,
+            metadata_position="ON",
+            id=id,
+            location_context=location_context,
+            geometry=geometry,
+            integ_time_sec=float(integ_time),
+        ):
+            self.com.chopper("remove")
+            self.com.metadata("set", position="ON", id=str(id))
+            self._sleep_with_abort(integ_time)
+            self.com.metadata("set", position="", id=str(id))
         self.logger.debug("Complete ON")
 
     def binning(self, ch, spectrometer):

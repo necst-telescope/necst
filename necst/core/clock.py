@@ -28,8 +28,10 @@ class ObserverInfo(Node):
 
         calc_time = time.time()
         lst = self.calculator.lst(calc_time)
+        # antenna_encoder.lon may be a continuous unwrapped Az (e.g. 380 deg).
+        # Astropy/Observer calculations need apparent Alt-Az modulo 360 deg.
         v_obs = self.calculator.v_obs(
-            lon=self.encoder_reading.lon,
+            lon=(self.encoder_reading.lon % 360.0),
             lat=self.encoder_reading.lat,
             frame=self.encoder_reading.frame,
             unit=self.encoder_reading.unit,
