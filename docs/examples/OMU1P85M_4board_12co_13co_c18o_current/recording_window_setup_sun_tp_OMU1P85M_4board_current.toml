@@ -1,0 +1,41 @@
+# Sun/sunscan TP recording window for the current OMU 1.85 m 4-board setup.
+#
+# Purpose:
+#   Solar continuum pointing/beam measurements do not need line-separated
+#   12CO/13CO/C18O products.  Each XFFTS stream is reduced to one TP value per
+#   dump using an explicit channel range.
+#
+# Channel convention:
+#   saved_ch_start:saved_ch_stop is a Python-style half-open interval.
+#   The default below uses the central half of the 32768-channel, 2.5 GHz band:
+#     8192:24576
+#   This avoids the band edges and is safer for continuum work than a
+#   velocity-defined line window.  Edit the range if a known spur falls inside.
+
+schema_version = "recording_window_setup_v2"
+setup_id = "omu1p85m_4board_sun_tp_current_2026_05_12"
+
+[defaults]
+mode = "tp"
+saved_window_policy = "channel"
+tp_stat = "sum_mean"
+
+[recording_groups.sun_tp_xffts_board1]
+streams = ["xffts_board1"]
+saved_ch_start = 8192
+saved_ch_stop = 24576
+
+[recording_groups.sun_tp_xffts_board2]
+streams = ["xffts_board2"]
+saved_ch_start = 8192
+saved_ch_stop = 24576
+
+[recording_groups.sun_tp_xffts_board3]
+streams = ["xffts_board3"]
+saved_ch_start = 8192
+saved_ch_stop = 24576
+
+[recording_groups.sun_tp_xffts_board4]
+streams = ["xffts_board4"]
+saved_ch_start = 8192
+saved_ch_stop = 24576

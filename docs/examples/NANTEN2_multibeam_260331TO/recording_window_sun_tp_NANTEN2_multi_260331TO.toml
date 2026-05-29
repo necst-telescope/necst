@@ -1,0 +1,40 @@
+# Sun/sunscan TP recording window for the NANTEN2 multibeam example.
+#
+# Solar continuum pointing/beam measurements do not need line-separated products.
+# Each XFFTS stream is reduced to one TP value per dump using an explicit channel
+# range.  fdnum/ifnum/plnum are inherited from lo_profile source streams.
+#
+# saved_ch_start:saved_ch_stop is a Python-style half-open interval.
+# The default below uses the central half of the 32768-channel, 2.0 GHz band:
+#   8192:24576
+# Edit the range if a known spur falls inside.
+
+schema_version = "recording_window_setup_v2"
+setup_id = "nanten2_multi_sun_tp_260331TO_2026_05_12"
+
+[defaults]
+mode = "tp"
+saved_window_policy = "channel"
+tp_stat = "sum_mean"
+
+[recording_groups.sun_tp_nanten2_all_streams]
+streams = [
+  "2LU",
+  "2RU",
+  "3LU",
+  "3RU",
+  "4LU",
+  "4RU",
+  "5LU",
+  "5RU",
+  "2LL",
+  "2RL",
+  "3RL",
+  "4LL",
+  "4RL",
+  "5LL",
+  "5RL",
+  "1LU",
+]
+saved_ch_start = 8192
+saved_ch_stop = 24576

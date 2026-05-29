@@ -20,6 +20,22 @@ from neclib.coordinates.paths import (
 
 from .observation_base import Observation
 from ... import config
+from .spectral_recording_sequence import (
+    apply_setup_with_commander,
+    build_spectral_recording_observation_setup,
+    save_sidecars_with_commander,
+    set_gate_with_commander,
+    clear_setup_with_commander,
+    reject_legacy_recording_kwargs_for_setup,
+    SpectralRecordingObservationSetup,
+)
+from .pointing_reference_beam import (
+    PointingReferenceBeamContext,
+    apply_pointing_reference_to_point_kwargs,
+    apply_pointing_reference_to_scan_kwargs,
+    apply_pointing_reference_to_scan_block_kwargs,
+    build_pointing_reference_context,
+)
 
 
 class FileBasedObservation(Observation):
@@ -27,9 +43,81 @@ class FileBasedObservation(Observation):
 
     def __init__(self, record_name: Optional[str] = None, /, **kwargs) -> None:
         file = kwargs["file"]
+        self._obs_file = file
         self.obsspec = self.SpecParser.from_file(file)
+        self._spectral_recording_setup: Optional[SpectralRecordingObservationSetup] = (
+            None
+        )
+        self._spectral_recording_gate_open = False
+        self._pointing_reference_beam: Optional[PointingReferenceBeamContext] = (
+            build_pointing_reference_context(
+                getattr(self.obsspec, "parameters", {}) or {},
+                obs_file=file,
+            )
+        )
         _record_name = record_name or f"{self.obsspec.target}"
         super().__init__(_record_name, **kwargs)
+
+    def before_record_controls(self) -> None:
+        params = getattr(self.obsspec, "parameters", {}) or {}
+        setup = build_spectral_recording_observation_setup(
+            params=params,
+            obs_file=self._obs_file,
+            default_setup_id=self.record_name,
+            obsspec=self.obsspec,
+        )
+        if setup is None:
+            return
+        reject_legacy_recording_kwargs_for_setup(self._kwargs, setup)
+        apply_setup_with_commander(self.com, setup)
+        self._spectral_recording_setup = setup
+        self._spectral_recording_gate_open = False
+        self.logger.info(
+            "Applied spectral recording setup before recorder start; "
+            f"setup_id={setup.setup_id!r}, setup_hash={setup.setup_hash}"
+        )
+
+    def after_record_start(self) -> None:
+        setup = self._spectral_recording_setup
+        if setup is None:
+            return
+        save_sidecars_with_commander(self.com, setup)
+        set_gate_with_commander(self.com, setup, allow_save=True)
+        self._spectral_recording_gate_open = True
+        self.logger.info(
+            "Saved spectral recording sidecars and opened setup gate; "
+            f"n_sidecars={len(setup.sidecars)}"
+        )
+
+    def before_record_stop(self) -> None:
+        setup = self._spectral_recording_setup
+        if setup is None:
+            return
+        try:
+            if self._spectral_recording_gate_open:
+                set_gate_with_commander(self.com, setup, allow_save=False)
+                self.logger.info(
+                    "Closed spectral recording setup gate before recorder stop"
+                )
+        finally:
+            self._spectral_recording_gate_open = False
+
+    def after_record_stop(self) -> None:
+        setup = self._spectral_recording_setup
+        if setup is None:
+            return
+        try:
+            clear_setup_with_commander(self.com, setup, strict=True)
+            self.logger.info("Cleared spectral recording setup after recorder stop")
+        finally:
+            self._spectral_recording_setup = None
+            self._spectral_recording_gate_open = False
+
+    def allow_legacy_recording_cleanup_controls(self) -> bool:
+        return self._spectral_recording_setup is None
+
+    def allow_legacy_recording_startup_controls(self) -> bool:
+        return self._spectral_recording_setup is None
 
     def _coord_to_tuple(self, coord: tuple):
         if len(coord) == 2:
@@ -111,6 +199,24 @@ class FileBasedObservation(Observation):
             kwargs.update(offset=self._coord_to_tuple(waypoint.offset))
         return kwargs
 
+    def _apply_pointing_reference_to_point_kwargs(self, kwargs):
+        return apply_pointing_reference_to_point_kwargs(
+            kwargs,
+            self._pointing_reference_beam,
+        )
+
+    def _apply_pointing_reference_to_scan_kwargs(self, kwargs):
+        return apply_pointing_reference_to_scan_kwargs(
+            kwargs,
+            self._pointing_reference_beam,
+        )
+
+    def _apply_pointing_reference_to_scan_block_kwargs(self, kwargs):
+        return apply_pointing_reference_to_scan_block_kwargs(
+            kwargs,
+            self._pointing_reference_beam,
+        )
+
     def _run_hot_off_pair(self, hot_waypoint, off_waypoint, *, cos_point: bool) -> None:
         kwargs = self._scan_context_kwargs(off_waypoint, cos_scan=cos_point)
         if off_waypoint.is_scan:
@@ -123,6 +229,7 @@ class FileBasedObservation(Observation):
         #   we first move to the OFF position and wait there for arrival/settle
         #   (Commander.antenna('point') waits by default), then execute HOT and
         #   OFF without issuing any additional antenna command in between.
+        kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
         self.com.antenna("point", **kwargs)
         self.hot(
             hot_waypoint.integration.to_value("s"),
@@ -202,6 +309,7 @@ class FileBasedObservation(Observation):
                 point_kwargs.update(
                     target=(entry_offset[0], entry_offset[1], waypoint.scan_frame)
                 )
+        point_kwargs = self._apply_pointing_reference_to_point_kwargs(point_kwargs)
         self.logger.info("Move to scan-block entry standby...")
         self.com.antenna("point", wait=False, **point_kwargs)
 
@@ -229,6 +337,7 @@ class FileBasedObservation(Observation):
             final_standby_duration=final_standby_duration_sec,
         )
         scan_kwargs = self._scan_context_kwargs(first_waypoint, cos_scan=cos_scan)
+        scan_kwargs = self._apply_pointing_reference_to_scan_block_kwargs(scan_kwargs)
         block_id = str(first_waypoint.id)
         self.logger.info(f"Starting ON (scan_block, n_lines={len(lines)})...")
         self.com.scan_block(
@@ -330,6 +439,7 @@ class FileBasedObservation(Observation):
             if waypoint.mode in (ObservationMode.OFF, ObservationMode.SKY):
                 kwargs = self._scan_context_kwargs(waypoint, cos_scan=cos_point)
                 if not waypoint.is_scan:
+                    kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
                     self.com.antenna("point", **kwargs)
                     self.off(waypoint.integration.to_value("s"), waypoint.id)
                     if reset_scan and bydirectional:
@@ -425,20 +535,25 @@ class FileBasedObservation(Observation):
                         else:
                             offset_position = (-offset_margin, -offset_margin)
 
-                        self.logger.info("Move to ON...")
-                        self.com.antenna(
-                            "point",
+                        point_kwargs = dict(
                             target=target,
                             unit="deg",
                             offset=offset_position + (waypoint.scan_frame,),
                             cos_correction=cos_scan,
                         )
+                        point_kwargs = self._apply_pointing_reference_to_point_kwargs(
+                            point_kwargs
+                        )
+                        self.logger.info("Move to ON...")
+                        self.com.antenna("point", **point_kwargs)
 
+                    kwargs = self._apply_pointing_reference_to_scan_kwargs(kwargs)
                     self.logger.info("Starting ON...")
                     self.com.metadata("set", position="ON", id=waypoint.id)
                     self.com.antenna("scan", **kwargs)
                     self.com.metadata("set", position="", id="")
                 else:
+                    kwargs = self._apply_pointing_reference_to_point_kwargs(kwargs)
                     self.com.antenna("point", **kwargs)
                     self.on(waypoint.integration.to_value("s"), waypoint.id)
             i += 1

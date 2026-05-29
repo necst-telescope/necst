@@ -1,0 +1,42 @@
+schema_version = "sunscan_analysis_v1"
+analysis_id = "12co_NANTEN2_multi_260331TO_sunscan"
+
+# Reuse the usual converter-analysis file as the master/base for common settings:
+# db/telescope/source names, encoder/weather table names,
+# and [spectral_time]/[encoder_time].  Chopper-wheel settings are sunscan-specific
+# and are kept in [sunscan_analysis] below.
+# contains only sunscan-specific parameters.
+[analysis_base]
+path = "converter_analysis_12co_NANTEN2_multi_260331TO.toml"
+
+[sunscan_analysis]
+# Sunscan-only chopper-wheel calibration for the vertical-axis signal.
+# The converter does not use these keys.
+chopper_wheel = true
+chopper_stat = "median"
+# Legacy compatibility option.  The current 1-load implementation groups
+# HOT/OFF rows by scan id or contiguous block and does not use a time-window
+# smoother, so this option is normally left commented out.
+# chopper_win_sec = 5.0
+
+profile_xlim_deg = 1.0
+ripple_preset = "auto"
+ripple_model = "auto"
+ripple_target_hz = 1.2
+ripple_search_hz = 0.3
+edge_fit_win_deg = 0.15
+edge_fit_threshold = 0.2
+hpbw_init_arcsec = 324.0
+edge_fit_plot_max_scans = 3
+trim_vfrac = 0.2
+trim_vmin = 0.0001
+trim_gap = 10
+trim_min_samples = 100
+trim_axis_ratio_min = 3.0
+trim_vpercentile = 95.0
+trim_scan_speed_min_arcsec = 20.0
+trim_xwin_factor = 1.2
+trim_cross_offset_max_deg = 0.5
+trim_steady_cv_max = 0.8
+dish_diameter_m = 4.0
+hpbw_factor = 0.5

@@ -1,0 +1,48 @@
+# recording_window_setup paired with lo_profile_legacy_converter_4board_12co_13co_c18o.toml.
+#
+# This file is optional for SG apply, but is useful when resolving a spectral
+# recording snapshot and saving velocity windows.  13CO/C18O pairs are represented
+# as multi_window products on the shared board.
+
+schema_version = "recording_window_setup_v2"
+setup_id = "legacy_converter_12co_13co_c18o_omu1p85m_windows_2026_05_03"
+
+[defaults]
+mode = "spectrum"
+velocity_frame = "LSRK"
+velocity_definition = "radio"
+reference_time_policy = "setup_resolve_time"
+
+[recording_groups.xffts_board1_12co21]
+mode = "spectrum"
+saved_window_policy = "contiguous_envelope"
+streams = ["xffts_board1"]
+windows = [
+  { window_id = "12CO_J2_1", line_name = "12CO J=2-1", rest_frequency_ghz = 230.538, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0 },
+]
+
+[recording_groups.xffts_board2_13co21_c18o21]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["xffts_board2"]
+windows = [
+  { window_id = "13CO_J2_1", line_name = "13CO J=2-1", rest_frequency_ghz = 220.399, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0 },
+  { window_id = "C18O_J2_1", line_name = "C18O J=2-1", rest_frequency_ghz = 219.560357, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0 },
+]
+
+[recording_groups.xffts_board3_12co10]
+mode = "spectrum"
+saved_window_policy = "contiguous_envelope"
+streams = ["xffts_board3"]
+windows = [
+  { window_id = "12CO_J1_0", line_name = "12CO J=1-0", rest_frequency_ghz = 115.271, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0 },
+]
+
+[recording_groups.xffts_board4_13co10_c18o10]
+mode = "spectrum"
+saved_window_policy = "multi_window"
+streams = ["xffts_board4"]
+windows = [
+  { window_id = "13CO_J1_0", line_name = "13CO J=1-0", rest_frequency_ghz = 110.201, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0 },
+  { window_id = "C18O_J1_0", line_name = "C18O J=1-0", rest_frequency_ghz = 109.782182, vmin_kms = -150.0, vmax_kms = 150.0, margin_kms = 10.0 },
+]

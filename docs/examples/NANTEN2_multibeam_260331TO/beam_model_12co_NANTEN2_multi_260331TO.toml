@@ -1,0 +1,50 @@
+# Auto-generated beam_model.toml from legacy spectrometer beam entries.
+schema_version = "beam_model_v2"
+beam_model_id = "12co_NANTEN2_multi_260331TO_equivalent"
+
+[beams.B00]
+beam_model_version = "default_zero_boresight"
+rotation_mode = "fixed"
+az_offset_arcsec = 0.0
+el_offset_arcsec = 0.0
+dewar_angle_deg = 0.0
+
+[beams.B01]
+beam_model_version = "sunscan_multibeam_pure_rotation_v1"
+rotation_mode = "pure_rotation_v1"
+pure_rotation_offset_x_el0_arcsec = 0
+pure_rotation_offset_y_el0_arcsec = 0
+pure_rotation_sign = -1
+dewar_angle_deg = 0.0
+
+[beams.B02]
+beam_model_version = "sunscan_multibeam_pure_rotation_v1"
+rotation_mode = "pure_rotation_v1"
+pure_rotation_offset_x_el0_arcsec = 35.20277101014
+pure_rotation_offset_y_el0_arcsec = 295.06639448179
+pure_rotation_sign = -1
+dewar_angle_deg = 0.0
+
+[beams.B03]
+beam_model_version = "sunscan_multibeam_pure_rotation_v1"
+rotation_mode = "pure_rotation_v1"
+pure_rotation_offset_x_el0_arcsec = -286.106025615731
+pure_rotation_offset_y_el0_arcsec = 23.9055055360697
+pure_rotation_sign = -1
+dewar_angle_deg = 0.0
+
+[beams.B04]
+beam_model_version = "sunscan_multibeam_pure_rotation_v1"
+rotation_mode = "pure_rotation_v1"
+pure_rotation_offset_x_el0_arcsec = 68.379403972865
+pure_rotation_offset_y_el0_arcsec = -303.605491064541
+pure_rotation_sign = -1
+dewar_angle_deg = 0.0
+
+[beams.B05]
+beam_model_version = "sunscan_multibeam_pure_rotation_v1"
+rotation_mode = "pure_rotation_v1"
+pure_rotation_offset_x_el0_arcsec = 330.962642142925
+pure_rotation_offset_y_el0_arcsec = -17.272265827714
+pure_rotation_sign = -1
+dewar_angle_deg = 0.0
