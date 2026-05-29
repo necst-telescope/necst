@@ -96,9 +96,9 @@ class qos:
         ).liveliness_lease_duration
 
         logger.debug(
-            f"QoS profile for topic {topicname!r}:\n\t{reliability = }\n"
-            f"\t{durability = }\n\t{deadline = }\n\t{liveliness = }\n"
-            f"\t{lease_duration = }\n\thistory = KEEP_LAST (default)\n\tdepth = 10"
+            f"QoS profile for topic {topicname!r}:\n\treliability={reliability}\n"
+            f"\tdurability={durability}\n\tdeadline={deadline}\n\tliveliness={liveliness}\n"
+            f"\tlease_duration={lease_duration}\n\thistory=KEEP_LAST (default)\n\tdepth=10"
         )
 
         return QoSProfile(
@@ -194,7 +194,10 @@ class topic:
         AntennaSectionStatus, "section_status", qos.realtime, namespace.antenna
     )
     antenna_command_queue_status = Topic(
-        AntennaCommandQueueStatus, "command_queue_status", qos.realtime, namespace.antenna
+        AntennaCommandQueueStatus,
+        "command_queue_status",
+        qos.realtime,
+        namespace.antenna,
     )
     pid_param = Topic(PIDMsg, "pid_param", qos.reliable, namespace.antenna)
     chopper_cmd = Topic(ChopperMsg, "chopper_cmd", qos.reliable, namespace.calib)

@@ -3,7 +3,12 @@ import math
 
 from neclib.data import LinearExtrapolate
 from neclib.utils import ConditionChecker, ParameterList
-from necst_msgs.msg import AntennaAzUnwrapStatus, AntennaPointingStatus, CoordMsg, TrackingStatus
+from necst_msgs.msg import (
+    AntennaAzUnwrapStatus,
+    AntennaPointingStatus,
+    CoordMsg,
+    TrackingStatus,
+)
 from rclpy.node import Node
 
 from ... import config, namespace, topic
@@ -47,10 +52,15 @@ class AntennaTrackingStatus(Node):
         msg = self.az_unwrap_status
         if msg is None:
             return False
-        if not bool(getattr(msg, "enabled", False)) or not bool(getattr(msg, "valid", False)):
+        if not bool(getattr(msg, "enabled", False)) or not bool(
+            getattr(msg, "valid", False)
+        ):
             return False
         t = float(getattr(msg, "encoder_time_unix", float("nan")))
-        return abs(t - float(enc_time)) < 1.0 and (now - float(getattr(msg, "publish_time_unix", now))) < 2.0
+        return (
+            abs(t - float(enc_time)) < 1.0
+            and (now - float(getattr(msg, "publish_time_unix", now))) < 2.0
+        )
 
     @staticmethod
     def _nan() -> float:

@@ -15,7 +15,6 @@ $ skydip -i 10 --tp_range 5000 6000 17000 18000
 
 """
 
-
 import argparse
 
 from necst.procedures import Skydip

@@ -226,7 +226,12 @@ class Commander(PrivilegedNode):
         start,
         stop,
     ) -> bool:
-        if target is None or name is not None or offset is not None or reference is not None:
+        if (
+            target is None
+            or name is not None
+            or offset is not None
+            or reference is not None
+        ):
             return False
         if start is not None or stop is not None:
             return False
@@ -302,7 +307,9 @@ class Commander(PrivilegedNode):
         target_az = float(az_deg)
         target_el = float(el_deg)
         experienced_control_id = command_id is None
-        while (timeout_sec is None) or (pytime.monotonic() - start < float(timeout_sec)):
+        while (timeout_sec is None) or (
+            pytime.monotonic() - start < float(timeout_sec)
+        ):
             self._raise_if_abort_requested()
 
             if self._manual_antenna_stop_seen:
@@ -328,7 +335,9 @@ class Commander(PrivilegedNode):
                             f"from {command_id!r} to {ctrl_id!r}"
                         )
                         return
-                if experienced_control_id and (not bool(getattr(ctrl, "controlled", True))):
+                if experienced_control_id and (
+                    not bool(getattr(ctrl, "controlled", True))
+                ):
                     self.logger.warning(
                         "Mount point wait interrupted: antenna controller is idle"
                     )
@@ -606,7 +615,9 @@ class Commander(PrivilegedNode):
             request_sec = 1.0 if timeout_sec is None else max(0.0, float(timeout_sec))
             interval = max(0.01, min(0.1, 1 / config.antenna_command_frequency))
             stop_msg = AlertMsg(critical=True, warning=True, target=[namespace.antenna])
-            clear_msg = AlertMsg(critical=False, warning=False, target=[namespace.antenna])
+            clear_msg = AlertMsg(
+                critical=False, warning=False, target=[namespace.antenna]
+            )
 
             deadline = pytime.monotonic() + request_sec
             first = True

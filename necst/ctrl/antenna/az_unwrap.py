@@ -9,7 +9,6 @@ import queue
 import tempfile
 import threading
 import time
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Mapping, Optional, Tuple
 
@@ -43,7 +42,9 @@ def _cfg_get(obj: Any, key: str, default: Any = None) -> Any:
     return default if value is None else value
 
 
-def _to_float(value: Any, unit: str = "deg", default: Optional[float] = None) -> Optional[float]:
+def _to_float(
+    value: Any, unit: str = "deg", default: Optional[float] = None
+) -> Optional[float]:
     if value is None:
         return default
     if hasattr(value, "to_value"):
@@ -86,7 +87,11 @@ def _drive_range_deg() -> Tuple[float, float]:
     return float(_to_float(lo, "deg", 0.0)), float(_to_float(hi, "deg", 360.0))
 
 
-def load_az_unwrap_config() -> tuple[AbsoluteModuloUnwrapConfig, Optional[Path], float, float, float, str, str, int]:
+def load_az_unwrap_config() -> (
+    tuple[
+        AbsoluteModuloUnwrapConfig, Optional[Path], float, float, float, str, str, int
+    ]
+):
     root = getattr(config, "antenna_encoder_unwrap", None)
     az = _cfg_get(root, "az", root)
     enabled = _to_bool(_cfg_get(az, "enabled", False), False)
@@ -94,27 +99,75 @@ def load_az_unwrap_config() -> tuple[AbsoluteModuloUnwrapConfig, Optional[Path],
     drive_min, drive_max = _drive_range_deg()
     cfg = AbsoluteModuloUnwrapConfig(
         enabled=enabled and mode == "absolute_modulo",
-        period_deg=float(_to_float(_cfg_get(az, "period", _cfg_get(az, "period_deg", 360.0)), "deg", 360.0)),
-        raw_min_deg=float(_to_float(_cfg_get(az, "raw_min", _cfg_get(az, "raw_min_deg", 0.0)), "deg", 0.0)),
-        raw_max_deg=float(_to_float(_cfg_get(az, "raw_max", _cfg_get(az, "raw_max_deg", 360.0)), "deg", 360.0)),
-        drive_min_deg=float(_to_float(_cfg_get(az, "drive_min", _cfg_get(az, "drive_min_deg", drive_min)), "deg", drive_min)),
-        drive_max_deg=float(_to_float(_cfg_get(az, "drive_max", _cfg_get(az, "drive_max_deg", drive_max)), "deg", drive_max)),
-        zero_offset_deg=float(_to_float(_cfg_get(az, "zero_offset", _cfg_get(az, "zero_offset_deg", 0.0)), "deg", 0.0)),
+        period_deg=float(
+            _to_float(
+                _cfg_get(az, "period", _cfg_get(az, "period_deg", 360.0)), "deg", 360.0
+            )
+        ),
+        raw_min_deg=float(
+            _to_float(
+                _cfg_get(az, "raw_min", _cfg_get(az, "raw_min_deg", 0.0)), "deg", 0.0
+            )
+        ),
+        raw_max_deg=float(
+            _to_float(
+                _cfg_get(az, "raw_max", _cfg_get(az, "raw_max_deg", 360.0)),
+                "deg",
+                360.0,
+            )
+        ),
+        drive_min_deg=float(
+            _to_float(
+                _cfg_get(az, "drive_min", _cfg_get(az, "drive_min_deg", drive_min)),
+                "deg",
+                drive_min,
+            )
+        ),
+        drive_max_deg=float(
+            _to_float(
+                _cfg_get(az, "drive_max", _cfg_get(az, "drive_max_deg", drive_max)),
+                "deg",
+                drive_max,
+            )
+        ),
+        zero_offset_deg=float(
+            _to_float(
+                _cfg_get(az, "zero_offset", _cfg_get(az, "zero_offset_deg", 0.0)),
+                "deg",
+                0.0,
+            )
+        ),
         sign=int(_cfg_get(az, "sign", 1)),
-        max_jump_deg=_to_float(_cfg_get(az, "max_jump", _cfg_get(az, "max_jump_deg", None)), "deg", None),
+        max_jump_deg=_to_float(
+            _cfg_get(az, "max_jump", _cfg_get(az, "max_jump_deg", None)), "deg", None
+        ),
     )
     state_path = _expand_path(_cfg_get(az, "state_path", None))
     heartbeat_value = _cfg_get(
         az,
         "state_heartbeat_sec",
-        _cfg_get(az, "persist_heartbeat_interval", _cfg_get(az, "persist_heartbeat_interval_sec", 5.0)),
+        _cfg_get(
+            az,
+            "persist_heartbeat_interval",
+            _cfg_get(az, "persist_heartbeat_interval_sec", 5.0),
+        ),
     )
     heartbeat_sec = float(_to_float(heartbeat_value, "s", 5.0))
-    state_warn_age_value = _cfg_get(az, "state_warn_age_sec", _cfg_get(az, "state_warn_age", 86400.0))
+    state_warn_age_value = _cfg_get(
+        az, "state_warn_age_sec", _cfg_get(az, "state_warn_age", 86400.0)
+    )
     state_warn_age_sec = float(_to_float(state_warn_age_value, "s", 86400.0))
-    state_raw_tol_value = _cfg_get(az, "state_raw_tolerance", _cfg_get(az, "state_raw_tolerance_deg", 5.0))
+    state_raw_tol_value = _cfg_get(
+        az, "state_raw_tolerance", _cfg_get(az, "state_raw_tolerance_deg", 5.0)
+    )
     state_raw_tolerance_deg = float(_to_float(state_raw_tol_value, "deg", 5.0))
-    startup_policy = str(_cfg_get(az, "startup_policy", "recover_if_raw_matches" if cfg.enabled else "pass_through"))
+    startup_policy = str(
+        _cfg_get(
+            az,
+            "startup_policy",
+            "recover_if_raw_matches" if cfg.enabled else "pass_through",
+        )
+    )
     startup_discard_raw_out_of_range_samples = int(
         _cfg_get(
             az,
@@ -144,7 +197,9 @@ class AtomicStateWriter:
         self.last_persist_time: float = float("nan")
         if self.path is not None:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            self._thread = threading.Thread(target=self._run, name="az_unwrap_state_writer", daemon=True)
+            self._thread = threading.Thread(
+                target=self._run, name="az_unwrap_state_writer", daemon=True
+            )
             self._thread.start()
 
     def submit(self, payload: dict) -> None:
@@ -189,7 +244,9 @@ class AtomicStateWriter:
         fd = None
         tmp_path = None
         try:
-            fd, tmp_name = tempfile.mkstemp(prefix=self.path.name + ".", suffix=".tmp", dir=str(self.path.parent))
+            fd, tmp_name = tempfile.mkstemp(
+                prefix=self.path.name + ".", suffix=".tmp", dir=str(self.path.parent)
+            )
             tmp_path = Path(tmp_name)
             with os.fdopen(fd, "w") as fp:
                 fd = None
@@ -240,7 +297,9 @@ class AzUnwrapRuntime:
         self._last_state_time = float("nan")
         self._last_status: Optional[AntennaAzUnwrapStatus] = None
         self._previous_payload = self._load_previous_payload() if self.enabled else None
-        self._previous_payload_age_sec = self._state_payload_age_sec(self._previous_payload)
+        self._previous_payload_age_sec = self._state_payload_age_sec(
+            self._previous_payload
+        )
         self._previous_payload_old = (
             self._previous_payload_age_sec is not None
             and self._previous_payload_age_sec > self.state_warn_age_sec
@@ -264,7 +323,9 @@ class AzUnwrapRuntime:
                 return None
             if float(payload.get("drive_max_deg")) != float(self.cfg.drive_max_deg):
                 return None
-            if float(payload.get("zero_offset_deg", self.cfg.zero_offset_deg)) != float(self.cfg.zero_offset_deg):
+            if float(payload.get("zero_offset_deg", self.cfg.zero_offset_deg)) != float(
+                self.cfg.zero_offset_deg
+            ):
                 return None
             if int(payload.get("sign", self.cfg.sign)) != int(self.cfg.sign):
                 return None
@@ -277,7 +338,6 @@ class AzUnwrapRuntime:
             return payload
         except Exception:
             return None
-
 
     def _refresh_previous_payload(self, *, min_interval_sec: float = 0.5) -> None:
         """Reload the state file while waiting for manual branch initialization.
@@ -305,7 +365,11 @@ class AzUnwrapRuntime:
         if payload is None:
             return None
         try:
-            t = float(payload.get("persist_request_time_unix", payload.get("encoder_time_unix", 0.0)))
+            t = float(
+                payload.get(
+                    "persist_request_time_unix", payload.get("encoder_time_unix", 0.0)
+                )
+            )
             return max(0.0, time.time() - t)
         except Exception:
             return None
@@ -318,15 +382,24 @@ class AzUnwrapRuntime:
         if not math.isfinite(raw):
             return False
         eps = 1e-9
-        return (float(self.cfg.raw_min_deg) - eps) <= raw <= (float(self.cfg.raw_max_deg) + eps)
+        return (
+            (float(self.cfg.raw_min_deg) - eps)
+            <= raw
+            <= (float(self.cfg.raw_max_deg) + eps)
+        )
 
     def _raw_range_is_full_period(self) -> bool:
-        return abs(
-            (float(self.cfg.raw_max_deg) - float(self.cfg.raw_min_deg))
-            - float(self.cfg.period_deg)
-        ) <= 1e-9
+        return (
+            abs(
+                (float(self.cfg.raw_max_deg) - float(self.cfg.raw_min_deg))
+                - float(self.cfg.period_deg)
+            )
+            <= 1e-9
+        )
 
-    def _startup_should_discard_nominal_out_of_range_raw(self, raw_az_deg: float) -> bool:
+    def _startup_should_discard_nominal_out_of_range_raw(
+        self, raw_az_deg: float
+    ) -> bool:
         """Suppress the first few finite periodic aliases after node startup.
 
         RS-232C devices can leave a stale or partial response in the input stream
@@ -352,7 +425,10 @@ class AzUnwrapRuntime:
             return False
         if not math.isfinite(raw):
             return False
-        if self._startup_raw_out_of_range_discards >= self.startup_discard_raw_out_of_range_samples:
+        if (
+            self._startup_raw_out_of_range_discards
+            >= self.startup_discard_raw_out_of_range_samples
+        ):
             return False
         self._startup_raw_out_of_range_discards += 1
         return True
@@ -368,16 +444,22 @@ class AzUnwrapRuntime:
         # the period circle so values near 0/360 and startup aliases such as
         # 727 deg (= 2 * 360 + 7 deg) are treated correctly.
         period = float(self.cfg.period_deg)
-        delta = ((current_modulo - previous_modulo + 0.5 * period) % period) - 0.5 * period
+        delta = (
+            (current_modulo - previous_modulo + 0.5 * period) % period
+        ) - 0.5 * period
         return abs(delta) <= float(self.state_raw_tolerance_deg)
 
     def _initialize_startup_branch(self, raw_az_deg: float) -> None:
         if self._startup_initialized:
             return
         self._refresh_previous_payload()
-        if self._previous_payload is not None and self._raw_matches_previous_payload(raw_az_deg, self._previous_payload):
+        if self._previous_payload is not None and self._raw_matches_previous_payload(
+            raw_az_deg, self._previous_payload
+        ):
             previous = float(self._previous_payload["continuous_az_deg"])
-            self.unwrapper = AbsoluteModuloUnwrapper(self.cfg, previous_continuous_deg=previous)
+            self.unwrapper = AbsoluteModuloUnwrapper(
+                self.cfg, previous_continuous_deg=previous
+            )
             self._startup_initialized = True
             self._startup_state_note = "old" if self._previous_payload_old else "ok"
             return
@@ -394,7 +476,9 @@ class AzUnwrapRuntime:
         else:
             self._startup_state_note = "state-mismatch"
 
-    def process(self, raw_az_deg: float, *, el_deg: float, encoder_time: float) -> tuple[float, AntennaAzUnwrapStatus]:
+    def process(
+        self, raw_az_deg: float, *, el_deg: float, encoder_time: float
+    ) -> tuple[float, AntennaAzUnwrapStatus]:
         now = time.time()
         if not self.enabled:
             status = self._make_status(
@@ -461,23 +545,35 @@ class AzUnwrapRuntime:
                 reason=reason,
             )
             self._last_status = status
-            if result.branch_changed or not math.isfinite(self._last_state_time) or (now - self._last_state_time) >= self.heartbeat_sec:
+            if (
+                result.branch_changed
+                or not math.isfinite(self._last_state_time)
+                or (now - self._last_state_time) >= self.heartbeat_sec
+            ):
                 self._persist(status)
             return result.continuous_deg, status
         except AmbiguousBranchError as exc:
             # Keep startup open so a subsequently written manual state file can be
             # picked up without restarting the encoder node.
             self._startup_initialized = False
-            status = self._error_status(now, encoder_time, raw_az_deg, "ambiguous", str(exc))
+            status = self._error_status(
+                now, encoder_time, raw_az_deg, "ambiguous", str(exc)
+            )
         except NoValidBranchError as exc:
             self._startup_initialized = False
-            status = self._error_status(now, encoder_time, raw_az_deg, "no-valid-branch", str(exc))
+            status = self._error_status(
+                now, encoder_time, raw_az_deg, "no-valid-branch", str(exc)
+            )
         except BranchJumpError as exc:
             status = self._error_status(now, encoder_time, raw_az_deg, "jump", str(exc))
         except RawAngleRangeError as exc:
-            status = self._error_status(now, encoder_time, raw_az_deg, "raw-range", str(exc))
+            status = self._error_status(
+                now, encoder_time, raw_az_deg, "raw-range", str(exc)
+            )
         except AngleUnwrapError as exc:
-            status = self._error_status(now, encoder_time, raw_az_deg, "error", str(exc))
+            status = self._error_status(
+                now, encoder_time, raw_az_deg, "error", str(exc)
+            )
         self._last_status = status
         raise RuntimeError(status.reason)
 
@@ -486,7 +582,9 @@ class AzUnwrapRuntime:
             self._persist(self._last_status, force_sync=True)
         self.writer.close()
 
-    def _persist(self, status: AntennaAzUnwrapStatus, *, force_sync: bool = False) -> None:
+    def _persist(
+        self, status: AntennaAzUnwrapStatus, *, force_sync: bool = False
+    ) -> None:
         payload = {
             "version": 1,
             "enabled": bool(status.enabled),
@@ -546,7 +644,11 @@ class AzUnwrapRuntime:
         persist_age = -1.0
         if math.isfinite(self.writer.last_persist_time):
             persist_age = max(0.0, now - self.writer.last_persist_time)
-        state_age = 0.0 if not math.isfinite(self._last_state_time) else max(0.0, now - self._last_state_time)
+        state_age = (
+            0.0
+            if not math.isfinite(self._last_state_time)
+            else max(0.0, now - self._last_state_time)
+        )
         return AntennaAzUnwrapStatus(
             enabled=bool(self.enabled),
             valid=bool(valid),
@@ -568,10 +670,16 @@ class AzUnwrapRuntime:
             persist_age_sec=self._finite_float(persist_age),
         )
 
-    def _error_status(self, now: float, encoder_time: float, raw_az: float, state: str, reason: str) -> AntennaAzUnwrapStatus:
+    def _error_status(
+        self, now: float, encoder_time: float, raw_az: float, state: str, reason: str
+    ) -> AntennaAzUnwrapStatus:
         previous = self.unwrapper.previous_continuous_deg
         continuous = -1.0 if previous is None else float(previous)
-        branch = 0 if self.unwrapper.previous_branch is None else int(self.unwrapper.previous_branch)
+        branch = (
+            0
+            if self.unwrapper.previous_branch is None
+            else int(self.unwrapper.previous_branch)
+        )
         try:
             modulo = normalize_absolute_modulo_raw(float(raw_az), self.cfg)
         except Exception:
@@ -590,8 +698,14 @@ class AzUnwrapRuntime:
         )
 
 
-
-def _manual_state_payload(cfg: AbsoluteModuloUnwrapConfig, mode: str, *, raw_az: Optional[float], continuous_az: Optional[float], branch: Optional[int]) -> dict:
+def _manual_state_payload(
+    cfg: AbsoluteModuloUnwrapConfig,
+    mode: str,
+    *,
+    raw_az: Optional[float],
+    continuous_az: Optional[float],
+    branch: Optional[int],
+) -> dict:
     def _check_raw_range(raw: float) -> None:
         try:
             normalize_absolute_modulo_raw(float(raw), cfg)
@@ -600,7 +714,9 @@ def _manual_state_payload(cfg: AbsoluteModuloUnwrapConfig, mode: str, *, raw_az:
 
     if continuous_az is None:
         if raw_az is None or branch is None:
-            raise ValueError("manual initialization requires --continuous-az or both --raw-az and --branch")
+            raise ValueError(
+                "manual initialization requires --continuous-az or both --raw-az and --branch"
+            )
         raw_az = float(raw_az)
         _check_raw_range(raw_az)
         modulo = normalize_absolute_modulo_raw(raw_az, cfg)
@@ -617,7 +733,10 @@ def _manual_state_payload(cfg: AbsoluteModuloUnwrapConfig, mode: str, *, raw_az:
         branch = derived_branch
         if raw_az is None:
             # Invert calibrated_modulo = sign * raw + zero_offset modulo period.
-            raw_az = ((cfg.sign * (modulo - cfg.zero_offset_deg) - cfg.raw_min_deg) % cfg.period_deg) + cfg.raw_min_deg
+            raw_az = (
+                (cfg.sign * (modulo - cfg.zero_offset_deg) - cfg.raw_min_deg)
+                % cfg.period_deg
+            ) + cfg.raw_min_deg
             _check_raw_range(raw_az)
         else:
             raw_az = float(raw_az)
@@ -657,16 +776,34 @@ def main(argv=None) -> int:
     """Small CLI for manual Az unwrap state inspection/initialization."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Inspect or initialize NECST Az unwrap state file.")
+    parser = argparse.ArgumentParser(
+        description="Inspect or initialize NECST Az unwrap state file."
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("status", help="show current configured state file")
     setp = sub.add_parser("set", help="write a manual unwrap state")
+
     def _deg_arg(text: str) -> float:
         return float(str(text).strip().removesuffix("deg").removesuffix("°"))
 
-    setp.add_argument("--raw-az", type=_deg_arg, default=None, help="current absolute modulo raw Az [deg]")
-    setp.add_argument("--continuous-az", type=_deg_arg, default=None, help="desired continuous Az [deg]")
-    setp.add_argument("--branch", type=int, default=None, help="desired branch; requires --raw-az when --continuous-az is omitted")
+    setp.add_argument(
+        "--raw-az",
+        type=_deg_arg,
+        default=None,
+        help="current absolute modulo raw Az [deg]",
+    )
+    setp.add_argument(
+        "--continuous-az",
+        type=_deg_arg,
+        default=None,
+        help="desired continuous Az [deg]",
+    )
+    setp.add_argument(
+        "--branch",
+        type=int,
+        default=None,
+        help="desired branch; requires --raw-az when --continuous-az is omitted",
+    )
     args = parser.parse_args(argv)
 
     (
@@ -691,11 +828,19 @@ def main(argv=None) -> int:
     if args.cmd == "set":
         if not cfg.enabled:
             raise SystemExit("az unwrap is not enabled in the current config")
-        payload = _manual_state_payload(cfg, mode, raw_az=args.raw_az, continuous_az=args.continuous_az, branch=args.branch)
+        payload = _manual_state_payload(
+            cfg,
+            mode,
+            raw_az=args.raw_az,
+            continuous_az=args.continuous_az,
+            branch=args.branch,
+        )
         writer = AtomicStateWriter(state_path)
         writer._write(payload)
         writer.close()
-        print(f"wrote {state_path}: continuous={payload['continuous_az_deg']:.6f} deg branch={payload['branch']} raw={payload['raw_az_deg']:.6f} deg")
+        print(
+            f"wrote {state_path}: continuous={payload['continuous_az_deg']:.6f} deg branch={payload['branch']} raw={payload['raw_az_deg']:.6f} deg"
+        )
         return 0
     return 2
 

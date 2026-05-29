@@ -18,7 +18,6 @@ import shutil
 import signal
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 import webbrowser
@@ -36,7 +35,10 @@ def safe_name(value: Any) -> str:
 def atomic_write_json(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+    tmp.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     os.replace(tmp, path)
 
 
@@ -140,7 +142,16 @@ def section_geometry(plan: Dict[str, Any], line_index: int) -> Dict[str, Any]:
     return lines[max(0, min(line_index, len(lines) - 1))]
 
 
-def make_snapshot(root: Path, record_name: str, plan: Dict[str, Any], started_at: float, now: float, *, total: int, stale_demo: bool) -> Dict[str, Any]:
+def make_snapshot(
+    root: Path,
+    record_name: str,
+    plan: Dict[str, Any],
+    started_at: float,
+    now: float,
+    *,
+    total: int,
+    stale_demo: bool,
+) -> Dict[str, Any]:
     elapsed = now - started_at
     line, kind, frac, section_start, section_stop = section_at(elapsed, total)
     geom = section_geometry(plan, line)
@@ -151,7 +162,9 @@ def make_snapshot(root: Path, record_name: str, plan: Dict[str, Any], started_at
     spec_publish_time = now - (2.2 if stale_demo else 0.20)
 
     direction = 1.0 if geom["stop"][0] >= geom["start"][0] else -1.0
-    along = frac if is_line else (0.0 if kind in {"initial_standby", "accelerate"} else 1.0)
+    along = (
+        frac if is_line else (0.0 if kind in {"initial_standby", "accelerate"} else 1.0)
+    )
     cmd_az = 146.0 + 0.8 * line / max(1, total - 1) + direction * 0.03 * along
     cmd_el = 53.0 + 0.2 * math.sin(0.2 * line) + 0.015 * along
     # Tracking is intentionally sometimes marginal so the warning styling can be checked.
@@ -194,7 +207,11 @@ def make_snapshot(root: Path, record_name: str, plan: Dict[str, Any], started_at
             "phase": "ON",
             "drive_kind": "scan_block",
             "motion_stage": kind,
-            "data_state": "integrating" if kind in {"initial_standby", "accelerate", "line", "decelerate"} else "not_integrating",
+            "data_state": (
+                "integrating"
+                if kind in {"initial_standby", "accelerate", "line", "decelerate"}
+                else "not_integrating"
+            ),
             "control_id": "demo-section-control",
             "control_line": "1/1",
             "expected_metadata_position": "ON",
@@ -204,8 +221,14 @@ def make_snapshot(root: Path, record_name: str, plan: Dict[str, Any], started_at
             "control_section_kind": kind,
             "control_section_label": f"{kind}:{line + 1}",
             "control_section_uid": f"demo:{line:04d}:{kind}",
-            "control_section_plan_index": line * 5 + ["initial_standby", "accelerate", "line", "decelerate", "turn"].index(kind),
-            "control_section_sequence_index": line * 5 + ["initial_standby", "accelerate", "line", "decelerate", "turn"].index(kind),
+            "control_section_plan_index": line * 5
+            + ["initial_standby", "accelerate", "line", "decelerate", "turn"].index(
+                kind
+            ),
+            "control_section_sequence_index": line * 5
+            + ["initial_standby", "accelerate", "line", "decelerate", "turn"].index(
+                kind
+            ),
             "control_section_line_index": line,
             "control_section_science_line": is_line,
             "control_section_interrupt_ok": kind in {"initial_standby", "turn"},
@@ -295,7 +318,10 @@ def make_snapshot(root: Path, record_name: str, plan: Dict[str, Any], started_at
             "last_record_time_unix": now - 0.20,
             "last_stream_time_unix": now - 0.18,
             "last_dump_age_sec": 0.18,
-            "latest_time_spectrometer": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(now - 0.18)) + "GPS",
+            "latest_time_spectrometer": time.strftime(
+                "%Y-%m-%dT%H:%M:%S", time.gmtime(now - 0.18)
+            )
+            + "GPS",
             "record_every_n": 1,
             "data_queue_size_max": 4096,
             "n_streams": 1,
@@ -351,7 +377,9 @@ def make_snapshot(root: Path, record_name: str, plan: Dict[str, Any], started_at
 
 
 class DemoWriter:
-    def __init__(self, root: Path, *, total: int, update_interval: float, stale_demo: bool) -> None:
+    def __init__(
+        self, root: Path, *, total: int, update_interval: float, stale_demo: bool
+    ) -> None:
         self.root = root
         self.total = total
         self.update_interval = update_interval
@@ -369,7 +397,9 @@ class DemoWriter:
         if clean and self.root.exists():
             shutil.rmtree(self.root)
         self.record_dir.mkdir(parents=True, exist_ok=True)
-        atomic_write_text(self.root / "current_observation_record.txt", self.record_name + "\n")
+        atomic_write_text(
+            self.root / "current_observation_record.txt", self.record_name + "\n"
+        )
         atomic_write_json(self.record_dir / "observation_plan.json", self.plan)
         events = self.record_dir / "observation_events.jsonl"
         events.write_text("", encoding="utf-8")
@@ -393,14 +423,44 @@ class DemoWriter:
         if key != self._last_section:
             if self._last_section is not None:
                 prev_line, prev_kind = self._last_section
-                self._event("drive_finished", drive_kind="scan_block", motion_stage=prev_kind, line_index=prev_line)
+                self._event(
+                    "drive_finished",
+                    drive_kind="scan_block",
+                    motion_stage=prev_kind,
+                    line_index=prev_line,
+                )
                 if prev_kind == "line":
-                    self._event("plan_item_finished", item_uid="demo:otf:scan_block:0", index0=prev_line, index0_end=prev_line, line_index=prev_line)
-            self._event("drive_started", drive_kind="scan_block", motion_stage=kind, line_index=line)
+                    self._event(
+                        "plan_item_finished",
+                        item_uid="demo:otf:scan_block:0",
+                        index0=prev_line,
+                        index0_end=prev_line,
+                        line_index=prev_line,
+                    )
+            self._event(
+                "drive_started",
+                drive_kind="scan_block",
+                motion_stage=kind,
+                line_index=line,
+            )
             if kind == "line":
-                self._event("line_started", item_uid="demo:otf:scan_block:0", index0=line, line_index=line, phase="ON")
+                self._event(
+                    "line_started",
+                    item_uid="demo:otf:scan_block:0",
+                    index0=line,
+                    line_index=line,
+                    phase="ON",
+                )
             self._last_section = key
-        snapshot = make_snapshot(self.root, self.record_name, self.plan, self.started_at, now, total=self.total, stale_demo=self.stale_demo)
+        snapshot = make_snapshot(
+            self.root,
+            self.record_name,
+            self.plan,
+            self.started_at,
+            now,
+            total=self.total,
+            stale_demo=self.stale_demo,
+        )
         atomic_write_json(self.root / "current_observation_progress.json", snapshot)
         atomic_write_json(self.record_dir / "observation_progress.json", snapshot)
 
@@ -409,7 +469,10 @@ class DemoWriter:
             while not self._stop.is_set():
                 self.write_once()
                 self._stop.wait(self.update_interval)
-        self._thread = threading.Thread(target=run, name="necst-progress-demo-writer", daemon=True)
+
+        self._thread = threading.Thread(
+            target=run, name="necst-progress-demo-writer", daemon=True
+        )
         self._thread.start()
 
     def stop(self) -> None:
@@ -425,27 +488,73 @@ def find_progress_script(value: Optional[str]) -> Path:
     sibling = here.with_name("progress.py")
     if sibling.exists():
         return sibling
-    raise FileNotFoundError("progress.py was not found next to progress-demo.py. Use --progress-script.")
+    raise FileNotFoundError(
+        "progress.py was not found next to progress-demo.py. Use --progress-script."
+    )
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Preview the NECST progress web dashboard using synthetic v44 data")
-    parser.add_argument("--root", default="/tmp/necst_progress_demo_v44", help="demo progress root directory")
+    parser = argparse.ArgumentParser(
+        description="Preview the NECST progress web dashboard using synthetic v44 data"
+    )
+    parser.add_argument(
+        "--root",
+        default="/tmp/necst_progress_demo_v44",
+        help="demo progress root directory",
+    )
     parser.add_argument("--host", default="127.0.0.1", help="web bind address")
     parser.add_argument("--port", type=int, default=8080, help="web bind port")
-    parser.add_argument("--refresh-ms", type=int, default=500, help="browser refresh interval [ms]")
-    parser.add_argument("--update-interval", type=float, default=0.25, help="synthetic file update interval [s]")
-    parser.add_argument("--lines", type=int, default=30, help="number of synthetic OTF scan lines")
-    parser.add_argument("--progress-script", default=None, help="path to progress.py; default is sibling progress.py")
-    parser.add_argument("--write-only", action="store_true", help="only write demo files; do not launch the web server")
-    parser.add_argument("--no-clean", action="store_true", help="do not remove the demo root before starting")
-    parser.add_argument("--open", action="store_true", help="open the dashboard URL in the default browser")
-    parser.add_argument("--stale-demo", action="store_true", help="intentionally write stale ages to check warning styling")
-    parser.add_argument("--quiet", action="store_true", help="suppress HTTP request logs from progress.py")
+    parser.add_argument(
+        "--refresh-ms", type=int, default=500, help="browser refresh interval [ms]"
+    )
+    parser.add_argument(
+        "--update-interval",
+        type=float,
+        default=0.25,
+        help="synthetic file update interval [s]",
+    )
+    parser.add_argument(
+        "--lines", type=int, default=30, help="number of synthetic OTF scan lines"
+    )
+    parser.add_argument(
+        "--progress-script",
+        default=None,
+        help="path to progress.py; default is sibling progress.py",
+    )
+    parser.add_argument(
+        "--write-only",
+        action="store_true",
+        help="only write demo files; do not launch the web server",
+    )
+    parser.add_argument(
+        "--no-clean",
+        action="store_true",
+        help="do not remove the demo root before starting",
+    )
+    parser.add_argument(
+        "--open",
+        action="store_true",
+        help="open the dashboard URL in the default browser",
+    )
+    parser.add_argument(
+        "--stale-demo",
+        action="store_true",
+        help="intentionally write stale ages to check warning styling",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="suppress HTTP request logs from progress.py",
+    )
     args = parser.parse_args(argv)
 
     root = Path(args.root).expanduser().resolve()
-    writer = DemoWriter(root, total=max(1, args.lines), update_interval=max(0.05, args.update_interval), stale_demo=bool(args.stale_demo))
+    writer = DemoWriter(
+        root,
+        total=max(1, args.lines),
+        update_interval=max(0.05, args.update_interval),
+        stale_demo=bool(args.stale_demo),
+    )
     writer.prepare(clean=not args.no_clean)
     writer.start()
 
@@ -454,7 +563,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.write_only:
         print("Run the dashboard separately, for example:")
-        print(f"  {sys.executable} /path/to/progress.py --serve --no-ros --root {root} --refresh-ms {args.refresh_ms}")
+        print(
+            f"  {sys.executable} /path/to/progress.py --serve --no-ros --root {root} --refresh-ms {args.refresh_ms}"
+        )
         try:
             while True:
                 time.sleep(1.0)

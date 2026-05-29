@@ -5,6 +5,5 @@ import sys
 
 from necst.core.emergency import main_mount_move
 
-
 if __name__ == "__main__":
     sys.exit(main_mount_move())

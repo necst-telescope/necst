@@ -4,3 +4,5 @@ extend-ignore = E203
 exclude =
     .venv,
     *.pyi
+per-file-ignores =
+    bin/progress.py:E501

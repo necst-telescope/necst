@@ -1128,7 +1128,7 @@ def _normalize_frequency_axis(
 
 
 def _normalize_frequency_axes(
-    lo_profile: Mapping[str, Any]
+    lo_profile: Mapping[str, Any],
 ) -> Dict[str, Dict[str, Any]]:
     axes = _ensure_mapping(lo_profile.get("frequency_axes", {}), field="frequency_axes")
     if not axes:
@@ -1371,7 +1371,7 @@ def _validate_beam_ids(
 
 
 def _recording_groups(
-    recording_setup: Optional[Mapping[str, Any]]
+    recording_setup: Optional[Mapping[str, Any]],
 ) -> Dict[str, Dict[str, Any]]:
     if recording_setup is None:
         return {}
@@ -1473,7 +1473,7 @@ def _relativistic_doppler_factor_from_kms(v_kms: float) -> float:
 
 
 def _lsrk_correction_kms_from_context(
-    context: Optional[Mapping[str, Any]]
+    context: Optional[Mapping[str, Any]],
 ) -> Optional[float]:
     """Return topocentric-to-LSRK correction projected to the reference direction.
 

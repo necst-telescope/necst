@@ -106,9 +106,7 @@ class Observation(ABC):
                     "time_unix": time.time(),
                 }
             )
-            self.progress.event(
-                "abort_requested", reason=reason, request_id=request_id
-            )
+            self.progress.event("abort_requested", reason=reason, request_id=request_id)
         except Exception:
             pass
 
@@ -316,7 +314,10 @@ class Observation(ABC):
                         record_name=self.record_name
                     ),
                 )
-                _cleanup_step("detach abort checker", lambda: setattr(self.com, "abort_checker", None))
+                _cleanup_step(
+                    "detach abort checker",
+                    lambda: setattr(self.com, "abort_checker", None),
+                )
                 _cleanup_step("quit privilege", self.com.quit_privilege)
                 _cleanup_step("destroy commander", self.com.destroy_node)
                 _observing_duration = (time.time() - self._start) / 60

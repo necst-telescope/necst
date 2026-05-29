@@ -24,19 +24,22 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional
 from urllib.parse import parse_qs, urlparse
 
 
-
-
 def safe_name(value: Any) -> str:
     original = str(value or "unknown")
     sanitized = re.sub(r"[^A-Za-z0-9_.-]+", "_", original)
     sanitized = re.sub(r"_+", "_", sanitized).strip("_") or "record"
     if sanitized != original:
-        digest = hashlib.sha1(original.encode("utf-8", errors="surrogatepass")).hexdigest()[:8]
+        digest = hashlib.sha1(
+            original.encode("utf-8", errors="surrogatepass")
+        ).hexdigest()[:8]
         sanitized = f"{sanitized}_{digest}"
     return sanitized
 
+
 def progress_root(value: Optional[str] = None) -> Path:
-    return Path(value or os.environ.get("NECST_PROGRESS_ROOT", "/tmp/necst_progress")).expanduser()
+    return Path(
+        value or os.environ.get("NECST_PROGRESS_ROOT", "/tmp/necst_progress")
+    ).expanduser()
 
 
 def live_status_max_age_sec() -> float:
@@ -47,7 +50,9 @@ def live_status_max_age_sec() -> float:
     no live status; it makes the dashboard jump to a delayed line fraction.
     """
     try:
-        return max(0.2, float(os.environ.get("NECST_PROGRESS_LIVE_STATUS_MAX_AGE_SEC", "2.0")))
+        return max(
+            0.2, float(os.environ.get("NECST_PROGRESS_LIVE_STATUS_MAX_AGE_SEC", "2.0"))
+        )
     except Exception:
         return 2.0
 
@@ -56,7 +61,9 @@ def strip_record_file_header(text: str) -> str:
     """Remove leading NECST FileWriter comment headers if present."""
     lines = text.splitlines()
     start = 0
-    while start < len(lines) and (not lines[start].strip() or lines[start].lstrip().startswith("#")):
+    while start < len(lines) and (
+        not lines[start].strip() or lines[start].lstrip().startswith("#")
+    ):
         start += 1
     return "\n".join(lines[start:])
 
@@ -72,7 +79,9 @@ def read_json(path: Path) -> Optional[Dict[str, Any]]:
         return {"_error": f"failed to read {path}: {exc}"}
 
 
-def read_jsonl(path: Optional[Path], limit: Optional[int] = None) -> List[Dict[str, Any]]:
+def read_jsonl(
+    path: Optional[Path], limit: Optional[int] = None
+) -> List[Dict[str, Any]]:
     if path is None:
         return []
     try:
@@ -100,13 +109,19 @@ def current_snapshot_path(root: Path) -> Path:
 
 def current_record_name(root: Path) -> Optional[str]:
     try:
-        text = (root / "current_observation_record.txt").read_text(encoding="utf-8").strip()
+        text = (
+            (root / "current_observation_record.txt")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
         return text or None
     except Exception:
         return None
 
 
-def latest_events_path(root: Path, snapshot: Optional[Dict[str, Any]] = None) -> Optional[Path]:
+def latest_events_path(
+    root: Path, snapshot: Optional[Dict[str, Any]] = None
+) -> Optional[Path]:
     record = None
     if snapshot:
         record = (snapshot.get("observation") or {}).get("record_name")
@@ -116,7 +131,11 @@ def latest_events_path(root: Path, snapshot: Optional[Dict[str, Any]] = None) ->
         path = root / safe / "observation_events.jsonl"
         if path.exists():
             return path
-    candidates = sorted(root.glob("*/observation_events.jsonl"), key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
+    candidates = sorted(
+        root.glob("*/observation_events.jsonl"),
+        key=lambda p: p.stat().st_mtime if p.exists() else 0,
+        reverse=True,
+    )
     return candidates[0] if candidates else None
 
 
@@ -169,11 +188,12 @@ def _msg_coord(msg: Any, *, prefix: str) -> Dict[str, Any]:
     return payload
 
 
-
 FINAL_LIFECYCLE_STATES = {"finished", "error", "aborted"}
 
 
-def apply_dynamic_remaining(snapshot: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def apply_dynamic_remaining(
+    snapshot: Optional[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
     """Return a display/API snapshot with ETA counted down from completion time.
 
     ObservationProgressReporter writes an estimated_completion_unix whenever it
@@ -184,7 +204,9 @@ def apply_dynamic_remaining(snapshot: Optional[Dict[str, Any]]) -> Optional[Dict
     if not isinstance(snapshot, dict):
         return snapshot
     timing = snapshot.get("time")
-    lifecycle = snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
+    lifecycle = (
+        snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
+    )
     if not isinstance(timing, dict):
         return snapshot
     state = str(lifecycle.get("state") or "").lower()
@@ -198,7 +220,6 @@ def apply_dynamic_remaining(snapshot: Optional[Dict[str, Any]]) -> Optional[Dict
     return snapshot
 
 
-
 _RADEC_FRAMES = {"j2000", "radec", "ra/dec", "equatorial", "fk5", "icrs"}
 _GALACTIC_FRAMES = {"galactic", "gal", "lb", "l,b"}
 
@@ -209,7 +230,12 @@ def _frame_token(frame: Any) -> str:
 
 def _is_radec_frame(frame: Any) -> bool:
     token = _frame_token(frame)
-    return token in _RADEC_FRAMES or "j2000" in token or "radec" in token or token.startswith("fk5")
+    return (
+        token in _RADEC_FRAMES
+        or "j2000" in token
+        or "radec" in token
+        or token.startswith("fk5")
+    )
 
 
 def _is_galactic_frame(frame: Any) -> bool:
@@ -217,7 +243,9 @@ def _is_galactic_frame(frame: Any) -> bool:
     return token in _GALACTIC_FRAMES or "gal" in token
 
 
-def _source_sky_coord_from_geometry(geom: Mapping[str, Any]) -> tuple[Optional[tuple[float, float]], str, str]:
+def _source_sky_coord_from_geometry(
+    geom: Mapping[str, Any],
+) -> tuple[Optional[tuple[float, float]], str, str]:
     """Return the best source/reference sky coordinate stored in progress geometry."""
     for key in ("target", "reference"):
         value = geom.get(key)
@@ -241,7 +269,9 @@ def _skycoord_from_lonlat_frame(lon_deg: float, lat_deg: float, frame: Any) -> A
 
     token = _frame_token(frame)
     if token == "icrs":
-        return SkyCoord(ra=float(lon_deg) * u.deg, dec=float(lat_deg) * u.deg, frame="icrs")
+        return SkyCoord(
+            ra=float(lon_deg) * u.deg, dec=float(lat_deg) * u.deg, frame="icrs"
+        )
     if _is_radec_frame(frame):
         return SkyCoord(
             ra=float(lon_deg) * u.deg,
@@ -249,7 +279,9 @@ def _skycoord_from_lonlat_frame(lon_deg: float, lat_deg: float, frame: Any) -> A
             frame=FK5(equinox=Time("J2000")),
         )
     if _is_galactic_frame(frame):
-        return SkyCoord(l=float(lon_deg) * u.deg, b=float(lat_deg) * u.deg, frame="galactic")
+        return SkyCoord(
+            l=float(lon_deg) * u.deg, b=float(lat_deg) * u.deg, frame="galactic"
+        )
     return None
 
 
@@ -298,7 +330,9 @@ def _derive_radec_galactic_from_geometry(geom: Mapping[str, Any]) -> Dict[str, A
         # importable in an offline analysis environment, browser/CLI simply show
         # the native-frame coordinate and leave the cross-frame row blank.
         out["coordinate_transform_backend"] = "unavailable"
-        out["coordinate_transform_note"] = f"Astropy coordinate transform unavailable: {exc.__class__.__name__}"
+        out["coordinate_transform_note"] = (
+            f"Astropy coordinate transform unavailable: {exc.__class__.__name__}"
+        )
     return out
 
 
@@ -355,12 +389,18 @@ def _lst_hours_with_astropy(unix_sec: float, lon_deg: float) -> Optional[float]:
         from astropy import units as u  # type: ignore
         from astropy.time import Time  # type: ignore
 
-        return float(Time(float(unix_sec), format="unix", scale="utc").sidereal_time("mean", longitude=float(lon_deg) * u.deg).hour)
+        return float(
+            Time(float(unix_sec), format="unix", scale="utc")
+            .sidereal_time("mean", longitude=float(lon_deg) * u.deg)
+            .hour
+        )
     except Exception:
         return None
 
 
-def _derive_lst(snapshot: Mapping[str, Any], *, server_time_unix: Optional[float] = None) -> Dict[str, Any]:
+def _derive_lst(
+    snapshot: Mapping[str, Any], *, server_time_unix: Optional[float] = None
+) -> Dict[str, Any]:
     timing = snapshot.get("time") if isinstance(snapshot.get("time"), Mapping) else {}
     unix_sec = _finite_float(timing.get("updated_at_unix"))
     if unix_sec is None:
@@ -385,7 +425,9 @@ def _derive_lst(snapshot: Mapping[str, Any], *, server_time_unix: Optional[float
     return out
 
 
-def apply_display_derivations(snapshot: Optional[Dict[str, Any]], *, server_time_unix: Optional[float] = None) -> Optional[Dict[str, Any]]:
+def apply_display_derivations(
+    snapshot: Optional[Dict[str, Any]], *, server_time_unix: Optional[float] = None
+) -> Optional[Dict[str, Any]]:
     """Add display-only coordinate/LST derivations to a snapshot.
 
     The progress sidecar remains the source of truth and keeps original frames.
@@ -405,6 +447,7 @@ def apply_display_derivations(snapshot: Optional[Dict[str, Any]], *, server_time
         out.setdefault("display", {}).update(display)
     return out
 
+
 def _live_payload_has_position(live_payload: Mapping[str, Any]) -> bool:
     """Return True when live ROS telemetry has enough antenna data to display.
 
@@ -415,8 +458,16 @@ def _live_payload_has_position(live_payload: Mapping[str, Any]) -> bool:
     """
     if not isinstance(live_payload, Mapping):
         return False
-    pointing = live_payload.get("pointing_status") if isinstance(live_payload.get("pointing_status"), Mapping) else {}
-    encoder = live_payload.get("encoder") if isinstance(live_payload.get("encoder"), Mapping) else {}
+    pointing = (
+        live_payload.get("pointing_status")
+        if isinstance(live_payload.get("pointing_status"), Mapping)
+        else {}
+    )
+    encoder = (
+        live_payload.get("encoder")
+        if isinstance(live_payload.get("encoder"), Mapping)
+        else {}
+    )
 
     # An idle snapshot must represent the actual telescope position.  A live
     # command-only sample may be stale or merely the last target, so it must not
@@ -431,7 +482,9 @@ def _live_payload_has_position(live_payload: Mapping[str, Any]) -> bool:
     return False
 
 
-def make_idle_live_snapshot(live_payload: Mapping[str, Any], *, now_unix: Optional[float] = None) -> Dict[str, Any]:
+def make_idle_live_snapshot(
+    live_payload: Mapping[str, Any], *, now_unix: Optional[float] = None
+) -> Dict[str, Any]:
     """Build a minimal display-only snapshot for idle live telemetry.
 
     This snapshot is used only by progress.py.  It is not written back to
@@ -485,7 +538,9 @@ def make_idle_live_snapshot(live_payload: Mapping[str, Any], *, now_unix: Option
     }
 
 
-def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
+def merge_live_telemetry(
+    snapshot: Optional[Dict[str, Any]], live: Optional[Mapping[str, Any]]
+) -> Optional[Dict[str, Any]]:
     """Return a display-only snapshot augmented with live ROS telemetry.
 
     The progress JSON files remain the source of truth while an observation is
@@ -508,10 +563,26 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
     out["live"] = live_payload
 
     antenna_update: Dict[str, Any] = {}
-    cmd = live_payload.get("command") if isinstance(live_payload.get("command"), dict) else {}
-    enc = live_payload.get("encoder") if isinstance(live_payload.get("encoder"), dict) else {}
-    pointing = live_payload.get("pointing_status") if isinstance(live_payload.get("pointing_status"), dict) else {}
-    az_unwrap = live_payload.get("az_unwrap_status") if isinstance(live_payload.get("az_unwrap_status"), dict) else {}
+    cmd = (
+        live_payload.get("command")
+        if isinstance(live_payload.get("command"), dict)
+        else {}
+    )
+    enc = (
+        live_payload.get("encoder")
+        if isinstance(live_payload.get("encoder"), dict)
+        else {}
+    )
+    pointing = (
+        live_payload.get("pointing_status")
+        if isinstance(live_payload.get("pointing_status"), dict)
+        else {}
+    )
+    az_unwrap = (
+        live_payload.get("az_unwrap_status")
+        if isinstance(live_payload.get("az_unwrap_status"), dict)
+        else {}
+    )
     if pointing:
         antenna_update["pointing_status_available"] = True
         antenna_update["pointing_status_valid"] = bool(pointing.get("valid", False))
@@ -531,8 +602,14 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
         antenna_update["tracking_ok"] = bool(pointing.get("tracking_ok", False))
         antenna_update["tracking_error_deg"] = pointing.get("tracking_error_deg")
         antenna_update["tracking_status_time_unix"] = pointing.get("publish_time_unix")
-        antenna_update["tracking_status_age_sec"] = max(0.0, time.time() - pointing.get("publish_time_unix", time.time())) if pointing.get("publish_time_unix") is not None else None
-        antenna_update["tracking_threshold_deg"] = pointing.get("tracking_threshold_deg")
+        antenna_update["tracking_status_age_sec"] = (
+            max(0.0, time.time() - pointing.get("publish_time_unix", time.time()))
+            if pointing.get("publish_time_unix") is not None
+            else None
+        )
+        antenna_update["tracking_threshold_deg"] = pointing.get(
+            "tracking_threshold_deg"
+        )
         antenna_update["command_stale"] = bool(pointing.get("command_stale", False))
         antenna_update["encoder_stale"] = bool(pointing.get("encoder_stale", False))
         antenna_update["command_age_sec"] = pointing.get("cmd_age_sec")
@@ -554,7 +631,11 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
         antenna_update["az_unwrap_raw_az_deg"] = az_unwrap.get("raw_az_deg")
         antenna_update["az_unwrap_state"] = az_unwrap.get("state")
         antenna_update["az_unwrap_reason"] = az_unwrap.get("reason")
-    tracking = live_payload.get("tracking") if isinstance(live_payload.get("tracking"), dict) else {}
+    tracking = (
+        live_payload.get("tracking")
+        if isinstance(live_payload.get("tracking"), dict)
+        else {}
+    )
     if tracking:
         terr = _finite_float(tracking.get("error_deg"))
         tstat = _finite_float(tracking.get("time_unix"))
@@ -573,20 +654,44 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
         antenna_update.setdefault("tracking_status_available", False)
     if antenna_update:
         out.setdefault("antenna", {}).update(antenna_update)
-    weather_payload = live_payload.get("weather") if isinstance(live_payload.get("weather"), dict) else {}
+    weather_payload = (
+        live_payload.get("weather")
+        if isinstance(live_payload.get("weather"), dict)
+        else {}
+    )
     if weather_payload:
         out.setdefault("weather", {}).update(weather_payload)
-    queue_payload = live_payload.get("queue_status") if isinstance(live_payload.get("queue_status"), dict) else {}
+    queue_payload = (
+        live_payload.get("queue_status")
+        if isinstance(live_payload.get("queue_status"), dict)
+        else {}
+    )
     if queue_payload:
         out.setdefault("antenna_command_queue", {}).update(queue_payload)
-    spec_payload = live_payload.get("spectrometer_status") if isinstance(live_payload.get("spectrometer_status"), dict) else {}
+    spec_payload = (
+        live_payload.get("spectrometer_status")
+        if isinstance(live_payload.get("spectrometer_status"), dict)
+        else {}
+    )
     if spec_payload:
         out.setdefault("spectrometer", {}).update(spec_payload)
 
     lifecycle = out.get("lifecycle") if isinstance(out.get("lifecycle"), dict) else {}
-    final_state = str(lifecycle.get("state") or "").lower() in {"finished", "error", "aborted"}
-    section_status = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), dict) else {}
-    ctrl = live_payload.get("control") if isinstance(live_payload.get("control"), dict) else {}
+    final_state = str(lifecycle.get("state") or "").lower() in {
+        "finished",
+        "error",
+        "aborted",
+    }
+    section_status = (
+        live_payload.get("section_status")
+        if isinstance(live_payload.get("section_status"), dict)
+        else {}
+    )
+    ctrl = (
+        live_payload.get("control")
+        if isinstance(live_payload.get("control"), dict)
+        else {}
+    )
     if section_status and not final_state:
         activity = out.setdefault("activity", {})
         geometry = out.setdefault("geometry", {})
@@ -613,28 +718,50 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
             activity["control_id"] = section_status.get("control_id")
         activity["control_tight"] = bool(section_status.get("tight", False))
         activity["control_section_uid"] = section_status.get("section_uid")
-        activity["control_section_plan_index"] = section_status.get("section_plan_index")
-        activity["control_section_sequence_index"] = section_status.get("section_sequence_index")
+        activity["control_section_plan_index"] = section_status.get(
+            "section_plan_index"
+        )
+        activity["control_section_sequence_index"] = section_status.get(
+            "section_sequence_index"
+        )
         activity["control_section_line_index"] = line_index
         activity["control_status_basis"] = section_status.get("status_basis")
         activity["control_section_active"] = bool(section_status.get("active", False))
-        activity["control_section_science_line"] = bool(section_status.get("science_line", False))
-        activity["control_section_interrupt_ok"] = bool(section_status.get("interrupt_ok", False))
-        activity["control_section_start_unix"] = section_status.get("section_start_unix")
+        activity["control_section_science_line"] = bool(
+            section_status.get("science_line", False)
+        )
+        activity["control_section_interrupt_ok"] = bool(
+            section_status.get("interrupt_ok", False)
+        )
+        activity["control_section_start_unix"] = section_status.get(
+            "section_start_unix"
+        )
         activity["control_section_stop_unix"] = section_status.get("section_stop_unix")
-        activity["control_section_duration_sec"] = section_status.get("section_duration_sec")
-        activity["control_section_command_time_unix"] = section_status.get("command_time_unix")
-        activity["control_section_query_time_unix"] = section_status.get("query_time_unix")
-        activity["control_section_publish_time_unix"] = section_status.get("publish_time_unix")
+        activity["control_section_duration_sec"] = section_status.get(
+            "section_duration_sec"
+        )
+        activity["control_section_command_time_unix"] = section_status.get(
+            "command_time_unix"
+        )
+        activity["control_section_query_time_unix"] = section_status.get(
+            "query_time_unix"
+        )
+        activity["control_section_publish_time_unix"] = section_status.get(
+            "publish_time_unix"
+        )
         pub_time = section_status.get("publish_time_unix")
         try:
             section_age = max(0.0, time.time() - float(pub_time))
         except Exception:
             section_age = None
         activity["control_section_age_sec"] = section_age
-        activity["control_section_fresh"] = bool(section_age is not None and section_age <= live_status_max_age_sec())
+        activity["control_section_fresh"] = bool(
+            section_age is not None and section_age <= live_status_max_age_sec()
+        )
         if section_status.get("fraction_valid"):
-            activity["control_section_fraction"] = section_status.get("nominal_fraction")
+            activity["control_section_fraction"] = section_status.get(
+                "nominal_fraction"
+            )
         if isinstance(line_index, int) and line_index >= 0:
             geometry["current_line_index0"] = line_index
             if data.get("latest_control_line_index") is None:
@@ -643,8 +770,14 @@ def merge_live_telemetry(snapshot: Optional[Dict[str, Any]], live: Optional[Mapp
             geometry["live_section_geometry"] = {
                 "frame": section_status.get("section_frame"),
                 "unit": section_status.get("section_unit"),
-                "start": [section_status.get("section_start_lon_deg"), section_status.get("section_start_lat_deg")],
-                "stop": [section_status.get("section_stop_lon_deg"), section_status.get("section_stop_lat_deg")],
+                "start": [
+                    section_status.get("section_start_lon_deg"),
+                    section_status.get("section_start_lat_deg"),
+                ],
+                "stop": [
+                    section_status.get("section_stop_lon_deg"),
+                    section_status.get("section_stop_lat_deg"),
+                ],
                 "speed_deg_per_sec": section_status.get("section_speed_deg_per_sec"),
             }
     elif ctrl and not final_state:
@@ -758,17 +891,33 @@ class LiveRosCache:
                     "control_id": str(getattr(msg, "control_id", "")),
                     "section_uid": str(getattr(msg, "section_uid", "")),
                     "section_plan_index": int(getattr(msg, "section_plan_index", -1)),
-                    "section_sequence_index": int(getattr(msg, "section_sequence_index", -1)),
+                    "section_sequence_index": int(
+                        getattr(msg, "section_sequence_index", -1)
+                    ),
                     "section_kind": str(getattr(msg, "section_kind", "")),
                     "section_label": str(getattr(msg, "section_label", "")),
                     "line_index": int(getattr(msg, "line_index", -1)),
-                    "section_start_unix": _finite_float(getattr(msg, "section_start_unix", None)),
-                    "section_stop_unix": _finite_float(getattr(msg, "section_stop_unix", None)),
-                    "section_duration_sec": _finite_float(getattr(msg, "section_duration_sec", None)),
-                    "query_time_unix": _finite_float(getattr(msg, "query_time_unix", None)),
-                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
-                    "command_time_unix": _finite_float(getattr(msg, "command_time_unix", None)),
-                    "nominal_fraction": _finite_float(getattr(msg, "nominal_fraction", None)),
+                    "section_start_unix": _finite_float(
+                        getattr(msg, "section_start_unix", None)
+                    ),
+                    "section_stop_unix": _finite_float(
+                        getattr(msg, "section_stop_unix", None)
+                    ),
+                    "section_duration_sec": _finite_float(
+                        getattr(msg, "section_duration_sec", None)
+                    ),
+                    "query_time_unix": _finite_float(
+                        getattr(msg, "query_time_unix", None)
+                    ),
+                    "publish_time_unix": _finite_float(
+                        getattr(msg, "publish_time_unix", None)
+                    ),
+                    "command_time_unix": _finite_float(
+                        getattr(msg, "command_time_unix", None)
+                    ),
+                    "nominal_fraction": _finite_float(
+                        getattr(msg, "nominal_fraction", None)
+                    ),
                     "fraction_valid": bool(getattr(msg, "fraction_valid", False)),
                     "tight": bool(getattr(msg, "tight", False)),
                     "science_line": bool(getattr(msg, "science_line", False)),
@@ -776,29 +925,51 @@ class LiveRosCache:
                     "geometry_valid": bool(getattr(msg, "geometry_valid", False)),
                     "section_frame": str(getattr(msg, "section_frame", "")),
                     "section_unit": str(getattr(msg, "section_unit", "")),
-                    "section_start_lon_deg": _finite_float(getattr(msg, "section_start_lon_deg", None)),
-                    "section_start_lat_deg": _finite_float(getattr(msg, "section_start_lat_deg", None)),
-                    "section_stop_lon_deg": _finite_float(getattr(msg, "section_stop_lon_deg", None)),
-                    "section_stop_lat_deg": _finite_float(getattr(msg, "section_stop_lat_deg", None)),
-                    "section_speed_deg_per_sec": _finite_float(getattr(msg, "section_speed_deg_per_sec", None)),
+                    "section_start_lon_deg": _finite_float(
+                        getattr(msg, "section_start_lon_deg", None)
+                    ),
+                    "section_start_lat_deg": _finite_float(
+                        getattr(msg, "section_start_lat_deg", None)
+                    ),
+                    "section_stop_lon_deg": _finite_float(
+                        getattr(msg, "section_stop_lon_deg", None)
+                    ),
+                    "section_stop_lat_deg": _finite_float(
+                        getattr(msg, "section_stop_lat_deg", None)
+                    ),
+                    "section_speed_deg_per_sec": _finite_float(
+                        getattr(msg, "section_speed_deg_per_sec", None)
+                    ),
                     "status_basis": str(getattr(msg, "status_basis", "")),
                 }
 
             def pointing_status_cb(msg: Any) -> None:
                 self.pointing_status = {
                     "valid": bool(getattr(msg, "valid", False)),
-                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
-                    "command_time_unix": _finite_float(getattr(msg, "command_time_unix", None)),
-                    "encoder_time_unix": _finite_float(getattr(msg, "encoder_time_unix", None)),
+                    "publish_time_unix": _finite_float(
+                        getattr(msg, "publish_time_unix", None)
+                    ),
+                    "command_time_unix": _finite_float(
+                        getattr(msg, "command_time_unix", None)
+                    ),
+                    "encoder_time_unix": _finite_float(
+                        getattr(msg, "encoder_time_unix", None)
+                    ),
                     "cmd_az_deg": _finite_float(getattr(msg, "cmd_az_deg", None)),
                     "cmd_el_deg": _finite_float(getattr(msg, "cmd_el_deg", None)),
                     "enc_az_deg": _finite_float(getattr(msg, "enc_az_deg", None)),
                     "enc_el_deg": _finite_float(getattr(msg, "enc_el_deg", None)),
                     "delta_az_deg": _finite_float(getattr(msg, "delta_az_deg", None)),
                     "delta_el_deg": _finite_float(getattr(msg, "delta_el_deg", None)),
-                    "delta_az_cos_el_deg": _finite_float(getattr(msg, "delta_az_cos_el_deg", None)),
-                    "tracking_error_deg": _finite_float(getattr(msg, "tracking_error_deg", None)),
-                    "tracking_threshold_deg": _finite_float(getattr(msg, "tracking_threshold_deg", None)),
+                    "delta_az_cos_el_deg": _finite_float(
+                        getattr(msg, "delta_az_cos_el_deg", None)
+                    ),
+                    "tracking_error_deg": _finite_float(
+                        getattr(msg, "tracking_error_deg", None)
+                    ),
+                    "tracking_threshold_deg": _finite_float(
+                        getattr(msg, "tracking_threshold_deg", None)
+                    ),
                     "tracking_ok": bool(getattr(msg, "tracking_ok", False)),
                     "cmd_age_sec": _finite_float(getattr(msg, "cmd_age_sec", None)),
                     "enc_age_sec": _finite_float(getattr(msg, "enc_age_sec", None)),
@@ -814,16 +985,24 @@ class LiveRosCache:
                     "mode": str(getattr(msg, "mode", "")),
                     "state": str(getattr(msg, "state", "")),
                     "reason": str(getattr(msg, "reason", "")),
-                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
-                    "encoder_time_unix": _finite_float(getattr(msg, "encoder_time_unix", None)),
+                    "publish_time_unix": _finite_float(
+                        getattr(msg, "publish_time_unix", None)
+                    ),
+                    "encoder_time_unix": _finite_float(
+                        getattr(msg, "encoder_time_unix", None)
+                    ),
                     "raw_az_deg": _finite_float(getattr(msg, "raw_az_deg", None)),
                     "modulo_az_deg": _finite_float(getattr(msg, "modulo_az_deg", None)),
-                    "continuous_az_deg": _finite_float(getattr(msg, "continuous_az_deg", None)),
+                    "continuous_az_deg": _finite_float(
+                        getattr(msg, "continuous_az_deg", None)
+                    ),
                     "branch": int(getattr(msg, "branch", 0)),
                     "branch_nonzero": bool(getattr(msg, "branch_nonzero", False)),
                     "branch_changed": bool(getattr(msg, "branch_changed", False)),
                     "state_age_sec": _finite_float(getattr(msg, "state_age_sec", None)),
-                    "persist_age_sec": _finite_float(getattr(msg, "persist_age_sec", None)),
+                    "persist_age_sec": _finite_float(
+                        getattr(msg, "persist_age_sec", None)
+                    ),
                 }
 
             def queue_status_cb(msg: Any) -> None:
@@ -831,17 +1010,33 @@ class LiveRosCache:
                     "active": bool(getattr(msg, "active", False)),
                     "control_id": str(getattr(msg, "control_id", "")),
                     "mode": str(getattr(msg, "mode", "")),
-                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
-                    "command_offset_sec": _finite_float(getattr(msg, "command_offset_sec", None)),
-                    "min_buffer_sec": _finite_float(getattr(msg, "min_buffer_sec", None)),
-                    "max_buffer_sec": _finite_float(getattr(msg, "max_buffer_sec", None)),
+                    "publish_time_unix": _finite_float(
+                        getattr(msg, "publish_time_unix", None)
+                    ),
+                    "command_offset_sec": _finite_float(
+                        getattr(msg, "command_offset_sec", None)
+                    ),
+                    "min_buffer_sec": _finite_float(
+                        getattr(msg, "min_buffer_sec", None)
+                    ),
+                    "max_buffer_sec": _finite_float(
+                        getattr(msg, "max_buffer_sec", None)
+                    ),
                     "queue_length": int(getattr(msg, "queue_length", 0)),
                     "head_lead_sec": _finite_float(getattr(msg, "head_lead_sec", None)),
                     "tail_lead_sec": _finite_float(getattr(msg, "tail_lead_sec", None)),
-                    "last_publish_wall_time_unix": _finite_float(getattr(msg, "last_publish_wall_time_unix", None)),
-                    "last_published_cmd_time_unix": _finite_float(getattr(msg, "last_published_cmd_time_unix", None)),
-                    "publish_gap_sec": _finite_float(getattr(msg, "publish_gap_sec", None)),
-                    "generator_exhausted": bool(getattr(msg, "generator_exhausted", False)),
+                    "last_publish_wall_time_unix": _finite_float(
+                        getattr(msg, "last_publish_wall_time_unix", None)
+                    ),
+                    "last_published_cmd_time_unix": _finite_float(
+                        getattr(msg, "last_published_cmd_time_unix", None)
+                    ),
+                    "publish_gap_sec": _finite_float(
+                        getattr(msg, "publish_gap_sec", None)
+                    ),
+                    "generator_exhausted": bool(
+                        getattr(msg, "generator_exhausted", False)
+                    ),
                     "guard_latched": bool(getattr(msg, "guard_latched", False)),
                     "reason": str(getattr(msg, "reason", "")),
                 }
@@ -852,12 +1047,24 @@ class LiveRosCache:
                     "recorder_active": bool(getattr(msg, "recorder_active", False)),
                     "saving_enabled": bool(getattr(msg, "saving_enabled", False)),
                     "acquiring": bool(getattr(msg, "acquiring", False)),
-                    "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
-                    "last_dump_time_unix": _finite_float(getattr(msg, "last_dump_time_unix", None)),
-                    "last_record_time_unix": _finite_float(getattr(msg, "last_record_time_unix", None)),
-                    "last_stream_time_unix": _finite_float(getattr(msg, "last_stream_time_unix", None)),
-                    "last_dump_age_sec": _finite_float(getattr(msg, "last_dump_age_sec", None)),
-                    "latest_time_spectrometer": str(getattr(msg, "latest_time_spectrometer", "")),
+                    "publish_time_unix": _finite_float(
+                        getattr(msg, "publish_time_unix", None)
+                    ),
+                    "last_dump_time_unix": _finite_float(
+                        getattr(msg, "last_dump_time_unix", None)
+                    ),
+                    "last_record_time_unix": _finite_float(
+                        getattr(msg, "last_record_time_unix", None)
+                    ),
+                    "last_stream_time_unix": _finite_float(
+                        getattr(msg, "last_stream_time_unix", None)
+                    ),
+                    "last_dump_age_sec": _finite_float(
+                        getattr(msg, "last_dump_age_sec", None)
+                    ),
+                    "latest_time_spectrometer": str(
+                        getattr(msg, "latest_time_spectrometer", "")
+                    ),
                     "record_every_n": int(getattr(msg, "record_every_n", 0)),
                     "data_queue_size_max": int(getattr(msg, "data_queue_size_max", 0)),
                     "n_streams": int(getattr(msg, "n_streams", 0)),
@@ -880,18 +1087,31 @@ class LiveRosCache:
             def weather_cb(key: str):
                 def _callback(msg: Any) -> None:
                     payload = {
-                        "temperature_k": _finite_float(getattr(msg, "temperature", None)),
-                        "in_temperature_k": _finite_float(getattr(msg, "in_temperature", None)),
+                        "temperature_k": _finite_float(
+                            getattr(msg, "temperature", None)
+                        ),
+                        "in_temperature_k": _finite_float(
+                            getattr(msg, "in_temperature", None)
+                        ),
                         "pressure_hpa": _finite_float(getattr(msg, "pressure", None)),
-                        "humidity_percent": _finite_float(getattr(msg, "humidity", None)),
-                        "in_humidity_percent": _finite_float(getattr(msg, "in_humidity", None)),
-                        "wind_speed_mps": _finite_float(getattr(msg, "wind_speed", None)),
-                        "wind_direction_deg": _finite_float(getattr(msg, "wind_direction", None)),
+                        "humidity_percent": _finite_float(
+                            getattr(msg, "humidity", None)
+                        ),
+                        "in_humidity_percent": _finite_float(
+                            getattr(msg, "in_humidity", None)
+                        ),
+                        "wind_speed_mps": _finite_float(
+                            getattr(msg, "wind_speed", None)
+                        ),
+                        "wind_direction_deg": _finite_float(
+                            getattr(msg, "wind_direction", None)
+                        ),
                         "rain_rate": _finite_float(getattr(msg, "rain_rate", None)),
                         "time_unix": _finite_float(getattr(msg, "time", None)),
                     }
                     with self._lock:
                         self.weather[key] = payload
+
                 return _callback
 
             topic.antenna_control_status.subscription(self._node, control_cb)
@@ -982,7 +1202,10 @@ class LiveRosCache:
 
     def snapshot(self) -> Dict[str, Any]:
         with self._lock:
-            payload: Dict[str, Any] = {"available": self.available, "spin_mode": self._spin_mode}
+            payload: Dict[str, Any] = {
+                "available": self.available,
+                "spin_mode": self._spin_mode,
+            }
             if self.error:
                 payload["error"] = self.error
             if self.control:
@@ -1004,7 +1227,9 @@ class LiveRosCache:
             if self.spectrometer_status:
                 payload["spectrometer_status"] = dict(self.spectrometer_status)
             if self.weather:
-                payload["weather"] = {key: dict(value) for key, value in self.weather.items()}
+                payload["weather"] = {
+                    key: dict(value) for key, value in self.weather.items()
+                }
             return payload
 
     def close(self) -> None:
@@ -1033,7 +1258,9 @@ class LiveRosCache:
             pass
 
 
-def latest_plan_path(root: Path, snapshot: Optional[Dict[str, Any]] = None) -> Optional[Path]:
+def latest_plan_path(
+    root: Path, snapshot: Optional[Dict[str, Any]] = None
+) -> Optional[Path]:
     record = None
     if snapshot:
         record = (snapshot.get("observation") or {}).get("record_name")
@@ -1043,7 +1270,11 @@ def latest_plan_path(root: Path, snapshot: Optional[Dict[str, Any]] = None) -> O
         path = root / safe / "observation_plan.json"
         if path.exists():
             return path
-    candidates = sorted(root.glob("*/observation_plan.json"), key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
+    candidates = sorted(
+        root.glob("*/observation_plan.json"),
+        key=lambda p: p.stat().st_mtime if p.exists() else 0,
+        reverse=True,
+    )
     return candidates[0] if candidates else None
 
 
@@ -1111,13 +1342,23 @@ def _geom_of(item: Mapping[str, Any]) -> Mapping[str, Any]:
 
 def _display_geom_context(geom: Mapping[str, Any]) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
-    for key in ("target_name", "target", "reference", "offset", "mode", "frame", "unit"):
+    for key in (
+        "target_name",
+        "target",
+        "reference",
+        "offset",
+        "mode",
+        "frame",
+        "unit",
+    ):
         if key in geom:
             out[key] = geom[key]
     return out
 
 
-def _flatten_plan_items_for_display(plan: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+def _flatten_plan_items_for_display(
+    plan: Optional[Mapping[str, Any]],
+) -> List[Dict[str, Any]]:
     """Flatten scan-block children for observer-facing progress summaries.
 
     This mirrors the browser Plan View logic.  Parent plan items are kept so
@@ -1135,7 +1376,9 @@ def _flatten_plan_items_for_display(plan: Optional[Mapping[str, Any]]) -> List[D
         out.append(item)
         geom = _geom_of(item)
         lines = geom.get("lines")
-        if geom.get("kind") in {"scan_block", "scan_block_line"} and isinstance(lines, list):
+        if geom.get("kind") in {"scan_block", "scan_block_line"} and isinstance(
+            lines, list
+        ):
             for line in lines:
                 if not isinstance(line, Mapping):
                     continue
@@ -1149,7 +1392,9 @@ def _flatten_plan_items_for_display(plan: Optional[Mapping[str, Any]]) -> List[D
                     merged_geom["unit"] = geom.get("unit")
                 child["geometry"] = merged_geom
                 child["_parent_item_uid"] = item.get("item_uid")
-                child["item_uid"] = f"{item.get('item_uid') or 'scan_block'}:line:{line.get('line_index0', len(out))}"
+                child["item_uid"] = (
+                    f"{item.get('item_uid') or 'scan_block'}:line:{line.get('line_index0', len(out))}"
+                )
                 child.setdefault("index0", item.get("index0"))
                 out.append(child)
     return out
@@ -1180,13 +1425,25 @@ def _live_scan_line_state(snapshot: Mapping[str, Any]) -> Dict[str, Any]:
     AntennaSectionStatus says that the current-time section is an actual science
     line.
     """
-    activity = snapshot.get("activity") if isinstance(snapshot.get("activity"), Mapping) else {}
-    geometry = snapshot.get("geometry") if isinstance(snapshot.get("geometry"), Mapping) else {}
+    activity = (
+        snapshot.get("activity")
+        if isinstance(snapshot.get("activity"), Mapping)
+        else {}
+    )
+    geometry = (
+        snapshot.get("geometry")
+        if isinstance(snapshot.get("geometry"), Mapping)
+        else {}
+    )
 
     basis = str(activity.get("control_status_basis") or "").lower()
     active = bool(activity.get("control_section_active", False))
     fresh = activity.get("control_section_fresh", True) is not False
-    authoritative = active and fresh and basis not in {"", "idle", "future-buffered", "no-current-section"}
+    authoritative = (
+        active
+        and fresh
+        and basis not in {"", "idle", "future-buffered", "no-current-section"}
+    )
 
     section_line = _int_or_none(activity.get("control_section_line_index"))
     if section_line is None and authoritative:
@@ -1196,7 +1453,9 @@ def _live_scan_line_state(snapshot: Mapping[str, Any]) -> Dict[str, Any]:
     if progress_line is None and not authoritative:
         progress_line = _int_or_none(geometry.get("current_line_index0"))
 
-    kind = str(activity.get("control_section_kind") or activity.get("motion_stage") or "").lower()
+    kind = str(
+        activity.get("control_section_kind") or activity.get("motion_stage") or ""
+    ).lower()
     science_line = bool(activity.get("control_section_science_line", False))
     line_active = science_line or kind in {"line", "scanning"}
 
@@ -1217,8 +1476,16 @@ def _display_status_for_item(
     events: Iterable[Mapping[str, Any]],
 ) -> str:
     plan = snapshot.get("plan") if isinstance(snapshot.get("plan"), Mapping) else {}
-    lifecycle = snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), Mapping) else {}
-    geometry = snapshot.get("geometry") if isinstance(snapshot.get("geometry"), Mapping) else {}
+    lifecycle = (
+        snapshot.get("lifecycle")
+        if isinstance(snapshot.get("lifecycle"), Mapping)
+        else {}
+    )
+    geometry = (
+        snapshot.get("geometry")
+        if isinstance(snapshot.get("geometry"), Mapping)
+        else {}
+    )
     cur = plan.get("item_uid")
     uid = item.get("item_uid")
     parent = item.get("_parent_item_uid")
@@ -1227,14 +1494,21 @@ def _display_status_for_item(
 
     event_list = list(events or [])
     for event in event_list:
-        if event.get("event") == "plan_item_finished" and event.get("item_uid") in {uid, parent}:
+        if event.get("event") == "plan_item_finished" and event.get("item_uid") in {
+            uid,
+            parent,
+        }:
             return "done"
     item_range = _index_range_from_mapping(item)
     for event in event_list:
         if event.get("event") != "plan_item_finished":
             continue
         event_range = _index_range_from_mapping(event)
-        if item_range is not None and event_range is not None and _ranges_overlap(item_range, event_range):
+        if (
+            item_range is not None
+            and event_range is not None
+            and _ranges_overlap(item_range, event_range)
+        ):
             return "done"
 
     try:
@@ -1269,8 +1543,12 @@ def _display_status_for_item(
             return "current"
         return "pending"
 
-    overlaps_current = bool(current_range and item_range and _ranges_overlap(current_range, item_range))
-    if not final_state and ((cur and (uid == cur or parent == cur)) or overlaps_current):
+    overlaps_current = bool(
+        current_range and item_range and _ranges_overlap(current_range, item_range)
+    )
+    if not final_state and (
+        (cur and (uid == cur or parent == cur)) or overlaps_current
+    ):
         return "current"
     return "pending"
 
@@ -1288,7 +1566,9 @@ def summarize_display_plan(
     the primary progress unit for OTF/Grid/PSW/Skydip.
     """
     snap = snapshot if isinstance(snapshot, Mapping) else {}
-    obs = snap.get("observation") if isinstance(snap.get("observation"), Mapping) else {}
+    obs = (
+        snap.get("observation") if isinstance(snap.get("observation"), Mapping) else {}
+    )
     current_plan = snap.get("plan") if isinstance(snap.get("plan"), Mapping) else {}
     geom = snap.get("geometry") if isinstance(snap.get("geometry"), Mapping) else {}
     obs_type = str(obs.get("type") or "").lower()
@@ -1297,22 +1577,51 @@ def summarize_display_plan(
     for item in _flatten_plan_items_for_display(full_plan):
         g = _geom_of(item)
         kind = str(g.get("kind") or "")
-        has_line = kind in {"scan_line", "scan_block_line"} and g.get("start") is not None and g.get("stop") is not None
-        has_point = kind in {"point", "grid_point"} and (g.get("target") is not None or g.get("reference") is not None or g.get("offset") is not None)
-        has_skydip = kind == "skydip_elevation" or ("sky" in obs_type and (g.get("target") is not None or g.get("el_deg") is not None or g.get("elevation_deg") is not None))
+        has_line = (
+            kind in {"scan_line", "scan_block_line"}
+            and g.get("start") is not None
+            and g.get("stop") is not None
+        )
+        has_point = kind in {"point", "grid_point"} and (
+            g.get("target") is not None
+            or g.get("reference") is not None
+            or g.get("offset") is not None
+        )
+        has_skydip = kind == "skydip_elevation" or (
+            "sky" in obs_type
+            and (
+                g.get("target") is not None
+                or g.get("el_deg") is not None
+                or g.get("elevation_deg") is not None
+            )
+        )
         if not (has_line or has_point or has_skydip):
             continue
         mode = _display_item_mode(item) or ("ON" if has_line else "POINT")
-        rows.append({"item": item, "kind": kind, "has_line": has_line, "has_point": has_point, "has_skydip": has_skydip, "mode": mode, "status": _display_status_for_item(item, snap, events)})
+        rows.append(
+            {
+                "item": item,
+                "kind": kind,
+                "has_line": has_line,
+                "has_point": has_point,
+                "has_skydip": has_skydip,
+                "mode": mode,
+                "status": _display_status_for_item(item, snap, events),
+            }
+        )
 
     line_rows = [row for row in rows if row["has_line"] and (row["mode"] in {"", "ON"})]
     if not line_rows:
         line_rows = [row for row in rows if row["has_line"]]
     point_rows = [row for row in rows if row["has_point"]]
-    on_point_rows = [row for row in point_rows if row["mode"] == "ON" or row["kind"] == "grid_point"]
+    on_point_rows = [
+        row for row in point_rows if row["mode"] == "ON" or row["kind"] == "grid_point"
+    ]
     skydip_rows = [row for row in rows if row["has_skydip"]]
 
-    def count_status(items: List[Dict[str, Any]]) -> tuple[int, int, int, int, Optional[int]]:
+    def count_status(
+        items: List[Dict[str, Any]],
+    ) -> tuple[int, int, int, int, Optional[int]]:
         done = sum(1 for row in items if row["status"] == "done")
         cur = sum(1 for row in items if row["status"] == "current")
         rem = sum(1 for row in items if row["status"] == "pending")
@@ -1418,7 +1727,11 @@ def _index_range_from_mapping(payload: Mapping[str, Any]) -> Optional[tuple[int,
     except Exception:
         return None
     try:
-        end = int(payload.get("index0_end")) if payload.get("index0_end") is not None else start
+        end = (
+            int(payload.get("index0_end"))
+            if payload.get("index0_end") is not None
+            else start
+        )
     except Exception:
         end = start
     if end < start:
@@ -1430,7 +1743,9 @@ def _ranges_overlap(a: tuple[int, int], b: tuple[int, int]) -> bool:
     return a[0] <= b[1] and b[0] <= a[1]
 
 
-def _snapshot_plan_finished_by_events(plan: Mapping[str, Any], events: Iterable[Mapping[str, Any]]) -> bool:
+def _snapshot_plan_finished_by_events(
+    plan: Mapping[str, Any], events: Iterable[Mapping[str, Any]]
+) -> bool:
     """Return True when the current snapshot plan item is already finished.
 
     observation_progress.json deliberately keeps the last item until the next
@@ -1444,10 +1759,18 @@ def _snapshot_plan_finished_by_events(plan: Mapping[str, Any], events: Iterable[
         if event.get("event") != "plan_item_finished":
             continue
         ev_uid = event.get("item_uid")
-        if uid_text is not None and ev_uid not in (None, "") and str(ev_uid) == uid_text:
+        if (
+            uid_text is not None
+            and ev_uid not in (None, "")
+            and str(ev_uid) == uid_text
+        ):
             return True
         ev_range = _index_range_from_mapping(event)
-        if plan_range is not None and ev_range is not None and _ranges_overlap(plan_range, ev_range):
+        if (
+            plan_range is not None
+            and ev_range is not None
+            and _ranges_overlap(plan_range, ev_range)
+        ):
             return True
     return False
 
@@ -1481,15 +1804,13 @@ def compact_record_name(value: Any, *, max_len: int = 24) -> str:
     text = str(value or "-")
     for prefix in ("necst_otf_", "necst_rsky_", "necst_skydip_", "necst_"):
         if text.startswith(prefix) and len(text) > max_len:
-            text = text[len(prefix):]
+            text = text[len(prefix) :]
             break
     if len(text) <= max_len:
         return text
     keep = max(4, (max_len - 1) // 2)
     tail = max(4, max_len - keep - 1)
     return f"{text[:keep]}…{text[-tail:]}"
-
-
 
 
 def _coord_pair(value: Any) -> Optional[tuple[float, float]]:
@@ -1502,12 +1823,18 @@ def _coord_pair(value: Any) -> Optional[tuple[float, float]]:
 
 
 def _coord_frame(value: Any, default: str = "") -> str:
-    if isinstance(value, (list, tuple)) and len(value) >= 3 and value[2] not in (None, ""):
+    if (
+        isinstance(value, (list, tuple))
+        and len(value) >= 3
+        and value[2] not in (None, "")
+    ):
         return str(value[2])
     return default
 
 
-def _geom_offset_actual_arcsec(geom: Mapping[str, Any]) -> Optional[tuple[float, float, str]]:
+def _geom_offset_actual_arcsec(
+    geom: Mapping[str, Any],
+) -> Optional[tuple[float, float, str]]:
     value = geom.get("offset")
     pair = _coord_pair(value)
     if pair is None:
@@ -1515,7 +1842,9 @@ def _geom_offset_actual_arcsec(geom: Mapping[str, Any]) -> Optional[tuple[float,
     unit = str(geom.get("offset_unit") or geom.get("unit") or "deg").lower()
     scale = 1.0 if "arcsec" in unit else 3600.0
     x, y = pair[0] * scale, pair[1] * scale
-    frame = str(geom.get("offset_frame") or _coord_frame(value, str(geom.get("frame") or "")))
+    frame = str(
+        geom.get("offset_frame") or _coord_frame(value, str(geom.get("frame") or ""))
+    )
     if bool(geom.get("cos_correction")):
         lat = None
         for key in ("reference", "target"):
@@ -1528,6 +1857,7 @@ def _geom_offset_actual_arcsec(geom: Mapping[str, Any]) -> Optional[tuple[float,
             x *= math.cos(math.radians(lat))
     return x, y, frame
 
+
 def offset_arcsec_text(value: Any) -> str:
     pair = _coord_pair(value)
     if pair is None:
@@ -1535,6 +1865,7 @@ def offset_arcsec_text(value: Any) -> str:
     frame = _coord_frame(value)
     suffix = f" {frame}" if frame else ""
     return f"({pair[0]*3600:.1f}, {pair[1]*3600:.1f}) arcsec{suffix}"
+
 
 def geometry_offset_arcsec_text(geom: Mapping[str, Any]) -> str:
     actual = _geom_offset_actual_arcsec(geom)
@@ -1558,7 +1889,7 @@ def az_unwrap_compact_text(antenna: Mapping[str, Any]) -> str:
     except Exception:
         return f"unwrap {compact_value(branch)}"
     if b == 0:
-        return f"unwrap 0" if state in {"-", "ok"} else f"unwrap 0 {state}"
+        return "unwrap 0" if state in {"-", "ok"} else f"unwrap 0 {state}"
     raw_text = "" if raw is None else f" raw={raw:.3f}deg"
     state_text = "" if state in {"-", "ok"} else f" {state}"
     return f"unwrap {b:+d}{raw_text}{state_text}"
@@ -1593,7 +1924,18 @@ def observer_target_name(obs: Mapping[str, Any], geom: Mapping[str, Any]) -> str
     record = usable(obs.get("record_name"))
     if record:
         tokens = re.split(r"[_\-]+", record)
-        skip = {"necst", "otf", "grid", "psw", "sky", "skydip", "rsky", "hot", "off", "on"}
+        skip = {
+            "necst",
+            "otf",
+            "grid",
+            "psw",
+            "sky",
+            "skydip",
+            "rsky",
+            "hot",
+            "off",
+            "on",
+        }
         filtered = []
         for tok in tokens:
             low = tok.lower()
@@ -1616,7 +1958,13 @@ def observer_target_name(obs: Mapping[str, Any], geom: Mapping[str, Any]) -> str
     return "-"
 
 
-def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]], *, compact: bool = False, full_plan: Optional[Mapping[str, Any]] = None) -> str:
+def render(
+    snapshot: Optional[Dict[str, Any]],
+    events: Iterable[Dict[str, Any]],
+    *,
+    compact: bool = False,
+    full_plan: Optional[Mapping[str, Any]] = None,
+) -> str:
     if snapshot is None:
         return "No active NECST observation progress found."
     if "_error" in snapshot:
@@ -1662,10 +2010,16 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         index_label = f"-/{total}"
 
     if compact:
-        state_prefix = state if status_label.lower() == str(lifecycle.get("state") or "").lower() else f"{state} status={status_label}"
-        eta_method = compact_eta_method(timing.get('remaining_method'), max_len=22)
+        state_prefix = (
+            state
+            if status_label.lower() == str(lifecycle.get("state") or "").lower()
+            else f"{state} status={status_label}"
+        )
+        eta_method = compact_eta_method(timing.get("remaining_method"), max_len=22)
         method_part = "" if eta_method == "-" else f" eta={eta_method}"
-        progress_label = str(display_summary.get("progress_label") or f"step {index_label}")
+        progress_label = str(
+            display_summary.get("progress_label") or f"step {index_label}"
+        )
         if progress_label.startswith("OTF line "):
             progress_part = "line=" + progress_label.split("OTF line ", 1)[1]
         elif progress_label.startswith("Grid ON "):
@@ -1679,7 +2033,7 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         counts_part = (
             f"done={display_summary.get('completed_units', '-')} "
             f"remain={display_summary.get('remaining_units', '-')} "
-            f"basis={display_summary.get('basis', '-') }"
+            f"basis={display_summary.get('basis', '-')}"
         )
         target = observer_target_name(obs, geom)
         target_part = "" if target == "-" else f" target={target}"
@@ -1699,34 +2053,44 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         return f"│ {str(content)[:58]:<58}│"
 
     lines.append("┌──────────────── NECST Observation Progress ────────────────┐")
-    status_suffix = "" if status_label.lower() == str(lifecycle.get("state") or "").lower() else f" status={status_label}"
+    status_suffix = (
+        ""
+        if status_label.lower() == str(lifecycle.get("state") or "").lower()
+        else f" status={status_label}"
+    )
     lines.append(frame_line(f"state={(state + status_suffix)[:21]}  type={obs_type}"))
     lines.append(frame_line(f"record={record}"))
     obsfile = compact_value(obs.get("obs_file"))
     lines.append(frame_line(f"obsfile={obsfile}"))
-    lines.append(frame_line(
-        f"elapsed={fmt_seconds_short(timing.get('elapsed_sec'))} "
-        f"remain={fmt_seconds_short(timing.get('estimated_remaining_sec'), approx=True)} "
-        f"conf={compact_value(timing.get('remaining_confidence'))}"
-    ))
-    method = compact_eta_method(timing.get('remaining_method'), max_len=34)
-    confidence = compact_value(timing.get('remaining_confidence'))
-    if method != '-' or confidence != '-':
+    lines.append(
+        frame_line(
+            f"elapsed={fmt_seconds_short(timing.get('elapsed_sec'))} "
+            f"remain={fmt_seconds_short(timing.get('estimated_remaining_sec'), approx=True)} "
+            f"conf={compact_value(timing.get('remaining_confidence'))}"
+        )
+    )
+    method = compact_eta_method(timing.get("remaining_method"), max_len=34)
+    confidence = compact_value(timing.get("remaining_confidence"))
+    if method != "-" or confidence != "-":
         lines.append(frame_line(f"eta_source={method} confidence={confidence}"))
     lines.append("├──────────────────── PLAN ──────────────────────────────────┤")
     label = compact_value(plan.get("label"))
     role = compact_value(plan.get("role"))
     obs_id = compact_value(plan.get("obs_id"))
-    lines.append(frame_line(
-        f"{display_summary.get('progress_label', 'step ' + index_label)}  "
-        f"done={display_summary.get('completed_units', '-')}  "
-        f"remaining={display_summary.get('remaining_units', '-')}"
-    ))
-    lines.append(frame_line(
-        f"basis={display_summary.get('basis', 'schedule item')}  "
-        f"current={display_summary.get('current_unit_label', phase)}  "
-        f"schedule step={display_summary['schedule_step']}"
-    ))
+    lines.append(
+        frame_line(
+            f"{display_summary.get('progress_label', 'step ' + index_label)}  "
+            f"done={display_summary.get('completed_units', '-')}  "
+            f"remaining={display_summary.get('remaining_units', '-')}"
+        )
+    )
+    lines.append(
+        frame_line(
+            f"basis={display_summary.get('basis', 'schedule item')}  "
+            f"current={display_summary.get('current_unit_label', phase)}  "
+            f"schedule step={display_summary['schedule_step']}"
+        )
+    )
     lines.append(frame_line(f"phase={phase}  id={obs_id}  role(plan)={role}"))
     if label != "-":
         lines.append(frame_line(f"label={label}"))
@@ -1739,7 +2103,9 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         try:
             line_info = f" line={int(current_line) + 1}/{int(line_total)}"
         except Exception:
-            line_info = f" line={compact_value(current_line)}/{compact_value(line_total)}"
+            line_info = (
+                f" line={compact_value(current_line)}/{compact_value(line_total)}"
+            )
     elif current_line is not None:
         line_info = f" line={compact_value(current_line)}"
     elif line_total is not None:
@@ -1749,7 +2115,11 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         frac = _finite_float(activity.get("control_section_fraction"))
         source = compact_value(activity.get("control_status_basis"))
         if frac is not None:
-            lines.append(frame_line(f"section: command_fraction={100.0*frac:.1f}% basis={source}"))
+            lines.append(
+                frame_line(
+                    f"section: command_fraction={100.0*frac:.1f}% basis={source}"
+                )
+            )
     loc = activity.get("location_context")
     if loc:
         lines.append(frame_line(f"location_context={compact_value(loc)}"))
@@ -1757,13 +2127,24 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
     gkind = compact_value(geom.get("kind"))
     frame = compact_value(geom.get("frame"))
     if geom.get("start") is not None or geom.get("stop") is not None:
-        lines.append(frame_line(f"plan : kind={gkind} frame={frame} start={compact_value(geom.get('start'))}"))
+        lines.append(
+            frame_line(
+                f"plan : kind={gkind} frame={frame} start={compact_value(geom.get('start'))}"
+            )
+        )
         lines.append(frame_line(f"       stop={compact_value(geom.get('stop'))}"))
     elif geom.get("target") is not None:
-        lines.append(frame_line(f"plan : kind={gkind} frame={frame} target={compact_value(geom.get('target'))}"))
+        lines.append(
+            frame_line(
+                f"plan : kind={gkind} frame={frame} target={compact_value(geom.get('target'))}"
+            )
+        )
     elif geom:
         line_text = ""
-        if geom.get("current_line_index0") is not None or geom.get("line_total") is not None:
+        if (
+            geom.get("current_line_index0") is not None
+            or geom.get("line_total") is not None
+        ):
             try:
                 line_text = f" line={int(geom.get('current_line_index0')) + 1}/{int(geom.get('line_total'))}"
             except Exception:
@@ -1777,16 +2158,26 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
         label = "map offset(actual)" if geom.get("cos_correction") else "map offset"
         lines.append(frame_line(f"{label}={geometry_offset_arcsec_text(geom)}"))
     if geom.get("cos_correction") is not None:
-        lines.append(frame_line(f"cos_correction={compact_value(geom.get('cos_correction'))}"))
+        lines.append(
+            frame_line(f"cos_correction={compact_value(geom.get('cos_correction'))}")
+        )
     if antenna:
         cmd_lon = antenna.get("command_lon_deg")
         cmd_lat = antenna.get("command_lat_deg")
         enc_lon = antenna.get("encoder_lon_deg")
         enc_lat = antenna.get("encoder_lat_deg")
         if cmd_lon is not None or cmd_lat is not None:
-            lines.append(frame_line(f"cmd  : {azel_text(cmd_lon, cmd_lat, antenna.get('command_frame'))}"))
+            lines.append(
+                frame_line(
+                    f"cmd  : {azel_text(cmd_lon, cmd_lat, antenna.get('command_frame'))}"
+                )
+            )
         if enc_lon is not None or enc_lat is not None:
-            lines.append(frame_line(f"enc  : {azel_text(enc_lon, enc_lat, antenna.get('encoder_frame'))}"))
+            lines.append(
+                frame_line(
+                    f"enc  : {azel_text(enc_lon, enc_lat, antenna.get('encoder_frame'))}"
+                )
+            )
         unwrap_text = az_unwrap_compact_text(antenna)
         if unwrap_text:
             lines.append(frame_line(f"az   : {unwrap_text}"))
@@ -1803,49 +2194,71 @@ def render(snapshot: Optional[Dict[str, Any]], events: Iterable[Dict[str, Any]],
             cmd_age = _finite_float(antenna.get("command_age_sec"))
             enc_age = _finite_float(antenna.get("encoder_age_sec"))
             if cmd_age is not None or enc_age is not None:
-                lines.append(frame_line(
-                    f"age  : cmd={fmt_seconds_short(cmd_age)} enc={fmt_seconds_short(enc_age)} "
-                    f"stale={bool(antenna.get('command_stale'))}/{bool(antenna.get('encoder_stale'))}"
-                ))
+                lines.append(
+                    frame_line(
+                        f"age  : cmd={fmt_seconds_short(cmd_age)} enc={fmt_seconds_short(enc_age)} "
+                        f"stale={bool(antenna.get('command_stale'))}/{bool(antenna.get('encoder_stale'))}"
+                    )
+                )
         else:
             lines.append(frame_line("trk  : status unavailable"))
         if not (cmd_lon is not None or enc_lon is not None):
             lines.append(frame_line(f"ant  : {compact_value(antenna)}"))
     lines.append("├──────────────────── DATA ──────────────────────────────────┤")
-    lines.append(frame_line(
-        f"expected: {compact_value(data.get('expected_metadata_position'))} "
-        f"id={compact_value(data.get('expected_metadata_id'))} "
-        f"line={compact_value(data.get('expected_metadata_line_index'))}"
-    ))
-    queue = snapshot.get("antenna_command_queue") if isinstance(snapshot.get("antenna_command_queue"), dict) else {}
+    lines.append(
+        frame_line(
+            f"expected: {compact_value(data.get('expected_metadata_position'))} "
+            f"id={compact_value(data.get('expected_metadata_id'))} "
+            f"line={compact_value(data.get('expected_metadata_line_index'))}"
+        )
+    )
+    queue = (
+        snapshot.get("antenna_command_queue")
+        if isinstance(snapshot.get("antenna_command_queue"), dict)
+        else {}
+    )
     if queue:
         q_state = "active" if queue.get("active") else "inactive"
         q_len = compact_value(queue.get("queue_length"))
         head = fmt_seconds_short(queue.get("head_lead_sec"))
         tail = fmt_seconds_short(queue.get("tail_lead_sec"))
         gap = fmt_seconds_short(queue.get("publish_gap_sec"))
-        lines.append(frame_line(f"queue: {q_state} len={q_len} head/tail={head}/{tail} gap={gap}"))
+        lines.append(
+            frame_line(
+                f"queue: {q_state} len={q_len} head/tail={head}/{tail} gap={gap}"
+            )
+        )
         if queue.get("guard_latched") or queue.get("reason"):
-            lines.append(frame_line(
-                f"queue reason={compact_value(queue.get('reason'))} "
-                f"guard={compact_value(queue.get('guard_latched'))}"
-            ))
-    spec = snapshot.get("spectrometer") if isinstance(snapshot.get("spectrometer"), dict) else {}
+            lines.append(
+                frame_line(
+                    f"queue reason={compact_value(queue.get('reason'))} "
+                    f"guard={compact_value(queue.get('guard_latched'))}"
+                )
+            )
+    spec = (
+        snapshot.get("spectrometer")
+        if isinstance(snapshot.get("spectrometer"), dict)
+        else {}
+    )
     if spec:
         acq = "acq" if spec.get("acquiring") else "no-acq"
         rec = "rec" if spec.get("recorder_active") else "no-rec"
         save = "save" if spec.get("saving_enabled") else "no-save"
         age = compact_value(spec.get("last_dump_age_sec"))
-        lines.append(frame_line(
-            f"spectrometer: {acq}/{rec}/{save} dump_age={age} "
-            f"streams={compact_value(spec.get('n_streams'))} boards={compact_value(spec.get('n_boards'))}"
-        ))
+        lines.append(
+            frame_line(
+                f"spectrometer: {acq}/{rec}/{save} dump_age={age} "
+                f"streams={compact_value(spec.get('n_streams'))} boards={compact_value(spec.get('n_boards'))}"
+            )
+        )
     if data.get("latest_spectrum_position") is not None:
-        lines.append(frame_line(
-            f"latest  : {compact_value(data.get('latest_spectrum_position'))} "
-            f"id={compact_value(data.get('latest_spectrum_id'))} "
-            f"age={compact_value(data.get('latest_spectrum_age_sec'))}"
-        ))
+        lines.append(
+            frame_line(
+                f"latest  : {compact_value(data.get('latest_spectrum_position'))} "
+                f"id={compact_value(data.get('latest_spectrum_id'))} "
+                f"age={compact_value(data.get('latest_spectrum_age_sec'))}"
+            )
+        )
     lines.append("├──────────────────── RECENT EVENTS ─────────────────────────┤")
     event_lines = event_list[-8:] or snapshot.get("recent_events", [])[-8:]
     if not event_lines:
@@ -1874,9 +2287,17 @@ def cmd_once(args: argparse.Namespace) -> int:
     live = LiveRosCache(enabled=not args.no_ros)
     try:
         live.spin_once(0.05)
-        snapshot = apply_display_derivations(apply_dynamic_remaining(merge_live_telemetry(read_json(current_snapshot_path(root)), live.snapshot())))
+        snapshot = apply_display_derivations(
+            apply_dynamic_remaining(
+                merge_live_telemetry(
+                    read_json(current_snapshot_path(root)), live.snapshot()
+                )
+            )
+        )
         if args.json:
-            print(json.dumps(snapshot or {}, ensure_ascii=False, indent=2, sort_keys=True))
+            print(
+                json.dumps(snapshot or {}, ensure_ascii=False, indent=2, sort_keys=True)
+            )
             return 0
         events_path = latest_events_path(root, snapshot)
         events = read_recent_events(events_path, args.events)
@@ -1894,17 +2315,27 @@ def cmd_watch(args: argparse.Namespace) -> int:
     try:
         while True:
             live.spin_once(0.0)
-            snapshot = apply_display_derivations(apply_dynamic_remaining(merge_live_telemetry(read_json(current_snapshot_path(root)), live.snapshot())))
+            snapshot = apply_display_derivations(
+                apply_dynamic_remaining(
+                    merge_live_telemetry(
+                        read_json(current_snapshot_path(root)), live.snapshot()
+                    )
+                )
+            )
             events_path = latest_events_path(root, snapshot)
             events = read_recent_events(events_path, args.events)
             plan_path = latest_plan_path(root, snapshot)
             full_plan = read_json(plan_path) if plan_path else None
             if args.no_clear:
-                print(render(snapshot, events, compact=args.compact, full_plan=full_plan))
+                print(
+                    render(snapshot, events, compact=args.compact, full_plan=full_plan)
+                )
                 print()
             else:
                 sys.stdout.write("\x1b[H\x1b[2J")
-                sys.stdout.write(render(snapshot, events, compact=args.compact, full_plan=full_plan))
+                sys.stdout.write(
+                    render(snapshot, events, compact=args.compact, full_plan=full_plan)
+                )
                 sys.stdout.write("\n")
                 sys.stdout.flush()
             time.sleep(args.interval)
@@ -1948,10 +2379,14 @@ def cmd_follow(args: argparse.Namespace) -> int:
                                 t = time.strftime("%H:%M:%S", time.localtime(float(ts)))
                             except Exception:
                                 t = "--:--:--"
-                            print(f"{t} {ev.get('event', 'event')} " + " ".join(
-                                f"{k}={v}" for k, v in ev.items()
-                                if k not in {"seq", "event", "time_unix"}
-                            ))
+                            print(
+                                f"{t} {ev.get('event', 'event')} "
+                                + " ".join(
+                                    f"{k}={v}"
+                                    for k, v in ev.items()
+                                    if k not in {"seq", "event", "time_unix"}
+                                )
+                            )
             except FileNotFoundError:
                 pass
             sys.stdout.flush()
@@ -1960,10 +2395,12 @@ def cmd_follow(args: argparse.Namespace) -> int:
         return 0
 
 
-
-
-def _json_response(handler: BaseHTTPRequestHandler, payload: Any, status: int = 200) -> None:
-    body = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
+def _json_response(
+    handler: BaseHTTPRequestHandler, payload: Any, status: int = 200
+) -> None:
+    body = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True).encode(
+        "utf-8"
+    )
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Cache-Control", "no-store")
@@ -1972,7 +2409,13 @@ def _json_response(handler: BaseHTTPRequestHandler, payload: Any, status: int = 
     handler.wfile.write(body)
 
 
-def _text_response(handler: BaseHTTPRequestHandler, body: str, *, content_type: str = "text/html; charset=utf-8", status: int = 200) -> None:
+def _text_response(
+    handler: BaseHTTPRequestHandler,
+    body: str,
+    *,
+    content_type: str = "text/html; charset=utf-8",
+    status: int = 200,
+) -> None:
     data = body.encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", content_type)
@@ -1982,7 +2425,14 @@ def _text_response(handler: BaseHTTPRequestHandler, body: str, *, content_type: 
     handler.wfile.write(data)
 
 
-def _int_query(query: Dict[str, List[str]], name: str, default: int, *, minimum: int = 0, maximum: int = 1000) -> int:
+def _int_query(
+    query: Dict[str, List[str]],
+    name: str,
+    default: int,
+    *,
+    minimum: int = 0,
+    maximum: int = 1000,
+) -> int:
     try:
         value = int(query.get(name, [default])[0])
     except Exception:
@@ -1990,23 +2440,35 @@ def _int_query(query: Dict[str, List[str]], name: str, default: int, *, minimum:
     return max(minimum, min(maximum, value))
 
 
-def build_state(root: Path, *, events_limit: int = 12, live: Optional[LiveRosCache] = None) -> Dict[str, Any]:
+def build_state(
+    root: Path, *, events_limit: int = 12, live: Optional[LiveRosCache] = None
+) -> Dict[str, Any]:
     snapshot_path = current_snapshot_path(root)
     raw_snapshot = read_json(snapshot_path)
     if live is not None:
         live.spin_once(0.0)
     server_time_unix = time.time()
     snapshot = apply_display_derivations(
-        apply_dynamic_remaining(merge_live_telemetry(raw_snapshot, live.snapshot() if live is not None else None)),
+        apply_dynamic_remaining(
+            merge_live_telemetry(
+                raw_snapshot, live.snapshot() if live is not None else None
+            )
+        ),
         server_time_unix=server_time_unix,
     )
-    events_path = latest_events_path(root, raw_snapshot if isinstance(raw_snapshot, dict) else None)
-    plan_path = latest_plan_path(root, raw_snapshot if isinstance(raw_snapshot, dict) else None)
+    events_path = latest_events_path(
+        root, raw_snapshot if isinstance(raw_snapshot, dict) else None
+    )
+    plan_path = latest_plan_path(
+        root, raw_snapshot if isinstance(raw_snapshot, dict) else None
+    )
     plan = read_json(plan_path) if plan_path else None
     all_events = read_all_events(events_path)
     events = all_events[-events_limit:] if events_limit > 0 else []
     return {
-        "ok": isinstance(snapshot, dict) and bool(snapshot) and not snapshot.get("_error"),
+        "ok": isinstance(snapshot, dict)
+        and bool(snapshot)
+        and not snapshot.get("_error"),
         "root": str(root),
         "paths": {
             "snapshot": str(snapshot_path) if snapshot_path else None,
@@ -2020,7 +2482,12 @@ def build_state(root: Path, *, events_limit: int = 12, live: Optional[LiveRosCac
         # ``events`` so the dashboard stays readable.
         "status_events": all_events,
         "plan": plan or {},
-        "rendered": render(snapshot if isinstance(snapshot, dict) else None, all_events, compact=True, full_plan=plan if isinstance(plan, dict) else None),
+        "rendered": render(
+            snapshot if isinstance(snapshot, dict) else None,
+            all_events,
+            compact=True,
+            full_plan=plan if isinstance(plan, dict) else None,
+        ),
         "server_time_unix": server_time_unix,
     }
 
@@ -4026,24 +4493,38 @@ def cmd_serve(args: argparse.Namespace) -> int:
                 return
             if parsed.path == "/api/events":
                 snapshot = read_json(current_snapshot_path(root))
-                path = latest_events_path(root, snapshot if isinstance(snapshot, dict) else None)
+                path = latest_events_path(
+                    root, snapshot if isinstance(snapshot, dict) else None
+                )
                 limit = _int_query(query, "limit", args.events, minimum=0, maximum=1000)
                 _json_response(self, read_recent_events(path, limit))
                 return
             if parsed.path == "/api/plan":
                 snapshot = read_json(current_snapshot_path(root))
-                path = latest_plan_path(root, snapshot if isinstance(snapshot, dict) else None)
+                path = latest_plan_path(
+                    root, snapshot if isinstance(snapshot, dict) else None
+                )
                 _json_response(self, (read_json(path) if path else None) or {})
                 return
             if parsed.path == "/api/health":
-                _json_response(self, {"ok": True, "root": str(root), "server_time_unix": time.time()})
+                _json_response(
+                    self,
+                    {"ok": True, "root": str(root), "server_time_unix": time.time()},
+                )
                 return
-            _json_response(self, {"ok": False, "error": "not found", "path": parsed.path}, status=404)
+            _json_response(
+                self,
+                {"ok": False, "error": "not found", "path": parsed.path},
+                status=404,
+            )
 
     try:
         server = ThreadingHTTPServer((args.host, args.port), ProgressHandler)
     except OSError as exc:
-        print(f"Could not start progress server on {args.host}:{args.port}: {exc}", file=sys.stderr)
+        print(
+            f"Could not start progress server on {args.host}:{args.port}: {exc}",
+            file=sys.stderr,
+        )
         return 1
     host, port = server.server_address[:2]
     print(f"Serving NECST progress dashboard at http://{host}:{port}/")
@@ -4061,22 +4542,69 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Show NECST observation progress")
-    parser.add_argument("--root", default=None, help="Progress root directory (default: NECST_PROGRESS_ROOT or /tmp/necst_progress)")
-    parser.add_argument("--interval", type=float, default=1.0, help="Watch/follow refresh interval [s]")
-    parser.add_argument("--events", type=int, default=8, help="Number of recent events to show")
-    parser.add_argument("--compact", action="store_true", help="Print compact one-line view")
-    parser.add_argument("--json", action="store_true", help="Print raw JSON snapshot or JSONL events")
-    parser.add_argument("--watch", action="store_true", help="Continuously redraw a fixed dashboard")
-    parser.add_argument("--once", action="store_true", help="Print once and exit (default)")
-    parser.add_argument("--follow", action="store_true", help="Follow observation_events.jsonl as a scrolling log")
-    parser.add_argument("--serve", action="store_true", help="Serve a lightweight web dashboard")
-    parser.add_argument("--host", default="127.0.0.1", help="With --serve, bind address (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=8080, help="With --serve, bind port (default: 8080)")
-    parser.add_argument("--refresh-ms", type=int, default=500, help="With --serve, browser refresh interval [ms]")
-    parser.add_argument("--quiet", action="store_true", help="With --serve, suppress HTTP request logs")
-    parser.add_argument("--no-ros", action="store_true", help="Disable optional live ROS telemetry augmentation")
-    parser.add_argument("--from-end", action="store_true", help="With --follow, start at end of current event log")
-    parser.add_argument("--no-clear", action="store_true", help="With --watch, do not clear/redraw the terminal")
+    parser.add_argument(
+        "--root",
+        default=None,
+        help="Progress root directory (default: NECST_PROGRESS_ROOT or /tmp/necst_progress)",
+    )
+    parser.add_argument(
+        "--interval", type=float, default=1.0, help="Watch/follow refresh interval [s]"
+    )
+    parser.add_argument(
+        "--events", type=int, default=8, help="Number of recent events to show"
+    )
+    parser.add_argument(
+        "--compact", action="store_true", help="Print compact one-line view"
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Print raw JSON snapshot or JSONL events"
+    )
+    parser.add_argument(
+        "--watch", action="store_true", help="Continuously redraw a fixed dashboard"
+    )
+    parser.add_argument(
+        "--once", action="store_true", help="Print once and exit (default)"
+    )
+    parser.add_argument(
+        "--follow",
+        action="store_true",
+        help="Follow observation_events.jsonl as a scrolling log",
+    )
+    parser.add_argument(
+        "--serve", action="store_true", help="Serve a lightweight web dashboard"
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="With --serve, bind address (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port", type=int, default=8080, help="With --serve, bind port (default: 8080)"
+    )
+    parser.add_argument(
+        "--refresh-ms",
+        type=int,
+        default=500,
+        help="With --serve, browser refresh interval [ms]",
+    )
+    parser.add_argument(
+        "--quiet", action="store_true", help="With --serve, suppress HTTP request logs"
+    )
+    parser.add_argument(
+        "--no-ros",
+        action="store_true",
+        help="Disable optional live ROS telemetry augmentation",
+    )
+    parser.add_argument(
+        "--from-end",
+        action="store_true",
+        help="With --follow, start at end of current event log",
+    )
+    parser.add_argument(
+        "--no-clear",
+        action="store_true",
+        help="With --watch, do not clear/redraw the terminal",
+    )
     return parser
 
 

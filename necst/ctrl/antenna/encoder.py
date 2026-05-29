@@ -33,7 +33,10 @@ class AntennaEncoderController(DeviceNode):
         except RuntimeError as exc:
             last_status = self.az_unwrap._last_status
             log_method = self.get_logger().error
-            if last_status is not None and getattr(last_status, "state", "") == "startup-raw-wait":
+            if (
+                last_status is not None
+                and getattr(last_status, "state", "") == "startup-raw-wait"
+            ):
                 log_method = self.get_logger().warning
             log_method(
                 f"Az unwrap failed; encoder sample suppressed: {exc}",

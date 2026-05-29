@@ -181,7 +181,9 @@ def main_mount_move(argv: Optional[list[str]] = None) -> int:
         if (args.az is None) != (args.el is None):
             parser.error("--az and --el must be specified together")
         if args.az is None or args.el is None:
-            parser.error("missing target: use 'necst mount-move AZ EL' or '--az AZ --el EL'")
+            parser.error(
+                "missing target: use 'necst mount-move AZ EL' or '--az AZ --el EL'"
+            )
         az, el = float(args.az), float(args.el)
 
     print("Mount move command")
@@ -222,8 +224,9 @@ def main_mount_move(argv: Optional[list[str]] = None) -> int:
         print("interrupted: sending antenna stop...", file=sys.stderr)
         try:
             com.antenna("stop")
-        finally:
-            return 130
+        except Exception:
+            pass
+        return 130
     finally:
         try:
             com.quit_privilege()
