@@ -1,11 +1,13 @@
 __all__ = ["Authorizer"]
 
 from typing import Optional
+import uuid
 
 import rclpy
-from neclib import NECSTAuthorityError
 from necst_msgs.srv import AuthoritySrv
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
+from rclpy.executors import SingleThreadedExecutor
+from rclpy.exceptions import InvalidHandle
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
@@ -47,8 +49,20 @@ class Authorizer(Node):
         self.request_srv = service.privilege_request.service(
             self, self._authorize, callback_group=MutuallyExclusiveCallbackGroup()
         )
+
+        # The authorization callback must not spin this node's own executor while it
+        # is already executing the service callback.  ROS 2 Jazzy is stricter about
+        # such nested spins and the ping future may never complete.  Use an
+        # independent lightweight node/executor only for checking the current
+        # privileged node's ping service.
+        self._ping_node = rclpy.create_node(
+            f"{self.NodeName}_ping_client_{uuid.uuid4().hex[:8]}",
+            namespace=self.Namespace,
+        )
+        self._ping_executor = SingleThreadedExecutor()
+        self._ping_executor.add_node(self._ping_node)
         self.ping_cli = service.privilege_ping.client(
-            self, callback_group=MutuallyExclusiveCallbackGroup()
+            self._ping_node, callback_group=ReentrantCallbackGroup()
         )
 
     @property
@@ -57,24 +71,33 @@ class Authorizer(Node):
         return self.__approved
 
     def _ping(self, timeout_sec: Optional[float] = None) -> bool:
-        """Assume auth ping server only responds if it has privilege."""
-        self.logger.info("Checking status of current privileged node...")
-        if not utils.wait_for_server_to_pick_up(self.ping_cli):
-            self.logger.info("Ping server on current privileged node is unreachable.")
-            return False
+        """Assume auth ping server only responds if it has privilege.
 
+        This method can be called from the privilege-request service callback.  Do
+        not spin ``self.executor`` here: in ROS 2 Jazzy, spinning the same executor
+        from inside a mutually-exclusive callback can leave the ping future pending
+        until timeout.  The dedicated ping client node/executor created in
+        ``__init__`` avoids that nested-spin path.
+        """
+        self.logger.info("Checking status of current privileged node...")
         if timeout_sec is None:
             timeout_sec = config.ros_service_timeout_sec
 
-        if self.executor is None:
-            raise NECSTAuthorityError("Authorizer isn't spinning.")
+        if not utils.wait_for_server_to_pick_up(self.ping_cli, timeout_sec=timeout_sec):
+            self.logger.info("Ping server on current privileged node is unreachable.")
+            return False
+
         request = Empty.Request()
         future = self.ping_cli.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
-        # NOTE: Use of `rclpy.spin_until_future_complete(self, future, self.executor)`
-        # will cause deadlock. Reason unknown.
+        self._ping_executor.spin_until_future_complete(future, timeout_sec)
 
-        return future.done()
+        if not future.done():
+            self.logger.info("Ping request to current privileged node timed out.")
+            return False
+        if future.result() is None:
+            self.logger.info("Ping request to current privileged node failed.")
+            return False
+        return True
 
     def _authorize(
         self, request: AuthoritySrv.Request, response: AuthoritySrv.Response
@@ -114,6 +137,32 @@ class Authorizer(Node):
             response.privilege = True
 
         return response
+
+    def destroy_node(self) -> None:
+        """Destroy the authorizer and its dedicated ping helper safely."""
+        ping_node = getattr(self, "_ping_node", None)
+        ping_executor = getattr(self, "_ping_executor", None)
+
+        if ping_executor is not None:
+            if ping_node is not None:
+                try:
+                    ping_executor.remove_node(ping_node)
+                except (InvalidHandle, RuntimeError):
+                    pass
+            try:
+                ping_executor.shutdown()
+            except (InvalidHandle, RuntimeError):
+                pass
+
+        if ping_node is not None:
+            try:
+                ping_node.destroy_node()
+            except (InvalidHandle, RuntimeError):
+                pass
+
+        self._ping_node = None
+        self._ping_executor = None
+        super().destroy_node()
 
     def _check_singleton(self) -> None:
         """Check if this server node is duplicated.

@@ -3,7 +3,8 @@ from threading import Event, Thread
 from typing import Optional, Type
 
 import rclpy
-from rclpy.executors import Executor, MultiThreadedExecutor
+from rclpy.executors import Executor, ExternalShutdownException, MultiThreadedExecutor
+from rclpy.exceptions import InvalidHandle
 from rclpy.node import Node
 from rclpy.task import Future
 
@@ -50,7 +51,10 @@ class ServerNode(Node):
 
     def __spin(self) -> None:
         while rclpy.ok() and (self.event is not None) and (not self.event.is_set()):
-            self.executor.spin_once(0.1)
+            try:
+                self.executor.spin_once(0.1)
+            except (ExternalShutdownException, InvalidHandle, RuntimeError):
+                break
             # Timeout=0 significantly affects system performance.
 
     def stop_server(self) -> None:
@@ -63,8 +67,15 @@ class ServerNode(Node):
 
     def destroy_node(self) -> None:
         self.stop_server()
-        [self.executor.remove_node(node) for node in self._executor.get_nodes()]
-        self.executor.shutdown()
+        for node in list(self._executor.get_nodes()):
+            try:
+                self.executor.remove_node(node)
+            except (InvalidHandle, RuntimeError):
+                pass
+        try:
+            self.executor.shutdown()
+        except (InvalidHandle, RuntimeError):
+            pass
         super().destroy_node()
 
     def wait_until_future_complete(

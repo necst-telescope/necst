@@ -262,7 +262,6 @@ class PrivilegedNode(ServerNode):
 
         """
         self._set_privilege(False)
-        self._executor.shutdown()
         super().destroy_node()
 
 
