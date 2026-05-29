@@ -70,7 +70,7 @@ class Authorizer(Node):
             raise NECSTAuthorityError("Authorizer isn't spinning.")
         request = Empty.Request()
         future = self.ping_cli.call_async(request)
-        self.executor.spin_until_future_complete(future, timeout_sec)
+        rclpy.spin_until_future_complete(self, future)
         # NOTE: Use of `rclpy.spin_until_future_complete(self, future, self.executor)`
         # will cause deadlock. Reason unknown.
 
