@@ -13,16 +13,14 @@ RUN apt-get update \
 ENV ROS2_WS=/root/ros2_ws
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
-COPY . $ROS2_WS/src/necst/
-
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
-
 ENV GIT_TERMINAL_PROMPT=0
 
-RUN pip install setuptools==70.3.0 --break-system-packages
-RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git --break-system-packages)
+RUN pip install setuptools==70.3.0
+
+RUN git clone https://github.com/necst-telescope/necst.git $ROS2_WS/src/necst/ \
+    && pip install git+https://github.com/necst-telescope/neclib.git
 RUN pip install ipython \
-    --break-system-packages \
     --ignore-installed psutil
 
 RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
