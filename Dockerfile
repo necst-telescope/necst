@@ -6,23 +6,21 @@ SHELL ["/bin/bash", "-c"]
 ENV SHELL=/bin/bash
 
 RUN apt-get update \
-    && apt-get -y install curl git pciutils python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp \
+    && apt-get -y install curl git pciutils python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp python3.12 \
     && apt-get clean \
-    && apt-get -y install emacs vim python3.12
+    && rm -rf /var/lib/apt/lists/*
 
 ENV ROS2_WS=/root/ros2_ws
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
-COPY . $ROS2_WS/src/necst/
-
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
-
 ENV GIT_TERMINAL_PROMPT=0
 
-RUN pip install setuptools==70.3.0 --break-system-packages
-RUN ( cd $ROS2_WS/src/necst && pip install git+https://github.com/necst-telescope/neclib.git --break-system-packages)
+RUN pip install setuptools==70.3.0
+
+RUN git clone https://github.com/necst-telescope/necst.git $ROS2_WS/src/necst/ \
+    && pip install git+https://github.com/necst-telescope/neclib.git
 RUN pip install ipython \
-    --break-system-packages \
     --ignore-installed psutil
 
 RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/necst-msgs \
