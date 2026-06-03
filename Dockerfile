@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-c"]
 ENV SHELL=/bin/bash
 
 RUN apt-get update \
-    && apt-get -y install curl git pciutils python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp python3.12 \
+    && apt-get -y install curl git pciutils python3-pip ros-${DISTRO}-rmw-cyclonedds-cpp python3.12 vim \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
