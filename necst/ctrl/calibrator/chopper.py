@@ -1,9 +1,10 @@
 import time
 
 from neclib.devices import ChopperMotor
+from std_srvs.srv import Trigger
 from necst_msgs.msg import ChopperMsg
 
-from ... import config, namespace, topic
+from ... import config, namespace, service, topic
 from ...core import DeviceNode
 
 
@@ -18,8 +19,81 @@ class ChopperController(DeviceNode):
         self.motor = ChopperMotor()
 
         topic.chopper_cmd.subscription(self, self.move)
+        service.chopper_alarm_reset.service(self, self.alarm_reset)
+        service.chopper_home.service(self, self.home)
+        service.chopper_recover.service(self, self.recover)
         self.pub = topic.chopper_status.publisher(self)
         self.create_timer(1, self.telemetry)
+
+    @staticmethod
+    def _maintenance_unsupported_reason() -> str | None:
+        """Return a reason string when maintenance I/O is unsupported here."""
+        observatory = str(getattr(config, "observatory", "")).upper()
+        if "NANTEN2" in observatory:
+            return (
+                "chopper maintenance is not supported for NANTEN2 "
+                "(サポートしていません)"
+            )
+        if "OMU1P85M" not in observatory:
+            return (
+                "chopper maintenance is supported only for OMU1p85m in this "
+                f"implementation (current observatory={observatory or 'unknown'})"
+            )
+        return None
+
+    def _run_maintenance_operation(
+        self,
+        response: Trigger.Response,
+        operation: str,
+    ) -> Trigger.Response:
+        unsupported = self._maintenance_unsupported_reason()
+        if unsupported is not None:
+            self.logger.warning(unsupported)
+            response.success = False
+            response.message = unsupported
+            return response
+
+        try:
+            if operation == "alarm-reset":
+                self.motor.remove_alarm()
+                message = "chopper alarm reset completed"
+            elif operation == "home":
+                self.motor.chopper_zero_point()
+                message = "chopper home completed; counter was reset to 0"
+            elif operation == "recover":
+                self.motor.remove_alarm()
+                self.motor.chopper_zero_point()
+                message = "chopper recover completed; alarm reset and home finished"
+            else:
+                raise ValueError(f"unknown chopper maintenance operation: {operation}")
+
+            self.telemetry()
+            response.success = True
+            response.message = message
+            self.logger.info(message)
+        except Exception as exc:
+            response.success = False
+            response.message = f"chopper {operation} failed: {exc}"
+            self.logger.error(response.message)
+        return response
+
+    def alarm_reset(
+        self, request: Trigger.Request, response: Trigger.Response
+    ) -> Trigger.Response:
+        del request
+        return self._run_maintenance_operation(response, "alarm-reset")
+
+    def home(
+        self, request: Trigger.Request, response: Trigger.Response
+    ) -> Trigger.Response:
+        del request
+        return self._run_maintenance_operation(response, "home")
+
+    def recover(
+        self, request: Trigger.Request, response: Trigger.Response
+    ) -> Trigger.Response:
+        del request
+        return self._run_maintenance_operation(response, "recover")
 
     def move(self, msg: ChopperMsg) -> None:
         self.telemetry()

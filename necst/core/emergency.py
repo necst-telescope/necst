@@ -402,8 +402,25 @@ def main_chopper(argv: Optional[list[str]] = None) -> int:
     )
     parser.add_argument(
         "command",
-        choices=["in", "out", "status", "insert", "remove", "?"],
-        help="Chopper command: in/out/status.  insert/remove/? are aliases.",
+        choices=[
+            "in",
+            "out",
+            "status",
+            "insert",
+            "remove",
+            "?",
+            "alarm-reset",
+            "alarm_reset",
+            "reset-alarm",
+            "home",
+            "zero",
+            "zero-point",
+            "recover",
+        ],
+        help=(
+            "Chopper command: in/out/status/alarm-reset/home/recover. "
+            "insert/remove/? and zero/zero-point are aliases."
+        ),
     )
     parser.add_argument(
         "--no-wait",
@@ -443,6 +460,10 @@ def main_chopper(argv: Optional[list[str]] = None) -> int:
         command = "out"
     elif command == "?":
         command = "status"
+    elif command in {"alarm_reset", "reset-alarm"}:
+        command = "alarm-reset"
+    elif command in {"zero", "zero-point"}:
+        command = "home"
 
     should_shutdown = _ensure_rclpy()
     com = Commander()
@@ -461,6 +482,21 @@ def main_chopper(argv: Optional[list[str]] = None) -> int:
             state, detail = _format_chopper_status(msg)
             print(f"chopper {state}: {detail}")
             return 0
+
+        if command in {"alarm-reset", "home", "recover"}:
+            print(f"Chopper maintenance command: {command}")
+            if not com.get_privilege():
+                print("failed to acquire NECST privilege", file=sys.stderr)
+                return 2
+            try:
+                result = com.chopper_maintenance(command)
+            except Exception as exc:
+                print(f"failed to execute chopper {command}: {exc}", file=sys.stderr)
+                return 1
+            status = "completed" if bool(getattr(result, "success", False)) else "failed"
+            message = str(getattr(result, "message", "")).strip()
+            print(f"chopper {command} {status}" + (f": {message}" if message else ""))
+            return 0 if bool(getattr(result, "success", False)) else 1
 
         if command == "in":
             commander_cmd = "insert"
