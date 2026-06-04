@@ -15,13 +15,20 @@ import json
 import math
 import os
 import re
+import shutil
+import subprocess
 import sys
 import time
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 from urllib.parse import parse_qs, urlparse
+
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:  # pragma: no cover - old Python fallback
+    tomllib = None  # type: ignore[assignment]
 
 
 def safe_name(value: Any) -> str:
@@ -155,6 +162,669 @@ def _finite_float(value: Any) -> Optional[float]:
     except Exception:
         return None
     return out if math.isfinite(out) else None
+
+
+def _finite_int(value: Any) -> Optional[int]:
+    try:
+        out = int(value)
+    except Exception:
+        return None
+    return out
+
+
+def _bool_config(value: Any, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    if isinstance(value, (int, float)):
+        return bool(value)
+    token = str(value).strip().lower()
+    if token in {"1", "true", "yes", "on", "enable", "enabled"}:
+        return True
+    if token in {"0", "false", "no", "off", "disable", "disabled"}:
+        return False
+    return default
+
+
+def _config_section_to_plain_dict(
+    section: Any, prefix: str
+) -> Optional[Dict[str, Any]]:
+    """Convert a neclib ConfigurationView or mapping to unprefixed keys."""
+    if isinstance(section, Mapping):
+        return dict(section)
+    if hasattr(section, "items"):
+        try:
+            return dict(section.items())
+        except Exception:
+            pass
+    if hasattr(section, "parameters"):
+        try:
+            raw = dict(section.parameters)
+        except Exception:
+            return None
+        prefix_norm = prefix.replace(".", "_") + "_"
+        out: Dict[str, Any] = {}
+        for key, value in raw.items():
+            key_s = str(key)
+            if key_s.startswith(prefix_norm):
+                key_s = key_s[len(prefix_norm) :]
+            out[key_s] = value
+        return out
+    return None
+
+
+def _progress_time_sync_from_necst_config() -> Optional[Dict[str, Any]]:
+    """Read [progress.time_sync] from the active NECST/neclib site config.
+
+    This intentionally fails closed.  Progress monitor must remain usable even
+    when it is run outside a fully configured NECST/ROS environment.
+    """
+    try:
+        from necst import config as necst_config  # type: ignore
+    except Exception:
+        return None
+    for key in ("progress.time_sync", "progress_time_sync"):
+        try:
+            section = necst_config.get(key)
+        except Exception:
+            continue
+        plain = _config_section_to_plain_dict(section, key)
+        if plain is not None:
+            return plain
+    return None
+
+
+def _progress_time_sync_from_toml_text(text: str) -> Optional[Dict[str, Any]]:
+    """Extract only [progress.time_sync] from TOML-like site config text.
+
+    Some existing NECST site config files contain constructs that the stdlib
+    TOML parser rejects even though neclib can read them.  The fallback reader
+    must therefore avoid parsing the entire site file.  It only parses the
+    requested section so that an unrelated legacy table elsewhere cannot disable
+    the optional progress time-sync indicator.
+    """
+    if tomllib is None:
+        return None
+    lines = text.splitlines()
+    section_lines: List[str] = []
+    in_section = False
+    header_pattern = re.compile(r"^\s*\[([^\[\]]+)\]\s*(?:#.*)?$")
+    array_header_pattern = re.compile(r"^\s*\[\[([^\[\]]+)\]\]\s*(?:#.*)?$")
+    for line in lines:
+        header = header_pattern.match(line)
+        array_header = array_header_pattern.match(line)
+        table_name = None
+        if header:
+            table_name = header.group(1).strip()
+        elif array_header:
+            table_name = array_header.group(1).strip()
+        if table_name is not None:
+            if table_name == "progress.time_sync" or table_name.startswith(
+                "progress.time_sync."
+            ):
+                in_section = True
+                section_lines.append(line)
+                continue
+            if in_section:
+                break
+        if in_section:
+            section_lines.append(line)
+    if not section_lines:
+        return None
+    snippet = "\n".join(section_lines) + "\n"
+    try:
+        data = tomllib.loads(snippet)
+    except Exception:
+        return None
+    progress = data.get("progress") if isinstance(data, Mapping) else None
+    if not isinstance(progress, Mapping):
+        return None
+    section = progress.get("time_sync")
+    return dict(section) if isinstance(section, Mapping) else None
+
+
+def _progress_time_sync_from_toml_file() -> Optional[Dict[str, Any]]:
+    """Fallback section reader used when necst/neclib import is unavailable."""
+    telescope = os.environ.get("TELESCOPE")
+    filename = f"{telescope}_config.toml" if telescope else "config.toml"
+    roots: List[Path] = []
+    necst_root = os.environ.get("NECST_ROOT")
+    if necst_root:
+        roots.append(Path(necst_root).expanduser())
+    roots.append(Path.home() / ".necst")
+    for root in roots:
+        path = root / filename
+        try:
+            section = _progress_time_sync_from_toml_text(
+                path.read_text(encoding="utf-8")
+            )
+        except Exception:
+            continue
+        if isinstance(section, Mapping):
+            return dict(section)
+    return None
+
+
+def _normalize_time_sync_hosts(raw_hosts: Any) -> List[Dict[str, Any]]:
+    hosts: List[Dict[str, Any]] = []
+    if raw_hosts is None:
+        return hosts
+    items: Iterable[Any]
+    if isinstance(raw_hosts, Mapping):
+        mapped: List[Any] = []
+        for name, value in raw_hosts.items():
+            if isinstance(value, Mapping):
+                entry = dict(value)
+                entry.setdefault("name", name)
+                mapped.append(entry)
+            else:
+                mapped.append({"name": name, "host": value})
+        items = mapped
+    elif isinstance(raw_hosts, (list, tuple)):
+        items = raw_hosts
+    else:
+        items = [raw_hosts]
+
+    for item in items:
+        if isinstance(item, str):
+            name = item.strip()
+            host = name
+            method = "auto"
+        elif isinstance(item, Mapping):
+            host_value = (
+                item.get("host")
+                if item.get("host") not in (None, "")
+                else item.get("address")
+            )
+            host = str(host_value or "").strip()
+            name = str(item.get("name") or host).strip()
+            method = str(item.get("method") or "auto").strip().lower()
+        else:
+            continue
+        if not host:
+            continue
+        hosts.append({"name": name or host, "host": host, "method": method or "auto"})
+    return hosts
+
+
+def load_progress_time_sync_config() -> Optional[Dict[str, Any]]:
+    """Return normalized progress time-sync config, or None when absent/disabled.
+
+    The only intended configuration location is the active site config, e.g.
+    OMU1p85m_config.toml or NANTEN2_config.toml.  No separate profile switch is
+    introduced; TELESCOPE/neclib already selects the site.
+    """
+    raw = _progress_time_sync_from_necst_config()
+    if raw is None:
+        raw = _progress_time_sync_from_toml_file()
+    if not isinstance(raw, Mapping):
+        return None
+    hosts = _normalize_time_sync_hosts(raw.get("hosts"))
+    enabled = _bool_config(raw.get("enabled"), default=bool(hosts))
+    if not enabled or not hosts:
+        return None
+    interval = _finite_float(raw.get("interval_sec"))
+    timeout = _finite_float(raw.get("timeout_sec"))
+    ok_offset = _finite_float(raw.get("ok_offset_ms"))
+    warn_offset = _finite_float(raw.get("warn_offset_ms"))
+    bad_after = _finite_int(raw.get("bad_after_failures"))
+    return {
+        "enabled": True,
+        "hosts": hosts,
+        "interval_sec": max(10.0, interval if interval is not None else 60.0),
+        "timeout_sec": max(0.2, timeout if timeout is not None else 2.0),
+        "ok_offset_ms": max(0.0, ok_offset if ok_offset is not None else 5.0),
+        "warn_offset_ms": max(0.0, warn_offset if warn_offset is not None else 20.0),
+        "bad_after_failures": max(1, bad_after if bad_after is not None else 3),
+    }
+
+
+def _compact_command(argv: Sequence[str]) -> str:
+    return " ".join(str(x) for x in argv)
+
+
+def _parse_float_token(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    match = re.search(r"[-+]?\d+(?:\.\d*)?(?:[eE][-+]?\d+)?", str(value))
+    return _finite_float(match.group(0)) if match else None
+
+
+def _split_ntp_assignments(text: str) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    for token in re.split(r",\s*|\s+", text.replace("\n", " ")):
+        if "=" not in token:
+            continue
+        key, value = token.split("=", 1)
+        key = key.strip().lower()
+        if key:
+            out[key] = value.strip().strip(',')
+    return out
+
+
+class TimeSyncPoller:
+    """Low-frequency best-effort NTP/chrony monitor for progress.py only."""
+
+    def __init__(self, config: Mapping[str, Any]) -> None:
+        self.hosts = list(config.get("hosts") or [])
+        self.interval_sec = float(config.get("interval_sec") or 60.0)
+        self.timeout_sec = float(config.get("timeout_sec") or 2.0)
+        self.ok_offset_ms = float(config.get("ok_offset_ms") or 5.0)
+        self.warn_offset_ms = float(config.get("warn_offset_ms") or 20.0)
+        if self.warn_offset_ms < self.ok_offset_ms:
+            self.warn_offset_ms = self.ok_offset_ms
+        self.bad_after_failures = int(config.get("bad_after_failures") or 3)
+        self._lock = threading.RLock()
+        self._stop = threading.Event()
+        self._failures: Dict[str, int] = {}
+        self._state: Dict[str, Any] = {
+            "enabled": True,
+            "status": "unknown",
+            "label": "unknown",
+            "summary": "time sync: not checked yet",
+            "checked_at_unix": None,
+            "hosts": [],
+        }
+        self._thread = threading.Thread(
+            target=self._loop, name="necst-progress-time-sync", daemon=True
+        )
+        self._thread.start()
+
+    @classmethod
+    def from_site_config(cls) -> Optional["TimeSyncPoller"]:
+        config = load_progress_time_sync_config()
+        if not config:
+            return None
+        return cls(config)
+
+    def snapshot(self) -> Dict[str, Any]:
+        with self._lock:
+            return copy.deepcopy(self._state)
+
+    def close(self) -> None:
+        self._stop.set()
+        try:
+            if self._thread.is_alive():
+                self._thread.join(timeout=1.0)
+        except Exception:
+            pass
+
+    def _loop(self) -> None:
+        while not self._stop.is_set():
+            try:
+                self.poll_once()
+            except Exception as exc:
+                with self._lock:
+                    self._state = {
+                        "enabled": True,
+                        "status": "unknown",
+                        "label": "unknown",
+                        "summary": (
+                            "time sync: monitor error "
+                            f"({exc.__class__.__name__})"
+                        ),
+                        "checked_at_unix": time.time(),
+                        "hosts": [],
+                    }
+            self._stop.wait(self.interval_sec)
+
+    def poll_once(self) -> None:
+        checked_at = time.time()
+        results: List[Dict[str, Any]] = []
+        for host_cfg in self.hosts:
+            if not isinstance(host_cfg, Mapping):
+                continue
+            result = self._check_host(host_cfg)
+            key = str(result.get("name") or result.get("host") or "host")
+            if result.get("status") in {"ok", "warn", "bad"} and not result.get(
+                "query_failed"
+            ):
+                self._failures[key] = 0
+            else:
+                self._failures[key] = self._failures.get(key, 0) + 1
+                result["failures"] = self._failures[key]
+                if self._failures[key] >= self.bad_after_failures:
+                    result["status"] = "bad"
+                    result["synced"] = False
+            results.append(result)
+
+        statuses = [str(r.get("status") or "unknown") for r in results]
+        ok_count = statuses.count("ok")
+        total = len(statuses)
+        offsets = [
+            abs(float(r["offset_ms"]))
+            for r in results
+            if _finite_float(r.get("offset_ms")) is not None
+        ]
+        max_offset = max(offsets) if offsets else None
+        if total <= 0:
+            status = "unknown"
+        elif ok_count == total:
+            status = "ok"
+        elif any(s in {"bad", "warn"} for s in statuses):
+            status = "bad"
+        else:
+            status = "unknown"
+        label = (
+            "sync"
+            if status == "ok"
+            else ("nosync" if status == "bad" else "unknown")
+        )
+        worst = next(
+            (r for r in results if str(r.get("status")) in {"bad", "warn"}),
+            next((r for r in results if str(r.get("status")) == "unknown"), None),
+        )
+        parts = [f"time sync: {label}", f"{ok_count}/{total} OK"]
+        if max_offset is not None:
+            parts.append(f"max offset {max_offset:.3g} ms")
+        if worst is not None and status != "ok":
+            reason = str(worst.get("reason") or worst.get("status") or "unknown")
+            parts.append(f"worst {worst.get('name')}: {reason}")
+        state = {
+            "enabled": True,
+            "status": status,
+            "label": label,
+            "summary": ", ".join(parts),
+            "checked_at_unix": checked_at,
+            "ok_count": ok_count,
+            "host_count": total,
+            "max_offset_ms": max_offset,
+            "hosts": results,
+        }
+        with self._lock:
+            self._state = state
+
+    def _run_command(self, argv: Sequence[str]) -> Dict[str, Any]:
+        exe = str(argv[0]) if argv else ""
+        if not exe or shutil.which(exe) is None:
+            return {
+                "ok": False,
+                "command_available": False,
+                "reason": f"{exe or 'command'} not found",
+                "command": _compact_command(argv),
+            }
+        try:
+            proc = subprocess.run(
+                list(argv),
+                text=True,
+                capture_output=True,
+                timeout=self.timeout_sec,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "ok": False,
+                "command_available": True,
+                "reason": "timeout",
+                "command": _compact_command(argv),
+            }
+        except Exception as exc:
+            return {
+                "ok": False,
+                "command_available": True,
+                "reason": exc.__class__.__name__,
+                "command": _compact_command(argv),
+            }
+        text = (proc.stdout or "") + ("\n" + proc.stderr if proc.stderr else "")
+        return {
+            "ok": proc.returncode == 0 and bool((proc.stdout or "").strip()),
+            "command_available": True,
+            "returncode": proc.returncode,
+            "stdout": proc.stdout or "",
+            "stderr": proc.stderr or "",
+            "text": text,
+            "reason": f"exit {proc.returncode}" if proc.returncode != 0 else "",
+            "command": _compact_command(argv),
+        }
+
+    def _check_host(self, host_cfg: Mapping[str, Any]) -> Dict[str, Any]:
+        name = str(host_cfg.get("name") or host_cfg.get("host") or "host")
+        host = str(host_cfg.get("host") or host_cfg.get("address") or name)
+        method = str(host_cfg.get("method") or "auto").strip().lower()
+        methods = (
+            ["chrony", "ntpq", "xntpdq", "ntpdc"]
+            if method == "auto"
+            else [method]
+        )
+        last: Optional[Dict[str, Any]] = None
+        for candidate in methods:
+            result = self._check_host_with_method(name, host, candidate)
+            last = result
+            # In auto mode, try the next tool only for command/query failures.
+            if method == "auto" and result.get("query_failed"):
+                continue
+            return result
+        return last or {
+            "name": name,
+            "host": host,
+            "method": method,
+            "status": "unknown",
+            "synced": None,
+            "reason": "no method usable",
+            "query_failed": True,
+        }
+
+    def _check_host_with_method(
+        self, name: str, host: str, method: str
+    ) -> Dict[str, Any]:
+        if method in {"chrony", "chronyc"}:
+            if host in {"localhost", "127.0.0.1", "::1"}:
+                argv = ["chronyc", "-n", "tracking"]
+            else:
+                argv = ["chronyc", "-n", "-h", host, "tracking"]
+            run = self._run_command(argv)
+            if not run.get("ok"):
+                return self._query_failed_result(name, host, "chrony", run)
+            return self._classify_host_result(
+                name,
+                host,
+                "chrony",
+                self._parse_chronyc_tracking(str(run.get("stdout") or "")),
+            )
+        if method == "ntpq":
+            argv = ["ntpq", "-n", "-c", "rv", "-c", "peers", host]
+            run = self._run_command(argv)
+            if not run.get("ok"):
+                return self._query_failed_result(name, host, "ntpq", run)
+            return self._classify_host_result(
+                name,
+                host,
+                "ntpq",
+                self._parse_ntpq_output(str(run.get("stdout") or "")),
+            )
+        if method == "xntpdq":
+            for argv in (
+                ["xntpdq", "-n", "-c", "rv", "-c", "peers", host],
+                ["xntpdq", "-n", "-p", host],
+            ):
+                run = self._run_command(argv)
+                if run.get("ok"):
+                    return self._classify_host_result(
+                        name,
+                        host,
+                        "xntpdq",
+                        self._parse_ntpq_output(str(run.get("stdout") or "")),
+                    )
+                last = run
+            return self._query_failed_result(name, host, "xntpdq", last)
+        if method == "ntpdc":
+            argv = ["ntpdc", "-n", "-c", "sysinfo", "-c", "peers", host]
+            run = self._run_command(argv)
+            if not run.get("ok"):
+                return self._query_failed_result(name, host, "ntpdc", run)
+            return self._classify_host_result(
+                name,
+                host,
+                "ntpdc",
+                self._parse_ntpdc_output(str(run.get("stdout") or "")),
+            )
+        return {
+            "name": name,
+            "host": host,
+            "method": method,
+            "status": "unknown",
+            "synced": None,
+            "reason": f"unsupported method {method!r}",
+            "query_failed": True,
+        }
+
+    def _query_failed_result(
+        self, name: str, host: str, method: str, run: Optional[Mapping[str, Any]]
+    ) -> Dict[str, Any]:
+        return {
+            "name": name,
+            "host": host,
+            "method": method,
+            "status": "unknown",
+            "synced": None,
+            "offset_ms": None,
+            "source": "",
+            "reason": str((run or {}).get("reason") or "query failed"),
+            "query_failed": True,
+            "command": str((run or {}).get("command") or ""),
+        }
+
+    def _classify_host_result(
+        self, name: str, host: str, method: str, parsed: Mapping[str, Any]
+    ) -> Dict[str, Any]:
+        synced = parsed.get("synced")
+        offset_ms = _finite_float(parsed.get("offset_ms"))
+        if synced is False:
+            status = "bad"
+            reason = str(parsed.get("reason") or "unsynchronised")
+        elif offset_ms is not None and abs(offset_ms) > self.warn_offset_ms:
+            status = "bad"
+            reason = f"offset {offset_ms:+.3g} ms"
+        elif offset_ms is not None and abs(offset_ms) > self.ok_offset_ms:
+            status = "warn"
+            reason = f"offset {offset_ms:+.3g} ms"
+        elif synced is True:
+            status = "ok"
+            reason = "synchronised"
+        else:
+            status = "unknown"
+            reason = str(parsed.get("reason") or "sync state unknown")
+        return {
+            "name": name,
+            "host": host,
+            "method": method,
+            "status": status,
+            "synced": synced,
+            "offset_ms": offset_ms,
+            "source": parsed.get("source") or "",
+            "stratum": parsed.get("stratum"),
+            "reach": parsed.get("reach"),
+            "reason": reason,
+            "query_failed": False,
+        }
+
+    def _parse_chronyc_tracking(self, text: str) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"synced": None, "offset_ms": None, "source": ""}
+        for line in text.splitlines():
+            if ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            key_l = key.strip().lower()
+            value_s = value.strip()
+            if key_l == "reference id":
+                out["source"] = value_s
+            elif key_l == "stratum":
+                out["stratum"] = _finite_int(value_s)
+            elif key_l == "system time":
+                seconds = _parse_float_token(value_s)
+                if seconds is not None:
+                    sign = -1.0 if "slow" in value_s.lower() else 1.0
+                    out["offset_ms"] = sign * seconds * 1000.0
+            elif key_l == "leap status":
+                token = value_s.lower()
+                if "normal" in token:
+                    out["synced"] = True
+                elif "not" in token or "unsynchron" in token:
+                    out["synced"] = False
+                    out["reason"] = value_s
+        stratum = _finite_int(out.get("stratum"))
+        if stratum is not None and stratum >= 16:
+            out["synced"] = False
+            out.setdefault("reason", f"stratum {stratum}")
+        return out
+
+    def _parse_ntpq_output(self, text: str) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"synced": None, "offset_ms": None, "source": ""}
+        assignments = _split_ntp_assignments(text)
+        if "offset" in assignments:
+            # ntpq rv reports offset in milliseconds.
+            out["offset_ms"] = _parse_float_token(assignments.get("offset"))
+        if "stratum" in assignments:
+            out["stratum"] = _finite_int(assignments.get("stratum"))
+        leap = str(assignments.get("leap") or "").lower()
+        if leap in {"00", "leap_none", "none"}:
+            out["synced"] = True
+        elif leap in {"11", "leap_alarm", "alarm"}:
+            out["synced"] = False
+            out["reason"] = f"leap {leap}"
+        for line in text.splitlines():
+            stripped = line.lstrip()
+            if not stripped or stripped[0] not in {"*", "o"}:
+                continue
+            fields = stripped[1:].split()
+            if fields:
+                out["source"] = fields[0]
+                out["synced"] = True
+            if len(fields) >= 9:
+                offset = _finite_float(fields[8])
+                if offset is not None:
+                    out["offset_ms"] = offset
+            if len(fields) >= 7:
+                out["reach"] = fields[6]
+            break
+        stratum = _finite_int(out.get("stratum"))
+        if stratum is not None and stratum >= 16:
+            out["synced"] = False
+            out.setdefault("reason", f"stratum {stratum}")
+        if out.get("synced") is None and "sync_unspec" in text.lower():
+            out["synced"] = False
+            out.setdefault("reason", "sync_unspec")
+        return out
+
+    def _parse_ntpdc_output(self, text: str) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"synced": None, "offset_ms": None, "source": ""}
+        for line in text.splitlines():
+            if ":" in line:
+                key, value = line.split(":", 1)
+                key_l = key.strip().lower()
+                value_s = value.strip()
+                if key_l == "system peer":
+                    out["source"] = value_s
+                    if value_s and value_s not in {"0.0.0.0", "none"}:
+                        out["synced"] = True
+                elif key_l == "stratum":
+                    out["stratum"] = _finite_int(value_s)
+                elif key_l == "leap indicator":
+                    token = value_s.lower()
+                    if token.startswith("00") or "none" in token:
+                        out["synced"] = True
+                    elif token.startswith("11") or "alarm" in token:
+                        out["synced"] = False
+                        out["reason"] = value_s
+            stripped = line.lstrip()
+            if stripped and stripped[0] in {"*", "o"}:
+                fields = stripped[1:].split()
+                if fields:
+                    out["source"] = fields[0]
+                    out["synced"] = True
+                # ntpdc peers usually ends with delay, offset, dispersion.
+                if len(fields) >= 3:
+                    offset = _finite_float(fields[-2])
+                    if offset is not None:
+                        out["offset_ms"] = (
+                            offset * 1000.0 if abs(offset) < 1.0 else offset
+                        )
+        stratum = _finite_int(out.get("stratum"))
+        if stratum is not None and stratum >= 16:
+            out["synced"] = False
+            out.setdefault("reason", f"stratum {stratum}")
+        return out
 
 
 def angular_delta_deg(measured: float, commanded: float) -> float:
@@ -675,6 +1345,13 @@ def merge_live_telemetry(
     )
     if spec_payload:
         out.setdefault("spectrometer", {}).update(spec_payload)
+    chopper_payload = (
+        live_payload.get("chopper_status")
+        if isinstance(live_payload.get("chopper_status"), dict)
+        else {}
+    )
+    if chopper_payload:
+        out.setdefault("chopper", {}).update(chopper_payload)
 
     lifecycle = out.get("lifecycle") if isinstance(out.get("lifecycle"), dict) else {}
     final_state = str(lifecycle.get("state") or "").lower() in {
@@ -832,6 +1509,7 @@ class LiveRosCache:
         self.az_unwrap_status: Dict[str, Any] = {}
         self.queue_status: Dict[str, Any] = {}
         self.spectrometer_status: Dict[str, Any] = {}
+        self.chopper_status: Dict[str, Any] = {}
         self.weather: Dict[str, Dict[str, Any]] = {}
         if self.requested:
             self._start()
@@ -842,6 +1520,7 @@ class LiveRosCache:
             if repo_root not in sys.path:
                 sys.path.insert(0, repo_root)
             import rclpy  # type: ignore
+            from necst import config as necst_config  # type: ignore
             from necst.definitions import topic  # type: ignore
 
             self._rclpy = rclpy
@@ -1084,6 +1763,61 @@ class LiveRosCache:
                     "warning": str(getattr(msg, "warning", "")),
                 }
 
+            def chopper_status_cb(msg: Any) -> None:
+                try:
+                    position = int(getattr(msg, "position"))
+                except Exception:
+                    position = None
+                try:
+                    insert = bool(getattr(msg, "insert"))
+                except Exception:
+                    insert = None
+                try:
+                    insert_position = int(necst_config.chopper_motor_position["insert"])
+                    remove_position = int(necst_config.chopper_motor_position["remove"])
+                except Exception:
+                    insert_position = None
+                    remove_position = None
+                try:
+                    simulator_boolean_only = bool(getattr(necst_config, "simulator", False))
+                except Exception:
+                    simulator_boolean_only = False
+                # ChopperSimulator publishes only the boolean insert flag; the
+                # int32 position field remains the ROS default 0.  In real
+                # hardware mode, position=0 must be treated as a real counter
+                # value.  In simulator mode, display position=0 + insert flag as
+                # the simulator state even for NANTEN2 OUT where remove=250.
+
+                if (
+                    position is not None
+                    and position == insert_position
+                    and insert is not False
+                ):
+                    state = "in"
+                elif (
+                    position is not None
+                    and position == remove_position
+                    and insert is not True
+                ):
+                    state = "out"
+                elif simulator_boolean_only and position == 0 and insert is True:
+                    state = "in"
+                elif simulator_boolean_only and position == 0 and insert is False:
+                    state = "out"
+                elif insert is True:
+                    state = "in?"
+                elif insert is False:
+                    state = "out?"
+                else:
+                    state = "unknown"
+
+                self.chopper_status = {
+                    "insert": insert,
+                    "state": state,
+                    "position": position,
+                    "time_unix": _finite_float(getattr(msg, "time", None)),
+                }
+
             def weather_cb(key: str):
                 def _callback(msg: Any) -> None:
                     payload = {
@@ -1130,6 +1864,7 @@ class LiveRosCache:
                 (getattr(topic, "antenna_az_unwrap_status", None), az_unwrap_status_cb),
                 (getattr(topic, "antenna_command_queue_status", None), queue_status_cb),
                 (getattr(topic, "spectrometer_status", None), spectrometer_status_cb),
+                (getattr(topic, "chopper_status", None), chopper_status_cb),
             ):
                 try:
                     if topic_obj is not None:
@@ -1226,6 +1961,8 @@ class LiveRosCache:
                 payload["queue_status"] = dict(self.queue_status)
             if self.spectrometer_status:
                 payload["spectrometer_status"] = dict(self.spectrometer_status)
+            if self.chopper_status:
+                payload["chopper_status"] = dict(self.chopper_status)
             if self.weather:
                 payload["weather"] = {
                     key: dict(value) for key, value in self.weather.items()
@@ -2441,7 +3178,11 @@ def _int_query(
 
 
 def build_state(
-    root: Path, *, events_limit: int = 12, live: Optional[LiveRosCache] = None
+    root: Path,
+    *,
+    events_limit: int = 12,
+    live: Optional[LiveRosCache] = None,
+    time_sync: Optional[TimeSyncPoller] = None,
 ) -> Dict[str, Any]:
     snapshot_path = current_snapshot_path(root)
     raw_snapshot = read_json(snapshot_path)
@@ -2463,6 +3204,10 @@ def build_state(
         root, raw_snapshot if isinstance(raw_snapshot, dict) else None
     )
     plan = read_json(plan_path) if plan_path else None
+    if isinstance(snapshot, dict) and time_sync is not None:
+        time_sync_snapshot = time_sync.snapshot()
+        if time_sync_snapshot.get("enabled"):
+            snapshot.setdefault("time_sync", {}).update(time_sync_snapshot)
     all_events = read_all_events(events_path)
     events = all_events[-events_limit:] if events_limit > 0 else []
     return {
@@ -2489,6 +3234,7 @@ def build_state(
             full_plan=plan if isinstance(plan, dict) else None,
         ),
         "server_time_unix": server_time_unix,
+        "time_sync": (time_sync.snapshot() if time_sync is not None else None) or {},
     }
 
 
@@ -3153,6 +3899,18 @@ function utcText(unixSec) {
   const n = Number(unixSec);
   return Number.isFinite(n) ? new Date(n*1000).toISOString().replace('T',' ').replace(/\\.\\d+Z$/,' UTC') : '-';
 }
+function timeSyncUtcRow(snapshot, utcUnix, serverTimeUnix=null) {
+  const base = utcText(utcUnix);
+  const ts = snapshot?.time_sync;
+  if (!ts || ts.enabled !== true) return ['UTC', base, ''];
+  const status = String(ts.status || '').toLowerCase();
+  const label = status === 'ok' ? 'sync' : (status === 'bad' || status === 'warn' ? 'nosync' : 'unknown');
+  const role = label === 'sync' ? 'ok' : (label === 'nosync' ? 'critical' : 'warning');
+  const checkedAge = ageSinceUnix(ts.checked_at_unix, serverTimeUnix);
+  const ageTextValue = Number.isFinite(checkedAge) ? ` / checked ${secText(checkedAge)} ago` : '';
+  const summary = String(ts.summary || `time sync: ${label}`) + ageTextValue;
+  return ['UTC', `${base}  ${label}`, role, summary];
+}
 function lstDisplayText(snapshot) {
   const text = snapshot?.display?.lst_hms;
   return isBlank(text) ? '-' : String(text);
@@ -3327,12 +4085,13 @@ function kvSmart(id, rows) {
     const label = Array.isArray(row) ? row[0] : '-';
     const raw = Array.isArray(row) ? row[1] : row;
     const role = Array.isArray(row) ? (row[2] || '') : '';
+    const title = Array.isArray(row) && row.length >= 4 ? row[3] : raw;
     if (role === 'html') {
-      el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v">${raw ?? '-'}</div>`);
+      el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v" title="${esc(title ?? raw ?? '-')}">${raw ?? '-'}</div>`);
       continue;
     }
     const cls = role ? ` ${role}-pos` : '';
-    el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v${cls}" title="${esc(raw ?? '-')}">${esc(raw ?? '-')}</div>`);
+    el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v${cls}" title="${esc(title ?? raw ?? '-')}">${esc(raw ?? '-')}</div>`);
   }
 }
 function geometryRows(snapshot) {
@@ -3667,9 +4426,27 @@ function compactSpectrometerTime(v) {
   return s.length > 20 ? shortPathText(s, 24) : s;
 }
 
+function spectrometerIrigbRow(sp) {
+  const raw = String(sp?.latest_time_spectrometer ?? '').trim();
+  if (!raw) return ['IRIG-B', 'NO TIMESTAMP', 'critical'];
+  return raw.endsWith('GPS') ? ['IRIG-B', 'GPS OK', 'ok'] : ['IRIG-B', 'NO GPS', 'critical'];
+}
+function chopperRow(snapshot, serverTimeUnix=null) {
+  const ch = snapshot?.chopper || {};
+  if (!ch || !Object.keys(ch).length) return ['chopper', 'not reported', 'muted'];
+  const stateRaw = String(ch.state ?? '').trim().toLowerCase();
+  const state = stateRaw || (ch.insert === true ? 'in' : (ch.insert === false ? 'out' : 'unknown'));
+  const pos = Number(ch.position);
+  const age = ageSinceUnix(ch.time_unix, serverTimeUnix);
+  const text = `${state.toUpperCase()}${Number.isFinite(pos) ? ` / pos ${pos}` : ''}${Number.isFinite(age) ? ` / ${secText(age)}` : ''}`;
+  return ['chopper', text, state === 'unknown' ? 'warning' : 'important'];
+}
+
 function spectrometerRows(snapshot, serverTimeUnix=null) {
   const sp = snapshot?.spectrometer || {};
-  if (!sp || !Object.keys(sp).length) return [['status', 'not reported', 'muted'], ['source', 'SpectrometerStatus unavailable', 'muted']];
+  if (!sp || !Object.keys(sp).length) {
+    return [['status', 'not reported', 'muted'], ['source', 'SpectrometerStatus unavailable', 'muted']];
+  }
   const valid = !!sp.valid;
   const acquiring = !!sp.acquiring;
   const recording = !!sp.recorder_active;
@@ -3688,7 +4465,8 @@ function spectrometerRows(snapshot, serverTimeUnix=null) {
     ['ch', `TP ${val(sp.tp_range_start)}:${val(sp.tp_range_stop)}; q ${val(sp.qlook_ch_start)}:${val(sp.qlook_ch_stop)}`, ''],
     ['age', secText(pubAge), ageRole(pubAge, 3.0, 10.0)]
   ];
-  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(2, 0, ['clock', compactSpectrometerTime(sp.latest_time_spectrometer), 'muted']);
+  rows.splice(2, 0, spectrometerIrigbRow(sp));
+  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(3, 0, ['clock', compactSpectrometerTime(sp.latest_time_spectrometer), 'muted']);
   if (!isBlank(sp.warning)) rows.push(['warning', sp.warning, 'warning']);
   return rows;
 }
@@ -3741,14 +4519,14 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
     ...officialTrackingRows(a, snapshot),
     [isCal ? 'calibration now' : (g.cos_correction ? 'map offset actual' : 'map offset'), isCal ? phase : (off ? coordPairText(off, frame, 'arcsec') : '-'), 'important'],
     ['progress item', psummary?.progress || '-', 'important'],
-    ['UTC', utcText(utcUnix), ''],
+    timeSyncUtcRow(snapshot, utcUnix, serverTimeUnix),
     ['LST', lstDisplayText(snapshot), ''],
     ['Target RA, Dec', radec ? radecText(radec, 'J2000') : '-', ''],
     ['Target L, B', gal ? galText(gal, 'galactic') : '-', '']
   ];
   return rows;
 }
-function activityRows(snapshot) {
+function activityRows(snapshot, serverTimeUnix=null) {
   const a = snapshot?.activity || {};
   const d = snapshot?.data || {};
   const g = snapshot?.geometry || {};
@@ -3758,6 +4536,7 @@ function activityRows(snapshot) {
     ['motion', a.motion_stage || a.control_section_kind],
     ['data', a.data_state]
   ];
+  if (snapshot?.chopper && Object.keys(snapshot.chopper).length) rows.push(chopperRow(snapshot, serverTimeUnix));
   if (!isBlank(a.control_id)) rows.push(['control id', a.control_id]);
   if (!isBlank(g.current_line_index0) && !isBlank(g.line_total)) rows.push(['control line', `${Number(g.current_line_index0)+1}/${g.line_total}`]);
   if (!isBlank(a.location_context)) rows.push(['location', a.location_context]);
@@ -4436,7 +5215,7 @@ async function update() {
     kv('plan', psummary, [['progress','progress'], ['basis','basis'], ['current','current'], ['completed','completed'], ['remaining','remaining'], ['total','total'], ['mode','mode'], ['role (plan)','role'], ['target','target'], ['label','label']]);
     document.getElementById('bar').style.width = pct(plan).toFixed(1) + '%';
     renderPlanView(snap, s.plan || {}, statusEvents, s.server_time_unix);
-    kvSmart('activity', activityRows(snap));
+    kvSmart('activity', activityRows(snap, s.server_time_unix));
     kvSmart('position', positionRows(snap, psummary, s.server_time_unix));
     kvSmart('geometry', geometryRows(snap));
     kvSmart('queue', commandQueueRows(snap, s.server_time_unix));
@@ -4470,6 +5249,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     root = progress_root(args.root)
     refresh_ms = max(250, int(args.refresh_ms))
     live = LiveRosCache(enabled=not args.no_ros)
+    time_sync = TimeSyncPoller.from_site_config()
 
     class ProgressHandler(BaseHTTPRequestHandler):
         server_version = "NECSTProgressHTTP/1.0"
@@ -4486,7 +5266,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
                 return
             if parsed.path == "/api/state":
                 limit = _int_query(query, "events", args.events, minimum=0, maximum=200)
-                _json_response(self, build_state(root, events_limit=limit, live=live))
+                _json_response(
+                    self,
+                    build_state(
+                        root, events_limit=limit, live=live, time_sync=time_sync
+                    ),
+                )
                 return
             if parsed.path == "/api/progress":
                 _json_response(self, read_json(current_snapshot_path(root)) or {})
@@ -4525,10 +5310,15 @@ def cmd_serve(args: argparse.Namespace) -> int:
             f"Could not start progress server on {args.host}:{args.port}: {exc}",
             file=sys.stderr,
         )
+        live.close()
+        if time_sync is not None:
+            time_sync.close()
         return 1
     host, port = server.server_address[:2]
     print(f"Serving NECST progress dashboard at http://{host}:{port}/")
     print(f"Progress root: {root}")
+    if time_sync is not None:
+        print("Time sync monitor: enabled from [progress.time_sync]")
     try:
         server.serve_forever(poll_interval=0.5)
     except KeyboardInterrupt:
@@ -4537,6 +5327,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
     finally:
         server.server_close()
         live.close()
+        if time_sync is not None:
+            time_sync.close()
     return 0
 
 
