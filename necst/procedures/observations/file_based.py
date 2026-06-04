@@ -39,6 +39,76 @@ from .pointing_reference_beam import (
 )
 
 
+def _parameter_bool(value, default=False) -> bool:
+    """Return a boolean for `.obs` parameters while preserving explicit false.
+
+    TOML booleans normally arrive as Python bool, but accepting common string
+    spellings makes fallback/mock tests and hand-written parameter fragments safer.
+    """
+    if value is None:
+        return bool(default)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    text = str(value).strip().lower()
+    if text in {"", "0", "false", "off", "no", "disable", "disabled", "none"}:
+        return False
+    if text in {"1", "true", "on", "yes", "enable", "enabled"}:
+        return True
+    return bool(value)
+
+
+def _obsspec_parameters(obsspec) -> dict:
+    """Return a mutable parameter mapping for an ObservationSpec when possible."""
+    params = getattr(obsspec, "_parameters", None)
+    if isinstance(params, dict):
+        return params
+    return getattr(obsspec, "parameters", {}) or {}
+
+
+def _apply_file_based_obs_defaults(obsspec) -> frozenset:
+    """Apply NECST file-observation defaults above individual Spec classes.
+
+    The defaults are injected immediately after parsing the `.obs` file so that
+    all file-based observation types, including GridSpec which generates its own
+    waypoints from its parameters, see a consistent parameter set without
+    changing the individual neclib observation-spec implementations.
+
+    Returns
+    -------
+    frozenset
+        Parameter names that were present in the original `.obs` parameter set.
+        This is used to distinguish an explicit user request from an implicit
+        default, for example when deciding whether to warn about unsupported
+        scan-block operation for an observation type.
+    """
+    params = _obsspec_parameters(obsspec)
+    explicit_keys = frozenset(params.keys())
+
+    # Defaulted and canonicalized booleans.  `cos_correction` is injected here,
+    # rather than in neclib.coordinates.observations.grid.GridSpec, so Grid, OTF,
+    # PSW, and RadioPointing share the same `.obs` default policy.
+    if "cos_correction" not in params:
+        params["cos_correction"] = True
+    else:
+        params["cos_correction"] = _parameter_bool(params.get("cos_correction"), True)
+
+    for key in ("scan_cos_correction", "point_cos_correction", "use_scan_block"):
+        if key in params:
+            params[key] = _parameter_bool(params.get(key), False)
+
+    # `use_scan_block` defaults to True at execution time.  Do not inject it
+    # into `params`: leaving it absent allows us to suppress warnings for
+    # unsupported observation types unless the user explicitly requested it.
+
+    # Spectral generator preflight defaults for file-based `.obs` observations.
+    params.setdefault("sg_preflight_policy", "verify_only")
+    params.setdefault("sg_preflight_scope", "active_lo_chains")
+
+    return explicit_keys
+
+
 class FileBasedObservation(Observation):
     SpecParser: Type[ObservationSpec]
 
@@ -46,6 +116,7 @@ class FileBasedObservation(Observation):
         file = kwargs["file"]
         self._obs_file = file
         self.obsspec = self.SpecParser.from_file(file)
+        self._obs_parameter_explicit_keys = _apply_file_based_obs_defaults(self.obsspec)
         # Keep the user-facing target name in progress snapshots.
         # FileBasedObservation historically used obsspec.target only for the
         # default record name, so Web/terminal progress displays could show
@@ -690,15 +761,18 @@ class FileBasedObservation(Observation):
         margin = config.antenna.scan_margin.value
 
         params = getattr(self.obsspec, "parameters", {}) or {}
-        cos_global = bool(params.get("cos_correction", False))
-        cos_scan = bool(params.get("scan_cos_correction", cos_global))
-        cos_point = bool(params.get("point_cos_correction", cos_global))
-        requested_use_scan_block = bool(params.get("use_scan_block", False))
+        cos_global = _parameter_bool(params.get("cos_correction", True))
+        cos_scan = _parameter_bool(params.get("scan_cos_correction", cos_global))
+        cos_point = _parameter_bool(params.get("point_cos_correction", cos_global))
+        use_scan_block_explicit = "use_scan_block" in getattr(
+            self, "_obs_parameter_explicit_keys", set()
+        )
+        requested_use_scan_block = _parameter_bool(params.get("use_scan_block", True))
         scan_block_supported_obstypes = {"OTF", "RadioPointing"}
         use_scan_block = requested_use_scan_block and (
             self.observation_type in scan_block_supported_obstypes
         )
-        if requested_use_scan_block and not use_scan_block:
+        if use_scan_block_explicit and requested_use_scan_block and not use_scan_block:
             supported = ", ".join(sorted(scan_block_supported_obstypes))
             self.logger.warning(
                 "use_scan_block is currently supported only for "
