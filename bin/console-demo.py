@@ -431,8 +431,8 @@ summary { cursor: pointer; color: var(--muted); }
             <div class="sub" id="runBarSub">Set the NECST-side directory and filename. Start will run server-side validation before any simulated command.</div>
           </div>
           <div class="run-actions">
-            <button id="startObs" class="primary large" disabled title="Start the selected observation sequence. Check and Dry run are optional; the server still validates the obs-file path and options before starting.">Start observation</button>
-            <button id="abortObs" class="danger large" disabled title="Abort a running observation sequence and request recorder/gate/progress cleanup.">ABORT observation</button>
+            <button id="startObs" class="primary large" disabled title="Start the selected observation sequence. Check and Dry run are optional; Start always performs server-side validation before launching.">Start observation</button>
+            <button id="abortObs" class="danger large" title="Abort a running observation sequence and request recorder/gate/progress cleanup. Safety action: kept clickable even if status has not yet detected observing.">ABORT observation</button>
           </div>
         </div>
         <div class="optional-checks" title="Optional checks. They never move the telescope, move the chopper, start recording, open gates, or apply SG settings.">
@@ -462,6 +462,7 @@ summary { cursor: pointer; color: var(--muted); }
               <button id="openObsChooser" class="primary compact" type="button" title="Open the NECST-side file chooser in a dialog.">Choose...</button>
               <button id="previewCurrentObs" class="secondary compact" type="button" title="Preview the file currently shown in Obs file on NECST side.">Preview</button>
             </div>
+            <div id="obsPathFull" class="path-text obs-full-path" title="Full NECST-side path used by Preview, Check, Dry run, and Start.">No obs file selected</div>
             <small>Click Choose to browse files visible to the console process. In Docker, this means Docker/container files.</small>
           </div>
         </div>
@@ -1308,7 +1309,9 @@ function renderStatus(data) {
   qs('authorityButton').disabled = Boolean(state.liveActions.guarded) && !heldByMe;
   qs('obsStateBadge').textContent = data.state;
   qs('obsStateBadge').className = 'badge ' + (data.state === 'observing' ? 'ok' : (data.state === 'calibrating' ? 'warn' : 'info'));
-  qs('abortObs').disabled = data.state !== 'observing';
+  // ABORT is a safety action.  It must stay clickable even when the
+  // observation state cannot be inferred from status/progress yet.
+  qs('abortObs').disabled = false;
   qs('manualBadge').textContent = data.manual_state;
   qs('manualBadge').className = 'badge ' + motionClass;
   qs('motionSummary').textContent = data.manual_state;
@@ -1324,6 +1327,9 @@ function renderStatus(data) {
   qs('calStatusNotice').className = 'notice ' + (data.state === 'calibrating' ? 'ok' : '');
   renderRuntime(data);
   applyCapabilities(data);
+  // Capabilities/live guard arrive via /api/status after page load.  Re-run
+  // obs validation so Start does not remain disabled until Check is pressed.
+  validateObs();
 }
 function renderLog(items) {
   qs('log').innerHTML = items.map(item => {
@@ -1366,8 +1372,15 @@ function updateObsRunPath() {
     const name = nameRaw.replace(/^\/+/, '');
     qs('obsPath').value = (dir && name) ? `${dir}/${name}` : '';
   }
-  qs('runBarTitle').textContent = qs('obsPath').value || 'No obs file selected';
-  qs('runBarSub').textContent = qs('obsPath').value ? `${qs('obsMode').value.toUpperCase()} / ${state.obsChecked ? 'checked' : 'unchecked, Start will validate'}` : 'Set the NECST-side directory and filename.';
+  const fullPath = qs('obsPath').value || '';
+  qs('obsPath').title = fullPath || 'Read-only computed NECST-side path used by Start observation.';
+  const fullPathEl = qs('obsPathFull');
+  if (fullPathEl) {
+    fullPathEl.textContent = fullPath || 'No obs file selected';
+    fullPathEl.title = fullPath || 'Full NECST-side path used by Preview, Check, Dry run, and Start.';
+  }
+  qs('runBarTitle').textContent = fullPath || 'No obs file selected';
+  qs('runBarSub').textContent = fullPath ? `${qs('obsMode').value.toUpperCase()} / ${state.obsChecked ? 'checked' : 'unchecked, Start will validate'}` : 'Set the NECST-side directory and filename.';
 }
 function updatePreviewInfo() {
   const text = qs('obsPreview').value;
