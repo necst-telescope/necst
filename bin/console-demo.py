@@ -299,6 +299,80 @@ summary { cursor: pointer; color: var(--muted); }
 .file-row.selected { background: rgba(86,211,100,0.12); box-shadow: inset 0 0 0 1px rgba(86,211,100,0.28); }
 .file-empty { color: var(--muted); padding: 12px; }
 
+.obs-main-row { align-items: end; }
+.obs-file-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+.path-edit-details { margin-top: 4px; }
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(6px);
+}
+.modal-backdrop.open { display: flex; }
+.modal-card {
+  width: min(980px, calc(100vw - 32px));
+  max-height: calc(100vh - 42px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+  overflow: hidden;
+}
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,0.03);
+}
+.modal-head h3 { margin: 0; font-size: 16px; }
+.modal-head .hint { color: var(--muted); font-size: 12px; }
+.modal-card .file-chooser-card {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(240px, 1fr) auto;
+  min-height: 0;
+}
+.modal-card .server-file-browser {
+  height: auto;
+  min-height: 260px;
+  max-height: 58vh;
+}
+.file-chooser-toolbar select {
+  flex: 1 1 260px;
+  min-width: 180px;
+}
+.chooser-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+@media (max-width: 760px) {
+  .obs-file-line { grid-template-columns: 1fr; }
+  .modal-backdrop { padding: 8px; }
+  .modal-card { width: calc(100vw - 16px); max-height: calc(100vh - 16px); }
+  .chooser-footer { align-items: stretch; flex-direction: column; }
+}
+
+
 .callout {
   display: grid;
   gap: 4px;
@@ -371,7 +445,7 @@ summary { cursor: pointer; color: var(--muted); }
           <b>Start and ABORT are the primary observation actions.</b>
           <span>Check is a safe static check; Dry run is a safe simulated plan. They are optional and never change hardware state.</span>
         </div>
-        <div class="row">
+        <div class="row obs-main-row">
           <div class="field">
             <label for="obsMode">Observation mode</label>
             <select id="obsMode" title="Observation modes supported by the obs-file launcher. RSky and SkyDip are calibration actions, not observation modes.">
@@ -381,66 +455,79 @@ summary { cursor: pointer; color: var(--muted); }
               <option value="radio_pointing">Radio Pointing</option>
             </select>
           </div>
-          <div class="field">
-            <label for="serverObsRoot" title="Browse obs files from the NECST side, meaning the environment where this console server is running. If console is in Docker, this is the Docker/container filesystem.">NECST-side file location</label>
-            <select id="serverObsRoot" title="Starting location for the NECST-side file chooser."></select>
-            <small>This is a file chooser for the side running the console. In Docker it shows container files; outside Docker it shows that PC filesystem.</small>
-          </div>
-        </div>
-        <div class="row">
-          <div class="field">
-            <label for="recentDir" title="Directory on the NECST-side filesystem. This is editable; selecting a file fills it automatically.">Obs directory on NECST side</label>
-            <input id="recentDir" list="recentDirList" placeholder="/path/on/NECST/side" title="Directory used to construct the run path. This is a NECST-side path, not the browser PC path.">
-            <datalist id="recentDirList"></datalist>
-            <small>NECST-side path. Use the file chooser below to choose and preview the exact file used for execution.</small>
-          </div>
-          <div class="field">
-            <label for="obsFilename" title="Filename on the NECST side. Choosing a file fills this automatically.">Obs filename</label>
-            <input id="obsFilename" placeholder="e.g. orion_otf.obs" title="Filename to combine with the NECST-side directory. Accepts .obs or .toml.">
-            <small>Filled from the NECST-side file chooser, then editable.</small>
-          </div>
-        </div>
-        <div class="field">
-          <label for="obsPath" title="Read-only confirmation. This is computed from Obs directory + Obs filename; edit those fields if this path is wrong.">Computed run path on NECST side</label>
-          <input id="obsPath" readonly placeholder="directory + filename" title="Read-only computed path used by Start observation.">
-          <small>Read-only confirmation. Check, Dry run, Start, and preview use this same NECST-side path.</small>
-        </div>
-        <div class="file-chooser-card" aria-label="NECST-side file chooser">
-          <div class="file-chooser-toolbar">
-            <button id="serverObsHome" class="secondary compact" type="button" title="Return to the selected location.">Home</button>
-            <button id="serverObsUp" class="secondary compact" type="button" title="Move to the parent directory.">Up</button>
-            <button id="refreshServerObs" class="secondary compact" type="button" title="Refresh the NECST-side directory listing.">Refresh</button>
-            <small id="serverObsInfo">NECST-side file chooser: not loaded</small>
-          </div>
-          <div class="file-chooser-path">
-            <div class="field" style="margin-bottom:0">
-              <label for="serverObsDir" title="Directory to browse on the NECST/console-side filesystem.">Current folder on NECST side</label>
-              <input id="serverObsDir" placeholder="choose a location or type a folder" title="Directory to list on the NECST/console side. This is not the browser PC path.">
+          <div class="field obs-file-field">
+            <label for="obsPath" title="This is the NECST-side path used by Preview, Check, Dry run, and Start.">Obs file on NECST side</label>
+            <div class="obs-file-line">
+              <input id="obsPath" readonly placeholder="choose an obs file" title="Read-only computed NECST-side path used by Start observation.">
+              <button id="openObsChooser" class="primary compact" type="button" title="Open the NECST-side file chooser in a dialog.">Choose...</button>
+              <button id="previewCurrentObs" class="secondary compact" type="button" title="Preview the file currently shown in Obs file on NECST side.">Preview</button>
             </div>
-            <button id="goServerObsDir" class="secondary compact" type="button" title="Open the typed NECST-side folder.">Open</button>
+            <small>Click Choose to browse files visible to the console process. In Docker, this means Docker/container files.</small>
           </div>
-          <div id="serverObsFiles" class="server-file-browser" role="listbox" aria-label="NECST-side files">
-            <div class="file-empty">Choose a location to browse NECST-side files.</div>
-          </div>
-          <small>Folders open in this browser. Clicking an .obs/.toml file previews the exact file used by Check / Dry run / Start.</small>
         </div>
-        <div id="obsValidation" class="notice">Set the NECST-side directory and filename.</div>
+        <details class="path-edit-details">
+          <summary>Edit path manually</summary>
+          <div class="row" style="margin-top:10px">
+            <div class="field">
+              <label for="recentDir" title="Directory on the NECST-side filesystem. This is editable; selecting a file fills it automatically.">Obs directory on NECST side</label>
+              <input id="recentDir" list="recentDirList" placeholder="/path/on/NECST/side" title="Directory used to construct the run path. This is a NECST-side path, not the browser PC path.">
+              <datalist id="recentDirList"></datalist>
+              <small>NECST-side directory. The file chooser fills this automatically.</small>
+            </div>
+            <div class="field">
+              <label for="obsFilename" title="Filename on the NECST side. Choosing a file fills this automatically.">Obs filename</label>
+              <input id="obsFilename" placeholder="e.g. orion_otf.obs" title="Filename to combine with the NECST-side directory. Accepts .obs or .toml.">
+              <small>NECST-side filename. The file chooser fills this automatically.</small>
+            </div>
+          </div>
+        </details>
+        <div id="obsValidation" class="notice">Choose a NECST-side obs file or enter a NECST-side path.</div>
         <details open>
           <summary>Preview selected obs file</summary>
           <div class="field" style="margin-top:10px">
             <label for="obsPreview">Preview text</label>
-            <textarea id="obsPreview" spellcheck="false" placeholder="Select a NECST-side obs file above to preview the exact file that Check/Dry run/Start will use." title="NECST-side preview. The Start button uses the same computed run path."></textarea>
+            <textarea id="obsPreview" spellcheck="false" placeholder="Select a NECST-side obs file to preview the exact file that Check/Dry run/Start will use." title="NECST-side preview. The Start button uses the same computed run path."></textarea>
             <small id="previewInfo">Preview: empty</small>
           </div>
         </details>
         <details>
           <summary>Optional local preview only</summary>
           <div class="field" style="margin-top:10px">
-            <label for="obsFile" title="This reads a file from the browser computer only. It does not provide a server/Docker path and is not used for Start.">Choose local file for visual comparison only</label>
-            <input id="obsFile" type="file" accept=".obs,.toml,.txt" title="Preview only. The browser does not expose the Docker/server absolute path.">
+            <label for="obsFile" title="This reads a file from the browser computer only. It does not provide a Docker/NECST absolute path and is not used for Start.">Choose local file for visual comparison only</label>
+            <input id="obsFile" type="file" accept=".obs,.toml,.txt" title="Preview only. The browser does not expose the Docker/NECST absolute path.">
             <small>Use this only to compare text. Observation execution uses the NECST-side path above, not the browser local file.</small>
           </div>
         </details>
+        <div id="obsChooserModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Choose NECST-side obs file">
+          <div class="modal-card obs-chooser-modal">
+            <div class="modal-head">
+              <div>
+                <h3>Choose NECST-side obs file</h3>
+                <div class="hint">This behaves like a file chooser for the filesystem visible to the console process.</div>
+              </div>
+              <button id="closeObsChooser" class="secondary compact" type="button">Close</button>
+            </div>
+            <div class="file-chooser-card" aria-label="NECST-side file chooser">
+              <div class="file-chooser-toolbar">
+                <button id="serverObsHome" class="secondary compact" type="button" title="Return to the selected location.">Home</button>
+                <button id="serverObsUp" class="secondary compact" type="button" title="Move to the parent directory.">Up</button>
+                <button id="refreshServerObs" class="secondary compact" type="button" title="Refresh the NECST-side directory listing.">Refresh</button>
+                <select id="serverObsRoot" title="Quick locations visible to the console process."></select>
+              </div>
+              <div class="file-chooser-path">
+                <input id="serverObsDir" placeholder="type or browse a folder visible to the console" title="Directory to list on the NECST/console side. This is not the browser PC path.">
+                <button id="goServerObsDir" class="secondary compact" type="button" title="Open the typed NECST-side folder.">Open</button>
+              </div>
+              <div id="serverObsFiles" class="server-file-browser" role="listbox" aria-label="NECST-side files">
+                <div class="file-empty">Loading...</div>
+              </div>
+              <div class="chooser-footer">
+                <small id="serverObsInfo">NECST-side file chooser: not loaded</small>
+                <button id="useSelectedObs" class="primary compact" type="button" disabled>Use selected file</button>
+              </div>
+            </div>
+          </div>
+        </div>
         <details>
           <summary>Advanced observation options</summary>
           <div class="field" style="margin-top:10px">
@@ -723,7 +810,8 @@ const state = {
   capabilities: {},
   liveActions: {guarded: false, enabled: false},
   lastSelfCheck: null,
-  demoObsBrowser: false
+  demoObsBrowser: false,
+  selectedObsPath: ""
 };
 localStorage.setItem('necstConsoleDemoSession', state.sessionId);
 
@@ -1006,7 +1094,7 @@ async function loadServerObsRoots() {
       if (info) info.textContent = `NECST-side file chooser: ${roots.length} root(s)`;
       await browseServerObs(roots[0].path);
     } else if (info) {
-      info.textContent = 'NECST-side file chooser: no locations are available. Check filesystem permissions or use --obs-root.';
+      info.textContent = 'NECST-side file chooser: no readable locations are available.';
     }
   } catch (err) {
     await useDemoObsBrowser(String(err && err.message ? err.message : err));
@@ -1095,7 +1183,8 @@ function renderServerObsEntries(entries, directory) {
     const icon = type === 'directory' ? (e.name === '..' ? '↩' : '📁') : '📄';
     const meta = type === 'directory' ? 'folder' : formatFileSize(e.size);
     const name = e.name === '..' ? '.. parent folder' : e.name;
-    return `<button type="button" class="file-row ${type}" role="option" data-index="${idx}" data-type="${escapeHtml(type)}" data-path="${escapeHtml(e.path || '')}" title="${escapeHtml(e.path || '')}">` +
+    const selected = e.path && e.path === state.selectedObsPath ? ' selected' : '';
+    return `<button type="button" class="file-row ${type}${selected}" role="option" data-index="${idx}" data-type="${escapeHtml(type)}" data-path="${escapeHtml(e.path || '')}" title="${escapeHtml(e.path || '')}">` +
       `<span class="file-icon">${icon}</span>` +
       `<span class="file-name">${escapeHtml(name || '')}</span>` +
       `<span class="file-meta">${escapeHtml(meta || '')}</span>` +
@@ -1109,7 +1198,7 @@ async function browseServerObs(dir) {
   const browseDir = String(dir || qs('serverObsDir').value || qs('serverObsRoot').value || '').trim();
   if (!browseDir) {
     if (info) info.textContent = 'NECST-side file chooser: choose a root or folder.';
-    list.innerHTML = '<div class="file-empty">No location is available. Check filesystem permissions or use --obs-root.</div>';
+    list.innerHTML = '<div class="file-empty">No readable NECST-side location is available.</div>';
     return;
   }
   try {
@@ -1148,6 +1237,9 @@ async function previewServerObsFile(path) {
       data = await resp.json();
     }
     if (!data.ok) throw new Error(data.reason || 'preview failed');
+    state.selectedObsPath = data.path || path;
+    const useButton = qs('useSelectedObs');
+    if (useButton) useButton.disabled = false;
     setObsPathFromServerPath(data.path || path);
     qs('obsPreview').value = data.text || '';
     updatePreviewInfo();
@@ -1159,6 +1251,28 @@ async function previewServerObsFile(path) {
     if (info) info.textContent = 'NECST-side preview failed: ' + err;
   }
 }
+
+function openObsChooser() {
+  const modal = qs('obsChooserModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const current = qs('obsPath').value.trim() || qs('serverObsDir').value.trim() || (qs('serverObsRoot') ? qs('serverObsRoot').value : '');
+  if (current) {
+    const dir = current.match(/\.(obs|toml)$/i) ? dirnameOf(current) : current;
+    browseServerObs(dir);
+  } else {
+    loadServerObsRoots();
+  }
+  setTimeout(() => { try { qs('serverObsDir').focus(); } catch (_) {} }, 0);
+}
+function closeObsChooser() {
+  const modal = qs('obsChooserModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 function renderStatus(data) {
   const heldByMe = data.authority && data.authority.session_id === state.sessionId;
   state.siteLimits = data.mount_limits || state.siteLimits;
@@ -1379,6 +1493,19 @@ qs('obsFile').addEventListener('change', async (ev) => {
   updatePreviewInfo();
   setNotice(qs('obsValidation'), 'warn', 'Local preview loaded for visual comparison only. Start still uses the NECST-side computed run path.');
 });
+qs('openObsChooser').addEventListener('click', openObsChooser);
+qs('closeObsChooser').addEventListener('click', closeObsChooser);
+qs('obsChooserModal').addEventListener('click', (ev) => { if (ev.target === qs('obsChooserModal')) closeObsChooser(); });
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && qs('obsChooserModal').classList.contains('open')) closeObsChooser(); });
+qs('previewCurrentObs').addEventListener('click', async () => {
+  const path = qs('obsPath').value.trim();
+  if (path) await previewServerObsFile(path);
+});
+qs('useSelectedObs').addEventListener('click', async () => {
+  if (!state.selectedObsPath) return;
+  await previewServerObsFile(state.selectedObsPath);
+  closeObsChooser();
+});
 qs('serverObsRoot').addEventListener('change', async () => {
   qs('serverObsDir').value = qs('serverObsRoot').value;
   await browseServerObs(qs('serverObsRoot').value);
@@ -1412,7 +1539,11 @@ qs('serverObsFiles').addEventListener('click', async (ev) => {
     qs('serverObsDir').value = path;
     await browseServerObs(path);
   } else {
+    state.selectedObsPath = path;
+    const useButton = qs('useSelectedObs');
+    if (useButton) useButton.disabled = false;
     await previewServerObsFile(path);
+    closeObsChooser();
   }
 });
 qs('serverObsFiles').addEventListener('keydown', async (ev) => {

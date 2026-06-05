@@ -1273,18 +1273,32 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("az_unwrap_status"), dict)
         else {}
     )
+    # Always start from direct command/encoder telemetry.  The pointing_status
+    # topic can be present while invalid (for example basis=missing-command);
+    # in that case its cmd/enc fields are NaN and must not mask a valid encoder
+    # topic.  Pointing status may overwrite these values only when it provides
+    # finite values for the same quantity.
+    if cmd:
+        antenna_update.update(cmd)
+    if enc:
+        antenna_update.update(enc)
+
     if pointing:
         antenna_update["pointing_status_available"] = True
         antenna_update["pointing_status_valid"] = bool(pointing.get("valid", False))
-        if pointing.get("cmd_az_deg") is not None:
-            antenna_update["command_lon_deg"] = pointing.get("cmd_az_deg")
-            antenna_update["command_lat_deg"] = pointing.get("cmd_el_deg")
+        cmd_az = _finite_float(pointing.get("cmd_az_deg"))
+        cmd_el = _finite_float(pointing.get("cmd_el_deg"))
+        enc_az = _finite_float(pointing.get("enc_az_deg"))
+        enc_el = _finite_float(pointing.get("enc_el_deg"))
+        if cmd_az is not None and cmd_el is not None:
+            antenna_update["command_lon_deg"] = cmd_az
+            antenna_update["command_lat_deg"] = cmd_el
             antenna_update["command_frame"] = "altaz"
             antenna_update["command_unit"] = "deg"
             antenna_update["command_time_unix"] = pointing.get("command_time_unix")
-        if pointing.get("enc_az_deg") is not None:
-            antenna_update["encoder_lon_deg"] = pointing.get("enc_az_deg")
-            antenna_update["encoder_lat_deg"] = pointing.get("enc_el_deg")
+        if enc_az is not None and enc_el is not None:
+            antenna_update["encoder_lon_deg"] = enc_az
+            antenna_update["encoder_lat_deg"] = enc_el
             antenna_update["encoder_frame"] = "altaz"
             antenna_update["encoder_unit"] = "deg"
             antenna_update["encoder_time_unix"] = pointing.get("encoder_time_unix")
@@ -1308,11 +1322,6 @@ def merge_live_telemetry(
         antenna_update["delta_el_deg"] = pointing.get("delta_el_deg")
         antenna_update["delta_az_cos_el_deg"] = pointing.get("delta_az_cos_el_deg")
         antenna_update["pointing_basis"] = pointing.get("basis")
-    else:
-        if cmd:
-            antenna_update.update(cmd)
-        if enc:
-            antenna_update.update(enc)
     if az_unwrap and az_unwrap.get("enabled"):
         antenna_update["az_unwrap"] = dict(az_unwrap)
         antenna_update["az_unwrap_enabled"] = True
