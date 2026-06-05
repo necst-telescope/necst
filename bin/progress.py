@@ -184,6 +184,17 @@ def _finite_float(value: Any) -> Optional[float]:
     return out if math.isfinite(out) else None
 
 
+def _first_present(mapping: Mapping[str, Any], *keys: str) -> Any:
+    for key in keys:
+        try:
+            value = mapping.get(key)
+        except Exception:
+            value = None
+        if value not in (None, ""):
+            return value
+    return None
+
+
 def _finite_int(value: Any) -> Optional[int]:
     try:
         out = int(value)
@@ -1273,29 +1284,65 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("az_unwrap_status"), dict)
         else {}
     )
-    # Always start from direct command/encoder telemetry.  The pointing_status
-    # topic can be present while invalid (for example basis=missing-command);
-    # in that case its cmd/enc fields are NaN and must not mask a valid encoder
-    # topic.  Pointing status may overwrite these values only when it provides
-    # finite values for the same quantity.
-    if cmd:
+    # Always start from direct encoder telemetry.  Command display is stricter:
+    # it must represent a real, fresh command status topic (or a valid
+    # pointing_status command), not an observation plan, old progress snapshot,
+    # or interpolated section.  Otherwise Command Az/El can keep moving after
+    # abort even when no command topic is being published.
+    command_valid = False
+    command_source = "none"
+    live_ages = (
+        live_payload.get("last_message_age_sec")
+        if isinstance(live_payload.get("last_message_age_sec"), dict)
+        else {}
+    )
+    command_topic_age = _finite_float(live_ages.get("command"))
+    command_topic_fresh = (
+        command_topic_age is not None
+        and command_topic_age <= live_status_max_age_sec()
+    )
+    direct_cmd_az = _finite_float(
+        _first_present(cmd, "command_lon_deg", "cmd_az_deg", "az_cmd_deg")
+    )
+    direct_cmd_el = _finite_float(
+        _first_present(cmd, "command_lat_deg", "cmd_el_deg", "el_cmd_deg")
+    )
+    if direct_cmd_az is not None and direct_cmd_el is not None and command_topic_fresh:
         antenna_update.update(cmd)
+        command_valid = True
+        command_source = "command_topic"
     if enc:
         antenna_update.update(enc)
 
     if pointing:
         antenna_update["pointing_status_available"] = True
-        antenna_update["pointing_status_valid"] = bool(pointing.get("valid", False))
+        pointing_valid = bool(pointing.get("valid", False))
+        antenna_update["pointing_status_valid"] = pointing_valid
         cmd_az = _finite_float(pointing.get("cmd_az_deg"))
         cmd_el = _finite_float(pointing.get("cmd_el_deg"))
         enc_az = _finite_float(pointing.get("enc_az_deg"))
         enc_el = _finite_float(pointing.get("enc_el_deg"))
-        if cmd_az is not None and cmd_el is not None:
+        pointing_cmd_age = _finite_float(pointing.get("cmd_age_sec"))
+        pointing_cmd_fresh = (
+            pointing_cmd_age is not None
+            and pointing_cmd_age <= live_status_max_age_sec()
+        )
+        pointing_command_stale = bool(pointing.get("command_stale", False))
+        if (
+            not command_valid
+            and pointing_valid
+            and not pointing_command_stale
+            and pointing_cmd_fresh
+            and cmd_az is not None
+            and cmd_el is not None
+        ):
             antenna_update["command_lon_deg"] = cmd_az
             antenna_update["command_lat_deg"] = cmd_el
             antenna_update["command_frame"] = "altaz"
             antenna_update["command_unit"] = "deg"
             antenna_update["command_time_unix"] = pointing.get("command_time_unix")
+            command_valid = True
+            command_source = "pointing_status"
         if enc_az is not None and enc_el is not None:
             antenna_update["encoder_lon_deg"] = enc_az
             antenna_update["encoder_lat_deg"] = enc_el
@@ -1352,6 +1399,25 @@ def merge_live_telemetry(
         # NECST's antenna_tracking topic already performs the correct comparison.
         antenna_update.setdefault("tracking_status_available", False)
     if antenna_update:
+        antenna_section = out.setdefault("antenna", {})
+        if not command_valid:
+            for key in (
+                "command_lon_deg",
+                "command_lat_deg",
+                "cmd_az_deg",
+                "cmd_el_deg",
+                "az_cmd_deg",
+                "el_cmd_deg",
+                "command_frame",
+                "command_unit",
+                "command_time_unix",
+            ):
+                antenna_section.pop(key, None)
+                antenna_update.pop(key, None)
+        antenna_update["command_valid"] = bool(command_valid)
+        antenna_update["command_source"] = command_source
+        if command_topic_age is not None:
+            antenna_update["command_topic_age_sec"] = command_topic_age
         out.setdefault("antenna", {}).update(antenna_update)
     weather_payload = (
         live_payload.get("weather")
