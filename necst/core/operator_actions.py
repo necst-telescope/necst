@@ -19,7 +19,7 @@ from typing import Any, Dict, Literal, Optional, Sequence
 
 from .. import config
 from .commander import Commander
-from ..ctrl.antenna.az_unwrap import assert_mount_az_allowed_when_unwrap_disabled
+from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 from . import observation_check
 
 

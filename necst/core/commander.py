@@ -51,7 +51,7 @@ from rclpy.subscription import Subscription
 from .. import NECSTTimeoutError, config, namespace, service, topic
 from ..utils import Topic
 from .auth import PrivilegedNode, require_privilege
-from ..ctrl.antenna.az_unwrap import assert_mount_az_allowed_when_unwrap_disabled
+from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
 
 @dataclass

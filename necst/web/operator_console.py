@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from . import log_reader, process_manager, progress_manager, self_check, site_config, status_model, live_telemetry
-from ..ctrl.antenna.az_unwrap import assert_mount_az_allowed_when_unwrap_disabled
+from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
 
 JsonDict = Dict[str, Any]

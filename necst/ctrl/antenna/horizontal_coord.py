@@ -30,7 +30,7 @@ from necst_msgs.srv import CoordinateCommand, ScanBlockCommand
 
 from ... import config, namespace, service, topic
 from ...core import AlertHandlerNode
-from .az_unwrap import assert_mount_az_allowed_when_unwrap_disabled
+from ...az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
 
 class HorizontalCoord(AlertHandlerNode):
