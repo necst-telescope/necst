@@ -79,6 +79,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="directory for launcher stdout/stderr logs; default is <operator-log-dir>/launcher_logs",
     )
     parser.add_argument(
+        "--obs-root",
+        action="append",
+        default=None,
+        help=(
+            "NECST-side file chooser start location; may be repeated. "
+            "Usually optional: without this, Home, common obs/data directories, and / are offered. "
+            "If console runs in Docker, this is a Docker/container path. "
+            "Use this to restrict or add chooser locations; also configurable with NECST_CONSOLE_OBS_ROOTS."
+        ),
+    )
+    parser.add_argument(
         "--shutdown-terminate-launchers",
         dest="shutdown_terminate_launchers",
         action="store_true",
@@ -157,6 +168,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 status_refresh_ms=int(args.status_refresh_ms),
                 progress_no_ros=bool(args.progress_no_ros),
                 progress_log_dir=args.progress_log_dir,
+                obs_roots=args.obs_root,
                 status_no_ros=bool(args.no_ros),
                 action_mode=str(args.action_mode),
                 live_actions_enabled=(str(args.action_mode) == "live" and not bool(args.guard_live_actions)),

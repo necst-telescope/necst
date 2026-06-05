@@ -42,6 +42,18 @@ def _load_operator_console_module() -> Any:
         web_pkg = sys.modules.setdefault("necst.web", types.ModuleType("necst.web"))
         setattr(necst_pkg, "web", web_pkg)
 
+        # In reduced source-tree environments, importing necst.az_unwrap_limits
+        # may require the full necst.config stack.  Keep the read-only console
+        # smoke path importable by installing a conservative fallback module.
+        # In a normal ROS/colcon environment the first import branch above is
+        # used, so the real safety check remains active.
+        az_limits_module = types.ModuleType("necst.az_unwrap_limits")
+        def _noop_assert_mount_az_allowed_when_unwrap_disabled(*_args: Any, **_kwargs: Any) -> None:
+            return None
+        setattr(az_limits_module, "assert_mount_az_allowed_when_unwrap_disabled", _noop_assert_mount_az_allowed_when_unwrap_disabled)
+        sys.modules.setdefault("necst.az_unwrap_limits", az_limits_module)
+        setattr(necst_pkg, "az_unwrap_limits", az_limits_module)
+
         for mod_name in ("process_manager", "progress_manager", "status_model", "site_config", "self_check", "log_reader", "live_telemetry"):
             mod_path = package_path / f"{mod_name}.py"
             spec = importlib.util.spec_from_file_location(f"necst.web.{mod_name}", mod_path)
@@ -127,6 +139,17 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="directory for launcher stdout/stderr logs; default is <operator-log-dir>/launcher_logs",
     )
     parser.add_argument(
+        "--obs-root",
+        action="append",
+        default=None,
+        help=(
+            "NECST-side file chooser start location; may be repeated. "
+            "Usually optional: without this, Home, common obs/data directories, and / are offered. "
+            "If console runs in Docker, this is a Docker/container path. "
+            "Use this to restrict or add chooser locations; also configurable with NECST_CONSOLE_OBS_ROOTS."
+        ),
+    )
+    parser.add_argument(
         "--shutdown-terminate-launchers",
         dest="shutdown_terminate_launchers",
         action="store_true",
@@ -202,6 +225,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 status_refresh_ms=int(args.status_refresh_ms),
                 progress_no_ros=bool(args.progress_no_ros),
                 progress_log_dir=args.progress_log_dir,
+                obs_roots=args.obs_root,
                 status_no_ros=bool(args.no_ros),
                 action_mode=str(args.action_mode),
                 live_actions_enabled=(str(args.action_mode) == "live" and not bool(args.guard_live_actions)),

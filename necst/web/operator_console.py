@@ -118,6 +118,7 @@ class OperatorConsoleState:
     live_cache: Optional[live_telemetry.LiveTelemetryCache] = None
     operator_log_path: Optional[Path] = None
     launcher_log_dir: Optional[Path] = None
+    obs_roots: List[Path] = field(default_factory=list)
     process_registry: process_manager.ProcessRegistry = field(
         default_factory=process_manager.ProcessRegistry
     )
@@ -276,6 +277,248 @@ def validate_observation_selection(params: Mapping[str, Any]) -> Tuple[str, str,
         raise ValueError("obs file extension must be .obs or .toml")
     channel = _optional_positive_int(params.get("channel"), name="channel override")
     return mode, path, channel
+
+
+def _split_env_paths(value: str) -> List[str]:
+    parts: List[str] = []
+    for chunk in str(value or "").replace(";", os.pathsep).split(os.pathsep):
+        chunk = chunk.strip()
+        if chunk:
+            parts.append(chunk)
+    return parts
+
+
+def _dir_has_obs_files(path: Path) -> bool:
+    """Return True when *path* directly contains likely obs files.
+
+    This deliberately checks only one directory level.  The browser can then
+    descend interactively; startup should not recursively scan large mounted
+    disks or network filesystems.
+    """
+
+    try:
+        for child in path.iterdir():
+            if child.is_file() and child.suffix.lower() in {".obs", ".toml"}:
+                return True
+    except Exception:
+        return False
+    return False
+
+
+def _auto_obs_root_candidates() -> List[Path]:
+    """Return NECST-side browse roots visible to this console process.
+
+    The browser cannot see Docker/container files directly.  The console
+    therefore exposes a read-only file chooser over the filesystem visible to
+    the process running this web server.  When no explicit ``--obs-root`` is
+    supplied we choose practical starting locations, including the filesystem
+    root, so the UI behaves like an ordinary file chooser rather than showing
+    an empty selector.
+    """
+
+    raw_candidates: List[str] = []
+    for raw in (
+        os.environ.get("NECST_CONSOLE_OBS_BASE", ""),
+        os.environ.get("NECST_OBS_BASE", ""),
+        os.environ.get("NECST_RECORD_ROOT", ""),
+        os.environ.get("ROS2_WS", ""),
+        os.environ.get("COLCON_PREFIX_PATH", "").split(os.pathsep)[0] if os.environ.get("COLCON_PREFIX_PATH") else "",
+        str(Path.cwd()),
+        str(Path.home()),
+        str(Path.home() / "obs"),
+        str(Path.home() / "observations"),
+        str(Path.home() / "data"),
+        str(Path.home() / "data" / "obs"),
+        str(Path.home() / "data" / "observations"),
+        "/root/obs",
+        "/root/observations",
+        "/root/data",
+        "/root/ros2_ws",
+        "/root",
+        "/home/necst/obs",
+        "/home/necst/observations",
+        "/data/obs",
+        "/data/observations",
+        "/data/observations/current",
+        "/data",
+        "/workspaces",
+        "/workspace",
+        "/mnt/data",
+        "/",
+    ):
+        raw = str(raw or "").strip()
+        if raw:
+            raw_candidates.append(raw)
+
+    # Put obs-like directories first when they exist, but do not hide the
+    # broader filesystem roots.  Users can still narrow the chooser by passing
+    # --obs-root or NECST_CONSOLE_OBS_ROOTS.
+    obs_names = ("obs", "obsfiles", "obs_files", "observation", "observations", "observation_files")
+    expanded: List[Path] = []
+    for raw in raw_candidates:
+        try:
+            base = Path(raw).expanduser()
+        except Exception:
+            continue
+        name = base.name.lower()
+        if name not in obs_names:
+            expanded.extend(base / name for name in obs_names)
+        expanded.append(base)
+    return expanded
+
+
+def resolve_obs_roots(configured_roots: Optional[List[os.PathLike[str] | str]] = None) -> List[Path]:
+    """Return NECST-side browse roots for preview and obs selection.
+
+    If ``--obs-root`` or ``NECST_CONSOLE_OBS_ROOTS`` is supplied, those paths
+    define the chooser locations.  Otherwise the console provides practical
+    defaults visible to the process running the console, including Home, common
+    obs/data directories, the current directory, and ``/``.  This makes the
+    chooser usable without command-line options while still allowing a site to
+    restrict it explicitly.
+    """
+
+    configured: List[os.PathLike[str] | str] = []
+    if configured_roots:
+        configured.extend(str(p) for p in configured_roots if str(p or "").strip())
+    for env_name in ("NECST_CONSOLE_OBS_ROOTS", "NECST_OBS_ROOTS"):
+        configured.extend(_split_env_paths(os.environ.get(env_name, "")))
+    for env_name in ("NECST_CONSOLE_OBS_ROOT", "NECST_OBS_ROOT", "NECST_OBS_DIR"):
+        val = os.environ.get(env_name, "").strip()
+        if val:
+            configured.append(val)
+
+    candidates = configured if configured else _auto_obs_root_candidates()
+
+    roots: List[Path] = []
+    seen: set[str] = set()
+    for raw in candidates:
+        try:
+            resolved = Path(raw).expanduser().resolve()
+        except Exception:
+            continue
+        key = str(resolved)
+        if key in seen:
+            continue
+        seen.add(key)
+        if resolved.exists() and resolved.is_dir():
+            roots.append(resolved)
+    return roots
+
+
+def _obs_root_label(path: Path) -> str:
+    try:
+        home = Path.home().resolve()
+        if path.resolve() == home:
+            return f"Home ({path})"
+    except Exception:
+        pass
+    if str(path) == "/":
+        return "Filesystem root (/)"
+    name = path.name or str(path)
+    if name.lower() in {"obs", "observations", "obsfiles", "obs_files"}:
+        return f"Obs folder ({path})"
+    if name.lower() == "data":
+        return f"Data folder ({path})"
+    if path == Path.cwd().resolve():
+        return f"Current directory ({path})"
+    return str(path)
+
+
+def _path_under_root(path: Path, roots: List[Path]) -> bool:
+    try:
+        resolved = path.expanduser().resolve()
+    except Exception:
+        return False
+    for root in roots:
+        try:
+            resolved.relative_to(root.resolve())
+            return True
+        except Exception:
+            continue
+    return False
+
+
+def _safe_obs_path(raw_path: str, roots: List[Path]) -> Path:
+    if not roots:
+        raise ValueError("no NECST-side locations are available; check filesystem permissions or set --obs-root")
+    if not str(raw_path or "").strip():
+        raise ValueError("obs path is empty")
+    path = Path(str(raw_path)).expanduser()
+    if not path.is_absolute():
+        path = roots[0] / path
+    try:
+        resolved = path.resolve()
+    except Exception as exc:
+        raise ValueError(f"cannot resolve NECST-side path: {exc}") from exc
+    if not _path_under_root(resolved, roots):
+        root_text = ", ".join(str(r) for r in roots)
+        raise ValueError(f"NECST-side path is outside configured locations: {resolved}; roots={root_text}")
+    return resolved
+
+
+def obs_roots_payload(roots: List[Path]) -> JsonDict:
+    return {
+        "ok": True,
+        "roots": [{"path": str(root), "label": _obs_root_label(root)} for root in roots],
+        "message": (
+            "NECST-side locations are paths visible to the process running this console"
+            if roots
+            else "no NECST-side locations found"
+        ),
+    }
+
+
+def list_server_obs_files(roots: List[Path], directory: str = "") -> JsonDict:
+    browse_dir = _safe_obs_path(directory or (str(roots[0]) if roots else ""), roots)
+    if not browse_dir.exists() or not browse_dir.is_dir():
+        raise ValueError(f"NECST-side directory does not exist or is not a directory: {browse_dir}")
+    entries: List[JsonDict] = []
+    parent = browse_dir.parent
+    if parent != browse_dir and _path_under_root(parent, roots):
+        entries.append({"type": "directory", "name": "..", "path": str(parent), "size": None})
+    try:
+        children = list(browse_dir.iterdir())
+    except Exception as exc:
+        raise ValueError(f"failed to list NECST-side directory {browse_dir}: {exc}") from exc
+    for child in sorted(children, key=lambda p: (not p.is_dir(), p.name.lower())):
+        try:
+            if child.is_dir():
+                entries.append({"type": "directory", "name": child.name, "path": str(child.resolve()), "size": None})
+            elif child.is_file() and child.suffix.lower() in {".obs", ".toml"}:
+                entries.append({
+                    "type": "file",
+                    "name": child.name,
+                    "path": str(child.resolve()),
+                    "size": int(child.stat().st_size),
+                })
+        except Exception:
+            continue
+    return {"ok": True, "directory": str(browse_dir), "entries": entries, "root_count": len(roots)}
+
+
+def preview_server_obs_file(roots: List[Path], path: str, *, max_bytes: int = 65536) -> JsonDict:
+    obs_path = _safe_obs_path(path, roots)
+    if obs_path.suffix.lower() not in {".obs", ".toml", ".txt"}:
+        raise ValueError("NECST-side preview only allows .obs, .toml, or .txt files")
+    if not obs_path.exists() or not obs_path.is_file():
+        raise ValueError(f"NECST-side obs file does not exist: {obs_path}")
+    max_b = max(1024, min(int(max_bytes), 1024 * 1024))
+    data = obs_path.read_bytes()
+    truncated = len(data) > max_b
+    chunk = data[:max_b]
+    preview_text = chunk.decode("utf-8", errors="replace")
+    return {
+        "ok": True,
+        "path": str(obs_path),
+        "directory": str(obs_path.parent),
+        "filename": obs_path.name,
+        "text": preview_text,
+        "size_bytes": len(data),
+        "returned_bytes": len(chunk),
+        "line_count": len(preview_text.splitlines()),
+        "truncated": bool(truncated),
+    }
 
 def validate_site_capability(
     state: OperatorConsoleState,
@@ -1575,6 +1818,26 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
         if self.path == "/api/status":
             self._send_json(build_console_status(self.server.state))
             return
+        parsed = urllib.parse.urlparse(self.path)
+        query = urllib.parse.parse_qs(parsed.query)
+        if parsed.path == "/api/obs-roots":
+            self._send_json(obs_roots_payload(self.server.state.obs_roots))
+            return
+        if parsed.path == "/api/obs-list":
+            try:
+                directory = (query.get("dir") or [""])[0]
+                self._send_json(list_server_obs_files(self.server.state.obs_roots, directory))
+            except Exception as exc:
+                self._send_json({"ok": False, "reason": str(exc), "entries": []}, status=400)
+            return
+        if parsed.path == "/api/obs-preview":
+            try:
+                path = (query.get("path") or [""])[0]
+                max_bytes = int((query.get("max_bytes") or [65536])[0])
+                self._send_json(preview_server_obs_file(self.server.state.obs_roots, path, max_bytes=max_bytes))
+            except Exception as exc:
+                self._send_json({"ok": False, "reason": str(exc), "text": ""}, status=400)
+            return
         if self.path == "/api/operator-status":
             state = self.server.state
             live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
@@ -1585,8 +1848,6 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
             )
             self._send_json(status_state.get("operator_status", {}))
             return
-        parsed = urllib.parse.urlparse(self.path)
-        query = urllib.parse.parse_qs(parsed.query)
         if parsed.path == "/api/processes":
             state = self.server.state
             with state.lock:
@@ -1759,6 +2020,7 @@ def run_server(
     progress_refresh_ms: int = 500,
     progress_no_ros: bool = False,
     progress_log_dir: Optional[os.PathLike[str] | str] = None,
+    obs_roots: Optional[List[os.PathLike[str] | str]] = None,
     status_no_ros: bool = False,
     action_mode: str = "live",
     live_actions_enabled: bool = True,
@@ -1807,6 +2069,7 @@ def run_server(
     resolved_launcher_log_dir.mkdir(parents=True, exist_ok=True)
     resolved_progress_log_dir.mkdir(parents=True, exist_ok=True)
     operator_log_path = resolved_operator_log_dir / "operator_console.jsonl"
+    resolved_obs_roots = resolve_obs_roots(obs_roots)
     progress_script = Path(__file__).resolve().parents[2] / "bin" / "progress.py"
     progress_monitor = progress_manager.ProgressMonitorManager(
         progress_script=progress_script,
@@ -1836,6 +2099,7 @@ def run_server(
         chopper_config=dict(site_summary.chopper),
         operator_log_path=operator_log_path,
         launcher_log_dir=resolved_launcher_log_dir,
+        obs_roots=list(resolved_obs_roots),
         shutdown_terminate_launchers=bool(shutdown_terminate_launchers),
         shutdown_launcher_timeout_sec=float(shutdown_launcher_timeout_sec),
         shutdown_launcher_kill_timeout_sec=float(shutdown_launcher_kill_timeout_sec),
@@ -1861,6 +2125,16 @@ def run_server(
             "progress_log_dir": str(resolved_progress_log_dir),
             "append_only": True,
         },
+    )
+    state.add_log(
+        bool(resolved_obs_roots),
+        (
+            "NECST-side file chooser locations configured: " + ", ".join(str(p) for p in resolved_obs_roots)
+            if resolved_obs_roots
+            else "NECST-side file chooser found no existing locations; check filesystem permissions or use --obs-root"
+        ),
+        action="necst_side_obs_browser",
+        data={"obs_roots": [str(p) for p in resolved_obs_roots]},
     )
     if state.live_cache is not None:
         live_snapshot = state.live_cache.snapshot()
