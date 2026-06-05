@@ -26,6 +26,26 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 from urllib.parse import parse_qs, urlparse
 
 try:
+    from necst.web import status_model
+except ModuleNotFoundError:
+    # Allow direct source-tree execution as ``python3 bin/progress.py`` in an
+    # environment where ROS/neclib is not importable yet.  Importing ``necst``
+    # normally executes necst/__init__.py, so load this stdlib-only helper by
+    # file path as a fallback.
+    import importlib.util
+
+    _status_model_path = (
+        Path(__file__).resolve().parents[1] / "necst" / "web" / "status_model.py"
+    )
+    _status_model_spec = importlib.util.spec_from_file_location(
+        "necst_progress_status_model", _status_model_path
+    )
+    if _status_model_spec is None or _status_model_spec.loader is None:
+        raise
+    status_model = importlib.util.module_from_spec(_status_model_spec)
+    _status_model_spec.loader.exec_module(status_model)
+
+try:
     import tomllib  # Python 3.11+
 except ModuleNotFoundError:  # pragma: no cover - old Python fallback
     tomllib = None  # type: ignore[assignment]
@@ -3184,58 +3204,48 @@ def build_state(
     live: Optional[LiveRosCache] = None,
     time_sync: Optional[TimeSyncPoller] = None,
 ) -> Dict[str, Any]:
-    snapshot_path = current_snapshot_path(root)
-    raw_snapshot = read_json(snapshot_path)
+    """Build the progress.py API state from the shared read-only status model."""
     if live is not None:
         live.spin_once(0.0)
-    server_time_unix = time.time()
+    time_sync_snapshot = (time_sync.snapshot() if time_sync is not None else None) or {}
+    state = status_model.build_progress_status_state(
+        root,
+        events_limit=events_limit,
+        live_payload=live.snapshot() if live is not None else None,
+        time_sync_payload=time_sync_snapshot,
+    )
+    server_time_unix = state["server_time_unix"]
     snapshot = apply_display_derivations(
         apply_dynamic_remaining(
-            merge_live_telemetry(
-                raw_snapshot, live.snapshot() if live is not None else None
-            )
+            state["snapshot"] if isinstance(state.get("snapshot"), dict) else None
         ),
         server_time_unix=server_time_unix,
     )
-    events_path = latest_events_path(
-        root, raw_snapshot if isinstance(raw_snapshot, dict) else None
+    all_events = state.get("status_events") or []
+    plan = state.get("plan") or {}
+    state.update(
+        {
+            "ok": isinstance(snapshot, dict)
+            and bool(snapshot)
+            and not snapshot.get("_error"),
+            "snapshot": snapshot or {},
+            "rendered": render(
+                snapshot if isinstance(snapshot, dict) else None,
+                all_events,
+                compact=True,
+                full_plan=plan if isinstance(plan, dict) else None,
+            ),
+            "time_sync": time_sync_snapshot,
+            "operator_status": status_model.build_operator_status(
+                snapshot if isinstance(snapshot, dict) else None,
+                plan=plan if isinstance(plan, dict) else None,
+                events=state.get("events") or [],
+                paths=state.get("paths") or {},
+                server_time_unix=server_time_unix,
+            ),
+        }
     )
-    plan_path = latest_plan_path(
-        root, raw_snapshot if isinstance(raw_snapshot, dict) else None
-    )
-    plan = read_json(plan_path) if plan_path else None
-    if isinstance(snapshot, dict) and time_sync is not None:
-        time_sync_snapshot = time_sync.snapshot()
-        if time_sync_snapshot.get("enabled"):
-            snapshot.setdefault("time_sync", {}).update(time_sync_snapshot)
-    all_events = read_all_events(events_path)
-    events = all_events[-events_limit:] if events_limit > 0 else []
-    return {
-        "ok": isinstance(snapshot, dict)
-        and bool(snapshot)
-        and not snapshot.get("_error"),
-        "root": str(root),
-        "paths": {
-            "snapshot": str(snapshot_path) if snapshot_path else None,
-            "events": str(events_path) if events_path else None,
-            "plan": str(plan_path) if plan_path else None,
-        },
-        "snapshot": snapshot or {},
-        "events": events,
-        # Full observation event status is used only for plan-status
-        # classification.  The visible Recent Events table remains bounded by
-        # ``events`` so the dashboard stays readable.
-        "status_events": all_events,
-        "plan": plan or {},
-        "rendered": render(
-            snapshot if isinstance(snapshot, dict) else None,
-            all_events,
-            compact=True,
-            full_plan=plan if isinstance(plan, dict) else None,
-        ),
-        "server_time_unix": server_time_unix,
-        "time_sync": (time_sync.snapshot() if time_sync is not None else None) or {},
-    }
+    return state
 
 
 _HTML_TEMPLATE = """<!doctype html>
