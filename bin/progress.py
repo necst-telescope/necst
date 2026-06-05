@@ -218,6 +218,33 @@ def _topic_age_sec(
     return None
 
 
+def _topic_receipt_age_sec(
+    live_payload: Mapping[str, Any],
+    key: str,
+) -> Optional[float]:
+    """Return age since the local subscriber actually received this topic.
+
+    This intentionally does *not* use timestamps carried inside the message.
+    For antenna command and control topics, message timestamps may describe the
+    planned command time rather than the wall-clock arrival time.  Using those
+    timestamps made old or interpolated command data look live after abort.
+    """
+    ages = live_payload.get("last_message_age_sec")
+    if isinstance(ages, Mapping):
+        age = _finite_float(ages.get(key))
+        if age is not None:
+            return age
+    return None
+
+
+def _topic_received_fresh(
+    live_payload: Mapping[str, Any],
+    key: str,
+) -> bool:
+    age = _topic_receipt_age_sec(live_payload, key)
+    return bool(age is not None and age <= live_status_max_age_sec())
+
+
 def _topic_is_fresh(
     live_payload: Mapping[str, Any],
     key: str,
@@ -268,17 +295,17 @@ def _live_truth_scrub_stale_motion(
     section = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), Mapping) else {}
     control = live_payload.get("control") if isinstance(live_payload.get("control"), Mapping) else {}
 
-    queue_fresh = _topic_is_fresh(live_payload, "queue_status", queue)
+    queue_fresh = _topic_received_fresh(live_payload, "queue_status")
     try:
         queue_depth = int(queue.get("queue_depth", 0)) if isinstance(queue, Mapping) else 0
     except Exception:
         queue_depth = 0
     queue_active = bool(queue_fresh and (queue.get("active") or queue_depth > 0))
 
-    section_fresh = _topic_is_fresh(live_payload, "section_status", section)
+    section_fresh = _topic_received_fresh(live_payload, "section_status")
     section_active = bool(section_fresh and section.get("active"))
 
-    control_fresh = _topic_is_fresh(live_payload, "control", control)
+    control_fresh = _topic_received_fresh(live_payload, "control")
     control_active = bool(control_fresh and (control.get("controlled") or control.get("tight")))
 
     live_motion_active = bool(command_valid or queue_active or section_active or control_active)
@@ -1446,8 +1473,8 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("last_message_age_sec"), dict)
         else {}
     )
-    command_topic_age = _topic_age_sec(live_payload, "command", cmd)
-    command_topic_fresh = bool(command_topic_age is not None and command_topic_age <= live_status_max_age_sec())
+    command_topic_age = _topic_receipt_age_sec(live_payload, "command")
+    command_topic_fresh = _topic_received_fresh(live_payload, "command")
     direct_cmd_az = _finite_float(
         _first_present(cmd, "command_lon_deg", "cmd_az_deg", "az_cmd_deg")
     )
@@ -1743,8 +1770,15 @@ class LiveRosCache:
         self.spectrometer_status: Dict[str, Any] = {}
         self.chopper_status: Dict[str, Any] = {}
         self.weather: Dict[str, Dict[str, Any]] = {}
+        self._sample_counts: Dict[str, int] = {}
+        self._last_message_time_unix: Dict[str, float] = {}
         if self.requested:
             self._start()
+
+    def _record_sample_locked(self, key: str) -> None:
+        now = time.time()
+        self._sample_counts[key] = int(self._sample_counts.get(key, 0)) + 1
+        self._last_message_time_unix[key] = now
 
     def _start(self) -> None:
         try:
@@ -1780,24 +1814,31 @@ class LiveRosCache:
                 }
 
             def command_cb(msg: Any) -> None:
-                self.command = _msg_coord(msg, prefix="command")
+                with self._lock:
+                    self.command = _msg_coord(msg, prefix="command")
+                    self._record_sample_locked("command")
 
             def encoder_cb(msg: Any) -> None:
-                self.encoder = _msg_coord(msg, prefix="encoder")
+                with self._lock:
+                    self.encoder = _msg_coord(msg, prefix="encoder")
+                    self._record_sample_locked("encoder")
 
             def tracking_cb(msg: Any) -> None:
                 # TrackingStatus is produced by NECST's antenna tracking node.
                 # It compares the encoder position with the command value at the
                 # encoder timestamp, using the control-side interpolation/extrapolation.
                 # Progress should not recompute tracking error from two latest samples.
-                self.tracking = {
-                    "ok": bool(getattr(msg, "ok", False)),
-                    "error_deg": _finite_float(getattr(msg, "error", None)),
-                    "time_unix": _finite_float(getattr(msg, "time", None)),
-                }
+                with self._lock:
+                    self.tracking = {
+                        "ok": bool(getattr(msg, "ok", False)),
+                        "error_deg": _finite_float(getattr(msg, "error", None)),
+                        "time_unix": _finite_float(getattr(msg, "time", None)),
+                    }
+                    self._record_sample_locked("tracking")
 
             def section_status_cb(msg: Any) -> None:
-                self.section_status = {
+                with self._lock:
+                    self.section_status = {
                     "active": bool(getattr(msg, "active", False)),
                     "control_id": str(getattr(msg, "control_id", "")),
                     "section_uid": str(getattr(msg, "section_uid", "")),
@@ -1852,10 +1893,12 @@ class LiveRosCache:
                         getattr(msg, "section_speed_deg_per_sec", None)
                     ),
                     "status_basis": str(getattr(msg, "status_basis", "")),
-                }
+                    }
+                    self._record_sample_locked("section_status")
 
             def pointing_status_cb(msg: Any) -> None:
-                self.pointing_status = {
+                with self._lock:
+                    self.pointing_status = {
                     "valid": bool(getattr(msg, "valid", False)),
                     "publish_time_unix": _finite_float(
                         getattr(msg, "publish_time_unix", None)
@@ -1887,10 +1930,12 @@ class LiveRosCache:
                     "command_stale": bool(getattr(msg, "command_stale", False)),
                     "encoder_stale": bool(getattr(msg, "encoder_stale", False)),
                     "basis": str(getattr(msg, "basis", "")),
-                }
+                    }
+                    self._record_sample_locked("pointing_status")
 
             def az_unwrap_status_cb(msg: Any) -> None:
-                self.az_unwrap_status = {
+                with self._lock:
+                    self.az_unwrap_status = {
                     "enabled": bool(getattr(msg, "enabled", False)),
                     "valid": bool(getattr(msg, "valid", False)),
                     "mode": str(getattr(msg, "mode", "")),
@@ -1917,7 +1962,8 @@ class LiveRosCache:
                 }
 
             def queue_status_cb(msg: Any) -> None:
-                self.queue_status = {
+                with self._lock:
+                    self.queue_status = {
                     "active": bool(getattr(msg, "active", False)),
                     "control_id": str(getattr(msg, "control_id", "")),
                     "mode": str(getattr(msg, "mode", "")),
@@ -2043,12 +2089,14 @@ class LiveRosCache:
                 else:
                     state = "unknown"
 
-                self.chopper_status = {
+                with self._lock:
+                    self.chopper_status = {
                     "insert": insert,
                     "state": state,
                     "position": position,
                     "time_unix": _finite_float(getattr(msg, "time", None)),
-                }
+                    }
+                    self._record_sample_locked("chopper_status")
 
             def weather_cb(key: str):
                 def _callback(msg: Any) -> None:
@@ -2077,6 +2125,7 @@ class LiveRosCache:
                     }
                     with self._lock:
                         self.weather[key] = payload
+                    self._record_sample_locked(f"weather/{key}")
 
                 return _callback
 
@@ -2169,9 +2218,18 @@ class LiveRosCache:
 
     def snapshot(self) -> Dict[str, Any]:
         with self._lock:
+            now = time.time()
+            last_age_sec = {
+                key: max(0.0, now - float(ts))
+                for key, ts in self._last_message_time_unix.items()
+            }
             payload: Dict[str, Any] = {
                 "available": self.available,
                 "spin_mode": self._spin_mode,
+                "sample_counts": dict(self._sample_counts),
+                "last_message_time_unix": dict(self._last_message_time_unix),
+                "last_message_age_sec": last_age_sec,
+                "received_topics": sorted(self._sample_counts),
             }
             if self.error:
                 payload["error"] = self.error
@@ -4737,7 +4795,7 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const rows = [
     ['Encoder Az/El', azElText(a.encoder_lon_deg, a.encoder_lat_deg, a.encoder_frame), 'important'],
     ...(a.az_unwrap_enabled ? [['Az unwrap', azUnwrapBadgeHtml(a), 'html']] : []),
-    ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame), ''],
+    ['Command Az/El', a.command_valid === true ? azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame) : '-', a.command_valid === true ? '' : 'muted'],
     ...officialTrackingRows(a, snapshot),
     [isCal ? 'calibration now' : (g.cos_correction ? 'map offset actual' : 'map offset'), isCal ? phase : (off ? coordPairText(off, frame, 'arcsec') : '-'), 'important'],
     ['progress item', psummary?.progress || '-', 'important'],

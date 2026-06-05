@@ -378,8 +378,8 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("last_message_age_sec"), dict)
         else {}
     )
-    command_topic_age = _topic_age_sec(live_payload, "command", cmd)
-    command_topic_fresh = bool(command_topic_age is not None and command_topic_age <= live_status_max_age_sec())
+    command_topic_age = _topic_receipt_age_sec(live_payload, "command")
+    command_topic_fresh = _topic_received_fresh(live_payload, "command")
     direct_cmd_az = _finite_float(
         _first_present(cmd, "command_lon_deg", "cmd_az_deg", "az_cmd_deg")
     )
@@ -686,6 +686,33 @@ def _topic_age_sec(
     return None
 
 
+def _topic_receipt_age_sec(
+    live_payload: Mapping[str, Any],
+    key: str,
+) -> Optional[float]:
+    """Return age since the local subscriber actually received this topic.
+
+    This intentionally does *not* use timestamps carried inside the message.
+    For antenna command and control topics, message timestamps may describe the
+    planned command time rather than the wall-clock arrival time.  Using those
+    timestamps made old or interpolated command data look live after abort.
+    """
+    ages = live_payload.get("last_message_age_sec")
+    if isinstance(ages, Mapping):
+        age = _finite_float(ages.get(key))
+        if age is not None:
+            return age
+    return None
+
+
+def _topic_received_fresh(
+    live_payload: Mapping[str, Any],
+    key: str,
+) -> bool:
+    age = _topic_receipt_age_sec(live_payload, key)
+    return bool(age is not None and age <= live_status_max_age_sec())
+
+
 def _topic_is_fresh(
     live_payload: Mapping[str, Any],
     key: str,
@@ -736,17 +763,17 @@ def _live_truth_scrub_stale_motion(
     section = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), Mapping) else {}
     control = live_payload.get("control") if isinstance(live_payload.get("control"), Mapping) else {}
 
-    queue_fresh = _topic_is_fresh(live_payload, "queue_status", queue)
+    queue_fresh = _topic_received_fresh(live_payload, "queue_status")
     try:
         queue_depth = int(queue.get("queue_depth", 0)) if isinstance(queue, Mapping) else 0
     except Exception:
         queue_depth = 0
     queue_active = bool(queue_fresh and (queue.get("active") or queue_depth > 0))
 
-    section_fresh = _topic_is_fresh(live_payload, "section_status", section)
+    section_fresh = _topic_received_fresh(live_payload, "section_status")
     section_active = bool(section_fresh and section.get("active"))
 
-    control_fresh = _topic_is_fresh(live_payload, "control", control)
+    control_fresh = _topic_received_fresh(live_payload, "control")
     control_active = bool(control_fresh and (control.get("controlled") or control.get("tight")))
 
     live_motion_active = bool(command_valid or queue_active or section_active or control_active)
