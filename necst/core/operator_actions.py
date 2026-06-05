@@ -19,6 +19,7 @@ from typing import Any, Dict, Literal, Optional, Sequence
 
 from .. import config
 from .commander import Commander
+from ..ctrl.antenna.az_unwrap import assert_mount_az_allowed_when_unwrap_disabled
 from . import observation_check
 
 
@@ -520,6 +521,12 @@ def mount_move(
 
     az = _finite_float(az_deg, name="az_deg")
     el = _finite_float(el_deg, name="el_deg")
+    try:
+        unwrap_disabled_limit = assert_mount_az_allowed_when_unwrap_disabled(
+            az, action_label="mount_move"
+        )
+    except ValueError as exc:
+        raise OperatorActionError(str(exc)) from exc
     if timeout_sec is None:
         timeout = None
     else:
@@ -537,6 +544,8 @@ def mount_move(
         "dry_run": bool(dry_run),
         "used_held_authority": commander is not None,
     }
+    if unwrap_disabled_limit is not None:
+        payload["az_unwrap_disabled_raw_limit"] = unwrap_disabled_limit
     if dry_run:
         return OperatorActionResult(
             action="mount_move",

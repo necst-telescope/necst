@@ -309,6 +309,8 @@ class service:
         CCDCommand,
         ComDelaySrv,
         CoordinateCommand,
+        GetAzUnwrapState,
+        SetAzUnwrapState,
         DomeSync,
         File,
         ObservationMode,
@@ -324,6 +326,12 @@ class service:
     record_file = Service(File, "record_file", namespace.core)
     com_delay = Service(ComDelaySrv, "com_delay", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
+    az_unwrap_state_get = Service(
+        GetAzUnwrapState, "az_unwrap_state/get", namespace.antenna
+    )
+    az_unwrap_state_set = Service(
+        SetAzUnwrapState, "az_unwrap_state/set", namespace.antenna
+    )
     scan_block = Service(ScanBlockCommand, "scan_block", namespace.antenna)
     dome_coord = Service(CoordinateCommand, "dome_coord", namespace.dome)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)

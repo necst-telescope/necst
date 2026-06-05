@@ -51,6 +51,7 @@ from rclpy.subscription import Subscription
 from .. import NECSTTimeoutError, config, namespace, service, topic
 from ..utils import Topic
 from .auth import PrivilegedNode, require_privilege
+from ..ctrl.antenna.az_unwrap import assert_mount_az_allowed_when_unwrap_disabled
 
 
 @dataclass
@@ -679,6 +680,11 @@ class Commander(PrivilegedNode):
                     offset_frame=offset[2],
                     unit=unit,
                     direct_mode=direct_mode,
+                )
+
+            if effective_az_target_mode == "mount" and target is not None:
+                assert_mount_az_allowed_when_unwrap_disabled(
+                    float(target[0]), action_label="Commander mount Az target"
                 )
 
             # Propagate optional fields in a backward compatible way.

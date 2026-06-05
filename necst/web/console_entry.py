@@ -1,69 +1,21 @@
-#!/usr/bin/env python3
-"""Serve the NECST Operator Console.
+"""Installable entry point for the NECST Operator Console.
 
-This is the first real-console entry point.  It reuses the approved v7 browser
-layout from ``bin/console-demo.py``, reads status through ``necst.web.status_model``,
-and dispatches supported write actions through ``necst.core.operator_actions``.
+This module mirrors ``bin/console.py`` so the GUI can be started after a normal
+ROS/colcon installation without relying on the source-tree ``bin`` directory.
 """
 
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import signal
-import sys
 import threading
 from pathlib import Path
 from typing import Any, Optional
 
-
-def _load_operator_console_module() -> Any:
-    """Import necst.web.operator_console, with a file fallback for reduced envs."""
-
-    try:
-        from necst.web import operator_console  # type: ignore
-
-        return operator_console
-    except Exception:
-        module_path = (
-            Path(__file__).resolve().parents[1]
-            / "necst"
-            / "web"
-            / "operator_console.py"
-        )
-        package_path = module_path.parent
-
-        # Create minimal package placeholders so operator_console's relative
-        # imports work without importing necst/__init__.py and therefore without
-        # requiring ROS/neclib for read-only smoke tests.
-        import types
-
-        necst_pkg = sys.modules.setdefault("necst", types.ModuleType("necst"))
-        web_pkg = sys.modules.setdefault("necst.web", types.ModuleType("necst.web"))
-        setattr(necst_pkg, "web", web_pkg)
-
-        for mod_name in ("process_manager", "progress_manager", "status_model", "site_config", "self_check", "log_reader", "live_telemetry"):
-            mod_path = package_path / f"{mod_name}.py"
-            spec = importlib.util.spec_from_file_location(f"necst.web.{mod_name}", mod_path)
-            if spec is None or spec.loader is None:
-                raise RuntimeError(f"failed to load {mod_name}.py from {mod_path}")
-            module = importlib.util.module_from_spec(spec)
-            sys.modules.setdefault(f"necst.web.{mod_name}", module)
-            spec.loader.exec_module(module)
-            setattr(web_pkg, mod_name, module)
-
-        spec = importlib.util.spec_from_file_location(
-            "necst.web.operator_console", module_path
-        )
-        if spec is None or spec.loader is None:
-            raise RuntimeError(f"failed to load operator_console.py from {module_path}")
-        module = importlib.util.module_from_spec(spec)
-        sys.modules.setdefault("necst.web.operator_console", module)
-        spec.loader.exec_module(module)
-        return module
+from . import operator_console
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Serve the NECST Operator Console")
     parser.add_argument("--host", default="127.0.0.1", help="web bind address")
     parser.add_argument("--port", type=int, default=8092, help="web bind port")
@@ -177,10 +129,13 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--az-max", type=float, default=None, help="fallback mount Az upper limit [deg]")
     parser.add_argument("--el-min", type=float, default=None, help="fallback mount El lower limit [deg]")
     parser.add_argument("--el-max", type=float, default=None, help="fallback mount El upper limit [deg]")
+    return parser
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    parser = build_parser()
     args = parser.parse_args(argv)
     progress_url = str(args.progress_url or f"http://{args.progress_host}:{int(args.progress_port)}/")
-
-    operator_console = _load_operator_console_module()
     stop_event = threading.Event()
 
     def _signal_handler(_signum: int, _frame: Any) -> None:

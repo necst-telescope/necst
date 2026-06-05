@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from . import log_reader, process_manager, progress_manager, self_check, site_config, status_model, live_telemetry
+from ..ctrl.antenna.az_unwrap import assert_mount_az_allowed_when_unwrap_disabled
 
 
 JsonDict = Dict[str, Any]
@@ -253,6 +254,9 @@ def validate_mount_target(
         raise ValueError("site TOML El min/max are invalid")
     if not (az_min <= az <= az_max):
         raise ValueError(f"Az={az:g} deg is outside site TOML range {az_min:g}..{az_max:g} deg")
+    assert_mount_az_allowed_when_unwrap_disabled(
+        az, action_label="operator console mount move"
+    )
     if not (el_min <= el <= el_max):
         raise ValueError(f"El={el:g} deg is outside site TOML range {el_min:g}..{el_max:g} deg")
     return az, el
@@ -1785,9 +1789,9 @@ def run_server(
     )
     limits = dict(site_summary.mount_limits)
     resolved_operator_log_dir = (
-        Path(operator_log_dir)
+        Path(operator_log_dir).expanduser()
         if operator_log_dir not in (None, "")
-        else Path(progress_root) / "operator_console"
+        else Path(os.environ.get("NECST_OPERATOR_LOG_DIR", Path.home() / ".necst" / "operator_console")).expanduser()
     )
     resolved_launcher_log_dir = (
         Path(launcher_log_dir)
@@ -1838,6 +1842,18 @@ def run_server(
     )
     state.live_cache = live_telemetry.LiveTelemetryCache(enabled=not bool(status_no_ros))
     state.add_log(True, f"console started in action_mode={action_mode}")
+    state.add_log(
+        True,
+        "operator log append file configured",
+        action="operator_log",
+        data={
+            "operator_log_path": str(operator_log_path),
+            "operator_log_dir": str(resolved_operator_log_dir),
+            "launcher_log_dir": str(resolved_launcher_log_dir),
+            "progress_log_dir": str(resolved_progress_log_dir),
+            "append_only": True,
+        },
+    )
     if state.live_cache is not None:
         live_snapshot = state.live_cache.snapshot()
         if live_snapshot.get("available"):
