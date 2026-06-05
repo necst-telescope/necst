@@ -1579,7 +1579,11 @@ def _operator_status_to_v7_status(
 
     raw_active_task = str(motion.get("active_task") or "").strip()
     if raw_active_task.lower() in {"", "idle", "none", "unknown"}:
-        active_task = str(state.last_active_task or "none")
+        # In live mode, do not resurrect the last console-side action.  That
+        # stale fallback made the Manual panel keep showing "moving" after
+        # an abort or after the command/status topics disappeared.  Dry-run
+        # still uses the local action memory because there are no live topics.
+        active_task = str(state.last_active_task or "none") if state.action_mode == "dry-run" else "none"
     else:
         active_task = raw_active_task
     if active_task.lower() in {"", "idle", "unknown"}:
@@ -1587,7 +1591,7 @@ def _operator_status_to_v7_status(
 
     raw_manual_state = str(motion.get("stage") or "").strip()
     if raw_manual_state.lower() in {"", "idle", "none", "unknown"}:
-        manual_state = str(state.last_manual_state or "idle")
+        manual_state = str(state.last_manual_state or "idle") if state.action_mode == "dry-run" else "idle"
     else:
         manual_state = raw_manual_state
     if manual_state.lower() in {"", "none", "unknown"}:
@@ -1605,15 +1609,20 @@ def _operator_status_to_v7_status(
 
     cmd_az = antenna.get("command_az_deg")
     cmd_el = antenna.get("command_el_deg")
-    if cmd_az is None:
-        cmd_az = state.last_command_az
-    if cmd_el is None:
-        cmd_el = state.last_command_el
+    if state.action_mode == "dry-run":
+        if cmd_az is None:
+            cmd_az = state.last_command_az
+        if cmd_el is None:
+            cmd_el = state.last_command_el
 
-    chopper_state = str(chopper.get("state") or state.last_chopper_state or "unknown")
-    chopper_position = chopper.get("position")
-    if chopper_position is None:
-        chopper_position = state.last_chopper_position
+    if state.action_mode == "dry-run":
+        chopper_state = str(chopper.get("state") or state.last_chopper_state or "unknown")
+        chopper_position = chopper.get("position")
+        if chopper_position is None:
+            chopper_position = state.last_chopper_position
+    else:
+        chopper_state = str(chopper.get("state") or "unknown")
+        chopper_position = chopper.get("position")
     chopper_age = chopper.get("age_sec")
     if chopper_age is None:
         age_text = "unknown"

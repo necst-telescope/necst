@@ -184,6 +184,156 @@ def _finite_float(value: Any) -> Optional[float]:
     return out if math.isfinite(out) else None
 
 
+
+def _topic_age_sec(
+    live_payload: Mapping[str, Any],
+    key: str,
+    payload: Optional[Mapping[str, Any]] = None,
+    *,
+    now_unix: Optional[float] = None,
+) -> Optional[float]:
+    """Return the age of a live ROS topic sample, if known.
+
+    Console live telemetry records ``last_message_age_sec`` explicitly.  The
+    standalone progress monitor may also carry a payload timestamp.  Treat
+    missing age as unknown, not fresh.
+    """
+    ages = live_payload.get("last_message_age_sec")
+    if isinstance(ages, Mapping):
+        age = _finite_float(ages.get(key))
+        if age is not None:
+            return age
+    if payload is not None:
+        now = float(now_unix if now_unix is not None else time.time())
+        for ts_key in (
+            "publish_time_unix",
+            "time_unix",
+            "command_time_unix",
+            "encoder_time_unix",
+            "query_time_unix",
+        ):
+            ts = _finite_float(payload.get(ts_key))
+            if ts is not None:
+                return max(0.0, now - ts)
+    return None
+
+
+def _topic_is_fresh(
+    live_payload: Mapping[str, Any],
+    key: str,
+    payload: Optional[Mapping[str, Any]] = None,
+) -> bool:
+    age = _topic_age_sec(live_payload, key, payload)
+    return bool(age is not None and age <= live_status_max_age_sec())
+
+
+def _clear_command_fields(mapping: Dict[str, Any]) -> None:
+    for key in (
+        "command_lon_deg",
+        "command_lat_deg",
+        "cmd_az_deg",
+        "cmd_el_deg",
+        "az_cmd_deg",
+        "el_cmd_deg",
+        "command_frame",
+        "command_unit",
+        "command_time_unix",
+        "command_name",
+    ):
+        mapping.pop(key, None)
+
+
+def _live_truth_scrub_stale_motion(
+    out: Dict[str, Any],
+    live_payload: Mapping[str, Any],
+    *,
+    command_valid: bool,
+) -> None:
+    """Remove stale planned/sidecar motion fields when live ROS says idle.
+
+    The progress sidecar can legitimately lag after ``necst abort`` or a local
+    launcher failure.  In operator-facing displays, command and motion must be
+    shown only when backed by fresh live command / section / queue status.
+    """
+    if not isinstance(out, dict) or not isinstance(live_payload, Mapping):
+        return
+
+    antenna = out.setdefault("antenna", {})
+    if isinstance(antenna, dict) and not command_valid:
+        _clear_command_fields(antenna)
+        antenna["command_valid"] = False
+        antenna.setdefault("command_source", "none")
+
+    queue = live_payload.get("queue_status") if isinstance(live_payload.get("queue_status"), Mapping) else {}
+    section = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), Mapping) else {}
+    control = live_payload.get("control") if isinstance(live_payload.get("control"), Mapping) else {}
+
+    queue_fresh = _topic_is_fresh(live_payload, "queue_status", queue)
+    try:
+        queue_depth = int(queue.get("queue_depth", 0)) if isinstance(queue, Mapping) else 0
+    except Exception:
+        queue_depth = 0
+    queue_active = bool(queue_fresh and (queue.get("active") or queue_depth > 0))
+
+    section_fresh = _topic_is_fresh(live_payload, "section_status", section)
+    section_active = bool(section_fresh and section.get("active"))
+
+    control_fresh = _topic_is_fresh(live_payload, "control", control)
+    control_active = bool(control_fresh and (control.get("controlled") or control.get("tight")))
+
+    live_motion_active = bool(command_valid or queue_active or section_active or control_active)
+    activity = out.setdefault("activity", {})
+    if not isinstance(activity, dict):
+        return
+    activity["live_motion_active"] = live_motion_active
+    activity["live_motion_source"] = (
+        "command" if command_valid else
+        "queue_status" if queue_active else
+        "section_status" if section_active else
+        "control_status" if control_active else
+        "none"
+    )
+
+    # If fresh live status does not support motion, old sidecar/planned values
+    # such as ON/line/moving must not remain visible as current state.
+    if live_motion_active:
+        return
+
+    for key in (
+        "motion_stage",
+        "drive_kind",
+        "active_task",
+        "control_section_kind",
+        "control_section_label",
+        "control_id",
+        "control_section_uid",
+        "control_status_basis",
+        "control_section_start_unix",
+        "control_section_stop_unix",
+        "control_section_command_time_unix",
+        "control_section_publish_time_unix",
+        "control_section_query_time_unix",
+        "control_section_duration_sec",
+        "control_section_fraction",
+        "phase",
+    ):
+        activity.pop(key, None)
+    activity["active_task"] = "idle"
+    activity["phase"] = "IDLE"
+    activity["motion_stage"] = "idle"
+    activity["drive_kind"] = "idle"
+    activity["control_section_active"] = False
+    activity["control_section_fresh"] = False
+    activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+
+    geometry = out.get("geometry")
+    if isinstance(geometry, dict):
+        for key in (
+            "current_line_label",
+            "live_section_geometry",
+        ):
+            geometry.pop(key, None)
+
 def _first_present(mapping: Mapping[str, Any], *keys: str) -> Any:
     for key in keys:
         try:
@@ -1296,11 +1446,8 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("last_message_age_sec"), dict)
         else {}
     )
-    command_topic_age = _finite_float(live_ages.get("command"))
-    command_topic_fresh = (
-        command_topic_age is not None
-        and command_topic_age <= live_status_max_age_sec()
-    )
+    command_topic_age = _topic_age_sec(live_payload, "command", cmd)
+    command_topic_fresh = bool(command_topic_age is not None and command_topic_age <= live_status_max_age_sec())
     direct_cmd_az = _finite_float(
         _first_present(cmd, "command_lon_deg", "cmd_az_deg", "az_cmd_deg")
     )
@@ -1401,19 +1548,8 @@ def merge_live_telemetry(
     if antenna_update:
         antenna_section = out.setdefault("antenna", {})
         if not command_valid:
-            for key in (
-                "command_lon_deg",
-                "command_lat_deg",
-                "cmd_az_deg",
-                "cmd_el_deg",
-                "az_cmd_deg",
-                "el_cmd_deg",
-                "command_frame",
-                "command_unit",
-                "command_time_unix",
-            ):
-                antenna_section.pop(key, None)
-                antenna_update.pop(key, None)
+            _clear_command_fields(antenna_section)
+            _clear_command_fields(antenna_update)
         antenna_update["command_valid"] = bool(command_valid)
         antenna_update["command_source"] = command_source
         if command_topic_age is not None:
@@ -1578,6 +1714,7 @@ def merge_live_telemetry(
             # present.
             if data.get("latest_control_line_index") is None:
                 data["latest_control_line_index"] = line_index
+    _live_truth_scrub_stale_motion(out, live_payload, command_valid=command_valid)
     return apply_dynamic_remaining(out)
 
 
