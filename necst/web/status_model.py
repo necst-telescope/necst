@@ -241,28 +241,19 @@ def _live_payload_has_position(live_payload: Mapping[str, Any]) -> bool:
     """
     if not isinstance(live_payload, Mapping):
         return False
-    pointing = (
-        live_payload.get("pointing_status")
-        if isinstance(live_payload.get("pointing_status"), Mapping)
-        else {}
-    )
     encoder = (
         live_payload.get("encoder")
         if isinstance(live_payload.get("encoder"), Mapping)
         else {}
     )
 
-    # An idle snapshot must represent the actual telescope position.  A live
-    # command-only sample may be stale or merely the last target, so it must not
-    # fabricate an "idle antenna position" when no encoder/pointing encoder value
-    # is available.
-    for payload, keys in (
-        (pointing, ("enc_az_deg", "enc_el_deg")),
-        (encoder, ("encoder_lon_deg", "encoder_lat_deg")),
-    ):
-        if any(_finite_float(payload.get(key)) is not None for key in keys):
-            return True
-    return False
+    # An idle snapshot must represent the actual telescope position.  Use only
+    # the real encoder topic here.  AntennaPointingStatus is a diagnostic topic
+    # and may be invalid or extrapolated when no command is active.
+    return (
+        _finite_float(encoder.get("encoder_lon_deg")) is not None
+        and _finite_float(encoder.get("encoder_lat_deg")) is not None
+    )
 
 
 def make_idle_live_snapshot(
@@ -356,21 +347,21 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("encoder"), dict)
         else {}
     )
-    pointing = (
-        live_payload.get("pointing_status")
-        if isinstance(live_payload.get("pointing_status"), dict)
-        else {}
-    )
+    # AntennaPointingStatus is a diagnostic topic derived from altaz + encoder
+    # and may contain interpolated/extrapolated command values even after the
+    # real altaz command stream stops.  Do not use it for Current, Command,
+    # Tracking, or Moving state in operator-facing displays.
+    pointing: Dict[str, Any] = {}
     az_unwrap = (
         live_payload.get("az_unwrap_status")
         if isinstance(live_payload.get("az_unwrap_status"), dict)
         else {}
     )
     # Always start from direct encoder telemetry.  Command display is stricter:
-    # it must represent a real, fresh command status topic (or a valid
-    # pointing_status command), not an observation plan, old progress snapshot,
-    # or interpolated section.  Otherwise Command Az/El can keep moving after
-    # abort even when no command topic is being published.
+    # it must represent a real, fresh altaz command topic callback only, not an
+    # observation plan, old progress snapshot, AntennaPointingStatus, or
+    # interpolated section.  Otherwise Command Az/El can keep moving after abort
+    # even when no real command topic is being published.
     command_valid = False
     command_source = "none"
     live_ages = (
@@ -393,61 +384,8 @@ def merge_live_telemetry(
     if enc:
         antenna_update.update(enc)
 
-    if pointing:
-        antenna_update["pointing_status_available"] = True
-        pointing_valid = bool(pointing.get("valid", False))
-        antenna_update["pointing_status_valid"] = pointing_valid
-        cmd_az = _finite_float(pointing.get("cmd_az_deg"))
-        cmd_el = _finite_float(pointing.get("cmd_el_deg"))
-        enc_az = _finite_float(pointing.get("enc_az_deg"))
-        enc_el = _finite_float(pointing.get("enc_el_deg"))
-        pointing_cmd_age = _finite_float(pointing.get("cmd_age_sec"))
-        pointing_cmd_fresh = (
-            pointing_cmd_age is not None
-            and pointing_cmd_age <= live_status_max_age_sec()
-        )
-        pointing_command_stale = bool(pointing.get("command_stale", False))
-        if (
-            not command_valid
-            and pointing_valid
-            and not pointing_command_stale
-            and pointing_cmd_fresh
-            and cmd_az is not None
-            and cmd_el is not None
-        ):
-            antenna_update["command_lon_deg"] = cmd_az
-            antenna_update["command_lat_deg"] = cmd_el
-            antenna_update["command_frame"] = "altaz"
-            antenna_update["command_unit"] = "deg"
-            antenna_update["command_time_unix"] = pointing.get("command_time_unix")
-            command_valid = True
-            command_source = "pointing_status"
-        if enc_az is not None and enc_el is not None:
-            antenna_update["encoder_lon_deg"] = enc_az
-            antenna_update["encoder_lat_deg"] = enc_el
-            antenna_update["encoder_frame"] = "altaz"
-            antenna_update["encoder_unit"] = "deg"
-            antenna_update["encoder_time_unix"] = pointing.get("encoder_time_unix")
-        antenna_update["tracking_status_available"] = True
-        antenna_update["tracking_ok"] = bool(pointing.get("tracking_ok", False))
-        antenna_update["tracking_error_deg"] = pointing.get("tracking_error_deg")
-        antenna_update["tracking_status_time_unix"] = pointing.get("publish_time_unix")
-        antenna_update["tracking_status_age_sec"] = (
-            max(0.0, time.time() - pointing.get("publish_time_unix", time.time()))
-            if pointing.get("publish_time_unix") is not None
-            else None
-        )
-        antenna_update["tracking_threshold_deg"] = pointing.get(
-            "tracking_threshold_deg"
-        )
-        antenna_update["command_stale"] = bool(pointing.get("command_stale", False))
-        antenna_update["encoder_stale"] = bool(pointing.get("encoder_stale", False))
-        antenna_update["command_age_sec"] = pointing.get("cmd_age_sec")
-        antenna_update["encoder_age_sec"] = pointing.get("enc_age_sec")
-        antenna_update["delta_az_deg"] = pointing.get("delta_az_deg")
-        antenna_update["delta_el_deg"] = pointing.get("delta_el_deg")
-        antenna_update["delta_az_cos_el_deg"] = pointing.get("delta_az_cos_el_deg")
-        antenna_update["pointing_basis"] = pointing.get("basis")
+    # Intentionally ignore AntennaPointingStatus for normal display.
+    # Tracking error is taken only from topic.antenna_tracking below.
     if az_unwrap and az_unwrap.get("enabled"):
         antenna_update["az_unwrap"] = dict(az_unwrap)
         antenna_update["az_unwrap_enabled"] = True
@@ -461,7 +399,8 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("tracking"), dict)
         else {}
     )
-    if tracking:
+    tracking_fresh = bool(tracking and _topic_received_fresh(live_payload, "tracking"))
+    if tracking_fresh:
         terr = _finite_float(tracking.get("error_deg"))
         tstat = _finite_float(tracking.get("time_unix"))
         antenna_update["tracking_status_available"] = True
@@ -470,7 +409,10 @@ def merge_live_telemetry(
             antenna_update["tracking_error_deg"] = terr
         if tstat is not None:
             antenna_update["tracking_status_time_unix"] = tstat
-            antenna_update["tracking_status_age_sec"] = max(0.0, time.time() - tstat)
+        antenna_update["tracking_status_age_sec"] = _topic_receipt_age_sec(
+            live_payload, "tracking"
+        )
+        antenna_update["tracking_status_source"] = "antenna_tracking"
     else:
         # Do not compute a tracking error from the latest command and latest
         # encoder samples here.  altaz_cmd is a time-tagged command stream and
@@ -774,13 +716,11 @@ def _live_truth_scrub_stale_motion(
         queue_depth = 0
     queue_active = bool(queue_fresh and (queue.get("active") or queue_depth > 0))
 
-    section_fresh = _topic_received_fresh(live_payload, "section_status")
-    section_active = bool(section_fresh and section.get("active"))
-
-    control_fresh = _topic_received_fresh(live_payload, "control")
-    control_active = bool(control_fresh and (control.get("controlled") or control.get("tight")))
-
-    live_motion_active = bool(command_valid or queue_active or section_active or control_active)
+    # Operator-facing Moving/Tracking must not be inferred from section/control
+    # diagnostic topics.  These can remain active or carry planned scan metadata
+    # after stop/abort.  Use the real altaz command stream and explicit command
+    # queue activity only.
+    live_motion_active = bool(command_valid or queue_active)
     activity = out.setdefault("activity", {})
     if not isinstance(activity, dict):
         return
@@ -788,8 +728,6 @@ def _live_truth_scrub_stale_motion(
     activity["live_motion_source"] = (
         "command" if command_valid else
         "queue_status" if queue_active else
-        "section_status" if section_active else
-        "control_status" if control_active else
         "none"
     )
 

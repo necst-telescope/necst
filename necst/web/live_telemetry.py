@@ -98,11 +98,7 @@ class LiveTelemetryCache:
     def _has_position_locked(self) -> bool:
         enc_lon = _finite_float(self.encoder.get("encoder_lon_deg"))
         enc_lat = _finite_float(self.encoder.get("encoder_lat_deg"))
-        if enc_lon is not None and enc_lat is not None:
-            return True
-        pointing_az = _finite_float(self.pointing_status.get("enc_az_deg"))
-        pointing_el = _finite_float(self.pointing_status.get("enc_el_deg"))
-        return pointing_az is not None and pointing_el is not None
+        return enc_lon is not None and enc_lat is not None
 
     def has_position(self) -> bool:
         with self._lock:
@@ -286,7 +282,6 @@ class LiveTelemetryCache:
             except Exception:
                 pass
             for topic_obj, callback in (
-                (getattr(topic, "antenna_pointing_status", None), pointing_status_cb),
                 (getattr(topic, "antenna_az_unwrap_status", None), az_unwrap_status_cb),
                 (getattr(topic, "antenna_command_queue_status", None), queue_status_cb),
                 (getattr(topic, "spectrometer_status", None), spectrometer_status_cb),
@@ -386,8 +381,9 @@ class LiveTelemetryCache:
                 payload["encoder"] = dict(self.encoder)
             if self.tracking:
                 payload["tracking"] = dict(self.tracking)
-            if self.pointing_status:
-                payload["pointing_status"] = dict(self.pointing_status)
+            # AntennaPointingStatus is intentionally not exposed to the operator
+            # status model.  It is a diagnostic/extrapolated topic and must not
+            # drive Command Az/El, Tracking, or Moving display.
             if self.az_unwrap_status:
                 payload["az_unwrap_status"] = dict(self.az_unwrap_status)
             if self.queue_status:
