@@ -29,7 +29,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from . import log_reader, process_manager, progress_manager, self_check, site_config, status_model
+from . import log_reader, process_manager, progress_manager, self_check, site_config, status_model, live_telemetry
 
 
 JsonDict = Dict[str, Any]
@@ -105,6 +105,7 @@ class OperatorConsoleState:
     action_mode: str = "live"
     live_actions_enabled: bool = True
     status_refresh_ms: int = 1000
+    status_no_ros: bool = False
     quiet: bool = False
     events_limit: int = 12
     site_summary: site_config.SiteConfigSummary = field(
@@ -113,6 +114,7 @@ class OperatorConsoleState:
     mount_limits: Dict[str, float] = field(default_factory=dict)
     site_capabilities: Dict[str, bool] = field(default_factory=dict)
     chopper_config: Dict[str, Any] = field(default_factory=dict)
+    live_cache: Optional[live_telemetry.LiveTelemetryCache] = None
     operator_log_path: Optional[Path] = None
     launcher_log_dir: Optional[Path] = None
     process_registry: process_manager.ProcessRegistry = field(
@@ -632,6 +634,11 @@ def run_self_check(state: OperatorConsoleState, *, include_progress_health: bool
         progress_monitor=state.progress_monitor,
         events_limit=state.events_limit,
         include_progress_health=include_progress_health,
+        live_telemetry_snapshot=(
+            state.live_cache.snapshot()
+            if state.live_cache is not None
+            else {"requested": False, "available": False, "spin_mode": "disabled"}
+        ),
     )
 
 
@@ -1303,6 +1310,8 @@ def _operator_status_to_v7_status(
     antenna = op.get("antenna") if isinstance(op.get("antenna"), Mapping) else {}
     chopper = op.get("chopper") if isinstance(op.get("chopper"), Mapping) else {}
     progress = op.get("progress") if isinstance(op.get("progress"), Mapping) else {}
+    observation = op.get("observation") if isinstance(op.get("observation"), Mapping) else {}
+    paths = op.get("paths") if isinstance(op.get("paths"), Mapping) else {}
     warnings = op.get("warnings") if isinstance(op.get("warnings"), list) else []
 
     sys_state = str(system.get("state") or "unknown").lower()
@@ -1340,10 +1349,11 @@ def _operator_status_to_v7_status(
     current_az = antenna.get("current_az_deg")
     current_el = antenna.get("current_el_deg")
     try:
-        az = float(current_az) if current_az is not None else 0.0
-        el = float(current_el) if current_el is not None else 0.0
+        az = float(current_az) if current_az is not None else None
+        el = float(current_el) if current_el is not None else None
     except Exception:
-        az, el = 0.0, 0.0
+        az, el = None, None
+    if az is None or el is None:
         warnings = list(warnings) + ["antenna current Az/El is unavailable"]
 
     cmd_az = antenna.get("command_az_deg")
@@ -1402,6 +1412,12 @@ def _operator_status_to_v7_status(
             "owned_by_console": bool(monitor_status.get("owned_by_console")),
             "monitor_status": monitor_status.get("status"),
         },
+        "observation": {
+            "record_name": observation.get("record_name"),
+            "obs_file": observation.get("obs_file"),
+            "recording_dir": observation.get("recording_dir") or paths.get("recording_dir"),
+            "progress_record_dir": observation.get("progress_record_dir") or paths.get("progress_record_dir"),
+        },
         "authority": {
             "held": state.authority.held,
             "session_id": state.authority.session_id,
@@ -1449,6 +1465,11 @@ def _operator_status_to_v7_status(
             ),
         },
         "status_refresh_ms": int(state.status_refresh_ms),
+        "live_telemetry": (
+            state.live_cache.snapshot()
+            if state.live_cache is not None
+            else {"requested": False, "available": False, "spin_mode": "disabled"}
+        ),
         "operator_status": op,
     }
 
@@ -1457,9 +1478,11 @@ def build_console_status(state: OperatorConsoleState) -> JsonDict:
     with state.lock:
         _refresh_processes_and_log(state)
         _sync_authority_state(state)
+        live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
         status_state = status_model.build_progress_status_state(
             state.progress_root,
             events_limit=state.events_limit,
+            live_payload=live_payload,
         )
         return _operator_status_to_v7_status(state, status_state)
 
@@ -1550,9 +1573,11 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/operator-status":
             state = self.server.state
+            live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
             status_state = status_model.build_progress_status_state(
                 state.progress_root,
                 events_limit=state.events_limit,
+                live_payload=live_payload,
             )
             self._send_json(status_state.get("operator_status", {}))
             return
@@ -1730,6 +1755,7 @@ def run_server(
     progress_refresh_ms: int = 500,
     progress_no_ros: bool = False,
     progress_log_dir: Optional[os.PathLike[str] | str] = None,
+    status_no_ros: bool = False,
     action_mode: str = "live",
     live_actions_enabled: bool = True,
     status_refresh_ms: int = 1000,
@@ -1797,6 +1823,7 @@ def run_server(
         action_mode=action_mode,
         live_actions_enabled=bool(live_actions_enabled),
         status_refresh_ms=max(200, int(status_refresh_ms)),
+        status_no_ros=bool(status_no_ros),
         quiet=quiet,
         events_limit=int(events_limit),
         site_summary=site_summary,
@@ -1809,7 +1836,14 @@ def run_server(
         shutdown_launcher_timeout_sec=float(shutdown_launcher_timeout_sec),
         shutdown_launcher_kill_timeout_sec=float(shutdown_launcher_kill_timeout_sec),
     )
+    state.live_cache = live_telemetry.LiveTelemetryCache(enabled=not bool(status_no_ros))
     state.add_log(True, f"console started in action_mode={action_mode}")
+    if state.live_cache is not None:
+        live_snapshot = state.live_cache.snapshot()
+        if live_snapshot.get("available"):
+            state.add_log(True, f"live telemetry enabled ({live_snapshot.get('spin_mode')})", action="live_telemetry")
+        else:
+            state.add_log(False, f"live telemetry unavailable: {live_snapshot.get('error', 'disabled')}", action="live_telemetry")
     if action_mode == "live" and not live_actions_enabled:
         state.add_log(False, LIVE_ACTION_GUARD_MESSAGE, action="live_write_guard")
     if action_mode == "live" and live_actions_enabled:
@@ -1842,6 +1876,7 @@ def run_server(
     if action_mode == "live" and not live_actions_enabled:
         print("  live write guard: ON by --guard-live-actions (write actions blocked; STOP/ABORT remain available)")
     print(f"  status refresh: {max(200, int(status_refresh_ms))} ms")
+    print(f"  console live telemetry ROS: {'disabled' if status_no_ros else 'enabled'}")
     print(f"  operator log: {operator_log_path}")
     print(f"  launcher logs: {resolved_launcher_log_dir}")
     print(f"  progress logs: {resolved_progress_log_dir}")
@@ -1886,6 +1921,11 @@ def run_server(
     finally:
         with state.lock:
             _run_shutdown_cleanup(state)
+            if state.live_cache is not None:
+                try:
+                    state.live_cache.close()
+                except Exception as exc:
+                    state.add_log(False, f"failed to close live telemetry cache: {exc}", action="live_telemetry")
         server.shutdown()
         server.server_close()
         thread.join(timeout=2.0)

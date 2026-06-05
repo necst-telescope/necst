@@ -42,7 +42,7 @@ def _load_operator_console_module() -> Any:
         web_pkg = sys.modules.setdefault("necst.web", types.ModuleType("necst.web"))
         setattr(necst_pkg, "web", web_pkg)
 
-        for mod_name in ("process_manager", "progress_manager", "status_model", "site_config", "self_check", "log_reader"):
+        for mod_name in ("process_manager", "progress_manager", "status_model", "site_config", "self_check", "log_reader", "live_telemetry"):
             mod_path = package_path / f"{mod_name}.py"
             spec = importlib.util.spec_from_file_location(f"necst.web.{mod_name}", mod_path)
             if spec is None or spec.loader is None:
@@ -94,6 +94,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         type=int,
         default=500,
         help="browser refresh interval [ms] for a progress.py server launched by this console",
+    )
+    parser.add_argument(
+        "--no-ros",
+        action="store_true",
+        help="disable ROS subscriptions for the console status panel; normally not used on the telescope",
     )
     parser.add_argument(
         "--status-refresh-ms",
@@ -197,6 +202,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 status_refresh_ms=int(args.status_refresh_ms),
                 progress_no_ros=bool(args.progress_no_ros),
                 progress_log_dir=args.progress_log_dir,
+                status_no_ros=bool(args.no_ros),
                 action_mode=str(args.action_mode),
                 live_actions_enabled=(str(args.action_mode) == "live" and not bool(args.guard_live_actions)),
                 quiet=bool(args.quiet),

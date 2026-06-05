@@ -194,6 +194,7 @@ def run_console_self_check(
     progress_monitor: Any,
     events_limit: int = 12,
     include_progress_health: bool = True,
+    live_telemetry_snapshot: Optional[Mapping[str, Any]] = None,
 ) -> JsonDict:
     """Return a JSON-serialisable read-only console self-check result."""
 
@@ -256,6 +257,41 @@ def run_console_self_check(
     checks.append(_capability_check(capabilities))
     checks.append(_chopper_check(chopper_config, capabilities))
 
+    live_snapshot = live_telemetry_snapshot if isinstance(live_telemetry_snapshot, Mapping) else {}
+    live_requested = bool(live_snapshot.get("requested"))
+    live_available = bool(live_snapshot.get("available"))
+    live_error = live_snapshot.get("error")
+    if live_requested and live_available:
+        checks.append(
+            _check_item(
+                "live_telemetry",
+                True,
+                f"console ROS live telemetry available ({live_snapshot.get('spin_mode') or 'unknown spin mode'})",
+                severity="info",
+                data=live_snapshot,
+            )
+        )
+    elif live_requested:
+        checks.append(
+            _check_item(
+                "live_telemetry",
+                action_mode != "live",
+                f"console ROS live telemetry unavailable: {live_error or 'unknown reason'}",
+                severity="error" if action_mode == "live" else "warning",
+                data=live_snapshot,
+            )
+        )
+    else:
+        checks.append(
+            _check_item(
+                "live_telemetry",
+                True,
+                "console ROS live telemetry disabled by --no-ros",
+                severity="warning" if action_mode == "live" else "info",
+                data=live_snapshot,
+            )
+        )
+
     progress_root = Path(progress_root)
     checks.append(
         _check_item(
@@ -315,6 +351,7 @@ def run_console_self_check(
         status_state = status_model.build_progress_status_state(
             progress_root,
             events_limit=int(events_limit),
+            live_payload=live_snapshot if live_available else None,
         )
         op = status_state.get("operator_status", {})
         checks.append(

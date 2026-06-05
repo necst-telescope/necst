@@ -562,6 +562,7 @@ summary { cursor: pointer; color: var(--muted); }
             <div>Action mode: <b id="runtimeActionMode">loading</b></div>
             <div>Live writes: <b id="runtimeLiveWrites">loading</b></div>
             <div>Status refresh: <b id="runtimeStatusRefresh">loading</b></div>
+            <div>Live telemetry: <b id="runtimeLiveTelemetry">loading</b></div>
             <div>Observatory: <b id="runtimeObservatory">loading</b></div>
             <div>Config source: <b id="runtimeConfigSource">loading</b></div>
             <div class="path-text" title="site config path">Path: <b id="runtimeConfigPath">loading</b></div>
@@ -578,6 +579,14 @@ summary { cursor: pointer; color: var(--muted); }
               <button id="terminateCalLauncher" class="secondary" title="Terminate local calibration launcher subprocess only; does not send telescope STOP">Terminate cal launcher</button>
               <button id="terminateAllLaunchers" class="secondary" title="Terminate all local launcher subprocesses started by this console">Terminate all launchers</button>
             </div>
+          </div>
+        </div>
+        <div class="runtime-card">
+          <h3>Current observation data</h3>
+          <div class="runtime-list">
+            <div>Record: <b id="runtimeRecordName">loading</b></div>
+            <div class="path-text" title="Expected NECST recorder output directory">Data directory: <b id="runtimeRecordingDir">loading</b></div>
+            <div class="path-text" title="Progress sidecar directory">Progress directory: <b id="runtimeProgressRecordDir">loading</b></div>
           </div>
         </div>
         <div class="runtime-card">
@@ -816,6 +825,8 @@ function renderRuntime(data) {
   setText('runtimeLiveWrites', liveActions.guarded ? 'guarded by CLI option' : (liveActions.enabled ? 'enabled' : 'dry-run / not live'));
   const refreshMs = Number(data.status_refresh_ms || getStatusRefreshMs());
   setText('runtimeStatusRefresh', `${refreshMs} ms`);
+  const liveTelemetry = data.live_telemetry || {};
+  setText('runtimeLiveTelemetry', liveTelemetry.requested === false ? 'disabled' : (liveTelemetry.available ? `available (${liveTelemetry.spin_mode || 'spin'})` : `unavailable${liveTelemetry.error ? ': ' + liveTelemetry.error : ''}`));
   setText('runtimeObservatory', site.observatory || 'unknown');
   setText('runtimeConfigSource', site.source || 'unknown');
   setText('runtimeConfigPath', site.source_path || '(none)');
@@ -823,6 +834,10 @@ function renderRuntime(data) {
   setText('runtimeProcessCounts', processSummary(counts));
   const processEl = qs('runtimeProcesses');
   if (processEl) processEl.innerHTML = renderProcessRows(processes);
+  const obs = data.observation || {};
+  setText('runtimeRecordName', obs.record_name || '(none)');
+  setText('runtimeRecordingDir', obs.recording_dir || '(not available yet)');
+  setText('runtimeProgressRecordDir', obs.progress_record_dir || '(not available yet)');
   renderLauncherLogChoices(processes);
   setText('runtimeProgressMonitor', progressMonitorText(progress));
   setText('runtimeOperatorLog', data.operator_log_path || '(not configured)');
@@ -923,7 +938,7 @@ function renderStatus(data) {
   qs('manualBadge').className = 'badge ' + motionClass;
   qs('motionSummary').textContent = data.manual_state;
   qs('taskSummary').textContent = data.active_task || 'none';
-  qs('posSummary').textContent = `${data.az.toFixed(3)} / ${data.el.toFixed(3)}`;
+  qs('posSummary').textContent = `${formatMaybeNumber(data.az)} / ${formatMaybeNumber(data.el)}`;
   qs('cmdSummary').textContent = cmd;
   qs('chopperSummary').textContent = `${data.chopper.state} / pos ${data.chopper.position}`;
   qs('chopperState').textContent = data.chopper.state;

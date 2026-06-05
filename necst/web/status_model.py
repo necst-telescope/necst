@@ -109,6 +109,41 @@ def current_record_name(root: Path) -> Optional[str]:
         return None
 
 
+def progress_record_dir(root: Path, record_name: Optional[Any]) -> Optional[Path]:
+    """Return the progress sidecar directory for a record name, if known."""
+    record = str(record_name or "").strip()
+    if not record:
+        record = current_record_name(root) or ""
+    if not record:
+        return None
+    return root / safe_name(record)
+
+
+def default_record_root() -> Path:
+    """Return the NECST FileWriter root used by recorder.py.
+
+    The recorder defaults to ``$NECST_RECORD_ROOT`` or ``~/data``.  This helper
+    mirrors that logic for display only; it does not create directories.
+    """
+    return Path(os.environ.get("NECST_RECORD_ROOT", str(Path.home() / "data"))).expanduser()
+
+
+def recording_data_dir(record_name: Optional[Any]) -> Optional[Path]:
+    """Return the expected observation data directory for a record name.
+
+    NECST RecorderController calls ``Recorder(record_root).start_recording(name)``.
+    When ``name`` is relative, files are written under the record root; if ``name``
+    is already absolute, pathlib keeps it absolute.
+    """
+    record = str(record_name or "").strip()
+    if not record or record == "-":
+        return None
+    path = Path(record).expanduser()
+    if path.is_absolute():
+        return path
+    return default_record_root() / path
+
+
 def latest_events_path(
     root: Path, snapshot: Optional[Mapping[str, Any]] = None
 ) -> Optional[Path]:
@@ -629,6 +664,12 @@ def build_operator_status(
     observation_type = _first_present(obs, "type", "mode")
     observation_record = obs.get("record_name")
     observation_target = obs.get("target")
+    progress_record_directory = (
+        str(progress_record_dir(Path(str(paths.get("root") or "")) if isinstance(paths, Mapping) and paths.get("root") else progress_root(), observation_record))
+        if observation_record
+        else None
+    )
+    recording_directory = str(recording_data_dir(observation_record)) if observation_record else None
 
     active_task = _first_present(
         activity,
@@ -693,6 +734,8 @@ def build_operator_status(
             "record_name": observation_record,
             "obs_file": obs.get("obs_file"),
             "target": observation_target,
+            "recording_dir": recording_directory,
+            "progress_record_dir": progress_record_directory,
             "elapsed_sec": _finite_float(timing.get("elapsed_sec")),
             "remaining_sec": _finite_float(timing.get("estimated_remaining_sec")),
             "remaining_method": timing.get("remaining_method"),
@@ -773,10 +816,19 @@ def build_progress_status_state(
     plan = read_json(plan_path) if plan_path else None
     all_events = read_all_events(events_path)
     events = all_events[-events_limit:] if events_limit > 0 else []
+    record_name_for_paths = None
+    if isinstance(snapshot, Mapping):
+        record_name_for_paths = (_as_mapping(snapshot.get("observation"))).get("record_name")
+    record_name_for_paths = record_name_for_paths or current_record_name(root)
+    prog_record_dir = progress_record_dir(root, record_name_for_paths)
+    data_record_dir = recording_data_dir(record_name_for_paths)
     paths = {
+        "root": str(root),
         "snapshot": str(snapshot_path) if snapshot_path else None,
         "events": str(events_path) if events_path else None,
         "plan": str(plan_path) if plan_path else None,
+        "progress_record_dir": str(prog_record_dir) if prog_record_dir else None,
+        "recording_dir": str(data_record_dir) if data_record_dir else None,
     }
     compact_status = build_operator_status(
         snapshot if isinstance(snapshot, Mapping) else None,

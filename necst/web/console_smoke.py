@@ -205,6 +205,41 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
             )
         )
 
+    live_telemetry = _mapping(data.get("live_telemetry"))
+    live_requested = bool(live_telemetry.get("requested"))
+    live_available = bool(live_telemetry.get("available"))
+    if live_requested and live_available:
+        items.append(
+            _item(
+                "status_live_telemetry",
+                True,
+                f"console live telemetry available ({live_telemetry.get('spin_mode') or 'unknown spin mode'})",
+                severity="info",
+                data={"live_telemetry": dict(live_telemetry)},
+            )
+        )
+    elif live_requested:
+        live_mode = str(data.get("action_mode")) == "live"
+        items.append(
+            _item(
+                "status_live_telemetry",
+                not live_mode,
+                f"console live telemetry unavailable: {live_telemetry.get('error') or 'unknown reason'}",
+                severity="error" if live_mode else "warning",
+                data={"live_telemetry": dict(live_telemetry)},
+            )
+        )
+    else:
+        items.append(
+            _item(
+                "status_live_telemetry",
+                True,
+                "console live telemetry disabled",
+                severity="warning" if str(data.get("action_mode")) == "live" else "info",
+                data={"live_telemetry": dict(live_telemetry)},
+            )
+        )
+
     process_counts = _mapping(data.get("process_counts"))
     items.append(
         _item(

@@ -105,6 +105,44 @@ python3 bin/console.py --open --status-refresh-ms 500
 
 `--status-refresh-ms` はOperator Console自身の `/api/status` 更新間隔である。`--progress-refresh-ms` はconsoleが起動するprogress.py側のブラウザ更新間隔であり、別物である。
 
+
+## 5.1 Current Az/El / Chopper state の取得
+
+Operator Console は、通常起動では console process 自身が read-only ROS subscriber を持ち、
+`/necst/antenna/encoder`, command, pointing status, chopper status などのlive telemetryを
+`/api/status`へ反映する。したがって、通常はCurrent Az/ElとChopper IN/OUTはconsole画面だけで更新される。
+
+```bash
+python3 bin/console.py --open
+```
+
+実機外でROSなし確認をしたい場合、またはstatus取得経路を意図的に切り離す場合だけ、次を使う。
+
+```bash
+python3 bin/console.py --open --no-ros
+```
+
+`--no-ros` を指定すると、consoleはROS topicを購読しない。この場合、観測中のprogress sidecarから得られる値以外は、Current Az/ElやChopper状態が更新されないことがある。
+実機でCurrent Az/Elが更新されない場合は、まずRuntime statusの `live_telemetry.available` 相当、operator logの `live_telemetry enabled/unavailable`、および `/api/status` の `live_telemetry` フィールドを確認する。
+
+## 5.2 観測データディレクトリ表示
+
+Runtime status の `Current observation data` には、現在の観測に対応するディレクトリを表示する。
+
+```text
+Record:
+  observation record_name
+
+Data directory:
+  NECST_RECORD_ROOT/record_name
+  ただし record_name が絶対pathならそのまま
+
+Progress directory:
+  NECST_PROGRESS_ROOT/<safe_record_name>
+```
+
+RecorderControllerの既定値と同じく、`NECST_RECORD_ROOT` が未設定の場合のData directoryは `~/data/<record_name>` として表示する。これは表示用の推定であり、実際の保存先はRecorderControllerの設定に従う。
+
 ## 6. smoke test の判定
 
 通常表示:
