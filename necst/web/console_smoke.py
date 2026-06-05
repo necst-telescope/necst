@@ -209,12 +209,17 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
     live_requested = bool(live_telemetry.get("requested"))
     live_available = bool(live_telemetry.get("available"))
     if live_requested and live_available:
+        live_mode = str(data.get("action_mode")) == "live"
+        has_position = bool(live_telemetry.get("has_position"))
         items.append(
             _item(
                 "status_live_telemetry",
-                True,
-                f"console live telemetry available ({live_telemetry.get('spin_mode') or 'unknown spin mode'})",
-                severity="info",
+                has_position or not live_mode,
+                (
+                    f"console live telemetry available ({live_telemetry.get('spin_mode') or 'unknown spin mode'}); "
+                    + ("position sample received" if has_position else "waiting for encoder/pointing position sample")
+                ),
+                severity="info" if has_position else ("error" if live_mode else "warning"),
                 data={"live_telemetry": dict(live_telemetry)},
             )
         )

@@ -262,13 +262,18 @@ def run_console_self_check(
     live_available = bool(live_snapshot.get("available"))
     live_error = live_snapshot.get("error")
     if live_requested and live_available:
+        has_position = bool(live_snapshot.get("has_position"))
+        sample_counts = live_snapshot.get("sample_counts") if isinstance(live_snapshot.get("sample_counts"), Mapping) else {}
         checks.append(
             _check_item(
                 "live_telemetry",
-                True,
-                f"console ROS live telemetry available ({live_snapshot.get('spin_mode') or 'unknown spin mode'})",
-                severity="info",
-                data=live_snapshot,
+                has_position or action_mode != "live",
+                (
+                    f"console ROS live telemetry available ({live_snapshot.get('spin_mode') or 'unknown spin mode'}); "
+                    + ("encoder/pointing position sample received" if has_position else "waiting for encoder/pointing position sample")
+                ),
+                severity="info" if has_position else ("error" if action_mode == "live" else "warning"),
+                data={**dict(live_snapshot), "sample_counts": dict(sample_counts)},
             )
         )
     elif live_requested:

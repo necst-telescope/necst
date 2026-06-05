@@ -1841,6 +1841,14 @@ def run_server(
         shutdown_launcher_kill_timeout_sec=float(shutdown_launcher_kill_timeout_sec),
     )
     state.live_cache = live_telemetry.LiveTelemetryCache(enabled=not bool(status_no_ros))
+    if state.live_cache is not None and state.live_cache.available:
+        # Wait briefly for the first encoder/pointing sample so the console
+        # starts with real Current Az/El whenever ROS status topics are alive.
+        # This is read-only; it does not send any telescope command.
+        try:
+            state.live_cache.wait_for_initial_position(timeout_sec=2.0)
+        except Exception as exc:
+            state.live_cache.error = f"initial live telemetry wait failed: {exc}"
     state.add_log(True, f"console started in action_mode={action_mode}")
     state.add_log(
         True,
@@ -1856,8 +1864,20 @@ def run_server(
     )
     if state.live_cache is not None:
         live_snapshot = state.live_cache.snapshot()
-        if live_snapshot.get("available"):
-            state.add_log(True, f"live telemetry enabled ({live_snapshot.get('spin_mode')})", action="live_telemetry")
+        if live_snapshot.get("available") and live_snapshot.get("has_position"):
+            state.add_log(
+                True,
+                f"live telemetry enabled ({live_snapshot.get('spin_mode')}); position sample received",
+                action="live_telemetry",
+                data={"sample_counts": live_snapshot.get("sample_counts", {})},
+            )
+        elif live_snapshot.get("available"):
+            state.add_log(
+                False,
+                f"live telemetry enabled ({live_snapshot.get('spin_mode')}) but no encoder/pointing position sample received yet",
+                action="live_telemetry",
+                data={"sample_counts": live_snapshot.get("sample_counts", {})},
+            )
         else:
             state.add_log(False, f"live telemetry unavailable: {live_snapshot.get('error', 'disabled')}", action="live_telemetry")
     if action_mode == "live" and not live_actions_enabled:

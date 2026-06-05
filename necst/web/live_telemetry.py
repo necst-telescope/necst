@@ -11,6 +11,7 @@ from __future__ import annotations
 import math
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -72,6 +73,9 @@ class LiveTelemetryCache:
         self._owns_context = False
         self._lock = threading.RLock()
         self._spin_mode = "disabled"
+        self._started_at_unix = time.time()
+        self._sample_counts: Dict[str, int] = {}
+        self._last_message_time_unix: Dict[str, float] = {}
 
         self.command: Dict[str, Any] = {}
         self.encoder: Dict[str, Any] = {}
@@ -85,6 +89,43 @@ class LiveTelemetryCache:
 
         if self.requested:
             self._start()
+
+    def _record_sample_locked(self, key: str) -> None:
+        now = time.time()
+        self._sample_counts[key] = int(self._sample_counts.get(key, 0)) + 1
+        self._last_message_time_unix[key] = now
+
+    def _has_position_locked(self) -> bool:
+        enc_lon = _finite_float(self.encoder.get("encoder_lon_deg"))
+        enc_lat = _finite_float(self.encoder.get("encoder_lat_deg"))
+        if enc_lon is not None and enc_lat is not None:
+            return True
+        pointing_az = _finite_float(self.pointing_status.get("enc_az_deg"))
+        pointing_el = _finite_float(self.pointing_status.get("enc_el_deg"))
+        return pointing_az is not None and pointing_el is not None
+
+    def has_position(self) -> bool:
+        with self._lock:
+            return self._has_position_locked()
+
+    def wait_for_initial_position(self, timeout_sec: float = 2.0) -> bool:
+        """Wait briefly for the first encoder/pointing sample after startup.
+
+        This prevents the console from starting with empty/demo Current Az/El
+        simply because subscriptions have not yet received their first samples.
+        It is read-only and does not send any telescope command.
+        """
+
+        if not self.available:
+            return False
+        deadline = time.monotonic() + max(0.0, float(timeout_sec))
+        while time.monotonic() <= deadline:
+            if self.has_position():
+                return True
+            self.spin_once(timeout_sec=0.05)
+            if self._executor is not None and self._spin_thread is not None and self._spin_thread.is_alive():
+                time.sleep(0.05)
+        return self.has_position()
 
     def _start(self) -> None:
         try:
@@ -104,10 +145,12 @@ class LiveTelemetryCache:
             def command_cb(msg: Any) -> None:
                 with self._lock:
                     self.command = _msg_coord(msg, prefix="command")
+                    self._record_sample_locked("command")
 
             def encoder_cb(msg: Any) -> None:
                 with self._lock:
                     self.encoder = _msg_coord(msg, prefix="encoder")
+                    self._record_sample_locked("encoder")
 
             def tracking_cb(msg: Any) -> None:
                 with self._lock:
@@ -116,6 +159,7 @@ class LiveTelemetryCache:
                         "error_deg": _finite_float(getattr(msg, "error", None)),
                         "time_unix": _finite_float(getattr(msg, "time", None)),
                     }
+                    self._record_sample_locked("tracking")
 
             def pointing_status_cb(msg: Any) -> None:
                 with self._lock:
@@ -140,6 +184,7 @@ class LiveTelemetryCache:
                         "encoder_stale": bool(getattr(msg, "encoder_stale", False)),
                         "basis": str(getattr(msg, "basis", "")),
                     }
+                    self._record_sample_locked("pointing_status")
 
             def az_unwrap_status_cb(msg: Any) -> None:
                 with self._lock:
@@ -157,6 +202,7 @@ class LiveTelemetryCache:
                         "branch": int(getattr(msg, "branch", 0)),
                         "state_age_sec": _finite_float(getattr(msg, "state_age_sec", None)),
                     }
+                    self._record_sample_locked("az_unwrap_status")
 
             def queue_status_cb(msg: Any) -> None:
                 with self._lock:
@@ -166,6 +212,7 @@ class LiveTelemetryCache:
                         "queue_depth": int(getattr(msg, "queue_depth", 0)),
                         "time_unix": _finite_float(getattr(msg, "time", None)),
                     }
+                    self._record_sample_locked("queue_status")
 
             def spectrometer_status_cb(msg: Any) -> None:
                 with self._lock:
@@ -174,6 +221,7 @@ class LiveTelemetryCache:
                         "time_src": str(getattr(msg, "time_src", "")),
                         "time_unix": _finite_float(getattr(msg, "time", None)),
                     }
+                    self._record_sample_locked("spectrometer_status")
 
             def chopper_status_cb(msg: Any) -> None:
                 position = _finite_float(getattr(msg, "position", None))
@@ -213,6 +261,7 @@ class LiveTelemetryCache:
                         "position": position,
                         "time_unix": _finite_float(getattr(msg, "time", None)),
                     }
+                    self._record_sample_locked("chopper_status")
 
             def weather_cb(key: str):
                 def _callback(msg: Any) -> None:
@@ -226,6 +275,7 @@ class LiveTelemetryCache:
                     }
                     with self._lock:
                         self.weather[key] = payload
+                        self._record_sample_locked(f"weather/{key}")
 
                 return _callback
 
@@ -290,7 +340,18 @@ class LiveTelemetryCache:
         if not (self.available and self._rclpy is not None and self._node is not None):
             return
         if self._executor is not None:
-            return
+            if self._spin_thread is not None and self._spin_thread.is_alive():
+                return
+            # The background executor was created but is no longer spinning.
+            # Fall back to request-thread spin_once so /api/status keeps
+            # telemetry alive instead of freezing until a GUI action happens.
+            try:
+                self._executor.shutdown()
+            except Exception:
+                pass
+            self._executor = None
+            self._spin_thread = None
+            self._spin_mode = "request-spin-fallback-after-thread-exit"
         try:
             self._rclpy.spin_once(self._node, timeout_sec=timeout_sec)
         except Exception as exc:
@@ -301,10 +362,21 @@ class LiveTelemetryCache:
         if self.available:
             self.spin_once(timeout_sec=0.0)
         with self._lock:
+            now = time.time()
+            last_age_sec = {
+                key: max(0.0, now - float(ts))
+                for key, ts in self._last_message_time_unix.items()
+            }
             payload: Dict[str, Any] = {
                 "requested": self.requested,
                 "available": self.available,
                 "spin_mode": self._spin_mode,
+                "uptime_sec": max(0.0, now - self._started_at_unix),
+                "has_position": self._has_position_locked(),
+                "sample_counts": dict(self._sample_counts),
+                "last_message_time_unix": dict(self._last_message_time_unix),
+                "last_message_age_sec": last_age_sec,
+                "received_topics": sorted(self._sample_counts),
             }
             if self.error:
                 payload["error"] = self.error

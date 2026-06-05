@@ -826,7 +826,18 @@ function renderRuntime(data) {
   const refreshMs = Number(data.status_refresh_ms || getStatusRefreshMs());
   setText('runtimeStatusRefresh', `${refreshMs} ms`);
   const liveTelemetry = data.live_telemetry || {};
-  setText('runtimeLiveTelemetry', liveTelemetry.requested === false ? 'disabled' : (liveTelemetry.available ? `available (${liveTelemetry.spin_mode || 'spin'})` : `unavailable${liveTelemetry.error ? ': ' + liveTelemetry.error : ''}`));
+  let liveTelemetryText = 'disabled';
+  if (liveTelemetry.requested !== false) {
+    if (liveTelemetry.available) {
+      const counts = liveTelemetry.sample_counts || {};
+      const topics = Object.entries(counts).filter(([, v]) => Number(v) > 0).map(([k, v]) => `${k}:${v}`).slice(0, 5).join(', ');
+      const pos = liveTelemetry.has_position ? 'position OK' : 'waiting for position sample';
+      liveTelemetryText = `available (${liveTelemetry.spin_mode || 'spin'}, ${pos}${topics ? '; ' + topics : ''})`;
+    } else {
+      liveTelemetryText = `unavailable${liveTelemetry.error ? ': ' + liveTelemetry.error : ''}`;
+    }
+  }
+  setText('runtimeLiveTelemetry', liveTelemetryText);
   setText('runtimeObservatory', site.observatory || 'unknown');
   setText('runtimeConfigSource', site.source || 'unknown');
   setText('runtimeConfigPath', site.source_path || '(none)');
