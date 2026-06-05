@@ -477,16 +477,20 @@ def merge_live_telemetry(
         # its newest sample is not necessarily the command at the encoder time.
         # NECST's antenna_tracking topic already performs the correct comparison.
         antenna_update.setdefault("tracking_status_available", False)
-    if antenna_update:
-        antenna_section = out.setdefault("antenna", {})
-        if not command_valid:
-            _clear_command_fields(antenna_section)
-            _clear_command_fields(antenna_update)
+    # Command Az/El is a truth value, not a planned/progress value.
+    # If live telemetry is present but no fresh command topic was actually
+    # received, remove any command fields that may already exist in an older
+    # progress snapshot before merging live data.
+    antenna_section = out.setdefault("antenna", {})
+    if not command_valid:
+        _clear_command_fields(antenna_section)
+        _clear_command_fields(antenna_update)
+    if antenna_update or isinstance(antenna_section, dict):
         antenna_update["command_valid"] = bool(command_valid)
         antenna_update["command_source"] = command_source
         if command_topic_age is not None:
             antenna_update["command_topic_age_sec"] = command_topic_age
-        out.setdefault("antenna", {}).update(antenna_update)
+        antenna_section.update(antenna_update)
     weather_payload = (
         live_payload.get("weather")
         if isinstance(live_payload.get("weather"), dict)
@@ -912,7 +916,7 @@ def build_operator_status(
         if active_task in (None, ""):
             active_task = "observation" if lifecycle_state not in {"idle", "unknown"} else "idle"
 
-    command_fields_valid = antenna.get("command_valid") is not False
+    command_fields_valid = antenna.get("command_valid") is True
     command_lon = (
         _finite_float(_first_present(antenna, "command_lon_deg", "cmd_az_deg", "az_cmd_deg"))
         if command_fields_valid

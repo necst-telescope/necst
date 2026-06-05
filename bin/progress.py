@@ -1572,16 +1572,19 @@ def merge_live_telemetry(
         # its newest sample is not necessarily the command at the encoder time.
         # NECST's antenna_tracking topic already performs the correct comparison.
         antenna_update.setdefault("tracking_status_available", False)
-    if antenna_update:
-        antenna_section = out.setdefault("antenna", {})
-        if not command_valid:
-            _clear_command_fields(antenna_section)
-            _clear_command_fields(antenna_update)
+    # Command Az/El must be backed by an actually received fresh command topic.
+    # The progress sidecar and observation plan may contain command-like values,
+    # but those are not the live command and must not survive after abort.
+    antenna_section = out.setdefault("antenna", {})
+    if not command_valid:
+        _clear_command_fields(antenna_section)
+        _clear_command_fields(antenna_update)
+    if antenna_update or isinstance(antenna_section, dict):
         antenna_update["command_valid"] = bool(command_valid)
         antenna_update["command_source"] = command_source
         if command_topic_age is not None:
             antenna_update["command_topic_age_sec"] = command_topic_age
-        out.setdefault("antenna", {}).update(antenna_update)
+        antenna_section.update(antenna_update)
     weather_payload = (
         live_payload.get("weather")
         if isinstance(live_payload.get("weather"), dict)
@@ -3193,7 +3196,7 @@ def render(
         cmd_lat = antenna.get("command_lat_deg")
         enc_lon = antenna.get("encoder_lon_deg")
         enc_lat = antenna.get("encoder_lat_deg")
-        if cmd_lon is not None or cmd_lat is not None:
+        if antenna.get("command_valid") is True and (cmd_lon is not None or cmd_lat is not None):
             lines.append(
                 frame_line(
                     f"cmd  : {azel_text(cmd_lon, cmd_lat, antenna.get('command_frame'))}"
@@ -4563,6 +4566,7 @@ function isOtfScanBlock(snapshot) {
 }
 function trackingExpected(snapshot) {
   const act = snapshot?.activity || {};
+  if (act.live_motion_active === false) return false;
   const stage = String(act.motion_stage || act.control_section_kind || '').toLowerCase();
   const phase = String(act.phase || snapshot?.plan?.mode || '').toUpperCase();
   if (phase !== 'ON') return false;
@@ -4810,10 +4814,11 @@ function activityRows(snapshot, serverTimeUnix=null) {
   const a = snapshot?.activity || {};
   const d = snapshot?.data || {};
   const g = snapshot?.geometry || {};
+  const liveIdle = a.live_motion_active === false;
   const rows = [
-    ['phase', a.phase],
-    ['drive', a.drive_kind],
-    ['motion', a.motion_stage || a.control_section_kind],
+    ['phase', liveIdle ? 'IDLE' : a.phase],
+    ['drive', liveIdle ? 'idle' : a.drive_kind],
+    ['motion', liveIdle ? 'idle' : (a.motion_stage || a.control_section_kind)],
     ['data', a.data_state]
   ];
   if (snapshot?.chopper && Object.keys(snapshot.chopper).length) rows.push(chopperRow(snapshot, serverTimeUnix));
@@ -4992,6 +4997,7 @@ function projectFraction(a, b, p) {
 }
 function antennaPoint(snapshot, prefix, requiredFrame) {
   const a = snapshot?.antenna || {};
+  if (prefix === 'command' && a.command_valid !== true) return null;
   const x = Number(a[`${prefix}_lon_deg`]);
   const y = Number(a[`${prefix}_lat_deg`]);
   const frame = String(a[`${prefix}_frame`] || '').toLowerCase();
@@ -5236,6 +5242,7 @@ function lineMotionKey(snapshot, row) {
   return `${rec}|${uid}|${line}|${id}|${ctrlId}|${sectionUid}`;
 }
 function isActualLineMotion(snapshot) {
+  if (snapshot?.activity?.live_motion_active !== true) return false;
   // Test/debug invariant: motion_stage=line means the line/scanning section is active.
   const drive = String(snapshot?.activity?.drive_kind || snapshot?.plan?.drive_kind || '').toLowerCase();
   const stage = String(snapshot?.activity?.motion_stage || '').toLowerCase();
