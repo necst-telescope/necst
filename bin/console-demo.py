@@ -1026,6 +1026,25 @@ function operationFromExclusiveStartGuard(data) {
     detail: `${message} was accepted ${age.toFixed(1)} s ago; waiting for status confirmation. This may have been started from another browser or before this page was reloaded.`
   };
 }
+function statusHasCommand(data) {
+  return finiteStatusNumber((data || {}).command_az) && finiteStatusNumber((data || {}).command_el);
+}
+function safetyReleaseLooksIdle(data, ageSec) {
+  data = data || {};
+  const sys = lowerText(data.state || 'idle');
+  const finalOrIdle = ['idle', 'finished', 'aborted', 'error', 'failed', 'unknown'].includes(sys);
+  if (!finalOrIdle || statusHasCommand(data)) return false;
+  if (data.operator_safety_release_idle) return true;
+  const src = lowerText(data.motion_live_source || '');
+  // Backend versions before this patch may keep stale SKY/moving or
+  // encoder-delta hysteresis after STOP.  STOP/ABORT are release requests, so
+  // once the command is gone and the lifecycle is final/idle, do not let the UI
+  // remain in STOP REQUESTED until ATTENTION.  Use a short grace to avoid
+  // flipping READY while a command topic is still disappearing.
+  if (ageSec >= 1.5 && src !== 'encoder_delta') return true;
+  if (ageSec >= 3.0) return true;
+  return false;
+}
 function actualOperationFromStatus(data) {
   data = data || {};
   const sys = lowerText(data.state || 'idle');
@@ -1085,9 +1104,14 @@ function deriveOperationState(data) {
     // than snapping the banner back to RUNNING.  External CLI stop/abort still
     // clears this as soon as /api/status reports READY.
     if (isSafetyPending) {
-      if (actual.phase === 'ready') {
+      if (actual.phase === 'ready' || safetyReleaseLooksIdle(data || {}, ageSec)) {
         state.pendingOperation = null;
-        return actual;
+        return {
+          phase: 'ready',
+          kind: 'idle',
+          label: 'READY',
+          detail: 'STOP/ABORT release is complete for the operator console: command output is gone and the system lifecycle is final/idle.'
+        };
       }
       if (ageSec > PENDING_ATTENTION_SEC) {
         return {

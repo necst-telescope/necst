@@ -82,6 +82,13 @@ EXCLUSIVE_START_BLOCK_SEC = 3.0
 # launchers and confirmed live activity supersede it.
 EXCLUSIVE_START_STATUS_SEC = 15.0
 
+# STOP / ABORT are release requests.  After a short grace, if the system
+# lifecycle is final/idle and /ctrl/antenna/altaz has disappeared, the operator
+# UI must stop trusting stale SKY/section_status or encoder-motion hysteresis.
+# This prevents STOP REQUESTED from degrading into ATTENTION while the telescope
+# is already stopped and ready for the next command.
+SAFETY_RELEASE_ASSUME_IDLE_AFTER_SEC = 1.0
+
 LIVE_ACTION_GUARD_MESSAGE = (
     "live write actions are guarded by --guard-live-actions; "
     "use --action-mode dry-run for normal no-hardware validation"
@@ -1178,7 +1185,7 @@ def _operator_status_operation_conflict(
             and safety_release_age is not None
             and sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
             and command_absent
-            and motion_source_lower != "encoder_delta"
+            and safety_release_age >= SAFETY_RELEASE_ASSUME_IDLE_AFTER_SEC
         )
         if safety_release_idle:
             at_target_idle = True
@@ -2007,6 +2014,7 @@ def _operator_status_to_v7_status(
         motion_live_active = False
         motion_mount_target_reached = True
         motion_mount_hold_at_target = True
+        motion_source_lower = "operator_mount_target_idle"
 
     cmd_az = antenna.get("command_az_deg")
     cmd_el = antenna.get("command_el_deg")
@@ -2023,17 +2031,19 @@ def _operator_status_to_v7_status(
         and safety_release_age is not None
         and sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
         and command_absent
-        and motion_source_lower != "encoder_delta"
+        and safety_release_age >= SAFETY_RELEASE_ASSUME_IDLE_AFTER_SEC
     )
     if safety_release_idle:
         # STOP/ABORT means the operator intentionally released the current
-        # manual control.  If the command topic is gone and encoder-delta does
-        # not indicate real motion, stale SKY/section_status must not keep the
-        # UI locked just because the previous fixed Az/El target was not reached.
+        # manual control.  Once the command topic is gone and the system
+        # lifecycle is final/idle, do not keep waiting for the old target and do
+        # not let stale SKY/section_status or encoder-motion hysteresis trap the
+        # UI in STOP REQUESTED/ATTENTION.
         manual_state = "idle"
         active_task = "none"
         motion_live_active = False
         motion_mount_hold_at_target = False
+        motion_source_lower = "operator_safety_release"
 
     if state.action_mode == "dry-run":
         chopper_state = str(chopper.get("state") or state.last_chopper_state or "unknown")
@@ -2070,7 +2080,7 @@ def _operator_status_to_v7_status(
         "manual_state": manual_state,
         "active_task": active_task,
         "motion_live_active": motion_live_active,
-        "motion_live_source": motion.get("live_motion_source"),
+        "motion_live_source": motion_source_lower or motion.get("live_motion_source"),
         "mount_target_reached": motion_mount_target_reached,
         "mount_hold_at_target": motion_mount_hold_at_target,
         "operator_last_mount_target_reached": bool(operator_mount_target_reached),

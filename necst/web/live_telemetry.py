@@ -128,7 +128,6 @@ class LiveTelemetryCache:
             return
 
         previous = self._previous_encoder_sample
-        anchor = self._encoder_motion_anchor or previous
         delta_az = None
         delta_el = None
         anchor_delta_az = None
@@ -146,7 +145,25 @@ class LiveTelemetryCache:
                 delta_az > ENCODER_MOTION_DEADBAND_DEG
                 or delta_el > ENCODER_MOTION_DEADBAND_DEG
             )
-        if anchor is not None and not was_recently_moving:
+
+        # Important: once a real move has stopped and the hysteresis hold has
+        # expired, reset the cumulative-motion anchor to the current encoder
+        # sample before testing the cumulative threshold again.  The previous
+        # implementation kept the anchor at the pre-move position.  After a STOP
+        # or after arrival at a new Az/El, the large distance from that stale
+        # anchor made ``cumulative_start_significant`` true forever, so the UI
+        # stayed in MOUNT MOVING even while the encoder had settled.
+        just_settled = bool(
+            self._last_significant_encoder_motion_unix is not None
+            and not was_recently_moving
+            and not per_sample_significant
+        )
+        if just_settled:
+            self._last_significant_encoder_motion_unix = None
+            self._encoder_motion_anchor = {"lon": lon, "lat": lat, "time_unix": now}
+
+        anchor = self._encoder_motion_anchor or previous
+        if anchor is not None and not was_recently_moving and not just_settled:
             anchor_delta_az = abs(lon - anchor.get("lon", lon))
             anchor_delta_el = abs(lat - anchor.get("lat", lat))
             cumulative_start_significant = bool(
@@ -174,6 +191,7 @@ class LiveTelemetryCache:
             "deadband_deg": ENCODER_MOTION_DEADBAND_DEG,
             "start_cumulative_deg": ENCODER_MOTION_START_CUMULATIVE_DEG,
             "hold_sec": ENCODER_MOTION_HOLD_SEC,
+            "just_settled": just_settled,
             "time_unix": now,
         }
         self._previous_encoder_sample = {"lon": lon, "lat": lat, "time_unix": now}
