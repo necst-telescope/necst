@@ -159,6 +159,10 @@ class OperatorConsoleState:
     last_mount_target_el: Optional[float] = None
     last_mount_target_started_at: Optional[float] = None
     last_mount_target_reached_since: Optional[float] = None
+    # Last safety release request sent from this console.  STOP/ABORT are
+    # operator intent to release the current manual/observation control, not a
+    # request to keep waiting for the previous fixed Az/El target.
+    last_safety_release_requested_at: Optional[float] = None
     last_manual_state: str = "idle"
     last_active_task: str = "none"
     last_chopper_state: str = "unknown"
@@ -1027,6 +1031,29 @@ def _clear_last_mount_target(state: OperatorConsoleState) -> None:
     state.last_mount_target_reached_since = None
 
 
+def _mark_safety_release_request(state: OperatorConsoleState) -> None:
+    state.last_safety_release_requested_at = time.time()
+
+
+def _clear_safety_release_request(state: OperatorConsoleState) -> None:
+    state.last_safety_release_requested_at = None
+
+
+def _recent_safety_release_request_age_sec(
+    state: OperatorConsoleState, *, max_age_sec: float = 180.0
+) -> Optional[float]:
+    started = state.last_safety_release_requested_at
+    if started is None:
+        return None
+    try:
+        age = max(0.0, time.time() - float(started))
+    except Exception:
+        return None
+    if age > float(max_age_sec):
+        state.last_safety_release_requested_at = None
+        return None
+    return age
+
 
 
 def _prune_exclusive_start_guard(state: OperatorConsoleState) -> None:
@@ -1143,6 +1170,18 @@ def _operator_status_operation_conflict(
             and motion.get("live_motion_active") is False
         )
         antenna = op.get("antenna") if isinstance(op.get("antenna"), Mapping) else {}
+        command_absent = antenna.get("command_az_deg") is None and antenna.get("command_el_deg") is None
+        motion_source_lower = str(motion.get("live_motion_source") or "").strip().lower()
+        safety_release_age = _recent_safety_release_request_age_sec(state)
+        safety_release_idle = bool(
+            state.action_mode != "dry-run"
+            and safety_release_age is not None
+            and sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
+            and command_absent
+            and motion_source_lower != "encoder_delta"
+        )
+        if safety_release_idle:
+            at_target_idle = True
         operator_target_idle = False
         if sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}:
             operator_target_idle = _last_mount_target_reached(
@@ -1526,6 +1565,7 @@ def dispatch_action(
                 session_id=session_id,
                 message=f"mount move Az={az:.4f} deg El={el:.4f} deg",
             )
+            _clear_safety_release_request(state)
             state.last_command_az = az
             state.last_command_el = el
             state.last_mount_target_az = az
@@ -1549,6 +1589,7 @@ def dispatch_action(
         data.update(safety_data)
         if ok:
             _clear_exclusive_start_guard(state)
+            _mark_safety_release_request(state)
             state.last_manual_state = "stopped"
             state.last_active_task = "none"
             state.last_command_az = None
@@ -1583,6 +1624,7 @@ def dispatch_action(
                 session_id=session_id,
                 message="target tracking",
             )
+            _clear_safety_release_request(state)
             state.last_command_az = None
             state.last_command_el = None
             _clear_last_mount_target(state)
@@ -1603,6 +1645,7 @@ def dispatch_action(
         data.update(safety_data)
         if ok:
             _clear_exclusive_start_guard(state)
+            _mark_safety_release_request(state)
             state.last_manual_state = "stopped"
             state.last_active_task = "none"
             state.last_command_az = None
@@ -1623,6 +1666,7 @@ def dispatch_action(
         data.update(safety_data)
         if ok:
             _clear_exclusive_start_guard(state)
+            _mark_safety_release_request(state)
             state.last_manual_state = "stopped"
             state.last_active_task = "none"
             state.last_command_az = None
@@ -1672,6 +1716,7 @@ def dispatch_action(
                 session_id=session_id,
                 message=f"observation {mode}",
             )
+            _clear_safety_release_request(state)
             state.last_command_az = None
             state.last_command_el = None
             _clear_last_mount_target(state)
@@ -1723,6 +1768,7 @@ def dispatch_action(
                 session_id=session_id,
                 message="RSky",
             )
+            _clear_safety_release_request(state)
             state.last_command_az = None
             state.last_command_el = None
             _clear_last_mount_target(state)
@@ -1774,6 +1820,7 @@ def dispatch_action(
                 session_id=session_id,
                 message="SkyDip",
             )
+            _clear_safety_release_request(state)
             state.last_command_az = None
             state.last_command_el = None
             _clear_last_mount_target(state)
@@ -1969,6 +2016,25 @@ def _operator_status_to_v7_status(
         if cmd_el is None:
             cmd_el = state.last_command_el
 
+    command_absent = cmd_az is None and cmd_el is None
+    safety_release_age = _recent_safety_release_request_age_sec(state)
+    safety_release_idle = bool(
+        state.action_mode != "dry-run"
+        and safety_release_age is not None
+        and sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
+        and command_absent
+        and motion_source_lower != "encoder_delta"
+    )
+    if safety_release_idle:
+        # STOP/ABORT means the operator intentionally released the current
+        # manual control.  If the command topic is gone and encoder-delta does
+        # not indicate real motion, stale SKY/section_status must not keep the
+        # UI locked just because the previous fixed Az/El target was not reached.
+        manual_state = "idle"
+        active_task = "none"
+        motion_live_active = False
+        motion_mount_hold_at_target = False
+
     if state.action_mode == "dry-run":
         chopper_state = str(chopper.get("state") or state.last_chopper_state or "unknown")
         chopper_position = chopper.get("position")
@@ -2012,6 +2078,8 @@ def _operator_status_to_v7_status(
         "operator_last_mount_target_az": state.last_mount_target_az,
         "operator_last_mount_target_el": state.last_mount_target_el,
         "operator_last_mount_target_reached_since": state.last_mount_target_reached_since,
+        "operator_safety_release_idle": bool(safety_release_idle),
+        "operator_safety_release_age_sec": safety_release_age,
         "mount_target_reached_tol_deg": motion.get("mount_target_reached_tol_deg"),
         "encoder_motion_deadband_deg": motion.get("encoder_motion_deadband_deg"),
         "encoder_motion_delta_az_deg": motion.get("encoder_motion_delta_az_deg"),
