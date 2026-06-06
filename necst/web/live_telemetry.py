@@ -16,8 +16,9 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 
-ENCODER_MOTION_DEADBAND_DEG = 1.0e-4
-ENCODER_MOTION_HOLD_SEC = 1.0
+ENCODER_MOTION_DEADBAND_DEG = 5.0e-4
+ENCODER_MOTION_START_CUMULATIVE_DEG = 8.0e-4
+ENCODER_MOTION_HOLD_SEC = 0.8
 
 
 def _finite_float(value: Any) -> Optional[float]:
@@ -85,6 +86,7 @@ class LiveTelemetryCache:
         self.encoder: Dict[str, Any] = {}
         self.encoder_motion: Dict[str, Any] = {}
         self._previous_encoder_sample: Optional[Dict[str, float]] = None
+        self._encoder_motion_anchor: Optional[Dict[str, float]] = None
         self._last_significant_encoder_motion_unix: Optional[float] = None
         self.tracking: Dict[str, Any] = {}
         self.pointing_status: Dict[str, Any] = {}
@@ -107,9 +109,10 @@ class LiveTelemetryCache:
         """Estimate actual antenna motion from encoder samples with deadband.
 
         Encoder readout often jitters in the low-order digits even when the
-        antenna is physically stopped.  This fallback therefore ignores changes
-        at or below 1e-4 deg and is used only as a secondary source when no
-        fresher explicit motion/section status is available.
+        antenna is physically stopped.  Field tests showed sample-to-sample
+        noise of about 2e-4 deg, so this fallback uses a larger deadband and a
+        small hysteresis.  It is only a secondary source when no fresher
+        explicit motion/section status is available.
         """
 
         now = time.time()
@@ -125,17 +128,33 @@ class LiveTelemetryCache:
             return
 
         previous = self._previous_encoder_sample
+        anchor = self._encoder_motion_anchor or previous
         delta_az = None
         delta_el = None
-        significant = False
+        anchor_delta_az = None
+        anchor_delta_el = None
+        per_sample_significant = False
+        cumulative_start_significant = False
+        was_recently_moving = bool(
+            self._last_significant_encoder_motion_unix is not None
+            and now - self._last_significant_encoder_motion_unix <= ENCODER_MOTION_HOLD_SEC
+        )
         if previous is not None:
             delta_az = abs(lon - previous.get("lon", lon))
             delta_el = abs(lat - previous.get("lat", lat))
-            significant = bool(
+            per_sample_significant = bool(
                 delta_az > ENCODER_MOTION_DEADBAND_DEG
                 or delta_el > ENCODER_MOTION_DEADBAND_DEG
             )
+        if anchor is not None and not was_recently_moving:
+            anchor_delta_az = abs(lon - anchor.get("lon", lon))
+            anchor_delta_el = abs(lat - anchor.get("lat", lat))
+            cumulative_start_significant = bool(
+                anchor_delta_az > ENCODER_MOTION_START_CUMULATIVE_DEG
+                or anchor_delta_el > ENCODER_MOTION_START_CUMULATIVE_DEG
+            )
 
+        significant = bool(per_sample_significant or cumulative_start_significant)
         if significant:
             self._last_significant_encoder_motion_unix = now
         held = bool(
@@ -143,12 +162,17 @@ class LiveTelemetryCache:
             and now - self._last_significant_encoder_motion_unix <= ENCODER_MOTION_HOLD_SEC
         )
         moving = bool(significant or held)
+        if self._encoder_motion_anchor is None or (was_recently_moving and not moving):
+            self._encoder_motion_anchor = {"lon": lon, "lat": lat, "time_unix": now}
         self.encoder_motion = {
             "moving": moving,
             "source": "encoder_delta" if moving else "encoder_delta_deadband",
             "delta_az_deg": delta_az,
             "delta_el_deg": delta_el,
+            "anchor_delta_az_deg": anchor_delta_az,
+            "anchor_delta_el_deg": anchor_delta_el,
             "deadband_deg": ENCODER_MOTION_DEADBAND_DEG,
+            "start_cumulative_deg": ENCODER_MOTION_START_CUMULATIVE_DEG,
             "hold_sec": ENCODER_MOTION_HOLD_SEC,
             "time_unix": now,
         }

@@ -18,6 +18,21 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
+# Field feedback showed stopped encoder samples can jitter by about 2e-4 deg.
+# Use a looser tolerance for UI completion/hold detection than the display
+# precision, otherwise a fixed Az/El mount-move can remain incorrectly blocked.
+MOUNT_TARGET_REACHED_TOL_DEG = 5.0e-4
+MOUNT_HOLD_STAGE_NAMES = {
+    "tracking",
+    "track",
+    "holding",
+    "hold",
+    "target_hold",
+    "target hold",
+    "command_hold",
+    "command hold",
+}
+
 
 def safe_name(value: Any) -> str:
     original = str(value or "unknown")
@@ -200,6 +215,37 @@ def _finite_float(value: Any) -> Optional[float]:
     except Exception:
         return None
     return out if math.isfinite(out) else None
+
+
+def _axis_delta_deg(a: Optional[float], b: Optional[float], *, wrap: bool = False) -> Optional[float]:
+    if a is None or b is None:
+        return None
+    direct = abs(float(a) - float(b))
+    if not wrap:
+        return direct
+    try:
+        wrapped = abs(((float(a) - float(b) + 180.0) % 360.0) - 180.0)
+    except Exception:
+        return direct
+    return min(direct, wrapped)
+
+
+def _mount_target_reached(
+    *,
+    current_az: Optional[float],
+    current_el: Optional[float],
+    command_az: Optional[float],
+    command_el: Optional[float],
+    tolerance_deg: float = MOUNT_TARGET_REACHED_TOL_DEG,
+) -> bool:
+    az_delta = _axis_delta_deg(current_az, command_az, wrap=True)
+    el_delta = _axis_delta_deg(current_el, command_el, wrap=False)
+    return bool(
+        az_delta is not None
+        and el_delta is not None
+        and az_delta <= tolerance_deg
+        and el_delta <= tolerance_deg
+    )
 
 
 def _as_mapping(value: Any) -> Mapping[str, Any]:
@@ -750,10 +796,51 @@ def _live_truth_scrub_stale_motion(
     encoder_motion_fresh = _topic_received_fresh(live_payload, "encoder")
     encoder_moving = bool(encoder_motion_fresh and encoder_motion.get("moving"))
 
+    current_az = _finite_float(
+        _first_present(antenna, "encoder_lon_deg", "enc_az_deg", "az_deg")
+    )
+    current_el = _finite_float(
+        _first_present(antenna, "encoder_lat_deg", "enc_el_deg", "el_deg")
+    )
+    command_az = (
+        _finite_float(_first_present(antenna, "command_lon_deg", "cmd_az_deg", "az_cmd_deg"))
+        if command_valid
+        else None
+    )
+    command_el = (
+        _finite_float(_first_present(antenna, "command_lat_deg", "cmd_el_deg", "el_cmd_deg"))
+        if command_valid
+        else None
+    )
+    mount_target_reached = _mount_target_reached(
+        current_az=current_az,
+        current_el=current_el,
+        command_az=command_az,
+        command_el=command_el,
+    )
+    section_stage_lower = section_stage.lower()
+    control_stage_lower = control_stage.lower()
+    hold_stage_active = bool(
+        (section_active and section_stage_lower in MOUNT_HOLD_STAGE_NAMES)
+        or (control_active and control_stage_lower in MOUNT_HOLD_STAGE_NAMES)
+    )
+    mount_hold_at_target = bool(
+        command_valid
+        and mount_target_reached
+        and not encoder_moving
+        and hold_stage_active
+    )
+
     # command_valid keeps Tracking diagnostics meaningful, but by itself it is
     # not physical movement.  Prefer explicit motion topics; use the encoder
-    # only as a deadbanded fallback for manual motion cases.
-    live_motion_active = bool(section_active or queue_active or control_active or encoder_moving)
+    # only as a deadbanded fallback for manual motion cases.  A fixed Az/El
+    # mount-move may leave the low-level controller in a "tracking"/hold stage
+    # after the mount has reached the target; that must not block the next
+    # mount-move in the operator UI.
+    live_motion_active = bool(
+        (section_active or queue_active or control_active or encoder_moving)
+        and not mount_hold_at_target
+    )
     if section_active:
         motion_source = "section_status"
     elif queue_active:
@@ -775,6 +862,40 @@ def _live_truth_scrub_stale_motion(
     activity["encoder_motion_deadband_deg"] = encoder_motion.get("deadband_deg")
     activity["encoder_motion_delta_az_deg"] = encoder_motion.get("delta_az_deg")
     activity["encoder_motion_delta_el_deg"] = encoder_motion.get("delta_el_deg")
+    activity["mount_target_reached"] = bool(mount_target_reached)
+    activity["mount_target_reached_tol_deg"] = MOUNT_TARGET_REACHED_TOL_DEG
+
+    if mount_hold_at_target:
+        for key in (
+            "motion_stage",
+            "drive_kind",
+            "active_task",
+            "control_section_kind",
+            "control_section_label",
+            "control_id",
+            "control_section_uid",
+            "control_status_basis",
+            "control_section_start_unix",
+            "control_section_stop_unix",
+            "control_section_command_time_unix",
+            "control_section_publish_time_unix",
+            "control_section_query_time_unix",
+            "control_section_duration_sec",
+            "control_section_fraction",
+            "phase",
+        ):
+            activity.pop(key, None)
+        activity["live_motion_active"] = False
+        activity["live_motion_source"] = "mount_target_reached"
+        activity["active_task"] = "idle"
+        activity["phase"] = "IDLE"
+        activity["motion_stage"] = "idle"
+        activity["drive_kind"] = "idle"
+        activity["control_section_active"] = False
+        activity["control_section_fresh"] = bool(section_fresh or control_fresh)
+        activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+        activity["mount_hold_at_target"] = True
+        return
 
     if section_active:
         if section_stage:

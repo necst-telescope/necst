@@ -1073,7 +1073,25 @@ def _operator_status_operation_conflict(
         if active_task.lower() not in {"", "none", "idle", "unknown"}:
             return f"cannot start {requested_action}: active task is {active_task}; use STOP/ABORT or wait until READY"
         stage = str(motion.get("stage") or "").strip()
-        if stage.lower() not in {"", "none", "idle", "unknown"}:
+        # Low-level antenna control can report a hold/tracking-like stage after
+        # a fixed Az/El mount-move has already reached the target.  The shared
+        # status model normally normalizes that to idle, but keep this guard
+        # tolerant so a stale or site-specific label does not trap the operator.
+        nonblocking_stages = {
+            "",
+            "none",
+            "idle",
+            "unknown",
+            "at_target",
+            "at target",
+            "holding",
+            "hold",
+            "command_hold",
+            "command hold",
+            "target_hold",
+            "target hold",
+        }
+        if stage.lower() not in nonblocking_stages:
             return f"cannot start {requested_action}: mount/activity stage is {stage}; use STOP/ABORT or wait until READY"
     except Exception:
         # If status probing fails, do not block the action solely because the
@@ -1782,6 +1800,19 @@ def _operator_status_to_v7_status(
         manual_state = raw_manual_state
     if manual_state.lower() in {"", "none", "unknown"}:
         manual_state = "idle"
+
+    if state.action_mode != "dry-run" and manual_state.lower() == "tracking":
+        # Some low-level antenna controllers use a generic "tracking" stage
+        # for fixed Az/El command hold after mount_move.  Do not present that as
+        # target tracking unless the console actually started target tracking.
+        last_manual = str(state.last_manual_state or "").strip().lower()
+        if last_manual == "moving":
+            manual_state = "moving"
+            if active_task.lower() in {"", "idle", "none", "unknown", "tracking"}:
+                active_task = "manual mount move"
+        elif last_manual == "tracking":
+            if active_task.lower() in {"", "idle", "none", "unknown", "tracking"}:
+                active_task = "target tracking"
 
     current_az = antenna.get("current_az_deg")
     current_el = antenna.get("current_el_deg")

@@ -960,17 +960,19 @@ function matchingRecentFinalProcess(data, pending) {
   candidates.sort((a, b) => Number(b.started_at || 0) - Number(a.started_at || 0));
   return candidates[0];
 }
-const MOUNT_REACHED_TOL_DEG = 2.0e-4;
+const MOUNT_REACHED_TOL_DEG = 5.0e-4;
 function mountPendingReached(data, pending) {
   if (!pending || pending.kind !== 'mount') return false;
   const targetAz = Number(pending.targetAz);
   const targetEl = Number(pending.targetEl);
   const currentAz = Number(data && data.az);
   const currentEl = Number(data && data.el);
+  const azDelta = Math.min(Math.abs(currentAz - targetAz), Math.abs(((currentAz - targetAz + 180.0) % 360.0) - 180.0));
+  const elDelta = Math.abs(currentEl - targetEl);
   return Number.isFinite(targetAz) && Number.isFinite(targetEl)
     && Number.isFinite(currentAz) && Number.isFinite(currentEl)
-    && Math.abs(currentAz - targetAz) <= MOUNT_REACHED_TOL_DEG
-    && Math.abs(currentEl - targetEl) <= MOUNT_REACHED_TOL_DEG;
+    && azDelta <= MOUNT_REACHED_TOL_DEG
+    && elDelta <= MOUNT_REACHED_TOL_DEG;
 }
 function exclusiveStartActionKind(action) {
   const a = lowerText(action || '');
@@ -1032,8 +1034,9 @@ function actualOperationFromStatus(data) {
   const finalOrIdle = ['idle', 'finished', 'aborted', 'error', 'failed'].includes(sys);
   const obsActive = sys === 'observing' || (!finalOrIdle && task.includes('observation')) || (!finalOrIdle && Boolean(progress.observation_running)) || processCategoryActive(data, 'observation');
   const calActive = sys === 'calibrating' || (!finalOrIdle && manual === 'calibration') || (!finalOrIdle && (task.includes('rsky') || task.includes('skydip'))) || processCategoryActive(data, 'calibration');
-  const mountActive = manual === 'moving' || task.includes('mount move') || task.includes('manual mount');
-  const trackingActive = manual === 'tracking' || task.includes('target tracking');
+  const explicitTrackingActive = task.includes('target tracking');
+  const mountActive = manual === 'moving' || (manual === 'tracking' && !explicitTrackingActive) || task.includes('mount move') || task.includes('manual mount');
+  const trackingActive = explicitTrackingActive || manual === 'target tracking';
   if (obsActive) {
     return {phase: 'running', kind: 'observation', label: 'OBSERVATION RUNNING', detail: 'Observation execution is confirmed by status/progress/launcher state.'};
   }
@@ -1046,7 +1049,7 @@ function actualOperationFromStatus(data) {
     return {phase: 'running', kind: 'mount', label: 'MOUNT MOVING', detail: 'Mount motion is confirmed by live/manual status.'};
   }
   if (trackingActive) {
-    return {phase: 'running', kind: 'tracking', label: 'TARGET TRACKING', detail: 'Target tracking is active. Use STOP to stop antenna motion.'};
+    return {phase: 'running', kind: 'tracking', label: 'TARGET TRACKING', detail: 'Time-dependent target tracking is active. Fixed Az/El mount-move hold is not treated as target tracking.'};
   }
   const guardedStart = operationFromExclusiveStartGuard(data);
   if (guardedStart) return guardedStart;
