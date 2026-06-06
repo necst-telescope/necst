@@ -400,13 +400,13 @@ def merge_live_telemetry(
         else {}
     )
     tracking_fresh = bool(tracking and _topic_received_fresh(live_payload, "tracking"))
-    if tracking_fresh:
-        terr = _finite_float(tracking.get("error_deg"))
+    terr = _finite_float(tracking.get("error_deg")) if tracking else None
+    tracking_available = bool(command_valid and tracking_fresh and terr is not None)
+    if tracking_available:
         tstat = _finite_float(tracking.get("time_unix"))
         antenna_update["tracking_status_available"] = True
         antenna_update["tracking_ok"] = bool(tracking.get("ok", False))
-        if terr is not None:
-            antenna_update["tracking_error_deg"] = terr
+        antenna_update["tracking_error_deg"] = terr
         if tstat is not None:
             antenna_update["tracking_status_time_unix"] = tstat
         antenna_update["tracking_status_age_sec"] = _topic_receipt_age_sec(
@@ -417,8 +417,10 @@ def merge_live_telemetry(
         # Do not compute a tracking error from the latest command and latest
         # encoder samples here.  altaz_cmd is a time-tagged command stream and
         # its newest sample is not necessarily the command at the encoder time.
-        # NECST's antenna_tracking topic already performs the correct comparison.
-        antenna_update.setdefault("tracking_status_available", False)
+        # NECST's antenna_tracking topic already performs the correct comparison,
+        # but it is meaningful for the UI only while a fresh altaz command exists.
+        antenna_update["tracking_status_available"] = False
+        _clear_tracking_fields(antenna_update)
     # Command Az/El is a truth value, not a planned/progress value.
     # If live telemetry is present but no fresh command topic was actually
     # received, remove any command fields that may already exist in an older
@@ -427,6 +429,9 @@ def merge_live_telemetry(
     if not command_valid:
         _clear_command_fields(antenna_section)
         _clear_command_fields(antenna_update)
+    if not tracking_available:
+        _clear_tracking_fields(antenna_section)
+        _clear_tracking_fields(antenna_update)
     if antenna_update or isinstance(antenna_section, dict):
         antenna_update["command_valid"] = bool(command_valid)
         antenna_update["command_source"] = command_source
@@ -684,6 +689,17 @@ def _clear_command_fields(mapping: Dict[str, Any]) -> None:
         mapping.pop(key, None)
 
 
+def _clear_tracking_fields(mapping: Dict[str, Any]) -> None:
+    for key in (
+        "tracking_ok",
+        "tracking_error_deg",
+        "tracking_status_time_unix",
+        "tracking_status_age_sec",
+        "tracking_status_source",
+    ):
+        mapping.pop(key, None)
+
+
 def _live_truth_scrub_stale_motion(
     out: Dict[str, Any],
     live_payload: Mapping[str, Any],
@@ -692,9 +708,10 @@ def _live_truth_scrub_stale_motion(
 ) -> None:
     """Remove stale planned/sidecar motion fields when live ROS says idle.
 
-    The progress sidecar can legitimately lag after ``necst abort`` or a local
-    launcher failure.  In operator-facing displays, command and motion must be
-    shown only when backed by fresh live command / section / queue status.
+    Motion display is based on explicit fresh motion/status topics first
+    (section status, command queue, control status).  Encoder-delta motion is
+    only a fallback and uses a deadband, because the low-order encoder digits
+    can jitter while the antenna is physically stopped.
     """
     if not isinstance(out, dict) or not isinstance(live_payload, Mapping):
         return
@@ -702,12 +719,19 @@ def _live_truth_scrub_stale_motion(
     antenna = out.setdefault("antenna", {})
     if isinstance(antenna, dict) and not command_valid:
         _clear_command_fields(antenna)
+        _clear_tracking_fields(antenna)
         antenna["command_valid"] = False
+        antenna["tracking_status_available"] = False
         antenna.setdefault("command_source", "none")
 
     queue = live_payload.get("queue_status") if isinstance(live_payload.get("queue_status"), Mapping) else {}
     section = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), Mapping) else {}
     control = live_payload.get("control") if isinstance(live_payload.get("control"), Mapping) else {}
+    encoder_motion = live_payload.get("encoder_motion") if isinstance(live_payload.get("encoder_motion"), Mapping) else {}
+
+    section_fresh = _topic_received_fresh(live_payload, "section_status")
+    section_active = bool(section_fresh and section.get("active"))
+    section_stage = str(section.get("section_kind") or section.get("section_label") or "").strip()
 
     queue_fresh = _topic_received_fresh(live_payload, "queue_status")
     try:
@@ -716,26 +740,73 @@ def _live_truth_scrub_stale_motion(
         queue_depth = 0
     queue_active = bool(queue_fresh and (queue.get("active") or queue_depth > 0))
 
-    # Operator-facing Moving/Tracking must not be inferred from section/control
-    # diagnostic topics.  These can remain active or carry planned scan metadata
-    # after stop/abort.  Use the real altaz command stream and explicit command
-    # queue activity only.
-    live_motion_active = bool(command_valid or queue_active)
+    control_fresh = _topic_received_fresh(live_payload, "control")
+    control_stage = str(control.get("section_kind") or control.get("section_label") or "").strip()
+    control_active = bool(
+        control_fresh
+        and (control.get("controlled") or control.get("tight") or control_stage)
+    )
+
+    encoder_motion_fresh = _topic_received_fresh(live_payload, "encoder")
+    encoder_moving = bool(encoder_motion_fresh and encoder_motion.get("moving"))
+
+    # command_valid keeps Tracking diagnostics meaningful, but by itself it is
+    # not physical movement.  Prefer explicit motion topics; use the encoder
+    # only as a deadbanded fallback for manual motion cases.
+    live_motion_active = bool(section_active or queue_active or control_active or encoder_moving)
+    if section_active:
+        motion_source = "section_status"
+    elif queue_active:
+        motion_source = "queue_status"
+    elif control_active:
+        motion_source = "control_status"
+    elif encoder_moving:
+        motion_source = "encoder_delta"
+    elif command_valid:
+        motion_source = "command"
+    else:
+        motion_source = "none"
+
     activity = out.setdefault("activity", {})
     if not isinstance(activity, dict):
         return
     activity["live_motion_active"] = live_motion_active
-    activity["live_motion_source"] = (
-        "command" if command_valid else
-        "queue_status" if queue_active else
-        "none"
-    )
+    activity["live_motion_source"] = motion_source
+    activity["encoder_motion_deadband_deg"] = encoder_motion.get("deadband_deg")
+    activity["encoder_motion_delta_az_deg"] = encoder_motion.get("delta_az_deg")
+    activity["encoder_motion_delta_el_deg"] = encoder_motion.get("delta_el_deg")
+
+    if section_active:
+        if section_stage:
+            activity["motion_stage"] = section_stage
+            activity["control_section_kind"] = section_stage
+        activity["control_section_active"] = True
+        activity["control_section_fresh"] = True
+        activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+        return
+
+    if queue_active:
+        if not activity.get("motion_stage") or str(activity.get("motion_stage")).lower() in {"idle", "none", "unknown"}:
+            activity["motion_stage"] = "moving"
+        return
+
+    if control_active:
+        if control_stage:
+            activity["motion_stage"] = control_stage
+            activity["control_section_kind"] = control_stage
+        elif not activity.get("motion_stage") or str(activity.get("motion_stage")).lower() in {"idle", "none", "unknown"}:
+            activity["motion_stage"] = "moving"
+        return
+
+    if encoder_moving:
+        activity["motion_stage"] = "moving"
+        return
+
+    # Fresh command without explicit movement can still support tracking error
+    # display, but it must not preserve or invent a Moving state.
 
     # If fresh live status does not support motion, old sidecar/planned values
     # such as ON/line/moving must not remain visible as current state.
-    if live_motion_active:
-        return
-
     for key in (
         "motion_stage",
         "drive_kind",
@@ -770,7 +841,6 @@ def _live_truth_scrub_stale_motion(
             "live_section_geometry",
         ):
             geometry.pop(key, None)
-
 def _first_present(mapping: Mapping[str, Any], *keys: str) -> Any:
     for key in keys:
         value = mapping.get(key)
@@ -871,8 +941,11 @@ def build_operator_status(
     encoder_lat = _finite_float(
         _first_present(antenna, "encoder_lat_deg", "enc_el_deg", "el_deg")
     )
-    tracking_error = _finite_float(antenna.get("tracking_error_deg"))
-    tracking_ok_raw = antenna.get("tracking_ok")
+    tracking_available = antenna.get("tracking_status_available") is True
+    tracking_error = (
+        _finite_float(antenna.get("tracking_error_deg")) if tracking_available else None
+    )
+    tracking_ok_raw = antenna.get("tracking_ok") if tracking_available else None
     tracking_ok = bool(tracking_ok_raw) if tracking_ok_raw is not None else None
 
     chopper_time = _first_present(

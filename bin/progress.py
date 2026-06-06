@@ -51,6 +51,10 @@ except ModuleNotFoundError:  # pragma: no cover - old Python fallback
     tomllib = None  # type: ignore[assignment]
 
 
+ENCODER_MOTION_DEADBAND_DEG = 1.0e-4
+ENCODER_MOTION_HOLD_SEC = 1.0
+
+
 def safe_name(value: Any) -> str:
     original = str(value or "unknown")
     sanitized = re.sub(r"[^A-Za-z0-9_.-]+", "_", original)
@@ -270,6 +274,17 @@ def _clear_command_fields(mapping: Dict[str, Any]) -> None:
         mapping.pop(key, None)
 
 
+def _clear_tracking_fields(mapping: Dict[str, Any]) -> None:
+    for key in (
+        "tracking_ok",
+        "tracking_error_deg",
+        "tracking_status_time_unix",
+        "tracking_status_age_sec",
+        "tracking_status_source",
+    ):
+        mapping.pop(key, None)
+
+
 def _live_truth_scrub_stale_motion(
     out: Dict[str, Any],
     live_payload: Mapping[str, Any],
@@ -278,9 +293,10 @@ def _live_truth_scrub_stale_motion(
 ) -> None:
     """Remove stale planned/sidecar motion fields when live ROS says idle.
 
-    The progress sidecar can legitimately lag after ``necst abort`` or a local
-    launcher failure.  In operator-facing displays, command and motion must be
-    shown only when backed by fresh live command / section / queue status.
+    Motion display is based on explicit fresh motion/status topics first
+    (section status, command queue, control status).  Encoder-delta motion is
+    only a fallback and uses a deadband, because the low-order encoder digits
+    can jitter while the antenna is physically stopped.
     """
     if not isinstance(out, dict) or not isinstance(live_payload, Mapping):
         return
@@ -288,12 +304,19 @@ def _live_truth_scrub_stale_motion(
     antenna = out.setdefault("antenna", {})
     if isinstance(antenna, dict) and not command_valid:
         _clear_command_fields(antenna)
+        _clear_tracking_fields(antenna)
         antenna["command_valid"] = False
+        antenna["tracking_status_available"] = False
         antenna.setdefault("command_source", "none")
 
     queue = live_payload.get("queue_status") if isinstance(live_payload.get("queue_status"), Mapping) else {}
     section = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), Mapping) else {}
     control = live_payload.get("control") if isinstance(live_payload.get("control"), Mapping) else {}
+    encoder_motion = live_payload.get("encoder_motion") if isinstance(live_payload.get("encoder_motion"), Mapping) else {}
+
+    section_fresh = _topic_received_fresh(live_payload, "section_status")
+    section_active = bool(section_fresh and section.get("active"))
+    section_stage = str(section.get("section_kind") or section.get("section_label") or "").strip()
 
     queue_fresh = _topic_received_fresh(live_payload, "queue_status")
     try:
@@ -302,26 +325,73 @@ def _live_truth_scrub_stale_motion(
         queue_depth = 0
     queue_active = bool(queue_fresh and (queue.get("active") or queue_depth > 0))
 
-    # Operator-facing Moving/Tracking must not be inferred from section/control
-    # diagnostic topics.  These can remain active or carry planned scan metadata
-    # after stop/abort.  Use the real altaz command stream and explicit command
-    # queue activity only.
-    live_motion_active = bool(command_valid or queue_active)
+    control_fresh = _topic_received_fresh(live_payload, "control")
+    control_stage = str(control.get("section_kind") or control.get("section_label") or "").strip()
+    control_active = bool(
+        control_fresh
+        and (control.get("controlled") or control.get("tight") or control_stage)
+    )
+
+    encoder_motion_fresh = _topic_received_fresh(live_payload, "encoder")
+    encoder_moving = bool(encoder_motion_fresh and encoder_motion.get("moving"))
+
+    # command_valid keeps Tracking diagnostics meaningful, but by itself it is
+    # not physical movement.  Prefer explicit motion topics; use the encoder
+    # only as a deadbanded fallback for manual motion cases.
+    live_motion_active = bool(section_active or queue_active or control_active or encoder_moving)
+    if section_active:
+        motion_source = "section_status"
+    elif queue_active:
+        motion_source = "queue_status"
+    elif control_active:
+        motion_source = "control_status"
+    elif encoder_moving:
+        motion_source = "encoder_delta"
+    elif command_valid:
+        motion_source = "command"
+    else:
+        motion_source = "none"
+
     activity = out.setdefault("activity", {})
     if not isinstance(activity, dict):
         return
     activity["live_motion_active"] = live_motion_active
-    activity["live_motion_source"] = (
-        "command" if command_valid else
-        "queue_status" if queue_active else
-        "none"
-    )
+    activity["live_motion_source"] = motion_source
+    activity["encoder_motion_deadband_deg"] = encoder_motion.get("deadband_deg")
+    activity["encoder_motion_delta_az_deg"] = encoder_motion.get("delta_az_deg")
+    activity["encoder_motion_delta_el_deg"] = encoder_motion.get("delta_el_deg")
+
+    if section_active:
+        if section_stage:
+            activity["motion_stage"] = section_stage
+            activity["control_section_kind"] = section_stage
+        activity["control_section_active"] = True
+        activity["control_section_fresh"] = True
+        activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+        return
+
+    if queue_active:
+        if not activity.get("motion_stage") or str(activity.get("motion_stage")).lower() in {"idle", "none", "unknown"}:
+            activity["motion_stage"] = "moving"
+        return
+
+    if control_active:
+        if control_stage:
+            activity["motion_stage"] = control_stage
+            activity["control_section_kind"] = control_stage
+        elif not activity.get("motion_stage") or str(activity.get("motion_stage")).lower() in {"idle", "none", "unknown"}:
+            activity["motion_stage"] = "moving"
+        return
+
+    if encoder_moving:
+        activity["motion_stage"] = "moving"
+        return
+
+    # Fresh command without explicit movement can still support tracking error
+    # display, but it must not preserve or invent a Moving state.
 
     # If fresh live status does not support motion, old sidecar/planned values
     # such as ON/line/moving must not remain visible as current state.
-    if live_motion_active:
-        return
-
     for key in (
         "motion_stage",
         "drive_kind",
@@ -356,7 +426,6 @@ def _live_truth_scrub_stale_motion(
             "live_section_geometry",
         ):
             geometry.pop(key, None)
-
 def _first_present(mapping: Mapping[str, Any], *keys: str) -> Any:
     for key in keys:
         try:
@@ -1491,13 +1560,13 @@ def merge_live_telemetry(
         else {}
     )
     tracking_fresh = bool(tracking and _topic_received_fresh(live_payload, "tracking"))
-    if tracking_fresh:
-        terr = _finite_float(tracking.get("error_deg"))
+    terr = _finite_float(tracking.get("error_deg")) if tracking else None
+    tracking_available = bool(command_valid and tracking_fresh and terr is not None)
+    if tracking_available:
         tstat = _finite_float(tracking.get("time_unix"))
         antenna_update["tracking_status_available"] = True
         antenna_update["tracking_ok"] = bool(tracking.get("ok", False))
-        if terr is not None:
-            antenna_update["tracking_error_deg"] = terr
+        antenna_update["tracking_error_deg"] = terr
         if tstat is not None:
             antenna_update["tracking_status_time_unix"] = tstat
         antenna_update["tracking_status_age_sec"] = _topic_receipt_age_sec(
@@ -1508,8 +1577,10 @@ def merge_live_telemetry(
         # Do not compute a tracking error from the latest command and latest
         # encoder samples here.  altaz_cmd is a time-tagged command stream and
         # its newest sample is not necessarily the command at the encoder time.
-        # NECST's antenna_tracking topic already performs the correct comparison.
-        antenna_update.setdefault("tracking_status_available", False)
+        # NECST's antenna_tracking topic already performs the correct comparison,
+        # but it is meaningful for the UI only while a fresh altaz command exists.
+        antenna_update["tracking_status_available"] = False
+        _clear_tracking_fields(antenna_update)
     # Command Az/El must be backed by an actually received fresh command topic.
     # The progress sidecar and observation plan may contain command-like values,
     # but those are not the live command and must not survive after abort.
@@ -1517,6 +1588,9 @@ def merge_live_telemetry(
     if not command_valid:
         _clear_command_fields(antenna_section)
         _clear_command_fields(antenna_update)
+    if not tracking_available:
+        _clear_tracking_fields(antenna_section)
+        _clear_tracking_fields(antenna_update)
     if antenna_update or isinstance(antenna_section, dict):
         antenna_update["command_valid"] = bool(command_valid)
         antenna_update["command_source"] = command_source
@@ -1703,6 +1777,9 @@ class LiveRosCache:
         self.control: Dict[str, Any] = {}
         self.command: Dict[str, Any] = {}
         self.encoder: Dict[str, Any] = {}
+        self.encoder_motion: Dict[str, Any] = {}
+        self._previous_encoder_sample: Optional[Dict[str, float]] = None
+        self._last_significant_encoder_motion_unix: Optional[float] = None
         self.tracking: Dict[str, Any] = {}
         self.section_status: Dict[str, Any] = {}
         self.pointing_status: Dict[str, Any] = {}
@@ -1720,6 +1797,56 @@ class LiveRosCache:
         now = time.time()
         self._sample_counts[key] = int(self._sample_counts.get(key, 0)) + 1
         self._last_message_time_unix[key] = now
+
+    def _update_encoder_motion_locked(self, payload: Dict[str, Any]) -> None:
+        """Estimate actual antenna motion from encoder samples with deadband.
+
+        The encoder can jitter in the low-order digits while the antenna is
+        stopped.  This fallback ignores changes at or below 1e-4 deg and is
+        used only when fresher explicit section/queue status is unavailable.
+        """
+
+        now = time.time()
+        lon = _finite_float(payload.get("encoder_lon_deg"))
+        lat = _finite_float(payload.get("encoder_lat_deg"))
+        if lon is None or lat is None:
+            self.encoder_motion = {
+                "moving": False,
+                "source": "encoder_unavailable",
+                "deadband_deg": ENCODER_MOTION_DEADBAND_DEG,
+                "time_unix": now,
+            }
+            return
+
+        previous = self._previous_encoder_sample
+        delta_az = None
+        delta_el = None
+        significant = False
+        if previous is not None:
+            delta_az = abs(lon - previous.get("lon", lon))
+            delta_el = abs(lat - previous.get("lat", lat))
+            significant = bool(
+                delta_az > ENCODER_MOTION_DEADBAND_DEG
+                or delta_el > ENCODER_MOTION_DEADBAND_DEG
+            )
+
+        if significant:
+            self._last_significant_encoder_motion_unix = now
+        held = bool(
+            self._last_significant_encoder_motion_unix is not None
+            and now - self._last_significant_encoder_motion_unix <= ENCODER_MOTION_HOLD_SEC
+        )
+        moving = bool(significant or held)
+        self.encoder_motion = {
+            "moving": moving,
+            "source": "encoder_delta" if moving else "encoder_delta_deadband",
+            "delta_az_deg": delta_az,
+            "delta_el_deg": delta_el,
+            "deadband_deg": ENCODER_MOTION_DEADBAND_DEG,
+            "hold_sec": ENCODER_MOTION_HOLD_SEC,
+            "time_unix": now,
+        }
+        self._previous_encoder_sample = {"lon": lon, "lat": lat, "time_unix": now}
 
     def _start(self) -> None:
         try:
@@ -1742,17 +1869,19 @@ class LiveRosCache:
                     line_index = int(line_index)
                 except Exception:
                     line_index = -1
-                self.control = {
-                    "controlled": bool(getattr(msg, "controlled", False)),
-                    "tight": bool(getattr(msg, "tight", False)),
-                    "remote": bool(getattr(msg, "remote", False)),
-                    "id": str(getattr(msg, "id", "")),
-                    "interrupt_ok": bool(getattr(msg, "interrupt_ok", False)),
-                    "time_unix": _finite_float(getattr(msg, "time", None)),
-                    "section_kind": str(getattr(msg, "section_kind", "")),
-                    "section_label": str(getattr(msg, "section_label", "")),
-                    "line_index": line_index,
-                }
+                with self._lock:
+                    self.control = {
+                        "controlled": bool(getattr(msg, "controlled", False)),
+                        "tight": bool(getattr(msg, "tight", False)),
+                        "remote": bool(getattr(msg, "remote", False)),
+                        "id": str(getattr(msg, "id", "")),
+                        "interrupt_ok": bool(getattr(msg, "interrupt_ok", False)),
+                        "time_unix": _finite_float(getattr(msg, "time", None)),
+                        "section_kind": str(getattr(msg, "section_kind", "")),
+                        "section_label": str(getattr(msg, "section_label", "")),
+                        "line_index": line_index,
+                    }
+                    self._record_sample_locked("control")
 
             def command_cb(msg: Any) -> None:
                 with self._lock:
@@ -1762,6 +1891,7 @@ class LiveRosCache:
             def encoder_cb(msg: Any) -> None:
                 with self._lock:
                     self.encoder = _msg_coord(msg, prefix="encoder")
+                    self._update_encoder_motion_locked(self.encoder)
                     self._record_sample_locked("encoder")
 
             def tracking_cb(msg: Any) -> None:
@@ -2179,6 +2309,8 @@ class LiveRosCache:
                 payload["command"] = dict(self.command)
             if self.encoder:
                 payload["encoder"] = dict(self.encoder)
+            if self.encoder_motion:
+                payload["encoder_motion"] = dict(self.encoder_motion)
             if self.tracking:
                 payload["tracking"] = dict(self.tracking)
             if self.section_status:
@@ -2871,8 +3003,8 @@ def azel_text(lon: Any, lat: Any, frame: Any = "altaz") -> str:
         return "-"
     f = str(frame or "").lower()
     if f in {"altaz", "azel", "alt-az"}:
-        return f"Az={x:.3f} El={y:.3f} deg"
-    return f"lon={x:.3f} lat={y:.3f} {frame or ''}".strip()
+        return f"Az={x:.4f} El={y:.4f} deg"
+    return f"lon={x:.4f} lat={y:.4f} {frame or ''}".strip()
 
 
 def observer_target_name(obs: Mapping[str, Any], geom: Mapping[str, Any]) -> str:
@@ -4267,8 +4399,8 @@ function offsetArcsecText(v, label='') {
 function azElText(lon, lat, frame='altaz') {
   const x=Number(lon), y=Number(lat); if (!Number.isFinite(x) || !Number.isFinite(y)) return '-';
   const f=String(frame || '').toLowerCase();
-  if (f === 'altaz' || f === 'alt-az' || f === 'azel') return `Az ${x.toFixed(3)}°, El ${y.toFixed(3)}°`;
-  return `${String(frame || 'coord')} lon ${x.toFixed(3)}°, lat ${y.toFixed(3)}°`;
+  if (f === 'altaz' || f === 'alt-az' || f === 'azel') return `Az ${x.toFixed(4)}°, El ${y.toFixed(4)}°`;
+  return `${String(frame || 'coord')} lon ${x.toFixed(4)}°, lat ${y.toFixed(4)}°`;
 }
 function azUnwrapBadgeHtml(a) {
   if (!a || !a.az_unwrap_enabled) return '';

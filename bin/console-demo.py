@@ -124,6 +124,37 @@ small { color: var(--faint); }
 .badge.warn { border-color: rgba(242,204,96,0.55); color: var(--warn); }
 .badge.bad { border-color: rgba(255,107,107,0.55); color: var(--bad); }
 .badge.info { border-color: rgba(122,162,255,0.55); color: var(--accent2); }
+.system-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(17, 24, 44, 0.94);
+  box-shadow: 0 10px 28px var(--shadow);
+}
+.system-banner .main { min-width: 0; }
+.system-banner .label { font-size: 16px; font-weight: 900; letter-spacing: 0.02em; }
+.system-banner .detail { margin-top: 2px; color: var(--muted); font-size: 12px; }
+.system-banner .safe { color: var(--faint); font-size: 12px; text-align: right; }
+.system-banner.ready { border-color: rgba(86,211,100,0.40); }
+.system-banner.starting { border-color: rgba(122,162,255,0.65); background: rgba(31, 50, 91, 0.94); }
+.system-banner.running { border-color: rgba(242,204,96,0.75); background: rgba(73, 58, 20, 0.94); }
+.system-banner.attention { border-color: rgba(255,107,107,0.80); background: rgba(76, 31, 36, 0.96); }
+.card.op-starting { border-color: rgba(122,162,255,0.75); box-shadow: 0 0 0 2px rgba(122,162,255,0.13), 0 10px 28px var(--shadow); }
+.card.op-running { border-color: rgba(242,204,96,0.85); box-shadow: 0 0 0 2px rgba(242,204,96,0.17), 0 10px 28px var(--shadow); }
+.card.op-attention { border-color: rgba(255,107,107,0.85); box-shadow: 0 0 0 2px rgba(255,107,107,0.16), 0 10px 28px var(--shadow); }
+.card.op-running > .card-head, .card.op-running > .card-body { background: rgba(242,204,96,0.055); }
+.card.op-starting > .card-head, .card.op-starting > .card-body { background: rgba(122,162,255,0.050); }
+.card.op-attention > .card-head, .card.op-attention > .card-body { background: rgba(255,107,107,0.060); }
+.operation-subcard.op-running { border-color: rgba(242,204,96,0.85); }
+.operation-subcard.op-starting { border-color: rgba(122,162,255,0.75); }
+.operation-subcard.op-attention { border-color: rgba(255,107,107,0.85); }
+button.busy:not(:disabled) { border-color: rgba(242,204,96,0.85); background: #4b3a16; }
+button.pending:not(:disabled) { border-color: rgba(122,162,255,0.75); background: #203865; }
 .stop-button {
   min-width: 126px;
   min-height: 48px;
@@ -415,6 +446,13 @@ summary { cursor: pointer; color: var(--muted); }
   </div>
 </header>
 <main class="page">
+  <div class="system-banner ready" id="systemBanner" role="status" aria-live="polite">
+    <div class="main">
+      <div class="label" id="systemStateLabel">READY</div>
+      <div class="detail" id="systemStateDetail">No observation, mount move, or calibration is currently confirmed.</div>
+    </div>
+    <div class="safe">STOP and ABORT remain available.</div>
+  </div>
   <div class="main-grid">
     <section class="card" id="observationCard">
       <div class="card-head">
@@ -552,7 +590,7 @@ summary { cursor: pointer; color: var(--muted); }
           <div class="kv"><span>Motion state</span><b id="motionSummary">idle</b></div>
           <div class="kv"><span>Active task</span><b id="taskSummary">none</b></div>
           <div class="kv"><span>Current Az / El</span><b id="posSummary">180.000 / 45.000</b></div>
-          <div class="kv"><span>Command Az / El</span><b id="cmdSummary">none</b></div>
+          <div class="kv"><span>Command Az / El</span><b id="cmdSummary">- / -</b></div>
           <div class="kv"><span>Chopper</span><b id="chopperSummary">OUT / pos 19700</b></div>
         </div>
         <div class="tabs">
@@ -672,7 +710,7 @@ summary { cursor: pointer; color: var(--muted); }
         <div id="calPanel" class="panel">
           <div class="notice" id="calStatusNotice">RSky / SkyDip running state is also shown in the header Active badge.</div>
           <div class="row">
-            <div class="card" style="box-shadow:none">
+            <div class="card operation-subcard" id="rskyCard" style="box-shadow:none">
               <div class="card-head"><h2>RSky</h2><span class="hint">runtime parameters</span></div>
               <div class="card-body">
                 <div class="row">
@@ -683,7 +721,7 @@ summary { cursor: pointer; color: var(--muted); }
                 <button id="runRsky" class="primary">Run RSky</button>
               </div>
             </div>
-            <div class="card" style="box-shadow:none">
+            <div class="card operation-subcard" id="skydipCard" style="box-shadow:none">
               <div class="card-head"><h2>SkyDip</h2><span class="hint">runtime parameters</span></div>
               <div class="card-body">
                 <div class="field"><label for="skydipInteg">integ [s]</label><input id="skydipInteg" value="2" inputmode="decimal"></div>
@@ -811,6 +849,10 @@ const state = {
   capabilities: {},
   liveActions: {guarded: false, enabled: false},
   lastSelfCheck: null,
+  lastStatus: null,
+  pendingOperation: null,
+  currentOperation: {phase: 'ready', kind: 'idle', label: 'READY'},
+  lastActionResponse: null,
   demoObsBrowser: false,
   selectedObsPath: ""
 };
@@ -821,6 +863,9 @@ function numberOrNaN(value) {
   return Number(value);
 }
 function finite(value) { return Number.isFinite(value); }
+function finiteStatusNumber(value) {
+  return value !== null && value !== undefined && String(value).trim() !== '' && Number.isFinite(Number(value));
+}
 
 function parseSexagesimalAngle(value, isRa) {
   const raw = String(value || '').trim();
@@ -874,9 +919,297 @@ function setDisabled(id, disabled) {
   const el = qs(id);
   if (el) el.disabled = Boolean(disabled);
 }
-function formatMaybeNumber(value, digits=3) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n.toFixed(digits) : String(value ?? 'unknown');
+function formatMaybeNumber(value, digits=4) {
+  return finiteStatusNumber(value) ? Number(value).toFixed(digits) : '-';
+}
+const PENDING_ATTENTION_SEC = 15;
+function lowerText(value) { return String(value ?? '').trim().toLowerCase(); }
+function processCategoryActive(data, category) {
+  const records = Array.isArray(data && data.processes) ? data.processes : [];
+  const want = lowerText(category);
+  return records.some(r => {
+    const active = Boolean(r && (r.active || r.is_active || r.status === 'running' || r.status === 'active'));
+    if (!active) return false;
+    const haystack = [r.category, r.kind, r.name, r.action, r.label, r.command].map(lowerText).join(' ');
+    return haystack === want || haystack.includes(want);
+  });
+}
+function processMatchesKind(record, kind) {
+  if (!record || !kind) return false;
+  const k = lowerText(kind);
+  const haystack = [record.category, record.kind, record.name, record.action, record.label, record.command].map(lowerText).join(' ');
+  if (k === 'observation') return haystack.includes('observation') || haystack.includes('start_observation');
+  if (k === 'rsky') return haystack.includes('rsky');
+  if (k === 'skydip') return haystack.includes('skydip');
+  if (k === 'calibration') return haystack.includes('calibration') || haystack.includes('rsky') || haystack.includes('skydip');
+  return haystack.includes(k);
+}
+function matchingRecentFinalProcess(data, pending) {
+  if (!pending || !['observation', 'rsky', 'skydip', 'calibration'].includes(pending.kind)) return null;
+  const records = Array.isArray(data && data.processes) ? data.processes : [];
+  const startedAt = Number(pending.startedAt || 0) / 1000.0;
+  const candidates = records.filter(r => {
+    if (!processMatchesKind(r, pending.kind)) return false;
+    const status = lowerText(r.status);
+    if (!['exited', 'failed', 'lost', 'unknown'].includes(status)) return false;
+    const recStart = Number(r.started_at || 0);
+    if (Number.isFinite(startedAt) && startedAt > 0 && Number.isFinite(recStart) && recStart + 2.0 < startedAt) return false;
+    return true;
+  });
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => Number(b.started_at || 0) - Number(a.started_at || 0));
+  return candidates[0];
+}
+const MOUNT_REACHED_TOL_DEG = 2.0e-4;
+function mountPendingReached(data, pending) {
+  if (!pending || pending.kind !== 'mount') return false;
+  const targetAz = Number(pending.targetAz);
+  const targetEl = Number(pending.targetEl);
+  const currentAz = Number(data && data.az);
+  const currentEl = Number(data && data.el);
+  return Number.isFinite(targetAz) && Number.isFinite(targetEl)
+    && Number.isFinite(currentAz) && Number.isFinite(currentEl)
+    && Math.abs(currentAz - targetAz) <= MOUNT_REACHED_TOL_DEG
+    && Math.abs(currentEl - targetEl) <= MOUNT_REACHED_TOL_DEG;
+}
+function exclusiveStartActionKind(action) {
+  const a = lowerText(action || '');
+  if (a === 'start_observation') return 'observation';
+  if (a === 'mount_move') return 'mount';
+  if (a === 'run_rsky') return 'rsky';
+  if (a === 'run_skydip') return 'skydip';
+  if (a === 'start_tracking') return 'tracking';
+  return '';
+}
+function operationFromExclusiveStartGuard(data) {
+  const guard = data && data.exclusive_start_guard;
+  if (!guard || typeof guard !== 'object') return null;
+  const kind = exclusiveStartActionKind(guard.action);
+  if (!kind) return null;
+  const age = Number(guard.age_sec);
+  const limit = Number(guard.guard_sec ?? PENDING_ATTENTION_SEC);
+  if (!Number.isFinite(age) || !Number.isFinite(limit) || age < 0 || age > limit) return null;
+  const text = pendingLabel({kind});
+  const message = String(guard.message || guard.action || 'start command');
+
+  // If this page was reloaded after the command and the launcher already
+  // finished, do not keep showing STARTING.  A clean quick exit returns to
+  // READY; a failed exit becomes ATTENTION so the operator is guided to logs.
+  const started = Number(guard.started_at || 0);
+  const finalProcess = matchingRecentFinalProcess(data || {}, {kind, startedAt: started > 0 ? started * 1000.0 : 0});
+  if (finalProcess) {
+    const rc = finalProcess.returncode;
+    const okFinal = rc === 0 || rc === '0';
+    if (okFinal) {
+      return {
+        phase: 'ready',
+        kind: 'idle',
+        label: 'READY',
+        detail: `${message} finished before this status view confirmed RUNNING; launcher exited normally.`
+      };
+    }
+    return {
+      phase: 'attention',
+      kind,
+      label: 'ATTENTION',
+      detail: `${message} launcher ended with status=${finalProcess.status || 'unknown'}, returncode=${rc ?? 'unknown'}. Check launcher logs before starting again.`
+    };
+  }
+
+  return {
+    phase: 'starting',
+    kind,
+    label: text.label,
+    detail: `${message} was accepted ${age.toFixed(1)} s ago; waiting for status confirmation. This may have been started from another browser or before this page was reloaded.`
+  };
+}
+function actualOperationFromStatus(data) {
+  data = data || {};
+  const sys = lowerText(data.state || 'idle');
+  const manual = lowerText(data.manual_state || 'idle');
+  const task = lowerText(data.active_task || 'none');
+  const progress = data.progress || {};
+  const finalOrIdle = ['idle', 'finished', 'aborted', 'error', 'failed'].includes(sys);
+  const obsActive = sys === 'observing' || (!finalOrIdle && task.includes('observation')) || (!finalOrIdle && Boolean(progress.observation_running)) || processCategoryActive(data, 'observation');
+  const calActive = sys === 'calibrating' || (!finalOrIdle && manual === 'calibration') || (!finalOrIdle && (task.includes('rsky') || task.includes('skydip'))) || processCategoryActive(data, 'calibration');
+  const mountActive = manual === 'moving' || task.includes('mount move') || task.includes('manual mount');
+  const trackingActive = manual === 'tracking' || task.includes('target tracking');
+  if (obsActive) {
+    return {phase: 'running', kind: 'observation', label: 'OBSERVATION RUNNING', detail: 'Observation execution is confirmed by status/progress/launcher state.'};
+  }
+  if (calActive) {
+    const kind = task.includes('skydip') ? 'skydip' : (task.includes('rsky') ? 'rsky' : 'calibration');
+    const label = kind === 'skydip' ? 'SKYDIP RUNNING' : (kind === 'rsky' ? 'RSKY RUNNING' : 'CALIBRATION RUNNING');
+    return {phase: 'running', kind, label, detail: 'Calibration execution is confirmed by status or launcher state.'};
+  }
+  if (mountActive) {
+    return {phase: 'running', kind: 'mount', label: 'MOUNT MOVING', detail: 'Mount motion is confirmed by live/manual status.'};
+  }
+  if (trackingActive) {
+    return {phase: 'running', kind: 'tracking', label: 'TARGET TRACKING', detail: 'Target tracking is active. Use STOP to stop antenna motion.'};
+  }
+  const guardedStart = operationFromExclusiveStartGuard(data);
+  if (guardedStart) return guardedStart;
+  return {phase: 'ready', kind: 'idle', label: 'READY', detail: 'No observation, mount move, or calibration is currently confirmed.'};
+}
+function pendingLabel(pending) {
+  if (!pending) return {label: 'STARTING...', detail: 'Command was accepted by the console; waiting for status confirmation.'};
+  const map = {
+    observation: ['STARTING OBSERVATION...', 'Start was accepted; waiting until observation status/progress confirms running.'],
+    mount: ['MOUNT COMMAND SENT', 'Mount command was accepted; waiting for motion confirmation.'],
+    rsky: ['STARTING RSKY...', 'RSky command was accepted; waiting for calibration status/launcher confirmation.'],
+    skydip: ['STARTING SKYDIP...', 'SkyDip command was accepted; waiting for calibration status/launcher confirmation.'],
+    tracking: ['STARTING TRACKING...', 'Tracking command was accepted; waiting for tracking status confirmation.'],
+    stop: ['STOP REQUESTED...', 'STOP was sent; waiting for idle status.'],
+    abort: ['ABORT REQUESTED...', 'ABORT was sent; waiting for idle status.']
+  };
+  const pair = map[pending.kind] || ['STARTING...', 'Command was accepted; waiting for status confirmation.'];
+  return {label: pair[0], detail: pair[1]};
+}
+function deriveOperationState(data) {
+  const actual = actualOperationFromStatus(data || {});
+  const pending = state.pendingOperation;
+  if (pending) {
+    const ageSec = (Date.now() - Number(pending.startedAt || Date.now())) / 1000;
+    const text = pendingLabel(pending);
+    const isSafetyPending = pending.kind === 'stop' || pending.kind === 'abort';
+
+    // STOP/ABORT are user intent, not normal START operations.  If the real
+    // status is still RUNNING immediately after a safety button was pressed,
+    // show the operator that the stop/abort request is being waited on rather
+    // than snapping the banner back to RUNNING.  External CLI stop/abort still
+    // clears this as soon as /api/status reports READY.
+    if (isSafetyPending) {
+      if (actual.phase === 'ready') {
+        state.pendingOperation = null;
+        return actual;
+      }
+      if (ageSec > PENDING_ATTENTION_SEC) {
+        return {
+          phase: 'attention',
+          kind: pending.kind,
+          label: 'ATTENTION',
+          detail: `${text.detail} The system is still not idle after ${Math.round(ageSec)} s. Check progress, launcher logs, and telemetry; STOP/ABORT remain available.`
+        };
+      }
+      return {phase: 'starting', kind: pending.kind, label: text.label, detail: text.detail};
+    }
+
+    const finalProcess = matchingRecentFinalProcess(data || {}, pending);
+    if (finalProcess && actual.phase === 'ready') {
+      state.pendingOperation = null;
+      const rc = finalProcess.returncode;
+      const okFinal = rc === 0 || rc === '0';
+      if (okFinal) {
+        return {phase: 'ready', kind: 'idle', label: 'READY', detail: `${text.label.replace(/\.\.\.$/, '')} finished before the next status update; launcher exited normally.`};
+      }
+      return {phase: 'attention', kind: pending.kind, label: 'ATTENTION', detail: `${text.label.replace(/\.\.\.$/, '')} launcher ended with status=${finalProcess.status || 'unknown'}, returncode=${rc ?? 'unknown'}. Check launcher logs.`};
+    }
+    if (pending.kind === 'mount' && actual.phase === 'ready' && mountPendingReached(data || {}, pending)) {
+      state.pendingOperation = null;
+      return {phase: 'ready', kind: 'idle', label: 'READY', detail: 'Mount command is complete or no motion was needed; Current Az/El matches the requested target.'};
+    }
+    if (actual.phase === 'running') {
+      if (pending.kind === actual.kind || pending.kind === 'observation' || pending.kind === 'rsky' || pending.kind === 'skydip' || pending.kind === 'mount' || pending.kind === 'tracking') {
+        state.pendingOperation = null;
+      }
+      return actual;
+    }
+    if (ageSec > PENDING_ATTENTION_SEC) {
+      return {
+        phase: 'attention',
+        kind: pending.kind,
+        label: 'ATTENTION',
+        detail: pending.kind === 'mount'
+          ? `${text.detail} No motion confirmation after ${Math.round(ageSec)} s. The mount may already be at the target or the motion may have finished quickly; check Current Az/El, telemetry, or use STOP if needed.`
+          : `${text.detail} No confirmation after ${Math.round(ageSec)} s. Check telemetry, progress, or use STOP/ABORT if needed.`
+      };
+    }
+    return {phase: 'starting', kind: pending.kind, label: text.label, detail: text.detail};
+  }
+  return actual;
+}
+function beginPendingOperation(kind, action, details={}) {
+  state.pendingOperation = Object.assign({kind, action, startedAt: Date.now()}, details || {});
+  const op = deriveOperationState(state.lastStatus || {});
+  applyOperationUi(op);
+}
+function clearPendingOperation() {
+  state.pendingOperation = null;
+  applyOperationUi(deriveOperationState(state.lastStatus || {}));
+}
+function setCardState(id, mode) {
+  const el = qs(id);
+  if (!el) return;
+  el.classList.remove('op-starting', 'op-running', 'op-attention');
+  if (mode && mode !== 'ready') el.classList.add('op-' + mode);
+}
+function setButtonText(id, text) {
+  const el = qs(id);
+  if (el) el.textContent = text;
+}
+function setButtonBusyClass(id, mode) {
+  const el = qs(id);
+  if (!el) return;
+  el.classList.remove('busy', 'pending');
+  if (mode === 'running') el.classList.add('busy');
+  if (mode === 'starting') el.classList.add('pending');
+}
+function operationLocksActive(op) {
+  return Boolean(op && ['starting', 'running', 'attention'].includes(op.phase));
+}
+function applyOperationUi(op) {
+  op = op || {phase: 'ready', kind: 'idle', label: 'READY', detail: ''};
+  state.currentOperation = op;
+  const banner = qs('systemBanner');
+  if (banner) {
+    banner.classList.remove('ready', 'starting', 'running', 'attention');
+    banner.classList.add(op.phase === 'ready' ? 'ready' : op.phase);
+  }
+  setText('systemStateLabel', op.label || 'READY');
+  setText('systemStateDetail', op.detail || '');
+  const isObs = op.kind === 'observation';
+  const isMount = op.kind === 'mount';
+  const isCal = ['rsky', 'skydip', 'calibration'].includes(op.kind);
+  setCardState('observationCard', isObs ? op.phase : 'ready');
+  setCardState('manualCard', (isMount || isCal || op.kind === 'tracking') ? op.phase : 'ready');
+  setCardState('rskyCard', (op.kind === 'rsky' || op.kind === 'calibration') ? op.phase : 'ready');
+  setCardState('skydipCard', (op.kind === 'skydip' || op.kind === 'calibration') ? op.phase : 'ready');
+  setButtonText('startObs', isObs ? (op.phase === 'running' ? 'Running...' : (op.phase === 'starting' ? 'Starting...' : (op.phase === 'attention' ? 'Attention' : 'Start observation'))) : 'Start observation');
+  setButtonText('moveMount', isMount ? (op.phase === 'running' ? 'Moving...' : (op.phase === 'starting' ? 'Command sent...' : (op.phase === 'attention' ? 'Check mount' : 'Move mount'))) : 'Move mount');
+  setButtonText('runRsky', op.kind === 'rsky' ? (op.phase === 'running' ? 'RSky running...' : (op.phase === 'starting' ? 'Starting RSky...' : (op.phase === 'attention' ? 'Attention' : 'Run RSky'))) : 'Run RSky');
+  setButtonText('runSkydip', op.kind === 'skydip' ? (op.phase === 'running' ? 'SkyDip running...' : (op.phase === 'starting' ? 'Starting SkyDip...' : (op.phase === 'attention' ? 'Attention' : 'Run SkyDip'))) : 'Run SkyDip');
+  setButtonBusyClass('startObs', isObs ? op.phase : 'ready');
+  setButtonBusyClass('moveMount', isMount ? op.phase : 'ready');
+  setButtonBusyClass('runRsky', op.kind === 'rsky' ? op.phase : 'ready');
+  setButtonBusyClass('runSkydip', op.kind === 'skydip' ? op.phase : 'ready');
+  enforceOperationLocks();
+}
+function enforceOperationLocks() {
+  const op = state.currentOperation || {phase: 'ready', kind: 'idle'};
+  const locked = operationLocksActive(op);
+  const lockIds = [
+    'startObs', 'checkObs', 'dryRunObs', 'openObsChooser', 'previewCurrentObs',
+    'recentDir', 'obsFilename', 'obsMode', 'obsChannel', 'obsPreview', 'obsFile',
+    'moveMount', 'dryRunMount', 'startTracking', 'runRsky', 'runSkydip',
+    'rskyN', 'rskyInteg', 'rskyCh', 'skydipInteg', 'skydipCh', 'skydipTpRange'
+  ];
+  const formOnlyIds = [
+    'openObsChooser', 'previewCurrentObs', 'recentDir', 'obsFilename', 'obsMode',
+    'obsChannel', 'obsPreview', 'obsFile', 'rskyN', 'rskyInteg', 'rskyCh',
+    'skydipInteg', 'skydipCh', 'skydipTpRange'
+  ];
+  if (locked) {
+    lockIds.forEach(id => setDisabled(id, true));
+  } else {
+    // Validation/capability functions own the actual Start buttons.  Restore
+    // only form and chooser controls here so a previous RUNNING lock does not
+    // leave the UI stuck after an external STOP/ABORT.
+    formOnlyIds.forEach(id => setDisabled(id, false));
+  }
+  // STOP and ABORT are safety actions and must remain clickable even if status is stale.
+  setDisabled('stopButton', false);
+  setDisabled('abortObs', false);
 }
 function capabilityText(caps) {
   if (!caps || typeof caps !== 'object') return 'unknown';
@@ -1062,21 +1395,53 @@ function applyCapabilities(data) {
     setDisabled('dryRunMount', true);
   }
 }
-async function api(action, params={}) {
-  const resp = await fetch('/api/action', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({action, params, session_id: state.sessionId})
-  });
-  const data = await resp.json();
+async function api(action, params={}, pendingKind=null) {
+  if (pendingKind) {
+    const pendingDetails = (typeof pendingKind === 'object') ? pendingKind : {kind: pendingKind};
+    beginPendingOperation(pendingDetails.kind, action, pendingDetails);
+  }
+  let data;
+  try {
+    const resp = await fetch('/api/action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action, params, session_id: state.sessionId})
+    });
+    data = await resp.json();
+  } catch (err) {
+    data = {ok: false, action, reason: String(err && err.message ? err.message : err)};
+  }
+  state.lastActionResponse = data;
+  if (!data.ok || data.dry_run) {
+    clearPendingOperation();
+  }
   await refresh();
   return data;
 }
+function renderStatusRefreshError(err) {
+  const message = String(err && err.message ? err.message : err);
+  const op = {
+    phase: 'attention',
+    kind: 'status',
+    label: 'ATTENTION',
+    detail: 'Console status refresh failed. The displayed state may be stale; STOP and ABORT remain available. Error: ' + message
+  };
+  state.currentOperation = op;
+  applyOperationUi(op);
+  const badges = qs('statusBadges');
+  if (badges) badges.innerHTML = `<span class="badge bad">Status refresh failed</span> <span class="badge warn">display may be stale</span>`;
+}
 async function refresh() {
-  const resp = await fetch('/api/status');
-  const data = await resp.json();
-  renderStatus(data);
-  renderLog(data.log || []);
+  try {
+    const resp = await fetch('/api/status');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    state.lastStatus = data;
+    renderStatus(data);
+    renderLog(data.log || []);
+  } catch (err) {
+    renderStatusRefreshError(err);
+  }
 }
 async function loadServerObsRoots() {
   const rootSel = qs('serverObsRoot');
@@ -1275,6 +1640,12 @@ function closeObsChooser() {
 }
 
 function renderStatus(data) {
+  state.lastStatus = data || {};
+  const operation = deriveOperationState(state.lastStatus);
+  // Store the freshly derived state before validation functions run, so a
+  // just-finished external STOP/ABORT does not leave controls disabled by the
+  // previous RUNNING lock.
+  state.currentOperation = operation;
   const heldByMe = data.authority && data.authority.session_id === state.sessionId;
   state.siteLimits = data.mount_limits || state.siteLimits;
   state.capabilities = data.capabilities || state.capabilities || {};
@@ -1287,7 +1658,7 @@ function renderStatus(data) {
   const authClass = data.authority && data.authority.held ? (heldByMe ? 'ok' : 'warn') : 'info';
   const taskClass = data.active_task && data.active_task !== 'none' ? 'ok' : 'info';
   const motionClass = (data.manual_state === 'moving' || data.manual_state === 'tracking' || data.manual_state === 'calibration' || data.manual_state === 'observing sequence') ? 'ok' : (data.manual_state === 'stopped' ? 'warn' : 'info');
-  const cmd = (finite(Number(data.command_az)) && finite(Number(data.command_el))) ? `${Number(data.command_az).toFixed(3)} / ${Number(data.command_el).toFixed(3)}` : 'none';
+  const cmd = (finiteStatusNumber(data.command_az) && finiteStatusNumber(data.command_el)) ? `${Number(data.command_az).toFixed(4)} / ${Number(data.command_el).toFixed(4)}` : '- / -';
   const progressClass = data.progress && data.progress.running ? 'ok' : 'info';
   const progressText = data.progress && data.progress.running ? 'Progress: running' : 'Progress: not started';
   const counts = data.process_counts || {};
@@ -1307,13 +1678,13 @@ function renderStatus(data) {
   ].join('');
   qs('authorityButton').textContent = heldByMe ? 'Release authority' : 'Acquire authority';
   qs('authorityButton').disabled = Boolean(state.liveActions.guarded) && !heldByMe;
-  qs('obsStateBadge').textContent = data.state;
-  qs('obsStateBadge').className = 'badge ' + (data.state === 'observing' ? 'ok' : (data.state === 'calibrating' ? 'warn' : 'info'));
+  qs('obsStateBadge').textContent = operation.kind === 'observation' ? operation.label : data.state;
+  qs('obsStateBadge').className = 'badge ' + (operation.kind === 'observation' ? (operation.phase === 'attention' ? 'bad' : (operation.phase === 'running' ? 'warn' : 'info')) : (data.state === 'observing' ? 'ok' : (data.state === 'calibrating' ? 'warn' : 'info')));
   // ABORT is a safety action.  It must stay clickable even when the
   // observation state cannot be inferred from status/progress yet.
   qs('abortObs').disabled = false;
-  qs('manualBadge').textContent = data.manual_state;
-  qs('manualBadge').className = 'badge ' + motionClass;
+  qs('manualBadge').textContent = ['mount', 'tracking', 'rsky', 'skydip', 'calibration'].includes(operation.kind) ? operation.label : data.manual_state;
+  qs('manualBadge').className = 'badge ' + (operation.phase === 'attention' ? 'bad' : (operation.phase === 'running' ? 'warn' : motionClass));
   qs('motionSummary').textContent = data.manual_state;
   qs('taskSummary').textContent = data.active_task || 'none';
   qs('posSummary').textContent = `${formatMaybeNumber(data.az)} / ${formatMaybeNumber(data.el)}`;
@@ -1323,13 +1694,21 @@ function renderStatus(data) {
   qs('chopperPos').textContent = data.chopper.position;
   qs('chopperAge').textContent = data.chopper.age || 'live demo';
   qs('stopTracking').disabled = data.manual_state !== 'tracking';
-  qs('calStatusNotice').textContent = `Current active task: ${data.active_task || 'none'}`;
-  qs('calStatusNotice').className = 'notice ' + (data.state === 'calibrating' ? 'ok' : '');
+  if (['rsky', 'skydip', 'calibration'].includes(operation.kind)) {
+    qs('calStatusNotice').textContent = operation.label + ': ' + operation.detail;
+    qs('calStatusNotice').className = 'notice ' + (operation.phase === 'attention' ? 'bad' : 'warn');
+  } else {
+    qs('calStatusNotice').textContent = `Calibration state: standby. Current active task: ${data.active_task || 'none'}`;
+    qs('calStatusNotice').className = 'notice';
+  }
   renderRuntime(data);
   applyCapabilities(data);
   // Capabilities/live guard arrive via /api/status after page load.  Re-run
-  // obs validation so Start does not remain disabled until Check is pressed.
+  // validation so Start buttons do not remain disabled until a user edits a field.
   validateObs();
+  validateMount();
+  validateTarget();
+  applyOperationUi(operation);
 }
 function renderLog(items) {
   qs('log').innerHTML = items.map(item => {
@@ -1408,6 +1787,7 @@ function validateObs() {
     qs('startObs').disabled = true;
     state.obsChecked = false;
     updateObsRunPath();
+    enforceOperationLocks();
     return false;
   }
   qs('checkObs').disabled = false;
@@ -1420,6 +1800,7 @@ function validateObs() {
   const startText = liveGuarded ? 'Live write guard is active; Start is disabled. Use --action-mode dry-run for normal validation, or restart without --guard-live-actions for live operation.' : (startCapable ? 'Start is enabled; Check and Dry run are optional. Start will validate again on the server.' : 'Observation start is disabled by site capability.');
   setNotice(qs('obsValidation'), startCapable ? (state.obsChecked ? 'ok' : 'warn') : 'bad', checkText + previewText + startText);
   updateObsRunPath();
+  enforceOperationLocks();
   return true;
 }
 function validateMount() {
@@ -1447,6 +1828,7 @@ function validateMount() {
   else setNotice(qs('mountValidation'), 'bad', 'Not movable: ' + reasons.join(' / '));
   qs('moveMount').disabled = !ok || liveGuarded;
   qs('dryRunMount').disabled = !ok;
+  enforceOperationLocks();
   return {ok, reasons, az, el};
 }
 function validateTarget() {
@@ -1479,6 +1861,7 @@ function validateTarget() {
   if (ok && liveGuarded) setNotice(qs('targetValidation'), 'warn', 'Target is valid, but live tracking is guarded by --guard-live-actions.');
   else setNotice(qs('targetValidation'), ok ? 'ok' : 'bad', ok ? 'Target tracking can be started. Stop it with STOP.' : 'Cannot track: ' + reasons.join(' / '));
   qs('startTracking').disabled = !ok || liveGuarded;
+  enforceOperationLocks();
   return {ok, reasons};
 }
 function updateTargetFields() {
@@ -1589,10 +1972,10 @@ qs('dryRunObs').addEventListener('click', async () => {
 });
 qs('startObs').addEventListener('click', async () => {
   if (!validateObs()) return;
-  await api('start_observation', {mode: qs('obsMode').value, file: qs('obsPath').value, channel: qs('obsChannel').value});
+  await api('start_observation', {mode: qs('obsMode').value, file: qs('obsPath').value, channel: qs('obsChannel').value}, 'observation');
 });
 qs('abortObs').addEventListener('click', async () => {
-  if (confirm('Abort current observation and request recorder/gate/progress cleanup?')) await api('abort_observation');
+  if (confirm('Abort current observation and request recorder/gate/progress cleanup?')) await api('abort_observation', {}, 'abort');
 });
 qs('authorityButton').addEventListener('click', async () => {
   const resp = await fetch('/api/status');
@@ -1600,11 +1983,11 @@ qs('authorityButton').addEventListener('click', async () => {
   const heldByMe = data.authority && data.authority.session_id === state.sessionId;
   await api(heldByMe ? 'release_authority' : 'acquire_authority');
 });
-qs('stopButton').addEventListener('click', async () => { await api('stop'); });
+qs('stopButton').addEventListener('click', async () => { await api('stop', {}, 'stop'); });
 qs('moveMount').addEventListener('click', async () => {
   const v = validateMount();
   if (!v.ok) return;
-  await api('mount_move', {az: qs('mountAz').value, el: qs('mountEl').value});
+  await api('mount_move', {az: qs('mountAz').value, el: qs('mountEl').value}, {kind: 'mount', targetAz: Number(qs('mountAz').value), targetEl: Number(qs('mountEl').value)});
 });
 qs('dryRunMount').addEventListener('click', async () => {
   const v = validateMount();
@@ -1622,17 +2005,17 @@ qs('startTracking').addEventListener('click', async () => {
     offset_x_arcsec: qs('offsetX').value,
     offset_y_arcsec: qs('offsetY').value,
     cos_correction: qs('cosCorrection').value
-  });
+  }, 'tracking');
 });
-qs('stopTracking').addEventListener('click', async () => { await api('stop_tracking'); });
+qs('stopTracking').addEventListener('click', async () => { await api('stop_tracking', {}, 'stop'); });
 qs('chopperIn').addEventListener('click', () => api('chopper_in'));
 qs('chopperOut').addEventListener('click', () => api('chopper_out'));
 qs('chopperStatus').addEventListener('click', () => api('chopper_status'));
 qs('chopperAlarmReset').addEventListener('click', () => api('chopper_alarm_reset'));
 qs('chopperHome').addEventListener('click', () => api('chopper_home'));
 qs('chopperRecover').addEventListener('click', () => api('chopper_recover'));
-qs('runRsky').addEventListener('click', () => api('run_rsky', {n: qs('rskyN').value, integ: qs('rskyInteg').value, ch: qs('rskyCh').value}));
-qs('runSkydip').addEventListener('click', () => api('run_skydip', {integ: qs('skydipInteg').value, ch: qs('skydipCh').value, tp_range: qs('skydipTpRange').value}));
+qs('runRsky').addEventListener('click', () => api('run_rsky', {n: qs('rskyN').value, integ: qs('rskyInteg').value, ch: qs('rskyCh').value}, 'rsky'));
+qs('runSkydip').addEventListener('click', () => api('run_skydip', {integ: qs('skydipInteg').value, ch: qs('skydipCh').value, tp_range: qs('skydipTpRange').value}, 'skydip'));
 qs('clearLog').addEventListener('click', () => api('clear_log'));
 qs('refreshRuntime').addEventListener('click', refresh);
 qs('loadOperatorLog').addEventListener('click', readOperatorLog);
@@ -1748,9 +2131,25 @@ class DemoState:
     authority_session_id: Optional[str] = None
     chopper_state: str = "OUT"
     chopper_position: int = 19700
+    exclusive_start_action: Optional[str] = None
+    exclusive_start_started_at: Optional[float] = None
+    exclusive_start_message: str = ""
     log: List[LogEntry] = field(default_factory=list)
 
+    def prune_exclusive_start_guard(self) -> None:
+        if self.exclusive_start_started_at is None:
+            return
+        try:
+            age = max(0.0, time.time() - float(self.exclusive_start_started_at))
+        except Exception:
+            age = 999.0
+        if age > EXCLUSIVE_START_STATUS_SEC:
+            self.exclusive_start_action = None
+            self.exclusive_start_started_at = None
+            self.exclusive_start_message = ""
+
     def to_dict(self) -> Dict[str, Any]:
+        self.prune_exclusive_start_guard()
         return {
             "telescope": self.telescope,
             "progress_url": self.progress_url,
@@ -1776,6 +2175,18 @@ class DemoState:
                 "state": self.chopper_state,
                 "position": self.chopper_position,
                 "age": "live demo",
+            },
+            "exclusive_start_guard": {
+                "action": self.exclusive_start_action,
+                "started_at": self.exclusive_start_started_at,
+                "age_sec": (
+                    max(0.0, time.time() - float(self.exclusive_start_started_at))
+                    if self.exclusive_start_started_at is not None
+                    else None
+                ),
+                "message": self.exclusive_start_message,
+                "guard_sec": EXCLUSIVE_START_STATUS_SEC,
+                "blocking_sec": EXCLUSIVE_START_BLOCK_SEC,
             },
             "log": [entry.__dict__ for entry in self.log[-80:]],
         }
@@ -2190,10 +2601,71 @@ def _with_privilege(server: ConsoleDemoServer, session_id: str, action_text: str
     return f"{action_text} with temporary authority acquire/release"
 
 
+
+EXCLUSIVE_START_ACTIONS = {
+    "mount_move",
+    "start_tracking",
+    "start_observation",
+    "run_rsky",
+    "run_skydip",
+}
+EXCLUSIVE_START_BLOCK_SEC = 3.0
+EXCLUSIVE_START_STATUS_SEC = 15.0
+
+
+def _demo_clear_exclusive_start_guard(state: DemoState) -> None:
+    state.exclusive_start_action = None
+    state.exclusive_start_started_at = None
+    state.exclusive_start_message = ""
+
+
+def _demo_mark_exclusive_start_guard(state: DemoState, action: str, message: str) -> None:
+    if action not in EXCLUSIVE_START_ACTIONS:
+        return
+    state.exclusive_start_action = str(action)
+    state.exclusive_start_started_at = time.time()
+    state.exclusive_start_message = str(message or action)
+
+
+def _demo_active_operation_reason(state: DemoState, requested_action: str) -> Optional[str]:
+    """Reject non-safety start actions while another operation is active.
+
+    Browser-side disabled buttons are helpful, but operators can double-click,
+    keep stale tabs open, or hit the HTTP endpoint directly.  The demo server
+    mirrors the real console guard so the UI never relies on frontend state as
+    the only protection against conflicting starts.
+    """
+
+    if requested_action not in EXCLUSIVE_START_ACTIONS:
+        return None
+    guard_action = str(state.exclusive_start_action or "").strip()
+    guard_started = state.exclusive_start_started_at
+    if guard_action and guard_started is not None:
+        age = max(0.0, time.time() - float(guard_started))
+        if age <= EXCLUSIVE_START_BLOCK_SEC:
+            message = state.exclusive_start_message or guard_action
+            return f"cannot start {requested_action}: {message} was accepted {age:.1f} s ago; wait for READY or use STOP/ABORT"
+        _demo_clear_exclusive_start_guard(state)
+    sys_state = str(state.state or "").strip().lower()
+    manual = str(state.manual_state or "").strip().lower()
+    task = str(state.active_task or "").strip().lower()
+    if sys_state in {"observing", "calibrating"}:
+        return f"cannot start {requested_action}: system is {state.state}; use STOP or ABORT before starting another operation"
+    if manual in {"moving", "tracking", "calibration", "observing sequence"}:
+        return f"cannot start {requested_action}: current manual state is {state.manual_state}; use STOP or wait until READY"
+    if task not in {"", "none", "idle", "unknown"}:
+        return f"cannot start {requested_action}: active task is {state.active_task}; use STOP/ABORT or wait until READY"
+    return None
+
 def handle_action(
     server: ConsoleDemoServer, action: str, params: Dict[str, Any], session_id: str
 ) -> Tuple[bool, str]:
     state = server.state
+
+    active_reason = _demo_active_operation_reason(state, action)
+    if active_reason is not None:
+        server.add_log(False, active_reason)
+        return False, active_reason
 
     if action == "launch_progress":
         ok, reason, url = server.launch_progress()
@@ -2233,6 +2705,7 @@ def handle_action(
             reason = "target tracking is not running"
             server.add_log(False, reason)
             return False, reason
+        _demo_clear_exclusive_start_guard(state)
         state.command_az = None
         state.command_el = None
         state.manual_state = "stopped"
@@ -2241,6 +2714,7 @@ def handle_action(
         return True, "tracking stopped"
 
     if action == "stop":
+        _demo_clear_exclusive_start_guard(state)
         state.command_az = None
         state.command_el = None
         state.manual_state = "stopped"
@@ -2267,6 +2741,7 @@ def handle_action(
             server.add_log(False, privilege_msg)
             return False, privilege_msg
         if action == "mount_move":
+            _demo_mark_exclusive_start_guard(state, action, f"mount move Az={az:.4f} deg El={el:.4f} deg")
             state.command_az = az
             state.command_el = el
             state.az = az
@@ -2303,6 +2778,7 @@ def handle_action(
         if "rejected" in privilege_msg:
             server.add_log(False, privilege_msg)
             return False, privilege_msg
+        _demo_mark_exclusive_start_guard(state, action, "observation")
         state.command_az = None
         state.command_el = None
         state.state = "observing"
@@ -2318,6 +2794,7 @@ def handle_action(
             reason = "no running observation to abort"
             server.add_log(False, reason)
             return False, reason
+        _demo_clear_exclusive_start_guard(state)
         state.command_az = None
         state.command_el = None
         state.state = "idle"
@@ -2335,6 +2812,7 @@ def handle_action(
         if "rejected" in privilege_msg:
             server.add_log(False, privilege_msg)
             return False, privilege_msg
+        _demo_mark_exclusive_start_guard(state, action, "target tracking")
         state.command_az = None
         state.command_el = None
         state.manual_state = "tracking"
@@ -2392,6 +2870,7 @@ def handle_action(
         if "rejected" in privilege_msg:
             server.add_log(False, privilege_msg)
             return False, privilege_msg
+        _demo_mark_exclusive_start_guard(state, action, "RSky")
         state.command_az = None
         state.command_el = None
         state.state = "calibrating"
@@ -2425,6 +2904,7 @@ def handle_action(
         if "rejected" in privilege_msg:
             server.add_log(False, privilege_msg)
             return False, privilege_msg
+        _demo_mark_exclusive_start_guard(state, action, "SkyDip")
         state.command_az = None
         state.command_el = None
         state.state = "calibrating"

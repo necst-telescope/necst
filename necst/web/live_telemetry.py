@@ -16,6 +16,10 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 
+ENCODER_MOTION_DEADBAND_DEG = 1.0e-4
+ENCODER_MOTION_HOLD_SEC = 1.0
+
+
 def _finite_float(value: Any) -> Optional[float]:
     try:
         out = float(value)
@@ -79,9 +83,13 @@ class LiveTelemetryCache:
 
         self.command: Dict[str, Any] = {}
         self.encoder: Dict[str, Any] = {}
+        self.encoder_motion: Dict[str, Any] = {}
+        self._previous_encoder_sample: Optional[Dict[str, float]] = None
+        self._last_significant_encoder_motion_unix: Optional[float] = None
         self.tracking: Dict[str, Any] = {}
         self.pointing_status: Dict[str, Any] = {}
         self.az_unwrap_status: Dict[str, Any] = {}
+        self.section_status: Dict[str, Any] = {}
         self.queue_status: Dict[str, Any] = {}
         self.chopper_status: Dict[str, Any] = {}
         self.spectrometer_status: Dict[str, Any] = {}
@@ -94,6 +102,57 @@ class LiveTelemetryCache:
         now = time.time()
         self._sample_counts[key] = int(self._sample_counts.get(key, 0)) + 1
         self._last_message_time_unix[key] = now
+
+    def _update_encoder_motion_locked(self, payload: Dict[str, Any]) -> None:
+        """Estimate actual antenna motion from encoder samples with deadband.
+
+        Encoder readout often jitters in the low-order digits even when the
+        antenna is physically stopped.  This fallback therefore ignores changes
+        at or below 1e-4 deg and is used only as a secondary source when no
+        fresher explicit motion/section status is available.
+        """
+
+        now = time.time()
+        lon = _finite_float(payload.get("encoder_lon_deg"))
+        lat = _finite_float(payload.get("encoder_lat_deg"))
+        if lon is None or lat is None:
+            self.encoder_motion = {
+                "moving": False,
+                "source": "encoder_unavailable",
+                "deadband_deg": ENCODER_MOTION_DEADBAND_DEG,
+                "time_unix": now,
+            }
+            return
+
+        previous = self._previous_encoder_sample
+        delta_az = None
+        delta_el = None
+        significant = False
+        if previous is not None:
+            delta_az = abs(lon - previous.get("lon", lon))
+            delta_el = abs(lat - previous.get("lat", lat))
+            significant = bool(
+                delta_az > ENCODER_MOTION_DEADBAND_DEG
+                or delta_el > ENCODER_MOTION_DEADBAND_DEG
+            )
+
+        if significant:
+            self._last_significant_encoder_motion_unix = now
+        held = bool(
+            self._last_significant_encoder_motion_unix is not None
+            and now - self._last_significant_encoder_motion_unix <= ENCODER_MOTION_HOLD_SEC
+        )
+        moving = bool(significant or held)
+        self.encoder_motion = {
+            "moving": moving,
+            "source": "encoder_delta" if moving else "encoder_delta_deadband",
+            "delta_az_deg": delta_az,
+            "delta_el_deg": delta_el,
+            "deadband_deg": ENCODER_MOTION_DEADBAND_DEG,
+            "hold_sec": ENCODER_MOTION_HOLD_SEC,
+            "time_unix": now,
+        }
+        self._previous_encoder_sample = {"lon": lon, "lat": lat, "time_unix": now}
 
     def _has_position_locked(self) -> bool:
         enc_lon = _finite_float(self.encoder.get("encoder_lon_deg"))
@@ -146,6 +205,7 @@ class LiveTelemetryCache:
             def encoder_cb(msg: Any) -> None:
                 with self._lock:
                     self.encoder = _msg_coord(msg, prefix="encoder")
+                    self._update_encoder_motion_locked(self.encoder)
                     self._record_sample_locked("encoder")
 
             def tracking_cb(msg: Any) -> None:
@@ -181,6 +241,26 @@ class LiveTelemetryCache:
                         "basis": str(getattr(msg, "basis", "")),
                     }
                     self._record_sample_locked("pointing_status")
+
+            def section_status_cb(msg: Any) -> None:
+                try:
+                    line_index = int(getattr(msg, "line_index", -1))
+                except Exception:
+                    line_index = -1
+                with self._lock:
+                    self.section_status = {
+                        "active": bool(getattr(msg, "active", False)),
+                        "control_id": str(getattr(msg, "control_id", "")),
+                        "section_uid": str(getattr(msg, "section_uid", "")),
+                        "section_kind": str(getattr(msg, "section_kind", "")),
+                        "section_label": str(getattr(msg, "section_label", "")),
+                        "line_index": line_index,
+                        "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
+                        "query_time_unix": _finite_float(getattr(msg, "query_time_unix", None)),
+                        "command_time_unix": _finite_float(getattr(msg, "command_time_unix", None)),
+                        "status_basis": str(getattr(msg, "status_basis", "")),
+                    }
+                    self._record_sample_locked("section_status")
 
             def az_unwrap_status_cb(msg: Any) -> None:
                 with self._lock:
@@ -282,6 +362,7 @@ class LiveTelemetryCache:
             except Exception:
                 pass
             for topic_obj, callback in (
+                (getattr(topic, "antenna_section_status", None), section_status_cb),
                 (getattr(topic, "antenna_az_unwrap_status", None), az_unwrap_status_cb),
                 (getattr(topic, "antenna_command_queue_status", None), queue_status_cb),
                 (getattr(topic, "spectrometer_status", None), spectrometer_status_cb),
@@ -379,6 +460,8 @@ class LiveTelemetryCache:
                 payload["command"] = dict(self.command)
             if self.encoder:
                 payload["encoder"] = dict(self.encoder)
+            if self.encoder_motion:
+                payload["encoder_motion"] = dict(self.encoder_motion)
             if self.tracking:
                 payload["tracking"] = dict(self.tracking)
             # AntennaPointingStatus is intentionally not exposed to the operator
@@ -386,6 +469,8 @@ class LiveTelemetryCache:
             # drive Command Az/El, Tracking, or Moving display.
             if self.az_unwrap_status:
                 payload["az_unwrap_status"] = dict(self.az_unwrap_status)
+            if self.section_status:
+                payload["section_status"] = dict(self.section_status)
             if self.queue_status:
                 payload["queue_status"] = dict(self.queue_status)
             if self.chopper_status:

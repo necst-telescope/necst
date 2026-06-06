@@ -58,6 +58,30 @@ SAFETY_ACTIONS = {
     "abort_observation",
 }
 
+# Operations that should be mutually exclusive from a human-operator point of
+# view. UI disabled states are not sufficient: stale browser tabs, double
+# clicks, or direct /api/action calls must be rejected server-side too.
+EXCLUSIVE_START_ACTIONS = {
+    "mount_move",
+    "start_tracking",
+    "start_observation",
+    "run_rsky",
+    "run_skydip",
+}
+
+# Short server-side mutex for Start-like commands.  This closes the gap where
+# two browsers, a stale tab, or a very fast double-click can submit another
+# Start before ROS/progress/launcher status has had time to reflect the first
+# accepted command.  Keep the hard blocking window short so a quick mount move
+# or an already-complete command does not block normal operation for long.
+EXCLUSIVE_START_BLOCK_SEC = 3.0
+
+# Longer status hint for human operators.  A browser reload or a second browser
+# should still show "STARTING..." while the accepted command is waiting for
+# ROS/progress confirmation.  This is display state, not a long mutex; finished
+# launchers and confirmed live activity supersede it.
+EXCLUSIVE_START_STATUS_SEC = 15.0
+
 LIVE_ACTION_GUARD_MESSAGE = (
     "live write actions are guarded by --guard-live-actions; "
     "use --action-mode dry-run for normal no-hardware validation"
@@ -139,6 +163,10 @@ class OperatorConsoleState:
     shutdown_terminate_launchers: bool = True
     shutdown_launcher_timeout_sec: float = 3.0
     shutdown_launcher_kill_timeout_sec: float = 1.0
+    exclusive_start_action: Optional[str] = None
+    exclusive_start_session_id: Optional[str] = None
+    exclusive_start_started_at: Optional[float] = None
+    exclusive_start_message: str = ""
     lock: threading.RLock = field(default_factory=threading.RLock)
 
     def add_log(
@@ -930,6 +958,131 @@ def _active_launcher_summary(
     return "active launcher already exists: " + ", ".join(labels)
 
 
+
+
+def _prune_exclusive_start_guard(state: OperatorConsoleState) -> None:
+    action = str(state.exclusive_start_action or "").strip()
+    started = state.exclusive_start_started_at
+    if not action or started is None:
+        return
+    try:
+        age = max(0.0, time.time() - float(started))
+    except Exception:
+        age = EXCLUSIVE_START_STATUS_SEC + 1.0
+    if age > EXCLUSIVE_START_STATUS_SEC:
+        state.exclusive_start_action = None
+        state.exclusive_start_session_id = None
+        state.exclusive_start_started_at = None
+        state.exclusive_start_message = ""
+
+
+def _exclusive_start_guard_reason(
+    state: OperatorConsoleState, *, requested_action: str
+) -> Optional[str]:
+    if requested_action not in EXCLUSIVE_START_ACTIONS:
+        return None
+    _prune_exclusive_start_guard(state)
+    action = str(state.exclusive_start_action or "").strip()
+    started = state.exclusive_start_started_at
+    if not action or started is None:
+        return None
+    age = max(0.0, time.time() - float(started))
+    if age > EXCLUSIVE_START_BLOCK_SEC:
+        return None
+    message = state.exclusive_start_message or action
+    return (
+        f"cannot start {requested_action}: {message} was accepted "
+        f"{age:.1f} s ago; wait for READY/status confirmation or use STOP/ABORT"
+    )
+
+
+def _mark_exclusive_start_guard(
+    state: OperatorConsoleState,
+    *,
+    action: str,
+    session_id: str,
+    message: str,
+) -> None:
+    if action not in EXCLUSIVE_START_ACTIONS:
+        return
+    state.exclusive_start_action = str(action)
+    state.exclusive_start_session_id = str(session_id or "")
+    state.exclusive_start_started_at = time.time()
+    state.exclusive_start_message = str(message or action)
+
+
+def _clear_exclusive_start_guard(state: OperatorConsoleState) -> None:
+    state.exclusive_start_action = None
+    state.exclusive_start_session_id = None
+    state.exclusive_start_started_at = None
+    state.exclusive_start_message = ""
+
+
+def _operator_status_operation_conflict(
+    state: OperatorConsoleState, *, requested_action: str
+) -> Optional[str]:
+    """Return a user-facing conflict reason for mutually exclusive starts.
+
+    The browser disables Start-like controls while an operation is active, but
+    the server must also be conservative because operators can double-click, use
+    stale tabs, or trigger actions from another client. Safety actions are not
+    passed here and remain available.
+    """
+
+    if requested_action not in EXCLUSIVE_START_ACTIONS:
+        return None
+
+    active_launcher = _active_launcher_summary(state)
+    if active_launcher is not None:
+        return (
+            f"cannot start {requested_action}: {active_launcher}. "
+            "Use STOP/ABORT or terminate the launcher before starting another operation."
+        )
+
+    recent_guard = _exclusive_start_guard_reason(state, requested_action=requested_action)
+    if recent_guard is not None:
+        return recent_guard
+
+    # Dry-run has no live ROS truth, so use local memory to protect the UI from
+    # conflicting Start-like actions. In live mode this memory is allowed to be
+    # stale, so live/progress truth below is preferred instead.
+    if state.action_mode == "dry-run":
+        task = str(state.last_active_task or "").strip()
+        manual = str(state.last_manual_state or "").strip()
+        if task.lower() not in {"", "none", "idle", "unknown"}:
+            return f"cannot start {requested_action}: active task is {task}; use STOP/ABORT or wait until READY"
+        if manual.lower() in {"moving", "tracking", "calibration", "observing sequence"}:
+            return f"cannot start {requested_action}: manual state is {manual}; use STOP/ABORT or wait until READY"
+        return None
+
+    try:
+        live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
+        status_state = status_model.build_progress_status_state(
+            state.progress_root,
+            events_limit=state.events_limit,
+            live_payload=live_payload,
+        )
+        op = status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
+        op = op if isinstance(op, Mapping) else {}
+        system = op.get("system") if isinstance(op.get("system"), Mapping) else {}
+        motion = op.get("motion") if isinstance(op.get("motion"), Mapping) else {}
+        sys_state = str(system.get("state") or "").strip().lower()
+        if sys_state not in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}:
+            return f"cannot start {requested_action}: system state is {sys_state}; use STOP/ABORT or wait until READY"
+        active_task = str(motion.get("active_task") or "").strip()
+        if active_task.lower() not in {"", "none", "idle", "unknown"}:
+            return f"cannot start {requested_action}: active task is {active_task}; use STOP/ABORT or wait until READY"
+        stage = str(motion.get("stage") or "").strip()
+        if stage.lower() not in {"", "none", "idle", "unknown"}:
+            return f"cannot start {requested_action}: mount/activity stage is {stage}; use STOP/ABORT or wait until READY"
+    except Exception:
+        # If status probing fails, do not block the action solely because the
+        # guard could not inspect telemetry. The action-specific validators and
+        # NECST command layer still run below. The next /api/status will expose
+        # the telemetry problem to the operator.
+        return None
+    return None
+
 def _launcher_log_paths(
     state: OperatorConsoleState,
     action: str,
@@ -1148,6 +1301,10 @@ def dispatch_action(
             kill=False,
         )
 
+    conflict_reason = _operator_status_operation_conflict(state, requested_action=action)
+    if conflict_reason is not None:
+        return False, conflict_reason, {"action": action, "operation_conflict": True}
+
     if action == "progress_status":
         progress = (
             state.progress_monitor.status(check_external=True).to_dict()
@@ -1256,6 +1413,12 @@ def dispatch_action(
         )
         ok, message, data = _result_to_response(result)
         if ok:
+            _mark_exclusive_start_guard(
+                state,
+                action=action,
+                session_id=session_id,
+                message=f"mount move Az={az:.4f} deg El={el:.4f} deg",
+            )
             state.last_command_az = az
             state.last_command_el = el
             state.last_manual_state = "moving"
@@ -1274,6 +1437,7 @@ def dispatch_action(
         ok, message, data = _result_to_response(result)
         data.update(safety_data)
         if ok:
+            _clear_exclusive_start_guard(state)
             state.last_manual_state = "stopped"
             state.last_active_task = "none"
             state.last_command_az = None
@@ -1299,6 +1463,12 @@ def dispatch_action(
         )
         ok, message, data = _result_to_response(result)
         if ok and not dry_run:
+            _mark_exclusive_start_guard(
+                state,
+                action=action,
+                session_id=session_id,
+                message="target tracking",
+            )
             state.last_command_az = None
             state.last_command_el = None
             state.last_manual_state = "tracking"
@@ -1317,6 +1487,7 @@ def dispatch_action(
         ok, message, data = _result_to_response(result)
         data.update(safety_data)
         if ok:
+            _clear_exclusive_start_guard(state)
             state.last_manual_state = "stopped"
             state.last_active_task = "none"
             state.last_command_az = None
@@ -1335,14 +1506,17 @@ def dispatch_action(
         )
         ok, message, data = _result_to_response(result)
         data.update(safety_data)
+        if ok:
+            _clear_exclusive_start_guard(state)
+            state.last_manual_state = "stopped"
+            state.last_active_task = "none"
+            state.last_command_az = None
+            state.last_command_el = None
         return ok, message, data
 
     if action == "start_observation":
         validate_site_capability(state, "observation_start", action_label="observation start")
         mode, path, channel = validate_observation_selection(params)
-        active_reason = _active_launcher_summary(state, category="observation")
-        if active_reason is not None:
-            return False, active_reason, {"action": action, "category": "observation"}
         dry_run = state.action_mode == "dry-run"
         actions = _load_operator_actions()
         if not dry_run:
@@ -1376,6 +1550,12 @@ def dispatch_action(
         )
         ok, message, data = _result_to_response(result)
         if ok and not dry_run:
+            _mark_exclusive_start_guard(
+                state,
+                action=action,
+                session_id=session_id,
+                message=f"observation {mode}",
+            )
             state.last_command_az = None
             state.last_command_el = None
             state.last_manual_state = "observing sequence"
@@ -1393,9 +1573,6 @@ def dispatch_action(
 
     if action == "run_rsky":
         validate_site_capability(state, "rsky", action_label="RSky")
-        active_reason = _active_launcher_summary(state, category="calibration")
-        if active_reason is not None:
-            return False, active_reason, {"action": action, "category": "calibration"}
         dry_run = state.action_mode == "dry-run"
         actions = _load_operator_actions()
         if not dry_run:
@@ -1423,6 +1600,12 @@ def dispatch_action(
         )
         ok, message, data = _result_to_response(result)
         if ok and not dry_run:
+            _mark_exclusive_start_guard(
+                state,
+                action=action,
+                session_id=session_id,
+                message="RSky",
+            )
             state.last_command_az = None
             state.last_command_el = None
             state.last_manual_state = "calibration"
@@ -1440,9 +1623,6 @@ def dispatch_action(
 
     if action == "run_skydip":
         validate_site_capability(state, "skydip", action_label="SkyDip")
-        active_reason = _active_launcher_summary(state, category="calibration")
-        if active_reason is not None:
-            return False, active_reason, {"action": action, "category": "calibration"}
         dry_run = state.action_mode == "dry-run"
         actions = _load_operator_actions()
         if not dry_run:
@@ -1470,6 +1650,12 @@ def dispatch_action(
         )
         ok, message, data = _result_to_response(result)
         if ok and not dry_run:
+            _mark_exclusive_start_guard(
+                state,
+                action=action,
+                session_id=session_id,
+                message="SkyDip",
+            )
             state.last_command_az = None
             state.last_command_el = None
             state.last_manual_state = "calibration"
@@ -1697,6 +1883,19 @@ def _operator_status_to_v7_status(
         "log": [entry.__dict__ for entry in state.log],
         "processes": [r.to_dict() for r in state.process_registry.all_records(refresh=False)],
         "process_counts": state.process_registry.counts(),
+        "exclusive_start_guard": {
+            "action": state.exclusive_start_action,
+            "session_id": state.exclusive_start_session_id,
+            "started_at": state.exclusive_start_started_at,
+            "age_sec": (
+                max(0.0, time.time() - float(state.exclusive_start_started_at))
+                if state.exclusive_start_started_at is not None
+                else None
+            ),
+            "message": state.exclusive_start_message,
+            "guard_sec": EXCLUSIVE_START_STATUS_SEC,
+            "blocking_sec": EXCLUSIVE_START_BLOCK_SEC,
+        },
         "launcher_log_choices": log_reader.launcher_log_choices([
             r.to_dict() for r in state.process_registry.all_records(refresh=False)
         ]),
@@ -1734,6 +1933,7 @@ def build_console_status(state: OperatorConsoleState) -> JsonDict:
     with state.lock:
         _refresh_processes_and_log(state)
         _sync_authority_state(state)
+        _prune_exclusive_start_guard(state)
         live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
         status_state = status_model.build_progress_status_state(
             state.progress_root,
