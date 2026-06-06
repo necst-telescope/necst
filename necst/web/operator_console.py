@@ -106,8 +106,8 @@ class ConsoleAuthorityState:
 
     ``held`` and ``session_id`` are the browser/session gate.  When running in
     live mode, ``necst_held`` means this console process also holds actual NECST
-    privilege through a persistent Commander.  Observation/RSky/SkyDip launchers
-    run as separate processes, so the console must release actual privilege
+    authority through a persistent Commander.  Observation/RSky/SkyDip launchers
+    run as separate processes, so the console must release actual authority
     before starting them to avoid blocking the child process.
     """
 
@@ -151,6 +151,14 @@ class OperatorConsoleState:
     authority_handle: Any = None
     last_command_az: Optional[float] = None
     last_command_el: Optional[float] = None
+    # Last fixed Az/El requested from the Manual telescope control card.  This is
+    # intentionally separate from Command Az/El display values: /ctrl/antenna/altaz
+    # can disappear after STOP, while the operator still needs the UI to recognize
+    # that the mount is already at the last requested fixed coordinate.
+    last_mount_target_az: Optional[float] = None
+    last_mount_target_el: Optional[float] = None
+    last_mount_target_started_at: Optional[float] = None
+    last_mount_target_reached_since: Optional[float] = None
     last_manual_state: str = "idle"
     last_active_task: str = "none"
     last_chopper_state: str = "unknown"
@@ -690,7 +698,7 @@ def _live_write_guard(state: OperatorConsoleState, action: str) -> Tuple[bool, s
 
 def _authority_allows(state: OperatorConsoleState, session_id: str) -> Tuple[bool, str]:
     if not state.authority.held:
-        return True, "temporary NECST privilege will be acquired by the action layer"
+        return True, "temporary NECST authority will be acquired by the action layer"
     if state.authority.session_id == session_id:
         return True, "using this console session's authority"
     return False, "authority is held by another browser session"
@@ -764,8 +772,8 @@ def _sync_authority_state(
     """Synchronize browser authority state with the held NECST handle.
 
     The browser-session gate is meaningful only while the underlying
-    OperatorAuthoritySession still reports that it holds privilege.  If the
-    authorizer restarted, the node lost privilege, or a reduced/stub
+    OperatorAuthoritySession still reports that it holds authority.  If the
+    authorizer restarted, the node lost authority, or a reduced/stub
     environment reports the handle as not held, clear the browser gate so other
     sessions are not blocked by stale state.
     """
@@ -792,7 +800,7 @@ def _sync_authority_state(
         return {"changed": True, "held": False, "reason": "status_check_failed"}
 
     if not handle_held:
-        note = "authority handle no longer reports NECST privilege; cleared browser gate"
+        note = "authority handle no longer reports NECST authority; cleared browser gate"
         _clear_authority_state(state)
         if log_if_cleared:
             state.add_log(False, note, action="authority_sync")
@@ -821,7 +829,7 @@ def _release_console_authority(
     session_id: Optional[str] = None,
     force: bool = False,
 ) -> Tuple[bool, str, JsonDict]:
-    """Release browser/session authority and any persistent NECST privilege."""
+    """Release browser/session authority and any persistent NECST authority."""
 
     if not state.authority.held and state.authority_handle is None:
         _clear_authority_state(state)
@@ -854,7 +862,7 @@ def _release_console_authority(
 def _release_before_subprocess_if_needed(
     state: OperatorConsoleState, session_id: str
 ) -> Optional[str]:
-    """Release persistent NECST privilege before starting a child launcher."""
+    """Release persistent NECST authority before starting a child launcher."""
 
     if state.action_mode == "dry-run":
         return None
@@ -865,7 +873,7 @@ def _release_before_subprocess_if_needed(
     ok, message, _data = _release_console_authority(state, session_id=session_id)
     if not ok:
         raise RuntimeError(message)
-    return "console NECST privilege was released before starting the launcher process"
+    return "console NECST authority was released before starting the launcher process"
 
 
 def _console_time_iso(ts: Optional[float]) -> Optional[str]:
@@ -956,6 +964,67 @@ def _active_launcher_summary(
     if category:
         return f"active {category} launcher already exists: " + ", ".join(labels)
     return "active launcher already exists: " + ", ".join(labels)
+
+
+def _last_mount_target_reached(
+    state: OperatorConsoleState,
+    *,
+    current_az: Any,
+    current_el: Any,
+    tol_deg: float = 7.5e-4,
+    require_settle_sec: float = 0.5,
+    update_state: bool = False,
+) -> bool:
+    """Return True when the encoder is at the last manual mount target.
+
+    This is not used to display Command Az/El.  It only prevents stale SKY or
+    tracking-like low-level status from trapping the operator UI after a fixed
+    Az/El mount-move has reached the requested coordinate, especially after STOP
+    clears the live command topic.
+    """
+
+    if state.last_mount_target_az is None or state.last_mount_target_el is None:
+        if update_state:
+            state.last_mount_target_reached_since = None
+        return False
+    try:
+        az = float(current_az)
+        el = float(current_el)
+        target_az = float(state.last_mount_target_az)
+        target_el = float(state.last_mount_target_el)
+    except Exception:
+        if update_state:
+            state.last_mount_target_reached_since = None
+        return False
+    if not (math.isfinite(az) and math.isfinite(el) and math.isfinite(target_az) and math.isfinite(target_el)):
+        if update_state:
+            state.last_mount_target_reached_since = None
+        return False
+
+    reached_now = abs(az - target_az) <= float(tol_deg) and abs(el - target_el) <= float(tol_deg)
+    now = time.time()
+    if not reached_now:
+        if update_state:
+            state.last_mount_target_reached_since = None
+        return False
+    if update_state and state.last_mount_target_reached_since is None:
+        state.last_mount_target_reached_since = now
+    since = state.last_mount_target_reached_since if state.last_mount_target_reached_since is not None else now
+    try:
+        settled = (now - float(since)) >= float(require_settle_sec)
+    except Exception:
+        settled = True
+    # For conflict checks we do not want a one-poll delay to trap the operator;
+    # for the visible status we use the small settle time to avoid flicker while
+    # the antenna is still passing through the target.
+    return bool(settled or require_settle_sec <= 0.0)
+
+
+def _clear_last_mount_target(state: OperatorConsoleState) -> None:
+    state.last_mount_target_az = None
+    state.last_mount_target_el = None
+    state.last_mount_target_started_at = None
+    state.last_mount_target_reached_since = None
 
 
 
@@ -1073,6 +1142,18 @@ def _operator_status_operation_conflict(
             motion.get("mount_target_reached")
             and motion.get("live_motion_active") is False
         )
+        antenna = op.get("antenna") if isinstance(op.get("antenna"), Mapping) else {}
+        operator_target_idle = False
+        if sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}:
+            operator_target_idle = _last_mount_target_reached(
+                state,
+                current_az=antenna.get("current_az_deg"),
+                current_el=antenna.get("current_el_deg"),
+                require_settle_sec=0.0,
+                update_state=False,
+            )
+        if operator_target_idle:
+            at_target_idle = True
         active_task = str(motion.get("active_task") or "").strip()
         if active_task.lower() not in {"", "none", "idle", "unknown"} and not at_target_idle:
             return f"cannot start {requested_action}: active task is {active_task}; use STOP/ABORT or wait until READY"
@@ -1417,6 +1498,10 @@ def dispatch_action(
         if state.action_mode == "dry-run":
             state.last_command_az = az
             state.last_command_el = el
+            state.last_mount_target_az = az
+            state.last_mount_target_el = el
+            state.last_mount_target_started_at = time.time()
+            state.last_mount_target_reached_since = None
             return True, f"dry-run mount move: Az={az:.6f} deg, El={el:.6f} deg; no command was sent", {
                 "action": action,
                 "az_deg": az,
@@ -1443,6 +1528,10 @@ def dispatch_action(
             )
             state.last_command_az = az
             state.last_command_el = el
+            state.last_mount_target_az = az
+            state.last_mount_target_el = el
+            state.last_mount_target_started_at = time.time()
+            state.last_mount_target_reached_since = None
             state.last_manual_state = "moving"
             state.last_active_task = "manual mount move"
         return ok, message, data
@@ -1464,6 +1553,9 @@ def dispatch_action(
             state.last_active_task = "none"
             state.last_command_az = None
             state.last_command_el = None
+            # Keep last_mount_target_* so the status adapter can still recognize
+            # that the fixed mount-move target has been reached after STOP clears
+            # /ctrl/antenna/altaz.
         return ok, message, data
 
     if action == "start_tracking":
@@ -1493,6 +1585,7 @@ def dispatch_action(
             )
             state.last_command_az = None
             state.last_command_el = None
+            _clear_last_mount_target(state)
             state.last_manual_state = "tracking"
             state.last_active_task = "target tracking"
         return ok, message, data
@@ -1534,6 +1627,7 @@ def dispatch_action(
             state.last_active_task = "none"
             state.last_command_az = None
             state.last_command_el = None
+            _clear_last_mount_target(state)
         return ok, message, data
 
     if action == "start_observation":
@@ -1580,6 +1674,7 @@ def dispatch_action(
             )
             state.last_command_az = None
             state.last_command_el = None
+            _clear_last_mount_target(state)
             state.last_manual_state = "observing sequence"
             state.last_active_task = "observation"
             _register_launcher_if_needed(
@@ -1630,6 +1725,7 @@ def dispatch_action(
             )
             state.last_command_az = None
             state.last_command_el = None
+            _clear_last_mount_target(state)
             state.last_manual_state = "calibration"
             state.last_active_task = "RSky"
             _register_launcher_if_needed(
@@ -1680,6 +1776,7 @@ def dispatch_action(
             )
             state.last_command_az = None
             state.last_command_el = None
+            _clear_last_mount_target(state)
             state.last_manual_state = "calibration"
             state.last_active_task = "SkyDip"
             _register_launcher_if_needed(
@@ -1840,6 +1937,30 @@ def _operator_status_to_v7_status(
     if az is None or el is None:
         warnings = list(warnings) + ["antenna current Az/El is unavailable"]
 
+    motion_source_lower = str(motion.get("live_motion_source") or "").strip().lower()
+    operator_mount_target_reached = False
+    operator_mount_target_idle = False
+    if state.action_mode != "dry-run" and sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}:
+        operator_mount_target_reached = _last_mount_target_reached(
+            state,
+            current_az=az,
+            current_el=el,
+            require_settle_sec=0.5,
+            update_state=True,
+        )
+        # If the encoder itself still reports motion, do not override.  But stale
+        # SKY/section/control activity after STOP or fixed-target hold should not
+        # keep the UI locked once the last manual mount target has settled.
+        operator_mount_target_idle = bool(
+            operator_mount_target_reached and motion_source_lower != "encoder_delta"
+        )
+    if operator_mount_target_idle:
+        manual_state = "idle"
+        active_task = "none"
+        motion_live_active = False
+        motion_mount_target_reached = True
+        motion_mount_hold_at_target = True
+
     cmd_az = antenna.get("command_az_deg")
     cmd_el = antenna.get("command_el_deg")
     if state.action_mode == "dry-run":
@@ -1886,6 +2007,11 @@ def _operator_status_to_v7_status(
         "motion_live_source": motion.get("live_motion_source"),
         "mount_target_reached": motion_mount_target_reached,
         "mount_hold_at_target": motion_mount_hold_at_target,
+        "operator_last_mount_target_reached": bool(operator_mount_target_reached),
+        "operator_last_mount_target_idle": bool(operator_mount_target_idle),
+        "operator_last_mount_target_az": state.last_mount_target_az,
+        "operator_last_mount_target_el": state.last_mount_target_el,
+        "operator_last_mount_target_reached_since": state.last_mount_target_reached_since,
         "mount_target_reached_tol_deg": motion.get("mount_target_reached_tol_deg"),
         "encoder_motion_deadband_deg": motion.get("encoder_motion_deadband_deg"),
         "encoder_motion_delta_az_deg": motion.get("encoder_motion_delta_az_deg"),

@@ -200,6 +200,7 @@ button.pending:not(:disabled) { border-color: rgba(122,162,255,0.75); background
 .danger { background: #7a2027; border-color: #d35d68; font-weight: 700; }
 .secondary { background: #18213b; }
 .ghost { background: transparent; }
+button.selected:not(:disabled) { border-color: rgba(86,211,100,0.70); box-shadow: 0 0 0 2px rgba(86,211,100,0.12); }
 .run-bar {
   position: sticky;
   top: 78px;
@@ -692,8 +693,8 @@ summary { cursor: pointer; color: var(--muted); }
           </div>
           <div class="notice ok">The current chopper state is shown continuously. The status button only logs a manual refresh.</div>
           <div class="actions">
-            <button id="chopperIn" class="primary">Chopper IN</button>
-            <button id="chopperOut" class="secondary">Chopper OUT</button>
+            <button id="chopperIn" class="secondary" aria-pressed="false">Chopper IN</button>
+            <button id="chopperOut" class="primary selected" aria-pressed="true">Chopper OUT (current)</button>
             <button id="chopperStatus" class="ghost">Log status</button>
           </div>
           <details>
@@ -1158,6 +1159,29 @@ function setButtonBusyClass(id, mode) {
   el.classList.remove('busy', 'pending');
   if (mode === 'running') el.classList.add('busy');
   if (mode === 'starting') el.classList.add('pending');
+}
+function setActionButtonCurrent(id, active, currentText, normalText) {
+  const el = qs(id);
+  if (!el) return;
+  el.classList.toggle('primary', Boolean(active));
+  el.classList.toggle('secondary', !active);
+  el.classList.toggle('selected', Boolean(active));
+  el.setAttribute('aria-pressed', active ? 'true' : 'false');
+  if (currentText || normalText) el.textContent = active ? currentText : normalText;
+}
+function normalizeChopperState(value) {
+  return String(value ?? '').trim().toUpperCase().replace(/[?！!]+$/g, '');
+}
+function updateChopperButtons(chopper) {
+  const stateText = normalizeChopperState(chopper && chopper.state);
+  const isIn = stateText === 'IN';
+  const isOut = stateText === 'OUT';
+  setActionButtonCurrent('chopperIn', isIn, 'Chopper IN (current)', 'Chopper IN');
+  setActionButtonCurrent('chopperOut', isOut, 'Chopper OUT (current)', 'Chopper OUT');
+  const inButton = qs('chopperIn');
+  const outButton = qs('chopperOut');
+  if (inButton) inButton.title = isIn ? 'Current chopper state is IN.' : 'Move chopper to IN.';
+  if (outButton) outButton.title = isOut ? 'Current chopper state is OUT.' : 'Move chopper to OUT.';
 }
 function operationLocksActive(op) {
   return Boolean(op && ['starting', 'running', 'attention'].includes(op.phase));
@@ -1698,6 +1722,7 @@ function renderStatus(data) {
   qs('chopperState').textContent = data.chopper.state;
   qs('chopperPos').textContent = data.chopper.position;
   qs('chopperAge').textContent = data.chopper.age || 'live demo';
+  updateChopperButtons(data.chopper || {});
   qs('stopTracking').disabled = data.manual_state !== 'tracking';
   if (['rsky', 'skydip', 'calibration'].includes(operation.kind)) {
     qs('calStatusNotice').textContent = operation.label + ': ' + operation.detail;
@@ -2597,7 +2622,7 @@ def _validate_positive_float(value: Any, name: str) -> Tuple[bool, str, Optional
     return True, "ok", number
 
 
-def _with_privilege(server: ConsoleDemoServer, session_id: str, action_text: str) -> str:
+def _with_authority(server: ConsoleDemoServer, session_id: str, action_text: str) -> str:
     state = server.state
     if state.authority_held:
         if state.authority_session_id == session_id:
@@ -2741,10 +2766,10 @@ def handle_action(
             return False, reason
         assert az is not None and el is not None
         prefix = "dry-run mount move" if action == "mount_move_dry_run" else "mount move"
-        privilege_msg = _with_privilege(server, session_id, prefix)
-        if "rejected" in privilege_msg:
-            server.add_log(False, privilege_msg)
-            return False, privilege_msg
+        authority_msg = _with_authority(server, session_id, prefix)
+        if "rejected" in authority_msg:
+            server.add_log(False, authority_msg)
+            return False, authority_msg
         if action == "mount_move":
             _demo_mark_exclusive_start_guard(state, action, f"mount move Az={az:.4f} deg El={el:.4f} deg")
             state.command_az = az
@@ -2753,7 +2778,7 @@ def handle_action(
             state.el = el
             state.manual_state = "moving"
             state.active_task = "manual mount move"
-        server.add_log(True, f"{privilege_msg}: Az={az:.6f} deg, El={el:.6f} deg")
+        server.add_log(True, f"{authority_msg}: Az={az:.6f} deg, El={el:.6f} deg")
         return True, "ok"
 
     if action == "check_observation":
@@ -2779,10 +2804,10 @@ def handle_action(
         if not ok:
             server.add_log(False, f"observation not started: {reason}")
             return False, reason
-        privilege_msg = _with_privilege(server, session_id, "start observation")
-        if "rejected" in privilege_msg:
-            server.add_log(False, privilege_msg)
-            return False, privilege_msg
+        authority_msg = _with_authority(server, session_id, "start observation")
+        if "rejected" in authority_msg:
+            server.add_log(False, authority_msg)
+            return False, authority_msg
         _demo_mark_exclusive_start_guard(state, action, "observation")
         state.command_az = None
         state.command_el = None
@@ -2791,7 +2816,7 @@ def handle_action(
         state.active_task = "observation"
         mode = str(params.get("mode") or "")
         path = str(params.get("file") or "").strip()
-        server.add_log(True, f"{privilege_msg}: mode={mode}, file={path}")
+        server.add_log(True, f"{authority_msg}: mode={mode}, file={path}")
         return True, "observation started"
 
     if action == "abort_observation":
@@ -2813,10 +2838,10 @@ def handle_action(
         if not ok:
             server.add_log(False, f"tracking not started: {reason}")
             return False, reason
-        privilege_msg = _with_privilege(server, session_id, "start tracking")
-        if "rejected" in privilege_msg:
-            server.add_log(False, privilege_msg)
-            return False, privilege_msg
+        authority_msg = _with_authority(server, session_id, "start tracking")
+        if "rejected" in authority_msg:
+            server.add_log(False, authority_msg)
+            return False, authority_msg
         _demo_mark_exclusive_start_guard(state, action, "target tracking")
         state.command_az = None
         state.command_el = None
@@ -2827,15 +2852,15 @@ def handle_action(
         off_y = float(params.get("offset_y_arcsec") or 0)
         server.add_log(
             True,
-            f"{privilege_msg}: target={kind}, offset=({off_x:g}, {off_y:g}) arcsec; stop with STOP",
+            f"{authority_msg}: target={kind}, offset=({off_x:g}, {off_y:g}) arcsec; stop with STOP",
         )
         return True, "tracking started"
 
     if action.startswith("chopper_"):
-        privilege_msg = _with_privilege(server, session_id, action.replace("_", " "))
-        if "rejected" in privilege_msg:
-            server.add_log(False, privilege_msg)
-            return False, privilege_msg
+        authority_msg = _with_authority(server, session_id, action.replace("_", " "))
+        if "rejected" in authority_msg:
+            server.add_log(False, authority_msg)
+            return False, authority_msg
         if action == "chopper_in":
             state.chopper_state = "IN"
             state.chopper_position = 4750
@@ -2855,7 +2880,7 @@ def handle_action(
             return True, "status"
         else:
             return False, f"unknown chopper action: {action}"
-        server.add_log(True, f"{privilege_msg}: state={state.chopper_state}, position={state.chopper_position}")
+        server.add_log(True, f"{authority_msg}: state={state.chopper_state}, position={state.chopper_position}")
         return True, "ok"
 
     if action == "run_rsky":
@@ -2871,17 +2896,17 @@ def handle_action(
         if err:
             server.add_log(False, f"RSky not started: {err}")
             return False, err
-        privilege_msg = _with_privilege(server, session_id, "RSky")
-        if "rejected" in privilege_msg:
-            server.add_log(False, privilege_msg)
-            return False, privilege_msg
+        authority_msg = _with_authority(server, session_id, "RSky")
+        if "rejected" in authority_msg:
+            server.add_log(False, authority_msg)
+            return False, authority_msg
         _demo_mark_exclusive_start_guard(state, action, "RSky")
         state.command_az = None
         state.command_el = None
         state.state = "calibrating"
         state.manual_state = "calibration"
         state.active_task = "RSky"
-        server.add_log(True, f"{privilege_msg}: n={n or 1}, integ={integ:g} s")
+        server.add_log(True, f"{authority_msg}: n={n or 1}, integ={integ:g} s")
         return True, "RSky started"
 
     if action == "run_skydip":
@@ -2905,17 +2930,17 @@ def handle_action(
                 reason = "tp_range must contain START END pairs"
                 server.add_log(False, f"SkyDip not started: {reason}")
                 return False, reason
-        privilege_msg = _with_privilege(server, session_id, "SkyDip")
-        if "rejected" in privilege_msg:
-            server.add_log(False, privilege_msg)
-            return False, privilege_msg
+        authority_msg = _with_authority(server, session_id, "SkyDip")
+        if "rejected" in authority_msg:
+            server.add_log(False, authority_msg)
+            return False, authority_msg
         _demo_mark_exclusive_start_guard(state, action, "SkyDip")
         state.command_az = None
         state.command_el = None
         state.state = "calibrating"
         state.manual_state = "calibration"
         state.active_task = "SkyDip"
-        server.add_log(True, f"{privilege_msg}: integ={integ:g} s")
+        server.add_log(True, f"{authority_msg}: integ={integ:g} s")
         return True, "SkyDip started"
 
     reason = f"unknown action: {action!r}"

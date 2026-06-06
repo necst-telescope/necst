@@ -840,6 +840,16 @@ def _live_truth_scrub_stale_motion(
         and not encoder_moving
         and (hold_stage_active or lifecycle_final_or_idle)
     )
+    # If STOP has cleared /ctrl/antenna/altaz, there is no fresh command left to
+    # compare with the encoder.  In that case a final/idle lifecycle plus no
+    # encoder motion is enough to treat stale SKY/tracking/hold status as idle.
+    # Otherwise the operator can get trapped in MOUNT MOVING after pressing STOP
+    # simply because a low-level section_status kept reporting SKY.
+    mount_final_idle_without_command = bool(
+        lifecycle_final_or_idle
+        and not command_valid
+        and not encoder_moving
+    )
 
     # command_valid keeps Tracking diagnostics meaningful, but by itself it is
     # not physical movement.  Prefer explicit motion topics; use the encoder
@@ -850,6 +860,7 @@ def _live_truth_scrub_stale_motion(
     live_motion_active = bool(
         (section_active or queue_active or control_active or encoder_moving)
         and not mount_hold_at_target
+        and not mount_final_idle_without_command
     )
     if section_active:
         motion_source = "section_status"
@@ -875,7 +886,7 @@ def _live_truth_scrub_stale_motion(
     activity["mount_target_reached"] = bool(mount_target_reached)
     activity["mount_target_reached_tol_deg"] = MOUNT_TARGET_REACHED_TOL_DEG
 
-    if mount_hold_at_target:
+    if mount_hold_at_target or mount_final_idle_without_command:
         for key in (
             "motion_stage",
             "drive_kind",
@@ -896,7 +907,9 @@ def _live_truth_scrub_stale_motion(
         ):
             activity.pop(key, None)
         activity["live_motion_active"] = False
-        activity["live_motion_source"] = "mount_target_reached"
+        activity["live_motion_source"] = (
+            "mount_target_reached" if mount_hold_at_target else "final_idle_no_encoder_motion"
+        )
         activity["active_task"] = "idle"
         activity["phase"] = "IDLE"
         activity["motion_stage"] = "idle"
@@ -904,7 +917,8 @@ def _live_truth_scrub_stale_motion(
         activity["control_section_active"] = False
         activity["control_section_fresh"] = bool(section_fresh or control_fresh)
         activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
-        activity["mount_hold_at_target"] = True
+        activity["mount_hold_at_target"] = bool(mount_hold_at_target)
+        activity["mount_final_idle_without_command"] = bool(mount_final_idle_without_command)
         return
 
     if section_active:
