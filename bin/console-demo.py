@@ -1035,8 +1035,9 @@ function actualOperationFromStatus(data) {
   const obsActive = sys === 'observing' || (!finalOrIdle && task.includes('observation')) || (!finalOrIdle && Boolean(progress.observation_running)) || processCategoryActive(data, 'observation');
   const calActive = sys === 'calibrating' || (!finalOrIdle && manual === 'calibration') || (!finalOrIdle && (task.includes('rsky') || task.includes('skydip'))) || processCategoryActive(data, 'calibration');
   const explicitTrackingActive = task.includes('target tracking');
-  const mountActive = manual === 'moving' || (manual === 'tracking' && !explicitTrackingActive) || task.includes('mount move') || task.includes('manual mount');
-  const trackingActive = explicitTrackingActive || manual === 'target tracking';
+  const atTargetIdle = Boolean((data.mount_target_reached || data.mount_hold_at_target) && data.motion_live_active === false);
+  const mountActive = !atTargetIdle && (manual === 'moving' || (manual === 'tracking' && !explicitTrackingActive) || task.includes('mount move') || task.includes('manual mount'));
+  const trackingActive = !atTargetIdle && (explicitTrackingActive || manual === 'target tracking');
   if (obsActive) {
     return {phase: 'running', kind: 'observation', label: 'OBSERVATION RUNNING', detail: 'Observation execution is confirmed by status/progress/launcher state.'};
   }
@@ -1660,7 +1661,8 @@ function renderStatus(data) {
   const authText = data.authority && data.authority.held ? (heldByMe ? 'Authority: held here' : 'Authority: held elsewhere') : 'Authority: auto';
   const authClass = data.authority && data.authority.held ? (heldByMe ? 'ok' : 'warn') : 'info';
   const taskClass = data.active_task && data.active_task !== 'none' ? 'ok' : 'info';
-  const motionClass = (data.manual_state === 'moving' || data.manual_state === 'tracking' || data.manual_state === 'calibration' || data.manual_state === 'observing sequence') ? 'ok' : (data.manual_state === 'stopped' ? 'warn' : 'info');
+  const motionAtTargetIdle = Boolean((data.mount_target_reached || data.mount_hold_at_target) && data.motion_live_active === false);
+  const motionClass = (!motionAtTargetIdle && (data.manual_state === 'moving' || data.manual_state === 'tracking' || data.manual_state === 'calibration' || data.manual_state === 'observing sequence')) ? 'ok' : (data.manual_state === 'stopped' ? 'warn' : 'info');
   const cmd = (finiteStatusNumber(data.command_az) && finiteStatusNumber(data.command_el)) ? `${Number(data.command_az).toFixed(4)} / ${Number(data.command_el).toFixed(4)}` : '- / -';
   const progressClass = data.progress && data.progress.running ? 'ok' : 'info';
   const progressText = data.progress && data.progress.running ? 'Progress: running' : 'Progress: not started';

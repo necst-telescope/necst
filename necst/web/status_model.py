@@ -824,11 +824,21 @@ def _live_truth_scrub_stale_motion(
         (section_active and section_stage_lower in MOUNT_HOLD_STAGE_NAMES)
         or (control_active and control_stage_lower in MOUNT_HOLD_STAGE_NAMES)
     )
+    lifecycle = out.get("lifecycle") if isinstance(out.get("lifecycle"), Mapping) else {}
+    lifecycle_state = str(_first_present(lifecycle, "state", "status") or "").strip().lower()
+    lifecycle_final_or_idle = lifecycle_state in {"", "idle", "finished", "aborted", "error", "failed"}
+
+    # A fixed Az/El mount-move can leave fresh low-level status such as
+    # section=SKY, stage=tracking, or queue/control active even after the mount
+    # has physically reached the requested coordinate.  In a final/idle
+    # observation lifecycle, command ~= encoder and no encoder motion is the
+    # authoritative truth for the operator UI: the mount is at target, not
+    # running.  During an active observation we keep ON/SKY activity visible.
     mount_hold_at_target = bool(
         command_valid
         and mount_target_reached
         and not encoder_moving
-        and hold_stage_active
+        and (hold_stage_active or lifecycle_final_or_idle)
     )
 
     # command_valid keeps Tracking diagnostics meaningful, but by itself it is
@@ -1123,6 +1133,14 @@ def build_operator_status(
             "stage": ("idle" if activity.get("live_motion_active") is False else _first_present(activity, "motion_stage", "phase")),
             "tracking_ok": tracking_ok,
             "tracking_error_deg": tracking_error,
+            "live_motion_active": activity.get("live_motion_active"),
+            "live_motion_source": activity.get("live_motion_source"),
+            "mount_target_reached": bool(activity.get("mount_target_reached")),
+            "mount_hold_at_target": bool(activity.get("mount_hold_at_target")),
+            "mount_target_reached_tol_deg": activity.get("mount_target_reached_tol_deg"),
+            "encoder_motion_deadband_deg": activity.get("encoder_motion_deadband_deg"),
+            "encoder_motion_delta_az_deg": activity.get("encoder_motion_delta_az_deg"),
+            "encoder_motion_delta_el_deg": activity.get("encoder_motion_delta_el_deg"),
         },
         "antenna": {
             "command_az_deg": command_lon,

@@ -1069,8 +1069,12 @@ def _operator_status_operation_conflict(
         sys_state = str(system.get("state") or "").strip().lower()
         if sys_state not in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}:
             return f"cannot start {requested_action}: system state is {sys_state}; use STOP/ABORT or wait until READY"
+        at_target_idle = bool(
+            motion.get("mount_target_reached")
+            and motion.get("live_motion_active") is False
+        )
         active_task = str(motion.get("active_task") or "").strip()
-        if active_task.lower() not in {"", "none", "idle", "unknown"}:
+        if active_task.lower() not in {"", "none", "idle", "unknown"} and not at_target_idle:
             return f"cannot start {requested_action}: active task is {active_task}; use STOP/ABORT or wait until READY"
         stage = str(motion.get("stage") or "").strip()
         # Low-level antenna control can report a hold/tracking-like stage after
@@ -1091,7 +1095,7 @@ def _operator_status_operation_conflict(
             "target_hold",
             "target hold",
         }
-        if stage.lower() not in nonblocking_stages:
+        if stage.lower() not in nonblocking_stages and not at_target_idle:
             return f"cannot start {requested_action}: mount/activity stage is {stage}; use STOP/ABORT or wait until READY"
     except Exception:
         # If status probing fails, do not block the action solely because the
@@ -1781,7 +1785,17 @@ def _operator_status_to_v7_status(
         elif "calibration" in active_process_categories:
             sys_state = "calibrating"
 
+    motion_live_active = motion.get("live_motion_active")
+    motion_mount_target_reached = bool(motion.get("mount_target_reached"))
+    motion_mount_hold_at_target = bool(motion.get("mount_hold_at_target"))
+    motion_at_target_idle = bool(
+        (motion_mount_target_reached or motion_mount_hold_at_target)
+        and motion_live_active is False
+    )
+
     raw_active_task = str(motion.get("active_task") or "").strip()
+    if motion_at_target_idle:
+        raw_active_task = "idle"
     if raw_active_task.lower() in {"", "idle", "none", "unknown"}:
         # In live mode, do not resurrect the last console-side action.  That
         # stale fallback made the Manual panel keep showing "moving" after
@@ -1794,6 +1808,8 @@ def _operator_status_to_v7_status(
         active_task = "none"
 
     raw_manual_state = str(motion.get("stage") or "").strip()
+    if motion_at_target_idle:
+        raw_manual_state = "idle"
     if raw_manual_state.lower() in {"", "idle", "none", "unknown"}:
         manual_state = str(state.last_manual_state or "idle") if state.action_mode == "dry-run" else "idle"
     else:
@@ -1866,6 +1882,14 @@ def _operator_status_to_v7_status(
         "state": sys_state,
         "manual_state": manual_state,
         "active_task": active_task,
+        "motion_live_active": motion_live_active,
+        "motion_live_source": motion.get("live_motion_source"),
+        "mount_target_reached": motion_mount_target_reached,
+        "mount_hold_at_target": motion_mount_hold_at_target,
+        "mount_target_reached_tol_deg": motion.get("mount_target_reached_tol_deg"),
+        "encoder_motion_deadband_deg": motion.get("encoder_motion_deadband_deg"),
+        "encoder_motion_delta_az_deg": motion.get("encoder_motion_delta_az_deg"),
+        "encoder_motion_delta_el_deg": motion.get("encoder_motion_delta_el_deg"),
         "az": az,
         "el": el,
         "command_az": cmd_az,
