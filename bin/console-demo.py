@@ -265,6 +265,29 @@ button.selected:not(:disabled) { border-color: rgba(86,211,100,0.70); box-shadow
 .mini-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
 .process-row button { margin-top:5px; padding:5px 8px; font-size:12px; }
 .path-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left; }
+.copy-path-text { direction:ltr; text-align:left; user-select:text; }
+.obs-output-dir {
+  display: none;
+  margin: 8px 0 12px;
+  padding: 10px;
+  border: 1px solid rgba(86,211,100,0.45);
+  border-radius: 12px;
+  background: rgba(86,211,100,0.08);
+}
+.obs-output-dir.visible { display: block; }
+.obs-output-dir .output-title { color: var(--ok); font-weight: 800; margin-bottom: 6px; }
+.obs-output-dir .output-path-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.obs-output-dir code {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 7px 8px;
+  border: 1px solid rgba(86,211,100,0.25);
+  border-radius: 9px;
+  background: rgba(0,0,0,0.22);
+  color: var(--text);
+}
+.obs-output-dir .output-meta { color: var(--muted); font-size: 12px; margin-top: 6px; }
 .log-browser-text { max-height:220px; overflow:auto; white-space:pre-wrap; word-break:break-word; background:#080d1b; border:1px solid var(--line); border-radius:10px; padding:8px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; color:var(--muted); }
 .log-choice { display:block; width:100%; text-align:left; margin-top:4px; padding:5px 7px; font-size:12px; }
 .warning-list { color:var(--warn); }
@@ -331,12 +354,23 @@ summary { cursor: pointer; color: var(--muted); }
 .file-row.selected { background: rgba(86,211,100,0.12); box-shadow: inset 0 0 0 1px rgba(86,211,100,0.28); }
 .file-empty { color: var(--muted); padding: 12px; }
 
-.obs-main-row { align-items: end; }
+.obs-main-row {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+.obs-file-field { min-width: 0; }
 .obs-file-line {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
   gap: 8px;
   align-items: center;
+}
+.obs-full-path {
+  direction: ltr;
+  text-align: left;
+  white-space: nowrap;
+  overflow-x: auto;
+  text-overflow: clip;
 }
 .path-edit-details { margin-top: 4px; }
 .modal-backdrop {
@@ -398,6 +432,7 @@ summary { cursor: pointer; color: var(--muted); }
   margin-top: 8px;
 }
 @media (max-width: 760px) {
+  .obs-output-dir .output-path-row { grid-template-columns: 1fr; }
   .obs-file-line { grid-template-columns: 1fr; }
   .modal-backdrop { padding: 8px; }
   .modal-card { width: calc(100vw - 16px); max-height: calc(100vh - 16px); }
@@ -473,6 +508,14 @@ summary { cursor: pointer; color: var(--muted); }
             <button id="startObs" class="primary large" disabled title="Start the selected observation sequence. Check and Dry run are optional; Start always performs server-side validation before launching.">Start observation</button>
             <button id="abortObs" class="danger large" title="Abort a running observation sequence and request recorder/gate/progress cleanup. Safety action: kept clickable even if status has not yet detected observing.">ABORT observation</button>
           </div>
+        </div>
+        <div id="obsOutputDirBox" class="obs-output-dir" aria-live="polite">
+          <div class="output-title">Latest observation data directory</div>
+          <div class="output-path-row">
+            <code id="obsOutputDirPath">not available yet</code>
+            <button id="copyObsOutputDir" class="secondary compact" type="button" title="Copy the observation data directory path for analysis notebooks.">Copy</button>
+          </div>
+          <div class="output-meta" id="obsOutputDirMeta">Shown when the console knows the latest record name.</div>
         </div>
         <div class="optional-checks" title="Optional checks. They never move the telescope, move the chopper, start recording, open gates, or apply SG settings.">
           <span class="label">Optional before Start:</span>
@@ -1207,6 +1250,56 @@ function updateChopperButtons(chopper) {
   if (inButton) inButton.title = isIn ? 'Current chopper state is IN.' : 'Move chopper to IN.';
   if (outButton) outButton.title = isOut ? 'Current chopper state is OUT.' : 'Move chopper to OUT.';
 }
+function observationOutputInfo(data) {
+  const obs = (data && data.observation) || {};
+  const dir = String(obs.recording_dir || '').trim();
+  const record = String(obs.record_name || '').trim();
+  const progressDir = String(obs.progress_record_dir || '').trim();
+  return {dir, record, progressDir};
+}
+function updateObservationOutputBox(data) {
+  const box = qs('obsOutputDirBox');
+  const pathEl = qs('obsOutputDirPath');
+  const metaEl = qs('obsOutputDirMeta');
+  const copyBtn = qs('copyObsOutputDir');
+  if (!box || !pathEl || !metaEl) return;
+  const info = observationOutputInfo(data || {});
+  const hasDir = Boolean(info.dir);
+  box.classList.toggle('visible', hasDir);
+  pathEl.textContent = hasDir ? info.dir : 'not available yet';
+  pathEl.title = hasDir ? info.dir : 'Observation data directory is not available yet.';
+  const pieces = [];
+  if (info.record) pieces.push(`record: ${info.record}`);
+  if (info.progressDir) pieces.push(`progress: ${info.progressDir}`);
+  metaEl.textContent = hasDir ? (pieces.join(' / ') || 'Copy this path into the analysis notebook.') : 'Shown when the console knows the latest record name.';
+  if (copyBtn) {
+    copyBtn.disabled = !hasDir;
+    copyBtn.title = hasDir ? 'Copy the observation data directory path for analysis notebooks.' : 'No observation data directory is available yet.';
+  }
+}
+async function copyObservationOutputDir() {
+  const info = observationOutputInfo(state.lastStatus || {});
+  if (!info.dir) {
+    log(false, 'No observation data directory is available to copy.');
+    return;
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(info.dir);
+      log(true, `Copied observation data directory: ${info.dir}`);
+      const btn = qs('copyObsOutputDir');
+      if (btn) {
+        const old = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = old || 'Copy'; }, 1200);
+      }
+      return;
+    }
+  } catch (err) {
+    // Fall through to the manual copy prompt below.
+  }
+  window.prompt('Copy observation data directory', info.dir);
+}
 function operationLocksActive(op) {
   return Boolean(op && ['starting', 'running', 'attention'].includes(op.phase));
 }
@@ -1747,6 +1840,7 @@ function renderStatus(data) {
   qs('chopperPos').textContent = data.chopper.position;
   qs('chopperAge').textContent = data.chopper.age || 'live demo';
   updateChopperButtons(data.chopper || {});
+  updateObservationOutputBox(data);
   qs('stopTracking').disabled = data.manual_state !== 'tracking';
   if (['rsky', 'skydip', 'calibration'].includes(operation.kind)) {
     qs('calStatusNotice').textContent = operation.label + ': ' + operation.detail;
@@ -2031,6 +2125,7 @@ qs('startObs').addEventListener('click', async () => {
 qs('abortObs').addEventListener('click', async () => {
   if (confirm('Abort current observation and request recorder/gate/progress cleanup?')) await api('abort_observation', {}, 'abort');
 });
+qs('copyObsOutputDir').addEventListener('click', copyObservationOutputDir);
 qs('authorityButton').addEventListener('click', async () => {
   const resp = await fetch('/api/status');
   const data = await resp.json();
