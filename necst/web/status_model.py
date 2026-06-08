@@ -143,6 +143,45 @@ def default_record_root() -> Path:
     return Path(os.environ.get("NECST_RECORD_ROOT", str(Path.home() / "data"))).expanduser()
 
 
+def record_path_display_mode() -> str:
+    """Return the preferred path kind for operator-facing record display.
+
+    The operator usually copies the path into an analysis notebook on the local
+    PC or mounted filesystem, so the default is ``local``.  Set
+    ``NECST_CONSOLE_RECORD_PATH_MODE=container`` (or
+    ``NECST_CONSOLE_SHOW_CONTAINER_RECORD_PATH=1``) only when the Docker/container
+    path itself should be displayed.
+    """
+    legacy_container_flag = os.environ.get(
+        "NECST_CONSOLE_SHOW_CONTAINER_RECORD_PATH", ""
+    ).strip().lower()
+    if legacy_container_flag in {"1", "true", "yes", "on", "container"}:
+        return "container"
+    mode = os.environ.get("NECST_CONSOLE_RECORD_PATH_MODE", "local").strip().lower()
+    if mode in {"container", "docker", "internal"}:
+        return "container"
+    return "local"
+
+
+def local_record_root() -> Path:
+    """Return the local-PC/mounted record root used for operator display.
+
+    A configured host-side mount point is preferred.  If none is configured, use
+    the recorder root as the best available path instead of hiding the field.
+    This keeps the UI useful by default; deployments that explicitly want the
+    Docker/container path can set ``NECST_CONSOLE_RECORD_PATH_MODE=container``.
+    """
+    for name in (
+        "NECST_CONSOLE_LOCAL_RECORD_ROOT",
+        "NECST_RECORD_LOCAL_ROOT",
+        "NECST_LOCAL_RECORD_ROOT",
+    ):
+        value = os.environ.get(name, "").strip()
+        if value:
+            return Path(value).expanduser()
+    return default_record_root()
+
+
 def recording_data_dir(record_name: Optional[Any]) -> Optional[Path]:
     """Return the expected observation data directory for a record name.
 
@@ -157,6 +196,20 @@ def recording_data_dir(record_name: Optional[Any]) -> Optional[Path]:
     if path.is_absolute():
         return path
     return default_record_root() / path
+
+
+def local_recording_data_dir(record_name: Optional[Any]) -> Optional[Path]:
+    """Return the local-PC/mounted display path for a record name."""
+    record = str(record_name or "").strip()
+    root = local_record_root()
+    if not record or record == "-":
+        return None
+    path = Path(record).expanduser()
+    # Absolute record names cannot be safely remapped without an explicit
+    # path mapping table; fall back to the absolute path we actually know.
+    if path.is_absolute():
+        return path
+    return root / path
 
 
 def latest_events_path(
@@ -1055,6 +1108,8 @@ def build_operator_status(
         else None
     )
     recording_directory = str(recording_data_dir(observation_record)) if observation_record else None
+    local_recording_directory = str(local_recording_data_dir(observation_record)) if observation_record else None
+    record_display_mode = record_path_display_mode()
 
     if activity.get("live_motion_active") is False:
         active_task = "idle"
@@ -1131,6 +1186,8 @@ def build_operator_status(
             "obs_file": obs.get("obs_file"),
             "target": observation_target,
             "recording_dir": recording_directory,
+            "local_recording_dir": local_recording_directory,
+            "record_path_display_mode": record_display_mode,
             "progress_record_dir": progress_record_directory,
             "elapsed_sec": _finite_float(timing.get("elapsed_sec")),
             "remaining_sec": _finite_float(timing.get("estimated_remaining_sec")),
@@ -1226,6 +1283,7 @@ def build_progress_status_state(
     record_name_for_paths = record_name_for_paths or current_record_name(root)
     prog_record_dir = progress_record_dir(root, record_name_for_paths)
     data_record_dir = recording_data_dir(record_name_for_paths)
+    local_data_record_dir = local_recording_data_dir(record_name_for_paths)
     paths = {
         "root": str(root),
         "snapshot": str(snapshot_path) if snapshot_path else None,
@@ -1233,6 +1291,8 @@ def build_progress_status_state(
         "plan": str(plan_path) if plan_path else None,
         "progress_record_dir": str(prog_record_dir) if prog_record_dir else None,
         "recording_dir": str(data_record_dir) if data_record_dir else None,
+        "local_recording_dir": str(local_data_record_dir) if local_data_record_dir else None,
+        "record_path_display_mode": record_path_display_mode(),
     }
     compact_status = build_operator_status(
         snapshot if isinstance(snapshot, Mapping) else None,

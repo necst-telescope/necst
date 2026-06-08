@@ -134,6 +134,32 @@ class ProgressMonitorManager:
     def _is_owned_running(self) -> bool:
         return self._popen is not None and self._poll_owned_process() is None
 
+    def _close_output_handles(self) -> None:
+        for attr in ("_stdout_fh", "_stderr_fh"):
+            handle = getattr(self, attr, None)
+            if handle is not None:
+                try:
+                    handle.close()
+                except Exception:
+                    pass
+                setattr(self, attr, None)
+
+    def _forget_finished_owned_process(self) -> Optional[int]:
+        """Drop local references to a console-owned process that already exited.
+
+        This keeps Retry launch from leaking log file handles or treating an old
+        exited process as the current managed progress server.  The last message
+        is intentionally left intact for UI diagnostics.
+        """
+        if self._popen is None:
+            return None
+        rc = self._popen.poll()
+        if rc is None:
+            return None
+        self._close_output_handles()
+        self._popen = None
+        return int(rc)
+
     def _make_command(self) -> List[str]:
         command = [
             self.python_executable,
@@ -156,6 +182,10 @@ class ProgressMonitorManager:
 
     def launch(self) -> Tuple[bool, str, Dict[str, Any]]:
         """Launch progress.py if no external or owned server is already healthy."""
+
+        old_rc = self._forget_finished_owned_process()
+        if old_rc is not None:
+            self._last_message = f"previous console-owned progress monitor had exited with return code {old_rc}; retrying launch"
 
         if self._is_owned_running():
             ok, health, _message = self.check_health(timeout_sec=0.5)
@@ -251,6 +281,8 @@ class ProgressMonitorManager:
             return True, message, data
         message = f"progress monitor exited during startup with return code {rc}"
         self._last_message = message
+        self._close_output_handles()
+        self._popen = None
         return False, message, data
 
     def stop_if_owned(self, *, timeout_sec: float = 2.0) -> Tuple[bool, str, Dict[str, Any]]:
@@ -276,14 +308,7 @@ class ProgressMonitorManager:
         self._last_message = message
         data = self.status().to_dict()
         self._popen = None
-        for attr in ("_stdout_fh", "_stderr_fh"):
-            handle = getattr(self, attr, None)
-            if handle is not None:
-                try:
-                    handle.close()
-                except Exception:
-                    pass
-                setattr(self, attr, None)
+        self._close_output_handles()
         return True, message, data
 
     def status(self, *, check_external: bool = False) -> ProgressMonitorState:

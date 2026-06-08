@@ -24,6 +24,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -288,6 +289,12 @@ button.selected:not(:disabled) { border-color: rgba(86,211,100,0.70); box-shadow
   color: var(--text);
 }
 .obs-output-dir .output-meta { color: var(--muted); font-size: 12px; margin-top: 6px; }
+.obs-output-dir .output-meta b { color: var(--text); }
+.obs-output-dir .output-meta code { display:inline; padding:0; border:0; background:transparent; color:var(--text); white-space:normal; }
+.progress-status-line { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.progress-status-line.ok { color: var(--ok); }
+.progress-status-line.warn { color: var(--warn); }
+.progress-status-line.bad { color: var(--bad); }
 .log-browser-text { max-height:220px; overflow:auto; white-space:pre-wrap; word-break:break-word; background:#080d1b; border:1px solid var(--line); border-radius:10px; padding:8px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; color:var(--muted); }
 .log-choice { display:block; width:100%; text-align:left; margin-top:4px; padding:5px 7px; font-size:12px; }
 .warning-list { color:var(--warn); }
@@ -512,8 +519,8 @@ summary { cursor: pointer; color: var(--muted); }
         <div id="obsOutputDirBox" class="obs-output-dir" aria-live="polite">
           <div class="output-title">Latest observation data directory</div>
           <div class="output-path-row">
-            <code id="obsOutputDirPath">not available yet</code>
-            <button id="copyObsOutputDir" class="secondary compact" type="button" title="Copy the observation data directory path for analysis notebooks.">Copy</button>
+            <code id="obsOutputDirName">not available yet</code>
+            <button id="copyObsOutputDir" class="secondary compact" type="button" title="Copy the record directory name for analysis notebooks.">Copy</button>
           </div>
           <div class="output-meta" id="obsOutputDirMeta">Shown when the console knows the latest record name.</div>
         </div>
@@ -758,8 +765,8 @@ summary { cursor: pointer; color: var(--muted); }
               <div class="card-head"><h2>RSky</h2><span class="hint">runtime parameters</span></div>
               <div class="card-body">
                 <div class="row">
-                  <div class="field"><label for="rskyN">n</label><input id="rskyN" value="1" inputmode="numeric"></div>
-                  <div class="field"><label for="rskyInteg">integ [s]</label><input id="rskyInteg" value="2" inputmode="decimal"></div>
+                  <div class="field"><label for="rskyN">n</label><input id="rskyN" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+                  <div class="field"><label for="rskyInteg">integ [s]</label><input id="rskyInteg" type="number" min="0.1" step="0.5" value="5" inputmode="decimal"></div>
                 </div>
                 <details><summary>Advanced</summary><div class="field" style="margin-top:10px"><label for="rskyCh">channel</label><input id="rskyCh" placeholder="empty = default"></div></details>
                 <button id="runRsky" class="primary">Run RSky</button>
@@ -768,7 +775,7 @@ summary { cursor: pointer; color: var(--muted); }
             <div class="card operation-subcard" id="skydipCard" style="box-shadow:none">
               <div class="card-head"><h2>SkyDip</h2><span class="hint">runtime parameters</span></div>
               <div class="card-body">
-                <div class="field"><label for="skydipInteg">integ [s]</label><input id="skydipInteg" value="2" inputmode="decimal"></div>
+                <div class="field"><label for="skydipInteg">integ [s]</label><input id="skydipInteg" type="number" min="0.1" step="0.5" value="10" inputmode="decimal"></div>
                 <details><summary>Advanced</summary>
                   <div class="field" style="margin-top:10px"><label for="skydipCh">channel</label><input id="skydipCh" placeholder="empty = default"></div>
                   <div class="field"><label for="skydipTpRange">tp_range</label><input id="skydipTpRange" placeholder="e.g. 5000 6000 17000 18000"></div>
@@ -834,7 +841,8 @@ summary { cursor: pointer; color: var(--muted); }
           <h3>Current observation data</h3>
           <div class="runtime-list">
             <div>Record: <b id="runtimeRecordName">loading</b></div>
-            <div class="path-text" title="Expected NECST recorder output directory">Data directory: <b id="runtimeRecordingDir">loading</b></div>
+            <div class="path-text" title="Local PC path if the Docker/container data root is mapped; otherwise the container path is shown.">Local/data path: <b id="runtimeLocalRecordingDir">loading</b></div>
+            <div class="path-text" title="Expected NECST recorder output directory inside the console/container environment">Container data directory: <b id="runtimeRecordingDir">loading</b></div>
             <div class="path-text" title="Progress sidecar directory">Progress directory: <b id="runtimeProgressRecordDir">loading</b></div>
           </div>
         </div>
@@ -898,9 +906,41 @@ const state = {
   currentOperation: {phase: 'ready', kind: 'idle', label: 'READY'},
   lastActionResponse: null,
   demoObsBrowser: false,
-  selectedObsPath: ""
+  selectedObsPath: "",
+  progressLaunch: {active: false, openedUrl: "", message: ""}
 };
 localStorage.setItem('necstConsoleDemoSession', state.sessionId);
+
+const FORM_STORAGE_PREFIX = 'necstConsole.form.';
+const PERSISTED_FORM_FIELDS = [
+  'obsMode', 'recentDir', 'obsFilename', 'obsChannel',
+  'mountAz', 'mountEl',
+  'targetKind', 'targetName', 'coord1', 'coord2', 'offsetFrame', 'offsetX', 'offsetY', 'cosCorrection',
+  'rskyN', 'rskyInteg', 'rskyCh',
+  'skydipInteg', 'skydipCh', 'skydipTpRange'
+];
+function storageKeyForField(id) { return FORM_STORAGE_PREFIX + id; }
+function saveFormField(id) {
+  const el = qs(id);
+  if (!el) return;
+  try { localStorage.setItem(storageKeyForField(id), el.value); } catch (_) {}
+}
+function restoreFormField(id) {
+  const el = qs(id);
+  if (!el) return;
+  try {
+    const saved = localStorage.getItem(storageKeyForField(id));
+    if (saved !== null && saved !== undefined) el.value = saved;
+  } catch (_) {}
+}
+function setupFormPersistence() {
+  PERSISTED_FORM_FIELDS.forEach(id => {
+    restoreFormField(id);
+    const el = qs(id);
+    if (!el) return;
+    ['input', 'change'].forEach(ev => el.addEventListener(ev, () => saveFormField(id)));
+  });
+}
 
 function numberOrNaN(value) {
   if (String(value).trim() === '') return NaN;
@@ -1250,43 +1290,59 @@ function updateChopperButtons(chopper) {
   if (inButton) inButton.title = isIn ? 'Current chopper state is IN.' : 'Move chopper to IN.';
   if (outButton) outButton.title = isOut ? 'Current chopper state is OUT.' : 'Move chopper to OUT.';
 }
+
+function basenameFromPath(path) {
+  const s = String(path || '').trim().replace(/\/+$/, '');
+  if (!s) return '';
+  const idx = s.lastIndexOf('/');
+  return idx >= 0 ? s.slice(idx + 1) : s;
+}
 function observationOutputInfo(data) {
   const obs = (data && data.observation) || {};
-  const dir = String(obs.recording_dir || '').trim();
   const record = String(obs.record_name || '').trim();
+  const containerDir = String(obs.recording_dir || '').trim();
+  const localDir = String(obs.local_recording_dir || obs.local_data_dir || '').trim();
   const progressDir = String(obs.progress_record_dir || '').trim();
-  return {dir, record, progressDir};
+  const mode = String(obs.record_path_display_mode || 'local').trim().toLowerCase();
+  const preferContainer = mode === 'container' || mode === 'docker' || mode === 'internal';
+  const directoryName = record || basenameFromPath(localDir) || basenameFromPath(containerDir);
+  const displayPath = preferContainer ? (containerDir || localDir) : (localDir || containerDir);
+  const displayKind = preferContainer ? 'container' : 'local';
+  return {directoryName, record, containerDir, localDir, progressDir, displayPath, displayKind};
 }
 function updateObservationOutputBox(data) {
   const box = qs('obsOutputDirBox');
-  const pathEl = qs('obsOutputDirPath');
+  const nameEl = qs('obsOutputDirName');
   const metaEl = qs('obsOutputDirMeta');
   const copyBtn = qs('copyObsOutputDir');
-  if (!box || !pathEl || !metaEl) return;
+  if (!box || !nameEl || !metaEl) return;
   const info = observationOutputInfo(data || {});
-  const hasDir = Boolean(info.dir);
-  box.classList.toggle('visible', hasDir);
-  pathEl.textContent = hasDir ? info.dir : 'not available yet';
-  pathEl.title = hasDir ? info.dir : 'Observation data directory is not available yet.';
-  const pieces = [];
-  if (info.record) pieces.push(`record: ${info.record}`);
-  if (info.progressDir) pieces.push(`progress: ${info.progressDir}`);
-  metaEl.textContent = hasDir ? (pieces.join(' / ') || 'Copy this path into the analysis notebook.') : 'Shown when the console knows the latest record name.';
+  const hasName = Boolean(info.directoryName);
+  box.classList.toggle('visible', hasName);
+  nameEl.textContent = hasName ? info.directoryName : 'not available yet';
+  nameEl.title = hasName ? 'Directory name copied by the Copy button.' : 'Observation data directory is not available yet.';
+  if (hasName) {
+    const label = info.displayKind === 'container' ? 'record (container)' : 'record';
+    metaEl.innerHTML = info.displayPath ? `${escapeHtml(label)}: <code>${escapeHtml(info.displayPath)}</code>` : 'record: path not available yet';
+  } else {
+    metaEl.textContent = 'Shown when the console knows the latest record name.';
+  }
   if (copyBtn) {
-    copyBtn.disabled = !hasDir;
-    copyBtn.title = hasDir ? 'Copy the observation data directory path for analysis notebooks.' : 'No observation data directory is available yet.';
+    copyBtn.disabled = !hasName;
+    copyBtn.title = hasName ? 'Copy the directory name for analysis notebooks.' : 'No observation data directory is available yet.';
   }
 }
 async function copyObservationOutputDir() {
   const info = observationOutputInfo(state.lastStatus || {});
-  if (!info.dir) {
-    log(false, 'No observation data directory is available to copy.');
+  const value = info.directoryName;
+  if (!value) {
+    log(false, 'No observation data directory name is available to copy.');
     return;
   }
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(info.dir);
-      log(true, `Copied observation data directory: ${info.dir}`);
+      await navigator.clipboard.writeText(value);
+      log(true, `Copied observation directory name: ${value}`);
       const btn = qs('copyObsOutputDir');
       if (btn) {
         const old = btn.textContent;
@@ -1295,10 +1351,103 @@ async function copyObservationOutputDir() {
       }
       return;
     }
-  } catch (err) {
-    // Fall through to the manual copy prompt below.
+  } catch (err) {}
+  window.prompt('Copy observation data directory name', value);
+}
+function progressMonitorSnapshot(data) {
+  const progress = (data && data.progress) || {};
+  const monitor = progress.monitor || progress;
+  const status = String(monitor.status || progress.monitor_status || '').trim().toLowerCase();
+  const url = String(monitor.progress_url || monitor.url || progress.url || data.progress_url || '').trim();
+  const running = Boolean(monitor.running || progress.running);
+  const readyStatus = !status || ['managed', 'external', 'running', 'ready', 'ok'].includes(status);
+  const starting = ['managed_starting', 'starting', 'pending'].includes(status);
+  const failed = ['exited', 'failed', 'error'].includes(status) || (monitor.returncode !== null && monitor.returncode !== undefined && monitor.returncode !== 0);
+  return {running, ready: running && readyStatus, starting, failed, status, url, message: monitor.message || progress.message || ''};
+}
+function updateProgressLaunchButton(data) {
+  const btn = qs('openProgress');
+  if (!btn) return;
+  const snap = progressMonitorSnapshot(data || state.lastStatus || {});
+  if (state.progressLaunch.active) {
+    btn.textContent = 'Starting progress...';
+    btn.disabled = true;
+    btn.classList.add('selected');
+    btn.title = 'Waiting for the progress monitor server to become reachable.';
+    return;
   }
-  window.prompt('Copy observation data directory', info.dir);
+  btn.disabled = false;
+  btn.classList.remove('selected');
+  if (snap.ready) {
+    btn.textContent = 'Open progress monitor';
+    btn.title = `Progress monitor is reachable: ${snap.url || 'URL unknown'}`;
+  } else if (snap.starting) {
+    btn.textContent = 'Progress starting...';
+    btn.title = snap.message || 'Progress monitor process is starting; click to retry opening when ready.';
+  } else if (snap.failed) {
+    btn.textContent = 'Retry progress monitor';
+    btn.title = snap.message || 'Progress monitor failed or exited; click to retry launch.';
+  } else {
+    btn.textContent = 'Launch progress monitor';
+    btn.title = 'Start or open the progress-monitor server managed by this console. If this console exits, only a console-owned progress server stops.';
+  }
+}
+function setProgressLaunchMessage(kind, text) {
+  const el = qs('runtimeProgressMonitor');
+  if (el) el.textContent = text;
+  const btn = qs('openProgress');
+  if (btn) btn.title = text;
+  if (kind === 'bad') log(false, text);
+  else if (kind === 'ok') log(true, text);
+}
+async function waitForProgressReady(initialUrl) {
+  const timeoutMs = 12000;
+  const started = Date.now();
+  let lastUrl = initialUrl || '';
+  let lastMessage = 'Waiting for progress server...';
+  state.progressLaunch.active = true;
+  updateProgressLaunchButton(state.lastStatus || {});
+  try {
+    while (Date.now() - started < timeoutMs) {
+      await new Promise(resolve => setTimeout(resolve, 350));
+      try { await refresh(); } catch (_) {}
+      const snap = progressMonitorSnapshot(state.lastStatus || {});
+      if (snap.url) lastUrl = snap.url;
+      if (snap.message) lastMessage = snap.message;
+      if (snap.ready && lastUrl) {
+        state.progressLaunch.active = false;
+        updateProgressLaunchButton(state.lastStatus || {});
+        setProgressLaunchMessage('ok', 'Progress monitor is ready. Opening it now.');
+        window.open(lastUrl, '_blank');
+        return true;
+      }
+      if (snap.failed && !snap.starting) break;
+    }
+  } finally {
+    state.progressLaunch.active = false;
+    updateProgressLaunchButton(state.lastStatus || {});
+  }
+  setProgressLaunchMessage('bad', `Progress monitor is not reachable yet. ${lastMessage}. Try Open/Retry or inspect progress logs.`);
+  if (lastUrl) window.open(lastUrl, '_blank');
+  return false;
+}
+async function launchOrOpenProgress() {
+  const existing = progressMonitorSnapshot(state.lastStatus || {});
+  if (existing.ready && existing.url) {
+    window.open(existing.url, '_blank');
+    return;
+  }
+  state.progressLaunch.active = true;
+  updateProgressLaunchButton(state.lastStatus || {});
+  const data = await api('launch_progress');
+  const url = data.progress_url || data.url || (data.state && data.state.progress_url) || existing.url;
+  if (!data.ok) {
+    state.progressLaunch.active = false;
+    updateProgressLaunchButton(state.lastStatus || {});
+    setProgressLaunchMessage('bad', data.reason || data.message || 'Failed to launch progress monitor.');
+    return;
+  }
+  await waitForProgressReady(url);
 }
 function operationLocksActive(op) {
   return Boolean(op && ['starting', 'running', 'attention'].includes(op.phase));
@@ -1494,10 +1643,12 @@ function renderRuntime(data) {
   if (processEl) processEl.innerHTML = renderProcessRows(processes);
   const obs = data.observation || {};
   setText('runtimeRecordName', obs.record_name || '(none)');
+  setText('runtimeLocalRecordingDir', obs.local_recording_dir || obs.local_data_dir || obs.recording_dir || '(not available yet)');
   setText('runtimeRecordingDir', obs.recording_dir || '(not available yet)');
   setText('runtimeProgressRecordDir', obs.progress_record_dir || '(not available yet)');
   renderLauncherLogChoices(processes);
   setText('runtimeProgressMonitor', progressMonitorText(progress));
+  updateProgressLaunchButton(data);
   setText('runtimeOperatorLog', data.operator_log_path || '(not configured)');
   setText('runtimeLauncherLogDir', data.launcher_log_dir || '(not configured)');
   const shutdown = data.shutdown || {};
@@ -1886,6 +2037,8 @@ function setObsPathFromServerPath(path) {
   if (!p) return;
   qs('recentDir').value = dirnameOf(p);
   qs('obsFilename').value = basenameOf(p);
+  saveFormField('recentDir');
+  saveFormField('obsFilename');
   if (qs('serverObsDir')) qs('serverObsDir').value = dirnameOf(p);
   state.obsChecked = false;
   validateObs();
@@ -2189,11 +2342,7 @@ qs('runtimeProcesses').addEventListener('click', async (ev) => {
   const pid = btn.dataset.pid;
   if (confirm(`Terminate local launcher pid=${pid}? Telescope STOP is separate.`)) await api('terminate_process', {pid});
 });
-qs('openProgress').addEventListener('click', async () => {
-  const data = await api('launch_progress');
-  const url = data.progress_url || (data.state && data.state.progress_url);
-  if (data.ok && url) window.open(url, '_blank');
-});
+qs('openProgress').addEventListener('click', launchOrOpenProgress);
 function getStatusRefreshMs() {
   const cfg = window.NECST_CONSOLE_CONFIG || {};
   const raw = Number(cfg.statusRefreshMs ?? cfg.status_refresh_ms ?? 1000);
@@ -2201,7 +2350,7 @@ function getStatusRefreshMs() {
   return Math.max(200, Math.round(raw));
 }
 const statusRefreshMs = getStatusRefreshMs();
-loadServerObsRoots(); validateObs(); updatePreviewInfo(); validateMount(); updateTargetFields(); refresh(); setInterval(refresh, statusRefreshMs);
+setupFormPersistence(); loadServerObsRoots(); validateObs(); updatePreviewInfo(); validateMount(); updateTargetFields(); refresh(); setInterval(refresh, statusRefreshMs);
 </script>
 </body>
 </html>
@@ -2283,6 +2432,10 @@ class DemoState:
     exclusive_start_action: Optional[str] = None
     exclusive_start_started_at: Optional[float] = None
     exclusive_start_message: str = ""
+    record_name: Optional[str] = None
+    recording_dir: Optional[str] = None
+    local_recording_dir: Optional[str] = None
+    progress_record_dir: Optional[str] = None
     log: List[LogEntry] = field(default_factory=list)
 
     def prune_exclusive_start_guard(self) -> None:
@@ -2308,6 +2461,12 @@ class DemoState:
                 "owned_by_console": self.progress_owned_by_console,
             },
             "state": self.state,
+            "observation": {
+                "record_name": self.record_name,
+                "recording_dir": self.recording_dir,
+                "local_recording_dir": self.local_recording_dir,
+                "progress_record_dir": self.progress_record_dir,
+            },
             "manual_state": self.manual_state,
             "active_task": self.active_task,
             "az": self.az,
@@ -2768,6 +2927,14 @@ def _demo_clear_exclusive_start_guard(state: DemoState) -> None:
     state.exclusive_start_message = ""
 
 
+
+def _demo_set_record(state: DemoState, record_name: str) -> None:
+    record = str(record_name or '').strip() or 'demo_record'
+    state.record_name = record
+    state.recording_dir = f"/root/data/{record}"
+    state.local_recording_dir = f"/local/necst/data/{record}"
+    state.progress_record_dir = f"/tmp/necst_progress/{record}"
+
 def _demo_mark_exclusive_start_guard(state: DemoState, action: str, message: str) -> None:
     if action not in EXCLUSIVE_START_ACTIONS:
         return
@@ -2935,6 +3102,8 @@ def handle_action(
         state.active_task = "observation"
         mode = str(params.get("mode") or "")
         path = str(params.get("file") or "").strip()
+        stem = Path(path).name.rsplit('.', 1)[0] if path else 'demo_observation'
+        _demo_set_record(state, f"{stem}_{int(time.time())}")
         server.add_log(True, f"{authority_msg}: mode={mode}, file={path}")
         return True, "observation started"
 
@@ -3007,7 +3176,7 @@ def handle_action(
         if err:
             server.add_log(False, f"RSky not started: {err}")
             return False, err
-        ok, reason, integ = _validate_positive_float(params.get("integ", 2), "RSky integ")
+        ok, reason, integ = _validate_positive_float(params.get("integ", 5), "RSky integ")
         if not ok:
             server.add_log(False, f"RSky not started: {reason}")
             return False, reason
@@ -3025,11 +3194,12 @@ def handle_action(
         state.state = "calibrating"
         state.manual_state = "calibration"
         state.active_task = "RSky"
+        _demo_set_record(state, f"necst_rsky_{time.strftime('%Y%m%d_%H%M%S')}")
         server.add_log(True, f"{authority_msg}: n={n or 1}, integ={integ:g} s")
         return True, "RSky started"
 
     if action == "run_skydip":
-        ok, reason, integ = _validate_positive_float(params.get("integ", 2), "SkyDip integ")
+        ok, reason, integ = _validate_positive_float(params.get("integ", 10), "SkyDip integ")
         if not ok:
             server.add_log(False, f"SkyDip not started: {reason}")
             return False, reason
@@ -3059,6 +3229,7 @@ def handle_action(
         state.state = "calibrating"
         state.manual_state = "calibration"
         state.active_task = "SkyDip"
+        _demo_set_record(state, f"necst_skydip_{time.strftime('%Y%m%d_%H%M%S')}")
         server.add_log(True, f"{authority_msg}: integ={integ:g} s")
         return True, "SkyDip started"
 

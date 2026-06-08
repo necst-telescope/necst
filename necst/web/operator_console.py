@@ -2117,6 +2117,8 @@ def _operator_status_to_v7_status(
             "record_name": observation.get("record_name"),
             "obs_file": observation.get("obs_file"),
             "recording_dir": observation.get("recording_dir") or paths.get("recording_dir"),
+            "local_recording_dir": observation.get("local_recording_dir") or paths.get("local_recording_dir"),
+            "record_path_display_mode": observation.get("record_path_display_mode") or paths.get("record_path_display_mode") or "local",
             "progress_record_dir": observation.get("progress_record_dir") or paths.get("progress_record_dir"),
         },
         "authority": {
