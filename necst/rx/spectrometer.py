@@ -530,6 +530,22 @@ class SpectralData(DeviceNode):
             except Exception as exc:
                 saving_enabled = False
                 warning = str(exc)
+
+        driver_warnings = []
+        for key, io in self.io.items():
+            last_exception = str(getattr(io, "last_exception", "") or "")
+            if last_exception:
+                driver_warnings.append(f"{key}: {last_exception.splitlines()[0]}")
+            try:
+                thread = getattr(io, "thread", None)
+                if thread is not None and not thread.is_alive():
+                    driver_warnings.append(f"{key}: reader thread is not alive")
+            except Exception:
+                pass
+        if driver_warnings:
+            joined = "; ".join(driver_warnings)
+            warning = f"{warning}; {joined}" if warning else joined
+
         if not getattr(self.recorder, "is_recording", False):
             saving_enabled = False
         tp_start = -1
