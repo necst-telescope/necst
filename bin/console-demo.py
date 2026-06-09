@@ -202,6 +202,8 @@ button.pending:not(:disabled) { border-color: rgba(122,162,255,0.75); background
 .secondary { background: #18213b; }
 .ghost { background: transparent; }
 button.selected:not(:disabled) { border-color: rgba(86,211,100,0.70); box-shadow: 0 0 0 2px rgba(86,211,100,0.12); }
+button.recovery-danger:not(:disabled) { background:#4d2730; border-color:rgba(255,107,107,0.72); color:#ffd9dd; font-weight:800; }
+button.recovery-danger:hover:not(:disabled) { background:#6b2b36; border-color:rgba(255,137,145,0.90); }
 .run-bar {
   position: sticky;
   top: 78px;
@@ -256,16 +258,33 @@ button.selected:not(:disabled) { border-color: rgba(86,211,100,0.70); box-shadow
 .log-entry .time { color: var(--faint); }
 .log-entry .ok { color: var(--ok); }
 .log-entry .bad { color: var(--bad); }
-.runtime-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:10px; }
-.runtime-card { border:1px solid var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,0.025); }
-.runtime-card h3 { margin:0 0 8px; font-size:13px; color:var(--accent2); }
-.runtime-list { display:grid; gap:6px; font-size:12px; color:var(--muted); }
+.runtime-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:12px; align-items:start; }
+.runtime-grid.advanced { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.runtime-card { border:1px solid var(--line); border-radius:12px; padding:12px; background:rgba(255,255,255,0.025); min-width:0; }
+.runtime-card h3 { margin:0 0 5px; font-size:13px; color:var(--accent2); }
+.runtime-card .card-hint { margin:0 0 9px; color:var(--faint); font-size:12px; line-height:1.35; }
+.runtime-card.wide { grid-column: span 2; }
+.runtime-card.history { border-color:rgba(86,211,100,0.28); }
+.runtime-card.recovery { border-color:rgba(242,204,96,0.32); }
+.recovery-warning { border:1px solid rgba(242,204,96,0.46); border-radius:10px; padding:9px 10px; background:rgba(242,204,96,0.075); color:var(--warn); line-height:1.38; }
+.recovery-warning b { color:var(--warn); }
+.recovery-muted { color:var(--faint); font-size:11px; line-height:1.35; }
+.runtime-card.logs { border-color:rgba(122,162,255,0.25); }
+.runtime-list { display:grid; gap:6px; font-size:12px; color:var(--muted); min-width:0; }
 .runtime-list b { color:var(--text); font-weight:600; }
-.process-row { border-top:1px dashed rgba(255,255,255,0.10); padding-top:6px; margin-top:6px; color:var(--muted); }
+.runtime-subtitle { margin: 10px 0 4px; color:var(--faint); font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.process-row { border-top:1px dashed rgba(255,255,255,0.10); padding-top:7px; margin-top:7px; color:var(--muted); }
 .process-row:first-child { border-top:0; margin-top:0; padding-top:0; }
+.process-row .process-title { display:flex; flex-wrap:wrap; gap:6px; align-items:center; color:var(--text); font-weight:700; }
+.process-row .process-meta { margin-top:2px; color:var(--faint); font-size:11px; }
+.process-row .process-log-paths { margin-top:4px; color:var(--muted); font-size:11px; overflow-wrap:anywhere; word-break:break-word; white-space:normal; }
+.process-row button { margin-top:6px; padding:5px 8px; font-size:12px; }
 .mini-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-.process-row button { margin-top:5px; padding:5px 8px; font-size:12px; }
 .path-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left; }
+.path-text.ltr { direction:ltr; }
+.path-text.wrap, .runtime-path { direction:ltr; text-align:left; white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; word-break:break-word; line-height:1.35; }
+.runtime-path b, .path-text.wrap b { overflow-wrap:anywhere; word-break:break-word; }
+@media (max-width: 980px) { .runtime-card.wide { grid-column: auto; } .runtime-grid.advanced { grid-template-columns: 1fr; } }
 .copy-path-text { direction:ltr; text-align:left; user-select:text; }
 .obs-output-dir {
   display: none;
@@ -295,8 +314,11 @@ button.selected:not(:disabled) { border-color: rgba(86,211,100,0.70); box-shadow
 .progress-status-line.ok { color: var(--ok); }
 .progress-status-line.warn { color: var(--warn); }
 .progress-status-line.bad { color: var(--bad); }
-.log-browser-text { max-height:220px; overflow:auto; white-space:pre-wrap; word-break:break-word; background:#080d1b; border:1px solid var(--line); border-radius:10px; padding:8px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; color:var(--muted); }
-.log-choice { display:block; width:100%; text-align:left; margin-top:4px; padding:5px 7px; font-size:12px; }
+.log-browser-text { max-height:260px; overflow:auto; white-space:pre-wrap; word-break:break-word; background:#080d1b; border:1px solid var(--line); border-radius:10px; padding:8px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; color:var(--muted); }
+.log-choice { display:block; width:100%; text-align:left; margin-top:5px; padding:6px 8px; font-size:12px; }
+.log-choice.latest { border-color:rgba(86,211,100,0.45); }
+.log-choice .log-choice-title { display:block; color:var(--text); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.log-choice .log-choice-sub { display:block; color:var(--faint); font-size:11px; overflow-wrap:anywhere; word-break:break-word; white-space:normal; margin-top:2px; }
 .warning-list { color:var(--warn); }
 details {
   margin-top: 10px;
@@ -514,7 +536,7 @@ summary { cursor: pointer; color: var(--muted); }
           <div class="run-actions">
             <button id="startObs" class="primary large" disabled title="Start the selected observation sequence. Check and Dry run are optional; Start always performs server-side validation before launching.">Start observation</button>
             <button id="abortObs" class="danger large" title="Abort a running observation sequence and request recorder/gate/progress cleanup. Safety action: kept clickable even if status has not yet detected observing.">ABORT observation</button>
-            <button id="terminateObsLauncherQuick" class="secondary compact" type="button" disabled title="Terminate the local observation launcher subprocess only. This does not send telescope STOP and should be used only after confirming the hardware is safe.">Terminate launcher</button>
+            <button id="terminateObsLauncherQuick" class="recovery-danger compact" type="button" disabled title="Force-kill only the local observation launcher started by this console. Use only after Abort does not return and hardware is already confirmed safe.">Force-kill local launcher</button>
             <button id="clearStaleObs" class="secondary compact" type="button" disabled title="Recover the console from stale progress state after confirming the telescope/recorder are safe. This archives only current progress pointer files; it does not send hardware commands or delete data.">Clear stale state</button>
           </div>
         </div>
@@ -808,7 +830,7 @@ summary { cursor: pointer; color: var(--muted); }
     <div class="card-head">
       <div>
         <h2>Runtime status</h2>
-        <div class="hint">Site config, process lifecycle, progress monitor ownership, and persistent log paths.</div>
+        <div class="hint">Observation data, operation history, progress status, and advanced recovery tools.</div>
       </div>
       <button id="refreshRuntime" class="secondary">Refresh</button>
     </div>
@@ -816,6 +838,7 @@ summary { cursor: pointer; color: var(--muted); }
       <div class="runtime-grid">
         <div class="runtime-card">
           <h3>Site and action mode</h3>
+          <p class="card-hint">Current console mode and live telemetry source.</p>
           <div class="runtime-list">
             <div>Action mode: <b id="runtimeActionMode">loading</b></div>
             <div>Live writes: <b id="runtimeLiveWrites">loading</b></div>
@@ -823,74 +846,96 @@ summary { cursor: pointer; color: var(--muted); }
             <div>Live telemetry: <b id="runtimeLiveTelemetry">loading</b></div>
             <div>Observatory: <b id="runtimeObservatory">loading</b></div>
             <div>Config source: <b id="runtimeConfigSource">loading</b></div>
-            <div class="path-text" title="site config path">Path: <b id="runtimeConfigPath">loading</b></div>
+            <div class="path-text wrap" title="site config path">Path: <b id="runtimeConfigPath">loading</b></div>
             <div>Capabilities: <b id="runtimeCapabilities">loading</b></div>
           </div>
         </div>
         <div class="runtime-card">
-          <h3>Process lifecycle</h3>
-          <div class="runtime-list">
-            <div>Counts: <b id="runtimeProcessCounts">loading</b></div>
-            <div id="runtimeProcesses">loading</div>
-            <div class="mini-actions">
-              <button id="terminateObsLauncher" class="secondary" title="Terminate local observation launcher subprocess only; does not send telescope STOP">Terminate obs launcher</button>
-              <button id="terminateCalLauncher" class="secondary" title="Terminate local calibration launcher subprocess only; does not send telescope STOP">Terminate cal launcher</button>
-              <button id="terminateAllLaunchers" class="secondary" title="Terminate all local launcher subprocesses started by this console">Terminate all launchers</button>
-            </div>
-          </div>
-        </div>
-        <div class="runtime-card">
           <h3>Current observation data</h3>
+          <p class="card-hint">Record and data paths from the most recent observation state.</p>
           <div class="runtime-list">
             <div>Record: <b id="runtimeRecordName">loading</b></div>
-            <div class="path-text" title="Local PC path if the Docker/container data root is mapped; otherwise the container path is shown.">Local/data path: <b id="runtimeLocalRecordingDir">loading</b></div>
-            <div class="path-text" title="Expected NECST recorder output directory inside the console/container environment">Container data directory: <b id="runtimeRecordingDir">loading</b></div>
-            <div class="path-text" title="Progress sidecar directory">Progress directory: <b id="runtimeProgressRecordDir">loading</b></div>
+            <div class="runtime-path" title="Local PC path if configured; otherwise the data path visible to this console is shown.">record path: <b id="runtimeLocalRecordingDir">loading</b></div>
+            <div class="runtime-path" title="Expected NECST recorder output directory inside the console/container environment">container data: <b id="runtimeRecordingDir">loading</b></div>
+            <div class="runtime-path" title="Progress sidecar directory">progress sidecar: <b id="runtimeProgressRecordDir">loading</b></div>
           </div>
         </div>
         <div class="runtime-card">
-          <h3>Progress monitor and logs</h3>
+          <h3>Progress monitor</h3>
+          <p class="card-hint">Progress server state. Operator and launcher logs are separated below.</p>
           <div class="runtime-list">
             <div>Progress: <b id="runtimeProgressMonitor">loading</b></div>
-            <div class="path-text" title="operator log path">Operator log: <b id="runtimeOperatorLog">loading</b></div>
-            <div class="path-text" title="launcher log directory">Launcher logs: <b id="runtimeLauncherLogDir">loading</b></div>
-            <div class="mini-actions">
-              <button id="loadOperatorLog" class="secondary" title="Read the persistent operator_console.jsonl tail">Read operator log</button>
-            </div>
-          </div>
-        </div>
-        <div class="runtime-card">
-          <h3>Log browser</h3>
-          <div class="runtime-list">
-            <div id="runtimeLogBrowserSummary">Operator and launcher logs are read-only.</div>
-            <div id="runtimeLauncherLogChoices"><span style="color:var(--faint)">No launcher log recorded.</span></div>
-            <div id="runtimeLogBrowserText" class="log-browser-text">Select a log to display its tail.</div>
-          </div>
-        </div>
-        <div class="runtime-card">
-          <h3>Shutdown cleanup</h3>
-          <div class="runtime-list">
-            <div>Status: <b id="runtimeShutdownStatus">loading</b></div>
-            <div>Terminate launchers: <b id="runtimeShutdownTerminate">loading</b></div>
-            <div>Last cleanup: <b id="runtimeShutdownLast">loading</b></div>
-            <div id="runtimeShutdownSummary" class="path-text">loading</div>
-          </div>
-        </div>
-        <div class="runtime-card">
-          <h3>Self-check</h3>
-          <div class="runtime-list">
-            <div>Status: <b id="runtimeSelfCheckStatus">not run</b></div>
-            <div id="runtimeSelfCheckSummary" class="path-text">Run self-check before live operation.</div>
-            <div class="mini-actions">
-              <button id="runSelfCheck" class="secondary" title="Run read-only console self-checks; no telescope command is sent">Run self-check</button>
-            </div>
+            <div class="runtime-path" title="launcher log directory">Progress/launcher log dir: <b id="runtimeLauncherLogDir">loading</b></div>
           </div>
         </div>
         <div class="runtime-card">
           <h3>Warnings</h3>
+          <p class="card-hint">Console-side warnings only; this does not decide observation OK/NG yet.</p>
           <div id="runtimeWarnings" class="runtime-list warning-list">loading</div>
         </div>
+        <div class="runtime-card logs history wide">
+          <h3>Observation/action history log</h3>
+          <p class="card-hint">Persistent operator_console.jsonl: observation starts, obs-file names, record/output directories when available, and accepted/rejected console actions.</p>
+          <div class="runtime-list">
+            <div class="runtime-path" title="operator log path">Path: <b id="runtimeOperatorLog">loading</b></div>
+            <div class="mini-actions">
+              <button id="loadOperatorLog" class="secondary" title="Show the persistent observation/action history log tail here">Show latest history</button>
+            </div>
+            <div id="runtimeOperatorLogText" class="log-browser-text">Click “Show latest history” to display recent observation and console actions.</div>
+          </div>
+        </div>
       </div>
+
+      <details class="runtime-advanced">
+        <summary>Advanced recovery tools and launcher logs</summary>
+        <div class="runtime-grid advanced" style="margin-top:10px">
+          <div class="runtime-card recovery wide">
+            <h3>Stuck local launchers (recovery only)</h3>
+            <p class="card-hint">Local child processes started by this console. These are not telescope, recorder, or XFFTS nodes.</p>
+            <div class="recovery-warning"><b>Use only when ABORT does not return.</b><br>First press STOP/ABORT and confirm the telescope, recorder, and XFFTS are safe. These buttons only kill local launcher processes started by this console; they do not send any hardware STOP command.</div>
+            <div class="runtime-list">
+              <div>Counts: <b id="runtimeProcessCounts">loading</b></div>
+              <div id="runtimeProcesses">loading</div>
+              <div class="mini-actions">
+                <button id="terminateObsLauncher" class="recovery-danger" title="Force-kill only the local observation launcher subprocess. This does not send telescope STOP, recorder STOP, or XFFTS STOP.">Force-kill local observation launcher</button>
+                <button id="terminateCalLauncher" class="recovery-danger" title="Force-kill only the local calibration launcher subprocess. This does not send telescope STOP, recorder STOP, or XFFTS STOP.">Force-kill local calibration launcher</button>
+                <button id="terminateAllLaunchers" class="recovery-danger" title="Force-kill all local launcher subprocesses started by this console. This does not send telescope STOP, recorder STOP, or XFFTS STOP.">Force-kill all local launchers</button>
+                <div class="recovery-muted">Normal operation: use STOP and ABORT. Use force-kill only for a stuck local launcher after hardware safety is confirmed.</div>
+              </div>
+            </div>
+          </div>
+          <div class="runtime-card logs wide">
+            <h3>Launcher stdout/stderr files</h3>
+            <p class="card-hint">Debug logs for local launcher subprocesses. Latest logs are listed first; observation history is shown above.</p>
+            <div class="runtime-list">
+              <div id="runtimeLogBrowserSummary">Select a launcher log below. Latest first.</div>
+              <div id="runtimeLauncherLogChoices"><span style="color:var(--faint)">No launcher log recorded.</span></div>
+              <div id="runtimeLogBrowserText" class="log-browser-text">Select a launcher stdout/stderr log to display its tail.</div>
+            </div>
+          </div>
+          <div class="runtime-card">
+            <h3>Self-check</h3>
+            <p class="card-hint">Read-only console self-check. It does not move hardware.</p>
+            <div class="runtime-list">
+              <div>Status: <b id="runtimeSelfCheckStatus">not run</b></div>
+              <div id="runtimeSelfCheckSummary" class="runtime-path">Run self-check before live operation.</div>
+              <div class="mini-actions">
+                <button id="runSelfCheck" class="secondary" title="Run read-only console self-checks; no telescope command is sent">Run self-check</button>
+              </div>
+            </div>
+          </div>
+          <div class="runtime-card">
+            <h3>Shutdown cleanup</h3>
+            <p class="card-hint">What this console would clean up on shutdown. No automatic hardware command is sent from here.</p>
+            <div class="runtime-list">
+              <div>Status: <b id="runtimeShutdownStatus">loading</b></div>
+              <div>Stop local launchers on console shutdown: <b id="runtimeShutdownTerminate">loading</b></div>
+              <div>Last cleanup: <b id="runtimeShutdownLast">loading</b></div>
+              <div id="runtimeShutdownSummary" class="runtime-path">loading</div>
+            </div>
+          </div>
+        </div>
+      </details>
     </div>
   </section>
 </main>
@@ -1144,7 +1189,7 @@ function actualOperationFromStatus(data) {
         phase: 'attention',
         kind: 'observation',
         label: 'ATTENTION: OBSERVATION LAUNCHER STUCK',
-        detail: `Observation launcher still appears active for ${record} while the system is error/abort-stalled (${safetyText}). Confirm hardware is safe, then terminate the local launcher. Clear stale state may be needed after that.`
+        detail: `Observation launcher still appears active for ${record} while the system is error/abort-stalled (${safetyText}). Confirm hardware is safe, then force-kill the local launcher. Clear stale state may be needed after that.`
       };
     }
     return {
@@ -1165,7 +1210,7 @@ function actualOperationFromStatus(data) {
       phase: 'attention',
       kind: 'observation',
       label: 'ATTENTION: OBSERVATION STATE ERROR',
-      detail: 'Observation-related state remains while the system lifecycle is error/failed. Use ABORT first; if it does not clear, terminate the local launcher and clear stale state after confirming hardware safety.'
+      detail: 'Observation-related state remains while the system lifecycle is error/failed. Use ABORT first; if it does not clear, force-kill the local launcher and clear stale state after confirming hardware safety.'
     };
   }
   const obsActive = sys === 'observing' || (!finalOrIdle && task.includes('observation')) || (!finalOrIdle && Boolean(progress.observation_running)) || (!finalOrIdle && processCategoryActive(data, 'observation'));
@@ -1552,69 +1597,145 @@ function processSummary(counts) {
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
 }
+function parseProcessTime(p) {
+  const raw = Number(p && p.started_at);
+  if (Number.isFinite(raw)) return raw;
+  const parsed = Date.parse((p && p.started_at_iso) || '');
+  return Number.isFinite(parsed) ? parsed / 1000 : 0;
+}
+function sortedProcesses(processes) {
+  if (!Array.isArray(processes)) return [];
+  return processes.slice().sort((a, b) => parseProcessTime(b) - parseProcessTime(a));
+}
+function processIsActive(p) {
+  return ['running', 'terminating', 'killing'].includes(String((p && p.status) || '')) || Boolean(p && p.can_terminate);
+}
+function processMatchesCategory(p, category) {
+  const haystack = [p && p.category, p && p.action, p && p.label, p && p.command].flat().join(' ').toLowerCase();
+  if (category === 'observation') return haystack.includes('observation') || haystack.includes('obs') || haystack.includes('psw') || haystack.includes('otf');
+  if (category === 'calibration') return haystack.includes('calibration') || haystack.includes('rsky') || haystack.includes('skydip');
+  return false;
+}
 function renderProcessRows(processes) {
-  if (!Array.isArray(processes) || processes.length === 0) return '<span style="color:var(--faint)">No launcher process recorded.</span>';
-  return processes.slice(0, 8).map(p => {
-    const rc = (p.returncode === null || p.returncode === undefined) ? '' : `, rc=${p.returncode}`;
+  const rows = sortedProcesses(processes);
+  if (rows.length === 0) return '<span style="color:var(--faint)">No local launcher process recorded.</span>';
+  return rows.slice(0, 8).map((p, index) => {
+    const rc = (p.returncode === null || p.returncode === undefined) ? '' : ` rc=${escapeHtml(p.returncode)}`;
     const pidValue = p.pid;
-    const pid = pidValue === undefined ? 'pid=?' : `pid=${pidValue}`;
-    const started = escapeHtml(p.started_at_iso || '');
+    const pid = pidValue === undefined ? 'pid=?' : `pid=${escapeHtml(pidValue)}`;
+    const started = escapeHtml(p.started_at_iso || 'time unknown');
+    const ended = p.ended_at_iso ? ` → ${escapeHtml(p.ended_at_iso)}` : '';
     const label = escapeHtml(p.label || p.action || 'launcher');
     const status = escapeHtml(p.status || 'unknown');
-    const logs = [p.stdout_path ? `stdout: ${escapeHtml(p.stdout_path)}` : '', p.stderr_path ? `stderr: ${escapeHtml(p.stderr_path)}` : ''].filter(Boolean).join('<br>');
-    const canTerminate = p.can_terminate || ['running', 'terminating', 'killing'].includes(String(p.status || ''));
-    const button = canTerminate && pidValue !== undefined ? `<br><button class="secondary process-stop" data-pid="${escapeHtml(pidValue)}">Terminate local launcher</button>` : '';
-    return `<div class="process-row"><b>${label}</b> ${pid}, ${status}${rc}<br><small>${started}</small>${logs ? '<br><small>' + logs + '</small>' : ''}${button}</div>`;
+    const active = processIsActive(p);
+    const latest = index === 0 ? ' <span class="badge ok">latest</span>' : '';
+    const stdout = p.stdout_path ? `<div title="${escapeHtml(p.stdout_path)}">stdout: ${escapeHtml(p.stdout_path)}</div>` : '';
+    const stderr = p.stderr_path ? `<div title="${escapeHtml(p.stderr_path)}">stderr: ${escapeHtml(p.stderr_path)}</div>` : '';
+    const canTerminate = active && pidValue !== undefined;
+    const button = canTerminate ? `<button class="recovery-danger process-stop" data-pid="${escapeHtml(pidValue)}">Force-kill this local launcher</button>` : '';
+    return `<div class="process-row"><div class="process-title">${label}${latest}</div><div class="process-meta">${pid} · ${status}${rc} · ${started}${ended}</div>${stdout || stderr ? '<div class="process-log-paths">' + stdout + stderr + '</div>' : ''}${button}</div>`;
   }).join('');
+}
+function shortFileName(path) {
+  const text = String(path || '');
+  const parts = text.split('/').filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : text;
 }
 function renderLauncherLogChoices(processes) {
   const el = qs('runtimeLauncherLogChoices');
   if (!el) return;
   const choices = [];
-  if (Array.isArray(processes)) {
-    processes.slice(0, 8).forEach(p => {
-      const label = p.label || p.action || 'launcher';
-      if (p.stdout_path) choices.push({label, stream:'stdout', path:p.stdout_path, pid:p.pid});
-      if (p.stderr_path) choices.push({label, stream:'stderr', path:p.stderr_path, pid:p.pid});
-    });
-  }
+  sortedProcesses(processes).forEach((p, pIndex) => {
+    const label = p.label || p.action || 'launcher';
+    const started = p.started_at_iso || '';
+    const status = p.status || 'unknown';
+    const rc = (p.returncode === null || p.returncode === undefined) ? '' : `, rc=${p.returncode}`;
+    if (p.stdout_path) choices.push({label, stream:'stdout', path:p.stdout_path, pid:p.pid, started, status, rc, pIndex});
+    if (p.stderr_path) choices.push({label, stream:'stderr', path:p.stderr_path, pid:p.pid, started, status, rc, pIndex});
+  });
   if (!choices.length) {
     el.innerHTML = '<span style="color:var(--faint)">No launcher log recorded.</span>';
     return;
   }
-  el.innerHTML = choices.slice(0, 12).map(c => `<button class="secondary log-choice" data-path="${escapeHtml(c.path)}">${escapeHtml(c.label)} ${escapeHtml(c.stream)} pid=${escapeHtml(c.pid ?? '?')}</button>`).join('');
+  el.innerHTML = choices.slice(0, 12).map((c, index) => {
+    const latestClass = c.pIndex === 0 ? ' latest' : '';
+    const latestText = c.pIndex === 0 ? 'latest · ' : '';
+    const title = `${latestText}${c.label} ${c.stream} pid=${c.pid ?? '?'}`;
+    const sub = `${c.started || 'time unknown'} · ${c.status}${c.rc} · ${shortFileName(c.path)}`;
+    return `<button class="secondary log-choice${latestClass}" data-path="${escapeHtml(c.path)}"><span class="log-choice-title">${escapeHtml(title)}</span><span class="log-choice-sub">${escapeHtml(sub)}</span></button>`;
+  }).join('');
 }
-function renderLogBrowser(payload) {
+function renderLauncherLogBrowser(payload) {
   const summary = qs('runtimeLogBrowserSummary');
   const body = qs('runtimeLogBrowserText');
   if (!summary || !body) return;
   if (!payload) {
-    summary.textContent = 'Operator and launcher logs are read-only.';
-    body.textContent = 'Select a log to display its tail.';
+    summary.textContent = 'Select a launcher log below. Latest first.';
+    body.textContent = 'Select a launcher stdout/stderr log to display its tail.';
     return;
   }
-  summary.textContent = payload.reason || (payload.ok ? 'log read' : 'log read failed');
+  summary.textContent = payload.path ? `${payload.reason || (payload.ok ? 'log read' : 'log read failed')}: ${payload.path}` : (payload.reason || (payload.ok ? 'log read' : 'log read failed'));
+  body.textContent = payload.text || '(log is empty)';
+}
+function pickFirstText(obj, paths) {
+  for (const path of paths) {
+    const parts = String(path).split('.');
+    let cur = obj;
+    for (const part of parts) {
+      if (cur == null || typeof cur !== 'object' || !(part in cur)) { cur = undefined; break; }
+      cur = cur[part];
+    }
+    if (cur === null || cur === undefined || cur === '') continue;
+    if (typeof cur === 'object') continue;
+    return String(cur);
+  }
+  return '';
+}
+function renderOperatorLog(payload) {
+  const body = qs('runtimeOperatorLogText');
+  if (!body) return;
+  if (!payload) {
+    body.textContent = 'Click “Show latest history” to display recent observation and console actions.';
+    return;
+  }
   if (Array.isArray(payload.entries)) {
     body.textContent = payload.entries.map(e => {
       const when = e.time_iso || e.time || '';
       const mark = e.ok === false ? 'NG' : 'OK';
       const action = e.action ? ` ${e.action}` : '';
       const msg = e.message || e.reason || '';
-      return `${when} ${mark}${action}: ${msg}`;
-    }).join('\n') || '(operator log is empty)';
+      const data = (e && typeof e.data === 'object' && e.data) ? e.data : {};
+      const details = [];
+      const mode = pickFirstText(data, ['obs_mode', 'mode', 'observation_mode']);
+      const channel = pickFirstText(data, ['channel', 'obs_channel']);
+      const obsPath = pickFirstText(data, ['obs_path', 'path', 'obs_file', 'obs_file_path', 'run_path']);
+      const record = pickFirstText(data, ['record_name', 'record', 'record_dir', 'observation.record_name']);
+      const outDir = pickFirstText(data, ['local_recording_dir', 'recording_dir', 'data_directory', 'output_directory', 'record_path', 'observation.recording_dir']);
+      const progressDir = pickFirstText(data, ['progress_record_dir', 'progress_dir', 'observation.progress_record_dir']);
+      const pid = pickFirstText(data, ['pid']);
+      if (mode) details.push(`mode=${mode}`);
+      if (channel) details.push(`channel=${channel}`);
+      if (obsPath) details.push(`obs=${obsPath}`);
+      if (record) details.push(`record=${record}`);
+      if (outDir) details.push(`output=${outDir}`);
+      if (progressDir) details.push(`progress=${progressDir}`);
+      if (pid) details.push(`pid=${pid}`);
+      const detailText = details.length ? `\n    ${details.join('\n    ')}` : '';
+      return `${when} ${mark}${action}: ${msg}${detailText}`;
+    }).join('\n\n') || '(observation/action history log is empty)';
     return;
   }
-  body.textContent = payload.text || '(log is empty)';
+  body.textContent = payload.text || payload.reason || '(observation/action history log is empty)';
 }
 async function readOperatorLog() {
   const resp = await fetch('/api/operator-log?limit=80');
   const data = await resp.json();
-  renderLogBrowser(data);
+  renderOperatorLog(data);
 }
 async function readLogFile(path) {
   const resp = await fetch('/api/log-file?max_bytes=32768&path=' + encodeURIComponent(path));
   const data = await resp.json();
-  renderLogBrowser(data);
+  renderLauncherLogBrowser(data);
 }
 function progressMonitorText(progress) {
   const mon = progress && (progress.monitor || progress.monitor_status || progress.progress_monitor);
@@ -1674,6 +1795,12 @@ function renderRuntime(data) {
   setText('runtimeProcessCounts', processSummary(counts));
   const processEl = qs('runtimeProcesses');
   if (processEl) processEl.innerHTML = renderProcessRows(processes);
+  const activeProcesses = processes.filter(processIsActive);
+  const activeObsProcesses = activeProcesses.filter(p => processMatchesCategory(p, 'observation'));
+  const activeCalProcesses = activeProcesses.filter(p => processMatchesCategory(p, 'calibration'));
+  setDisabled('terminateObsLauncher', activeObsProcesses.length === 0);
+  setDisabled('terminateCalLauncher', activeCalProcesses.length === 0);
+  setDisabled('terminateAllLaunchers', activeProcesses.length === 0);
   const obs = data.observation || {};
   setText('runtimeRecordName', obs.record_name || '(none)');
   setText('runtimeLocalRecordingDir', obs.local_recording_dir || obs.local_data_dir || obs.recording_dir || '(not available yet)');
@@ -2020,7 +2147,7 @@ function renderStatus(data) {
     terminateQuick.disabled = !canTerminate;
     terminateQuick.style.display = canTerminate ? '' : 'none';
     if (canTerminate) {
-      terminateQuick.title = 'Terminate the local observation launcher subprocess only. Confirm hardware is safe first; this does not send telescope STOP.';
+      terminateQuick.title = 'Force-kill only the local observation launcher started by this console. Use only after Abort does not return and hardware is already confirmed safe.';
     }
   }
   const staleButton = qs('clearStaleObs');
@@ -2332,10 +2459,10 @@ qs('abortObs').addEventListener('click', async () => {
   if (confirm('Abort current observation and request recorder/gate/progress cleanup?')) await api('abort_observation', {}, 'abort');
 });
 qs('terminateObsLauncherQuick').addEventListener('click', async () => {
-  if (!confirm('Terminate the local observation launcher subprocess only?\n\nUse this only after confirming the telescope/recorder/XFFTS are safe. This does not send telescope STOP.')) return;
+  if (!confirm('Force-kill the local observation launcher started by this console?\n\nUse this only when ABORT does not return and you have confirmed the telescope, recorder, and XFFTS are safe.\n\nThis does NOT send telescope STOP, recorder STOP, or XFFTS STOP.')) return;
   clearPendingOperation();
   const resp = await api('terminate_observation_launcher');
-  if (!resp.ok) alert('Terminate observation launcher failed: ' + (resp.reason || 'unknown reason'));
+  if (!resp.ok) alert('Force-kill local observation launcher failed: ' + (resp.reason || 'unknown reason'));
 });
 qs('clearStaleObs').addEventListener('click', async () => {
   const stale = (state.lastStatus || {}).stale_observation || {};
@@ -2400,14 +2527,14 @@ qs('runSelfCheck').addEventListener('click', async () => {
   renderSelfCheck(data);
   await refresh();
 });
-qs('terminateObsLauncher').addEventListener('click', async () => { if (confirm('Terminate local observation launcher subprocess only? Telescope STOP is separate.')) await api('terminate_observation_launcher'); });
-qs('terminateCalLauncher').addEventListener('click', async () => { if (confirm('Terminate local calibration launcher subprocess only? Telescope STOP is separate.')) await api('terminate_calibration_launcher'); });
-qs('terminateAllLaunchers').addEventListener('click', async () => { if (confirm('Terminate all local launcher subprocesses started by this console? Telescope STOP is separate.')) await api('terminate_all_launchers'); });
+qs('terminateObsLauncher').addEventListener('click', async () => { if (confirm('Force-kill the local observation launcher started by this console?\n\nUse only when ABORT does not return and the telescope, recorder, and XFFTS are already confirmed safe.\n\nThis does NOT send telescope STOP, recorder STOP, or XFFTS STOP.')) await api('terminate_observation_launcher'); });
+qs('terminateCalLauncher').addEventListener('click', async () => { if (confirm('Force-kill the local calibration launcher started by this console?\n\nUse only when the calibration action is stuck and hardware is already confirmed safe.\n\nThis does NOT send telescope STOP, recorder STOP, or XFFTS STOP.')) await api('terminate_calibration_launcher'); });
+qs('terminateAllLaunchers').addEventListener('click', async () => { if (confirm('Force-kill ALL local launchers started by this console?\n\nUse only for recovery after confirming the telescope, recorder, and XFFTS are safe.\n\nThis does NOT send telescope STOP, recorder STOP, or XFFTS STOP.')) await api('terminate_all_launchers'); });
 qs('runtimeProcesses').addEventListener('click', async (ev) => {
   const btn = ev.target && ev.target.closest ? ev.target.closest('.process-stop') : null;
   if (!btn) return;
   const pid = btn.dataset.pid;
-  if (confirm(`Terminate local launcher pid=${pid}? Telescope STOP is separate.`)) await api('terminate_process', {pid});
+  if (confirm(`Force-kill local launcher pid=${pid}?\n\nUse only when this local launcher is stuck and hardware is already confirmed safe.\n\nThis does NOT send telescope STOP, recorder STOP, or XFFTS STOP.`)) await api('terminate_process', {pid});
 });
 qs('openProgress').addEventListener('click', launchOrOpenProgress);
 function getStatusRefreshMs() {

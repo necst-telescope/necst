@@ -1127,7 +1127,7 @@ def _clear_stale_observation_state(state: OperatorConsoleState) -> Tuple[bool, s
     if active:
         return False, (
             "cannot clear stale observation state while a console-owned launcher "
-            f"is still active: {', '.join(sorted(active))}. Terminate the local "
+            f"is still active: {', '.join(sorted(active))}. Force-kill the local "
             "observation launcher first after confirming the hardware is safe."
         ), {"active_launcher_categories": sorted(active), "cleared": False}
 
@@ -1340,7 +1340,7 @@ def _operator_status_operation_conflict(
     if active_launcher is not None:
         return (
             f"cannot start {requested_action}: {active_launcher}. "
-            "Use STOP/ABORT or terminate the launcher before starting another operation."
+            "Use STOP/ABORT or force-kill the stuck local launcher before starting another operation."
         )
 
     recent_guard = _exclusive_start_guard_reason(state, requested_action=requested_action)
@@ -1373,7 +1373,7 @@ def _operator_status_operation_conflict(
             if stale.get("launcher_stuck"):
                 return (
                     f"cannot start {requested_action}: observation launcher appears stuck "
-                    f"for record {stale.get('record_name') or 'unknown'}; terminate the local observation launcher first"
+                    f"for record {stale.get('record_name') or 'unknown'}; force-kill the local observation launcher first"
                 )
             return (
                 f"cannot start {requested_action}: stale observation state remains "
@@ -1491,7 +1491,12 @@ def _request_launcher_stop(
     category: Optional[str] = None,
     kill: bool = False,
 ) -> Tuple[bool, str, JsonDict]:
-    """Terminate local launcher subprocesses started by this console only."""
+    """Force-kill local launcher subprocesses started by this console only.
+
+    This recovery action only signals local child processes owned by the
+    operator console.  It never sends telescope STOP, recorder STOP, or XFFTS
+    STOP commands.
+    """
 
     pid_value = params.get("pid")
     pid: Optional[int] = None
@@ -1510,7 +1515,7 @@ def _request_launcher_stop(
     )
     if not records:
         selector = f"pid={pid}" if pid is not None else f"category={category or 'any'}"
-        return False, f"no active launcher matched {selector}; no local process was terminated", {
+        return False, f"no active launcher matched {selector}; no local launcher process was force-killed", {
             "action": action,
             "pid": pid,
             "category": category,
@@ -1525,10 +1530,10 @@ def _request_launcher_stop(
         "kill": bool(kill),
         "signal": signal_name,
         "terminated": [record.to_dict() for record in records],
-        "note": "local launcher termination only; telescope STOP/ABORT is a separate action",
+        "note": "local launcher force-kill only; telescope STOP/ABORT/recorder/XFFTS stop are separate actions",
     }
     labels = ", ".join(f"{r.label}(pid={r.pid})" for r in records)
-    return True, f"requested {signal_name} for local launcher(s): {labels}", data
+    return True, f"requested {signal_name} for local launcher(s) only: {labels}", data
 
 
 def dispatch_action(
@@ -1933,6 +1938,11 @@ def dispatch_action(
             stderr_path=stderr_path,
         )
         ok, message, data = _result_to_response(result)
+        if isinstance(data, dict):
+            data.setdefault("obs_mode", mode)
+            data.setdefault("obs_path", path)
+            if channel not in (None, ""):
+                data.setdefault("channel", channel)
         if ok and not dry_run:
             _mark_exclusive_start_guard(
                 state,
