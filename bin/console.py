@@ -54,7 +54,7 @@ def _load_operator_console_module() -> Any:
         sys.modules.setdefault("necst.az_unwrap_limits", az_limits_module)
         setattr(necst_pkg, "az_unwrap_limits", az_limits_module)
 
-        for mod_name in ("process_manager", "progress_manager", "status_model", "site_config", "self_check", "log_reader", "live_telemetry"):
+        for mod_name in ("process_manager", "progress_manager", "status_model", "site_config", "self_check", "log_reader", "live_telemetry", "observation_log"):
             mod_path = package_path / f"{mod_name}.py"
             spec = importlib.util.spec_from_file_location(f"necst.web.{mod_name}", mod_path)
             if spec is None or spec.loader is None:
@@ -137,6 +137,25 @@ def main(argv: Optional[list[str]] = None) -> int:
         "--launcher-log-dir",
         default=None,
         help="directory for launcher stdout/stderr logs; default is <operator-log-dir>/launcher_logs",
+    )
+    parser.add_argument(
+        "--obslog-dir",
+        default=None,
+        help=(
+            "directory for observer-facing CSV observation logs; default is "
+            "$NECST_OBSLOG_DIR, then <record root>/obslogs, then ~/.necst/observation_logs. "
+            "If console runs in Docker, this is a Docker/container path."
+        ),
+    )
+    parser.add_argument(
+        "--obslog-prefix",
+        default=None,
+        help="filename prefix for observer-facing CSV observation logs; default is $NECST_OBSLOG_PREFIX or obslog",
+    )
+    parser.add_argument(
+        "--obslog-user",
+        default=None,
+        help="initial observer/user name written to CSV observation logs; default is $NECST_OBSLOG_USER or User",
     )
     parser.add_argument(
         "--obs-root",
@@ -235,6 +254,9 @@ def main(argv: Optional[list[str]] = None) -> int:
                 site_config_path=args.site_config,
                 operator_log_dir=args.operator_log_dir,
                 launcher_log_dir=args.launcher_log_dir,
+                obslog_dir=args.obslog_dir,
+                obslog_prefix=args.obslog_prefix,
+                obslog_user=args.obslog_user,
                 shutdown_terminate_launchers=bool(args.shutdown_terminate_launchers),
                 shutdown_launcher_timeout_sec=float(args.shutdown_launcher_timeout),
                 shutdown_launcher_kill_timeout_sec=float(args.shutdown_launcher_kill_timeout),

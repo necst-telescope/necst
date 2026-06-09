@@ -1,220 +1,160 @@
-"""Read-only log access helpers for the NECST Operator Console.
-
-The operator console writes two kinds of local logs:
-
-* operator_console.jsonl: one JSON object per accepted/rejected operator action;
-* launcher stdout/stderr logs: local child-process output captured by the console.
-
-This module only reads files that are explicitly configured by the running
-console process.  It never follows arbitrary browser-supplied paths outside the
-configured log roots.
-"""
+"""Small, safe log readers for the NECST operator console."""
 
 from __future__ import annotations
 
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 
-JsonDict = Dict[str, Any]
-
-
-def _coerce_limit(value: Any, *, default: int, minimum: int = 1, maximum: int = 1000) -> int:
+def _tail_lines(path: Path, *, limit: int = 100) -> List[str]:
+    limit = max(1, min(int(limit), 5000))
     try:
-        number = int(value)
+        with path.open("r", encoding="utf-8", errors="replace") as fh:
+            lines = fh.readlines()
+        return [line.rstrip("\n") for line in lines[-limit:]]
     except Exception:
-        number = int(default)
-    return max(int(minimum), min(int(maximum), number))
-
-
-def _coerce_max_bytes(value: Any, *, default: int = 32768, maximum: int = 262144) -> int:
-    try:
-        number = int(value)
-    except Exception:
-        number = int(default)
-    return max(1, min(int(maximum), number))
-
-
-def _tail_lines(path: Path, *, limit: int) -> List[str]:
-    """Return the last ``limit`` lines without assuming the file is small."""
-
-    if limit <= 0:
         return []
-    # The operator log is normally small, but avoid unbounded memory use.
-    block_size = 8192
-    chunks: List[bytes] = []
-    newline_count = 0
-    with path.open("rb") as fh:
-        fh.seek(0, os.SEEK_END)
-        pos = fh.tell()
-        while pos > 0 and newline_count <= limit:
-            read_size = min(block_size, pos)
-            pos -= read_size
-            fh.seek(pos)
-            chunk = fh.read(read_size)
-            chunks.append(chunk)
-            newline_count += chunk.count(b"\n")
-    data = b"".join(reversed(chunks))
-    text = data.decode("utf-8", errors="replace")
-    return text.splitlines()[-limit:]
 
 
-def read_operator_log(path: Optional[Path], *, limit: Any = 100) -> JsonDict:
-    """Read the tail of ``operator_console.jsonl`` as parsed JSON entries."""
-
-    n = _coerce_limit(limit, default=100, maximum=1000)
-    if path is None:
-        return {
-            "ok": False,
-            "reason": "operator log path is not configured",
-            "path": None,
-            "entries": [],
-        }
-    log_path = Path(path)
-    if not log_path.exists():
-        return {
-            "ok": True,
-            "reason": "operator log file does not exist yet",
-            "path": str(log_path),
-            "entries": [],
-            "line_count": 0,
-        }
-    if not log_path.is_file():
-        return {
-            "ok": False,
-            "reason": "operator log path is not a regular file",
-            "path": str(log_path),
-            "entries": [],
-        }
-    entries: List[JsonDict] = []
-    parse_errors: List[JsonDict] = []
-    lines = _tail_lines(log_path, limit=n)
-    start_line = None
-    try:
-        # Only used for display context; bounded file-tail parsing remains above.
-        with log_path.open("rb") as fh:
-            total_lines = sum(1 for _ in fh)
-        start_line = max(1, total_lines - len(lines) + 1)
-    except Exception:
-        total_lines = None
-    for idx, line in enumerate(lines, start=start_line or 1):
+def read_operator_log(path_value: Any, *, limit: Any = 100) -> Dict[str, Any]:
+    if path_value in (None, ""):
+        return {"ok": False, "reason": "operator log path is not configured", "entries": []}
+    path = Path(str(path_value)).expanduser()
+    if not path.exists():
+        return {"ok": True, "reason": "operator log does not exist yet", "path": str(path), "entries": []}
+    entries: List[Dict[str, Any]] = []
+    parse_errors = 0
+    for line in _tail_lines(path, limit=int(limit or 100)):
         if not line.strip():
             continue
         try:
             payload = json.loads(line)
             if isinstance(payload, dict):
-                payload.setdefault("_line", idx)
                 entries.append(payload)
             else:
-                parse_errors.append({"line": idx, "reason": "JSON value is not an object"})
-        except Exception as exc:
-            parse_errors.append({"line": idx, "reason": str(exc), "text": line[:200]})
+                entries.append({"message": str(payload)})
+        except Exception:
+            parse_errors += 1
+            entries.append({"message": line, "parse_error": True})
     return {
-        "ok": not bool(parse_errors),
-        "reason": "operator log read" if not parse_errors else "operator log read with parse warnings",
-        "path": str(log_path),
+        "ok": True,
+        "reason": f"read {len(entries)} operator log entrie(s)",
+        "path": str(path),
         "entries": entries,
         "parse_errors": parse_errors,
-        "requested_limit": n,
-        "returned_count": len(entries),
-        "line_count": total_lines,
     }
 
 
-def _safe_relative_to(path: Path, root: Path) -> bool:
-    try:
-        path.resolve().relative_to(root.resolve())
-        return True
-    except Exception:
-        return False
-
-
-def _allowed_log_path(
-    requested: Any,
+def _allowed_paths(
     *,
     launcher_log_dir: Optional[Path],
     operator_log_path: Optional[Path],
     extra_roots: Optional[Iterable[Path]] = None,
-) -> Tuple[Optional[Path], Optional[str]]:
-    if requested in (None, ""):
-        return None, "log path is empty"
-    candidate = Path(str(requested)).expanduser()
-    if not candidate.is_absolute():
-        return None, "log path must be absolute"
+) -> List[Path]:
     roots: List[Path] = []
-    if launcher_log_dir is not None:
-        roots.append(Path(launcher_log_dir))
+    for item in (launcher_log_dir,):
+        if item is not None:
+            roots.append(Path(item).expanduser())
     if operator_log_path is not None:
-        roots.append(Path(operator_log_path).parent)
-    if extra_roots is not None:
-        roots.extend(Path(root) for root in extra_roots)
-    candidate_resolved = candidate.resolve()
+        roots.append(Path(operator_log_path).expanduser().parent)
+    for item in extra_roots or []:
+        if item is not None:
+            roots.append(Path(item).expanduser())
+    out: List[Path] = []
+    seen = set()
     for root in roots:
-        if _safe_relative_to(candidate_resolved, Path(root)):
-            return candidate_resolved, None
-    return None, "requested log path is outside configured console log directories"
+        try:
+            key = str(root.resolve())
+        except Exception:
+            key = str(root)
+        if key not in seen:
+            seen.add(key)
+            out.append(root)
+    return out
+
+
+def _resolve_safe_log_path(
+    path_value: Any,
+    *,
+    launcher_log_dir: Optional[Path],
+    operator_log_path: Optional[Path],
+    extra_roots: Optional[Iterable[Path]] = None,
+) -> Path:
+    raw = str(path_value or "").strip()
+    if not raw:
+        raise ValueError("log file path is empty")
+    path = Path(raw).expanduser()
+    roots = _allowed_paths(launcher_log_dir=launcher_log_dir, operator_log_path=operator_log_path, extra_roots=extra_roots)
+    if not path.is_absolute():
+        if any(part == ".." for part in path.parts):
+            raise ValueError("relative log path must not contain '..'")
+        if launcher_log_dir is None:
+            raise ValueError("relative log path requires launcher_log_dir")
+        path = Path(launcher_log_dir).expanduser() / path
+    resolved = path.resolve()
+    for root in roots:
+        try:
+            resolved.relative_to(root.resolve())
+            return resolved
+        except Exception:
+            continue
+    raise ValueError(f"log path is outside allowed log directories: {path}")
 
 
 def read_text_log(
-    requested_path: Any,
+    path_value: Any,
     *,
     launcher_log_dir: Optional[Path],
     operator_log_path: Optional[Path],
     max_bytes: Any = 32768,
     extra_roots: Optional[Iterable[Path]] = None,
-) -> JsonDict:
-    """Read the tail of an allowed local text log file."""
-
-    path, error = _allowed_log_path(
-        requested_path,
-        launcher_log_dir=launcher_log_dir,
-        operator_log_path=operator_log_path,
-        extra_roots=extra_roots,
-    )
-    if error is not None or path is None:
-        return {"ok": False, "reason": error or "invalid log path", "path": str(requested_path or "")}
-    if not path.exists():
-        return {"ok": False, "reason": "log file does not exist", "path": str(path)}
-    if not path.is_file():
-        return {"ok": False, "reason": "log path is not a regular file", "path": str(path)}
-    size = path.stat().st_size
-    nbytes = _coerce_max_bytes(max_bytes)
-    with path.open("rb") as fh:
-        if size > nbytes:
-            fh.seek(size - nbytes)
-            raw = fh.read(nbytes)
-            truncated = True
-        else:
-            raw = fh.read()
-            truncated = False
-    return {
-        "ok": True,
-        "reason": "log file read",
-        "path": str(path),
-        "size_bytes": size,
-        "returned_bytes": len(raw),
-        "truncated_head": truncated,
-        "text": raw.decode("utf-8", errors="replace"),
-    }
+) -> Dict[str, Any]:
+    try:
+        path = _resolve_safe_log_path(
+            path_value,
+            launcher_log_dir=launcher_log_dir,
+            operator_log_path=operator_log_path,
+            extra_roots=extra_roots,
+        )
+        max_b = max(1024, min(int(max_bytes or 32768), 1024 * 1024))
+        if not path.exists() or not path.is_file():
+            return {"ok": False, "reason": f"log file does not exist: {path}", "path": str(path)}
+        size = path.stat().st_size
+        with path.open("rb") as fh:
+            if size > max_b:
+                fh.seek(size - max_b)
+            data = fh.read(max_b)
+        return {
+            "ok": True,
+            "reason": "log file read",
+            "path": str(path),
+            "text": data.decode("utf-8", errors="replace"),
+            "size_bytes": size,
+            "returned_bytes": len(data),
+            "truncated_head": size > max_b,
+        }
+    except Exception as exc:
+        return {"ok": False, "reason": str(exc), "path": str(path_value or "")}
 
 
-def launcher_log_choices(processes: Iterable[Mapping[str, Any]]) -> List[JsonDict]:
-    """Return stdout/stderr paths from process records for UI display."""
-
-    out: List[JsonDict] = []
-    for record in processes:
+def launcher_log_choices(process_records: Iterable[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    choices: List[Dict[str, Any]] = []
+    for record in process_records or []:
+        if not isinstance(record, Mapping):
+            continue
+        label = str(record.get("label") or record.get("category") or "launcher")
         pid = record.get("pid")
-        label = record.get("label") or record.get("action") or "launcher"
         for stream, key in (("stdout", "stdout_path"), ("stderr", "stderr_path")):
             path = record.get(key)
-            if path:
-                out.append({
-                    "pid": pid,
-                    "label": label,
-                    "stream": stream,
-                    "path": path,
-                    "status": record.get("status"),
-                })
-    return out
+            if not path:
+                continue
+            choices.append({
+                "label": f"{label} pid={pid} {stream}",
+                "path": str(path),
+                "stream": stream,
+                "pid": pid,
+                "category": record.get("category"),
+            })
+    return choices

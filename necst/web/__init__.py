@@ -1,1 +1,3 @@
-"""Web/status helpers for NECST operator-facing interfaces."""
+"""Web helpers for the NECST operator/progress console."""
+
+__all__ = []

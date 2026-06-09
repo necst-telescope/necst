@@ -30,7 +30,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from . import log_reader, process_manager, progress_manager, self_check, site_config, status_model, live_telemetry
+from . import log_reader, observation_log, process_manager, progress_manager, self_check, site_config, status_model, live_telemetry
 from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
 
@@ -156,6 +156,7 @@ class OperatorConsoleState:
     site_capabilities: Dict[str, bool] = field(default_factory=dict)
     chopper_config: Dict[str, Any] = field(default_factory=dict)
     live_cache: Optional[live_telemetry.LiveTelemetryCache] = None
+    observation_log: Optional[observation_log.ObservationLogManager] = None
     operator_log_path: Optional[Path] = None
     launcher_log_dir: Optional[Path] = None
     obs_roots: List[Path] = field(default_factory=list)
@@ -181,6 +182,9 @@ class OperatorConsoleState:
     last_safety_release_requested_at: Optional[float] = None
     last_manual_state: str = "idle"
     last_active_task: str = "none"
+    last_observation_abort_requested_at: Optional[float] = None
+    last_observation_stop_requested_at: Optional[float] = None
+    last_observation_safety_labels: List[str] = field(default_factory=list)
     last_chopper_state: str = "unknown"
     last_chopper_position: Optional[float] = None
     shutdown_requested: bool = False
@@ -919,6 +923,226 @@ def _shutdown_snapshot(state: OperatorConsoleState) -> JsonDict:
         "summary": dict(state.cleanup_summary),
     }
 
+
+def _observation_log_context(state: OperatorConsoleState) -> JsonDict:
+    """Return current telemetry/context fields for the observer CSV log."""
+
+    context: JsonDict = {
+        "enc_az_deg": None,
+        "enc_el_deg": None,
+        "weather": {},
+        "record_dir": "",
+    }
+    live_payload = state.live_cache.snapshot() if state.live_cache is not None else {}
+    if isinstance(live_payload, Mapping):
+        encoder = live_payload.get("encoder") if isinstance(live_payload.get("encoder"), Mapping) else {}
+        context["enc_az_deg"] = encoder.get("encoder_lon_deg")
+        context["enc_el_deg"] = encoder.get("encoder_lat_deg")
+        weather = live_payload.get("weather") if isinstance(live_payload.get("weather"), Mapping) else {}
+        context["weather"] = dict(weather)
+    try:
+        status_state = status_model.build_progress_status_state(
+            state.progress_root,
+            events_limit=1,
+            live_payload=live_payload if isinstance(live_payload, Mapping) else None,
+        )
+        op = status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
+        if isinstance(op, Mapping):
+            antenna = op.get("antenna") if isinstance(op.get("antenna"), Mapping) else {}
+            if context.get("enc_az_deg") is None:
+                context["enc_az_deg"] = antenna.get("current_az_deg")
+            if context.get("enc_el_deg") is None:
+                context["enc_el_deg"] = antenna.get("current_el_deg")
+            observation = op.get("observation") if isinstance(op.get("observation"), Mapping) else {}
+            paths = op.get("paths") if isinstance(op.get("paths"), Mapping) else {}
+            context["record_dir"] = (
+                observation.get("local_recording_dir")
+                or paths.get("local_recording_dir")
+                or observation.get("recording_dir")
+                or paths.get("recording_dir")
+                or observation.get("progress_record_dir")
+                or paths.get("progress_record_dir")
+                or ""
+            )
+        weather_state = status_state.get("weather") if isinstance(status_state.get("weather"), Mapping) else {}
+        if weather_state and not context.get("weather"):
+            context["weather"] = dict(weather_state)
+    except Exception:
+        pass
+    return context
+
+
+def _obslog_result(ok: bool, action: str, data: Mapping[str, Any]) -> str:
+    if not ok:
+        return "failed"
+    if action == "start_observation":
+        return "running"
+    if action == "run_rsky" or action == "run_skydip":
+        return "running"
+    if action == "abort_observation":
+        return "aborted"
+    if action in {"stop", "stop_tracking"}:
+        return "stopped"
+    return "success"
+
+
+def _active_process_labels(state: OperatorConsoleState, *, category: str) -> List[str]:
+    try:
+        return [str(record.label or record.category or "") for record in state.process_registry.active(category=category)]
+    except Exception:
+        return []
+
+
+def _mode_from_process_label(label: str, *, default: str = "Observation") -> str:
+    text = str(label or "")
+    if ":" in text:
+        candidate = text.split(":", 1)[1].strip()
+        if candidate:
+            return candidate.upper()
+    return default
+
+
+def _active_observation_mode(state: OperatorConsoleState) -> str:
+    labels = _active_process_labels(state, category="observation")
+    if labels:
+        return _mode_from_process_label(labels[0], default="Observation")
+    return "Observation"
+
+
+def _active_observation_text(state: OperatorConsoleState, *, fallback: str) -> str:
+    labels = [label for label in _active_process_labels(state, category="observation") if label]
+    if labels:
+        return ", ".join(labels)
+    return fallback
+
+
+def _obslog_event_for_action(action: str) -> Optional[str]:
+    return {
+        "check_observation": "observation_check_clicked",
+        "dry_run_observation": "observation_dry_run_clicked",
+        "start_observation": "observation_start_clicked",
+        "abort_observation": "abort_clicked",
+        "mount_move": "mount_move_clicked",
+        "mount_move_dry_run": "mount_move_dry_run_clicked",
+        "stop": "stop_clicked",
+        "start_tracking": "target_tracking_start_clicked",
+        "stop_tracking": "target_tracking_stop_clicked",
+        "run_rsky": "rsky_start_clicked",
+        "run_skydip": "skydip_start_clicked",
+        "chopper_in": "chopper_in_clicked",
+        "chopper_out": "chopper_out_clicked",
+        "chopper_status": "chopper_status_clicked",
+        "chopper_alarm_reset": "chopper_alarm_reset_clicked",
+        "chopper_home": "chopper_home_clicked",
+        "chopper_recover": "chopper_recover_clicked",
+        "clear_stale_observation_state": "stale_state_cleared",
+        "terminate_observation_launcher": "local_observation_launcher_force_kill_clicked",
+        "terminate_calibration_launcher": "local_calibration_launcher_force_kill_clicked",
+        "terminate_all_launchers": "local_launchers_force_kill_clicked",
+        "terminate_process": "local_launcher_force_kill_clicked",
+        "kill_process": "local_launcher_force_kill_clicked",
+    }.get(action)
+
+
+def _obslog_mode_for_action(
+    action: str,
+    params: Mapping[str, Any],
+    data: Mapping[str, Any],
+    state: Optional[OperatorConsoleState] = None,
+) -> str:
+    if action in {"check_observation", "dry_run_observation", "start_observation"}:
+        return str(data.get("obs_mode") or params.get("mode") or "Observation").upper()
+    if action in {"abort_observation", "stop"} and state is not None:
+        labels = _active_process_labels(state, category="observation")
+        if labels:
+            return _mode_from_process_label(labels[0], default="Observation")
+    if action in {"mount_move", "mount_move_dry_run"}:
+        return "Mount"
+    if action in {"start_tracking", "stop_tracking"}:
+        return "Tracking"
+    if action in {"run_rsky"}:
+        return "RSky"
+    if action in {"run_skydip"}:
+        return "SkyDip"
+    if action.startswith("chopper_"):
+        return "Chopper"
+    if action in {"stop", "abort_observation", "clear_stale_observation_state"}:
+        return "Console"
+    if action.startswith("terminate_") or action in {"kill_process"}:
+        return "Recovery"
+    return "Console"
+
+
+def _obslog_action_text(
+    action: str,
+    params: Mapping[str, Any],
+    data: Mapping[str, Any],
+    state: Optional[OperatorConsoleState] = None,
+) -> str:
+    if action in {"check_observation", "dry_run_observation", "start_observation"}:
+        return observation_log.obsfile_name_for_csv(data.get("obs_path") or params.get("file") or "")
+    if action in {"abort_observation", "stop"} and state is not None:
+        labels = _active_process_labels(state, category="observation")
+        if labels:
+            return f"{action}: " + ", ".join(labels)
+    if action in {"mount_move", "mount_move_dry_run"}:
+        return f"Az={params.get('az', '')}, El={params.get('el', '')}"
+    if action == "start_tracking":
+        target = params.get("target") or params.get("target_kind") or params.get("kind") or params.get("name") or "target"
+        return str(target)
+    if action in {"run_rsky", "run_skydip"}:
+        return ", ".join(f"{k}={v}" for k, v in params.items() if v not in (None, ""))
+    if action in {"chopper_in", "chopper_out"}:
+        return action.replace("chopper_", "chopper ").upper()
+    if action.startswith("terminate_") or action in {"kill_process"}:
+        note = data.get("note") or data.get("message") or ""
+        pid = params.get("pid")
+        pid_text = f"pid={pid}" if pid not in (None, "") else ""
+        return ", ".join(part for part in (str(note or action), pid_text) if part)
+    return str(data.get("action") or action)
+
+
+def _write_observation_log_for_action(
+    state: OperatorConsoleState,
+    *,
+    action: str,
+    params: Mapping[str, Any],
+    ok: bool,
+    data: Mapping[str, Any],
+) -> None:
+    manager = state.observation_log
+    if manager is None:
+        return
+    event = _obslog_event_for_action(action)
+    if event is None:
+        return
+    context = _observation_log_context(state)
+    record_dir = None
+    if action == "start_observation":
+        record_dir = data.get("recording_dir") or data.get("local_recording_dir") or data.get("progress_record_dir")
+    written = manager.write_event(
+        context,
+        mode=_obslog_mode_for_action(action, params, data, state),
+        event=event,
+        action_or_obsfile=_obslog_action_text(action, params, data, state),
+        result=_obslog_result(ok, action, data),
+        record_dir=record_dir,
+    )
+    if not written:
+        state.add_log(
+            False,
+            f"failed to append observation CSV log row: {manager.last_error or 'unknown error'}",
+            action="observation_csv_log",
+            data={"source_action": action},
+        )
+
+
+def _obslog_status_payload(state: OperatorConsoleState) -> JsonDict:
+    manager = state.observation_log
+    if manager is None:
+        return {"ok": False, "reason": "observation CSV log is not configured"}
+    return {"ok": True, "observation_log": manager.status()}
+
 def run_self_check(state: OperatorConsoleState, *, include_progress_health: bool = True) -> JsonDict:
     """Run read-only console self-checks without sending telescope commands."""
 
@@ -962,7 +1186,42 @@ def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
         else:
             message = f"{record.label} pid={record.pid} is no longer tracked"
         state.add_log(ok, message, action="process_exit", data=record.to_dict())
+        if state.observation_log is not None and record.category in {"observation", "calibration"}:
+            label = str(getattr(record, "label", "") or "")
+            result_text = "success" if ok else "failed"
+            if record.category == "observation":
+                mode = label.split(":", 1)[1].upper() if ":" in label else "Observation"
+                safety_labels = list(getattr(state, "last_observation_safety_labels", []) or [])
+                safety_matches = (not safety_labels) or (label in safety_labels)
+                if state.last_observation_abort_requested_at is not None and safety_matches:
+                    event = "observation_aborted"
+                    result_text = "aborted"
+                elif state.last_observation_stop_requested_at is not None and safety_matches:
+                    event = "observation_stopped"
+                    result_text = "stopped"
+                else:
+                    event = "observation_finished" if ok else "observation_failed"
+            else:
+                mode = label.split(":", 1)[1] if ":" in label else "Calibration"
+                event = f"{mode.lower()}_finished" if ok else f"{mode.lower()}_failed"
+            written = state.observation_log.write_event(
+                _observation_log_context(state),
+                mode=mode,
+                event=event,
+                action_or_obsfile=label or getattr(record, "category", ""),
+                result=result_text,
+            )
+            if not written:
+                state.add_log(
+                    False,
+                    f"failed to append observation CSV final-state row: {state.observation_log.last_error or 'unknown error'}",
+                    action="observation_csv_log",
+                    data={"source_action": "process_exit", "label": label},
+                )
         if record.category == "observation" and not state.process_registry.active(category="observation"):
+            state.last_observation_abort_requested_at = None
+            state.last_observation_stop_requested_at = None
+            state.last_observation_safety_labels = []
             if state.last_active_task == "observation":
                 state.last_active_task = "none"
             if state.last_manual_state == "observing sequence":
@@ -1557,6 +1816,46 @@ def dispatch_action(
         state.log.clear()
         return True, "operation log cleared", {"action": action}
 
+    if action == "obslog_status":
+        data = _obslog_status_payload(state)
+        return bool(data.get("ok")), "observation CSV log status", data
+
+    if action == "obslog_comment":
+        manager = state.observation_log
+        if manager is None:
+            return False, "observation CSV log is not configured", {"action": action}
+        comment = str(params.get("comment") or "").strip()
+        if not comment:
+            return False, "comment is empty; no observation-log row was written", {"action": action}
+        written = manager.write_event(
+            _observation_log_context(state),
+            comment=comment,
+            mode="Comment",
+            event="comment",
+            action_or_obsfile="manual comment",
+            result="success",
+        )
+        if not written:
+            return False, f"failed to append observation CSV log comment: {manager.last_error or 'unknown error'}", {
+                "action": action,
+                "observation_log": manager.status(),
+            }
+        return True, "comment appended to observation CSV log", {"action": action, "observation_log": manager.status()}
+
+    if action == "obslog_new":
+        manager = state.observation_log
+        if manager is None:
+            return False, "observation CSV log is not configured", {"action": action}
+        manager.open_new(prefix=params.get("prefix") or manager.prefix, observer=params.get("user") or manager.observer)
+        return True, "new observation CSV log opened", {"action": action, "observation_log": manager.status()}
+
+    if action == "obslog_open_existing":
+        manager = state.observation_log
+        if manager is None:
+            return False, "observation CSV log is not configured", {"action": action}
+        manager.open_existing(params.get("path"), observer=params.get("user") or manager.observer)
+        return True, "existing observation CSV log opened for append", {"action": action, "observation_log": manager.status()}
+
     if action == "launch_progress":
         if state.progress_monitor is None:
             return True, f"progress monitor URL: {state.progress_url}", {
@@ -1817,6 +2116,10 @@ def dispatch_action(
         ok, message, data = _result_to_response(result)
         data.update(safety_data)
         if ok:
+            active_obs_labels = _active_process_labels(state, category="observation")
+            if active_obs_labels:
+                state.last_observation_stop_requested_at = time.time()
+                state.last_observation_safety_labels = active_obs_labels
             _clear_exclusive_start_guard(state)
             _mark_safety_release_request(state)
             state.last_manual_state = "stopped"
@@ -1894,6 +2197,10 @@ def dispatch_action(
         ok, message, data = _result_to_response(result)
         data.update(safety_data)
         if ok:
+            active_obs_labels = _active_process_labels(state, category="observation")
+            if active_obs_labels:
+                state.last_observation_abort_requested_at = time.time()
+                state.last_observation_safety_labels = active_obs_labels
             _clear_exclusive_start_guard(state)
             _mark_safety_release_request(state)
             state.last_manual_state = "stopped"
@@ -2399,6 +2706,7 @@ def _operator_status_to_v7_status(
         "self_check_endpoint": "/api/self-check",
         "operator_log_path": str(state.operator_log_path) if state.operator_log_path is not None else None,
         "launcher_log_dir": str(state.launcher_log_dir) if state.launcher_log_dir is not None else None,
+        "observation_log": (state.observation_log.status() if state.observation_log is not None else {"ok": False}),
         "action_mode": state.action_mode,
         "live_actions": {
             "enabled": bool(state.live_actions_enabled),
@@ -2618,6 +2926,10 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
         session_id = str(payload.get("session_id") or uuid.uuid4())
         with self.server.state.lock:
             try:
+                manager = self.server.state.observation_log
+                obslog_user = payload.get("obslog_user")
+                if manager is not None and obslog_user not in (None, ""):
+                    manager.update_observer(obslog_user)
                 ok, reason, data = dispatch_action(
                     self.server.state,
                     action,
@@ -2627,6 +2939,14 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 ok, reason, data = False, str(exc), {"exception_type": type(exc).__name__}
             self.server.state.add_log(ok, reason, action=action, session_id=session_id, data=data)
+            if isinstance(data, Mapping):
+                _write_observation_log_for_action(
+                    self.server.state,
+                    action=action,
+                    params=params,
+                    ok=ok,
+                    data=data,
+                )
         response: JsonDict = {"ok": ok, "reason": reason, "data": data}
         if isinstance(data, Mapping):
             if data.get("progress_url") is not None:
@@ -2736,6 +3056,9 @@ def run_server(
     site_config_path: Optional[os.PathLike[str] | str] = None,
     operator_log_dir: Optional[os.PathLike[str] | str] = None,
     launcher_log_dir: Optional[os.PathLike[str] | str] = None,
+    obslog_dir: Optional[os.PathLike[str] | str] = None,
+    obslog_prefix: Optional[str] = None,
+    obslog_user: Optional[str] = None,
     shutdown_terminate_launchers: bool = True,
     shutdown_launcher_timeout_sec: float = 3.0,
     shutdown_launcher_kill_timeout_sec: float = 1.0,
@@ -2775,6 +3098,17 @@ def run_server(
     resolved_progress_log_dir.mkdir(parents=True, exist_ok=True)
     operator_log_path = resolved_operator_log_dir / "operator_console.jsonl"
     resolved_obs_roots = resolve_obs_roots(obs_roots)
+    observer_csv_log = observation_log.ObservationLogManager.create(
+        configured_dir=obslog_dir,
+        # Do not use --obs-root here: it is an obs-file browser location, not
+        # necessarily the data/record root.  ObservationLogManager still uses
+        # NECST_CONSOLE_PC_RECORD_ROOT, NECST_RECORD_ROOT, etc. for
+        # <record root>/obslogs before falling back to ~/.necst.
+        record_roots=None,
+        prefix=obslog_prefix or os.environ.get("NECST_OBSLOG_PREFIX", observation_log.DEFAULT_PREFIX),
+        observer=obslog_user or os.environ.get("NECST_OBSLOG_USER", observation_log.DEFAULT_OBSERVER),
+        telescope=telescope,
+    )
     progress_script = Path(__file__).resolve().parents[2] / "bin" / "progress.py"
     progress_monitor = progress_manager.ProgressMonitorManager(
         progress_script=progress_script,
@@ -2802,6 +3136,7 @@ def run_server(
         mount_limits=limits,
         site_capabilities=dict(site_summary.capabilities),
         chopper_config=dict(site_summary.chopper),
+        observation_log=observer_csv_log,
         operator_log_path=operator_log_path,
         launcher_log_dir=resolved_launcher_log_dir,
         obs_roots=list(resolved_obs_roots),
@@ -2819,6 +3154,12 @@ def run_server(
         except Exception as exc:
             state.live_cache.error = f"initial live telemetry wait failed: {exc}"
     state.add_log(True, f"console started in action_mode={action_mode}")
+    state.add_log(
+        bool(observer_csv_log.status().get("ok")),
+        "observation CSV log configured",
+        action="observation_csv_log",
+        data=observer_csv_log.status(),
+    )
     state.add_log(
         True,
         "operator log append file configured",
@@ -2893,6 +3234,8 @@ def run_server(
     print(f"  status refresh: {max(200, int(status_refresh_ms))} ms")
     print(f"  console live telemetry ROS: {'disabled' if status_no_ros else 'enabled'}")
     print(f"  operator log: {operator_log_path}")
+    print(f"  observation CSV log: {observer_csv_log.status().get('csv_path')}")
+    print(f"  observation CSV meta: {observer_csv_log.status().get('meta_path')}")
     print(f"  launcher logs: {resolved_launcher_log_dir}")
     print(f"  progress logs: {resolved_progress_log_dir}")
     print(
@@ -2936,6 +3279,19 @@ def run_server(
     finally:
         with state.lock:
             _run_shutdown_cleanup(state)
+            # graceful_shutdown() updates ProcessRegistry records, but final
+            # observation/calibration rows are appended by _refresh_processes_and_log().
+            # Run it once more before closing the observer CSV log so launcher
+            # exits during console shutdown are not silently lost.
+            try:
+                _refresh_processes_and_log(state)
+            except Exception as exc:
+                state.add_log(False, f"failed to refresh launcher exits during shutdown: {exc}", action="process_exit")
+            if state.observation_log is not None:
+                try:
+                    state.observation_log.close(write_log_closed=True)
+                except Exception as exc:
+                    state.add_log(False, f"failed to close observation CSV log: {exc}", action="observation_csv_log")
             if state.live_cache is not None:
                 try:
                     state.live_cache.close()

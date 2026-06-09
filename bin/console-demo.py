@@ -12,8 +12,10 @@ commands.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import math
+import os
 import signal
 import sys
 import threading
@@ -21,10 +23,11 @@ import time
 import uuid
 import webbrowser
 import urllib.parse
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -170,6 +173,11 @@ button.pending:not(:disabled) { border-color: rgba(122,162,255,0.75); background
 .main-grid {
   display: grid;
   grid-template-columns: minmax(520px, 1.05fr) minmax(430px, 0.95fr);
+  gap: 14px;
+  align-items: start;
+}
+.side-stack {
+  display: grid;
   gap: 14px;
   align-items: start;
 }
@@ -481,6 +489,138 @@ summary { cursor: pointer; color: var(--muted); }
 .callout b { color: var(--text); }
 .invalid { border-color: var(--bad) !important; }
 .valid { border-color: rgba(86,211,100,0.8) !important; }
+
+.obslog-card {
+  margin: 12px 0 0;
+  border-radius: 14px;
+  background: rgba(9, 15, 30, 0.58);
+  box-shadow: none;
+}
+.obslog-card .card-head { padding: 8px 10px 6px; }
+.obslog-card .card-body { padding: 8px 10px 10px; }
+.obslog-card h2 { font-size: 15px; }
+.obslog-card .compact-hint { font-size: 11px; color: var(--muted); }
+.obslog-head { align-items: center; }
+.obslog-card .mini-label {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.obslog-card .obslog-current-row {
+  display: grid;
+  grid-template-columns: auto minmax(280px, 1fr) auto auto;
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  margin-bottom: 3px;
+}
+.obslog-card .obslog-current-row code {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.18);
+  font-size: 12px;
+}
+.obslog-card .obslog-file-meta-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  margin: 0 0 7px;
+  padding-left: 0;
+}
+.obslog-card .obslog-created {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.obslog-card .obslog-settings-row,
+.obslog-card .obslog-custom-row,
+.obslog-card .obslog-comment-row {
+  display: grid;
+  gap: 7px;
+  align-items: end;
+  margin-bottom: 7px;
+}
+.obslog-card .obslog-settings-row {
+  grid-template-columns: 130px 180px minmax(190px, auto);
+  justify-content: start;
+}
+.obslog-card .obslog-custom-row {
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  align-items: center;
+}
+.obslog-card .obslog-comment-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+.obslog-card .mini-field {
+  display: grid;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.obslog-card label { color: var(--muted); font-size: 11px; }
+.obslog-card input { padding: 6px 8px; font-size: 12px; }
+.obslog-card .obslog-last {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.obslog-card .obslog-recent-details {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.obslog-card .obslog-recent {
+  max-height: 180px;
+  overflow: auto;
+  margin-top: 7px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  max-width: 100%;
+}
+.obslog-card table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 12px; }
+.obslog-card th, .obslog-card td { padding: 5px 7px; border-bottom: 1px solid rgba(40,50,74,0.6); text-align: left; vertical-align: top; white-space: nowrap; }
+.obslog-card th { color: var(--muted); font-weight: 600; background: rgba(255,255,255,0.025); position: sticky; top: 0; }
+.obslog-card td:nth-child(4), .obslog-card td:nth-child(7) { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.obslog-card .obslog-warning { color: var(--warn); font-size: 11px; margin-top: 5px; }
+.obslog-card .obslog-help-button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  padding: 0;
+  justify-content: center;
+}
+.obslog-card .obslog-help-text {
+  margin: 3px 0 7px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(122,162,255,0.07);
+  color: var(--muted);
+  font-size: 11px;
+  white-space: pre-line;
+}
+@media (max-width: 1050px) {
+  .obslog-card .obslog-current-row,
+  .obslog-card .obslog-file-meta-row,
+  .obslog-card .obslog-settings-row,
+  .obslog-card .obslog-custom-row,
+  .obslog-card .obslog-comment-row { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 1050px) {
   .header-inner { grid-template-columns: 1fr; }
   .main-grid { grid-template-columns: 1fr; }
@@ -652,11 +792,12 @@ summary { cursor: pointer; color: var(--muted); }
       </div>
     </section>
 
-    <section class="card sticky" id="manualCard">
+    <div class="side-stack">
+    <section class="card" id="manualCard">
       <div class="card-head">
         <div>
           <h2>Manual telescope control</h2>
-          <div class="hint">Right-side control area aligned with the always-visible STOP button.</div>
+          <div class="hint">Manual mount, tracking, chopper, and calibration controls. STOP remains available in the top bar.</div>
         </div>
         <span class="badge" id="manualBadge">Ready</span>
       </div>
@@ -811,7 +952,56 @@ summary { cursor: pointer; color: var(--muted); }
         </div>
       </div>
     </section>
+    <section class="card obslog-card" id="observationLogCard">
+      <div class="card-head obslog-head">
+        <div>
+          <h2>Observation Log</h2>
+          <div class="compact-hint">Append-only CSV log for observers. Browser reload keeps the same file.</div>
+        </div>
+        <span class="badge info" id="obsLogBadge">loading</span>
+      </div>
+      <div class="card-body">
+        <div class="obslog-current-row">
+          <span class="mini-label">Current CSV</span>
+          <code id="obsLogFile" title="Current observation CSV log file. This display is read-only. Use 'New timestamped CSV' or 'Use / Append CSV' to change the write target.">loading</code>
+          <button id="copyObsLogPath" class="secondary compact" type="button" title="Copy the full container path of the active CSV log.">Copy path</button>
+          <button id="obsLogDirHelp" class="secondary compact obslog-help-button" type="button" aria-expanded="false" title="Log directory selection:\n1. NECST_OBSLOG_DIR, if set.\n2. <record root>/obslogs, if available.\n3. ~/.necst/observation_logs as fallback.\nThis path is inside the console container. Use a bind-mounted path if you need the log on the host.">?</button>
+        </div>
+        <div class="obslog-file-meta-row">
+          <span class="mini-label">Started</span>
+          <span id="obsLogCreated" class="obslog-created"></span>
+        </div>
+        <div id="obsLogHelpText" class="obslog-help-text" hidden></div>
+
+        <div class="obslog-settings-row">
+          <label class="mini-field" for="obsLogUser"><span>User</span><input id="obsLogUser" value="User" maxlength="128" title="Observer name written to subsequent CSV rows."></label>
+          <label class="mini-field" for="obsLogPrefix"><span>Prefix</span><input id="obsLogPrefix" value="obslog" maxlength="64" title="Filename prefix used by 'New timestamped CSV'."></label>
+          <button id="newObsLog" class="secondary compact" type="button" title="Create a new CSV using the prefix and current UTC time, e.g. obslog_20260609T134032Z.csv. This does not rename the old file.">New timestamped CSV</button>
+        </div>
+
+        <div class="obslog-custom-row">
+          <label for="obsLogOpenPath">Use specific CSV</label>
+          <input id="obsLogOpenPath" placeholder="night1 or night1.csv, or /container/path/night1.csv" title="Switch writing to this CSV. If it exists, append to it. If it does not exist, create it. Relative names are resolved inside the current log directory; .csv is added automatically when omitted.">
+          <button id="openObsLog" class="secondary compact" type="button" title="Switch writing to the specified CSV. Existing files are appended; missing files are created.">Use / Append CSV</button>
+        </div>
+
+        <div class="obslog-comment-row">
+          <input id="obsLogComment" placeholder="Add a manual observation comment" title="Append a comment row to the active observation CSV log.">
+          <button id="addObsLogComment" class="primary compact" type="button">Add comment</button>
+        </div>
+        <div id="obsLogLast" class="obslog-last">No observation-log row yet.</div>
+        <div id="obsLogWarning" class="obslog-warning"></div>
+        <details class="obslog-recent-details">
+          <summary>Recent CSV rows</summary>
+          <div id="obsLogRecent" class="obslog-recent">No rows.</div>
+        </details>
+      </div>
+    </section>
+    </div>
   </div>
+
+
+
 
   <section class="card" style="margin-top:14px">
     <div class="card-head">
@@ -873,21 +1063,10 @@ summary { cursor: pointer; color: var(--muted); }
           <p class="card-hint">Console-side warnings only; this does not decide observation OK/NG yet.</p>
           <div id="runtimeWarnings" class="runtime-list warning-list">loading</div>
         </div>
-        <div class="runtime-card logs history wide">
-          <h3>Observation/action history log</h3>
-          <p class="card-hint">Persistent operator_console.jsonl: observation starts, obs-file names, record/output directories when available, and accepted/rejected console actions.</p>
-          <div class="runtime-list">
-            <div class="runtime-path" title="operator log path">Path: <b id="runtimeOperatorLog">loading</b></div>
-            <div class="mini-actions">
-              <button id="loadOperatorLog" class="secondary" title="Show the persistent observation/action history log tail here">Show latest history</button>
-            </div>
-            <div id="runtimeOperatorLogText" class="log-browser-text">Click “Show latest history” to display recent observation and console actions.</div>
-          </div>
-        </div>
       </div>
 
       <details class="runtime-advanced">
-        <summary>Advanced recovery tools and launcher logs</summary>
+        <summary>Advanced recovery tools, launcher logs, and internal action log</summary>
         <div class="runtime-grid advanced" style="margin-top:10px">
           <div class="runtime-card recovery wide">
             <h3>Stuck local launchers (recovery only)</h3>
@@ -906,11 +1085,22 @@ summary { cursor: pointer; color: var(--muted); }
           </div>
           <div class="runtime-card logs wide">
             <h3>Launcher stdout/stderr files</h3>
-            <p class="card-hint">Debug logs for local launcher subprocesses. Latest logs are listed first; observation history is shown above.</p>
+            <p class="card-hint">Debug logs for local launcher subprocesses. Latest logs are listed first. Observer-facing history is in the Observation Log CSV above; internal action history is below.</p>
             <div class="runtime-list">
               <div id="runtimeLogBrowserSummary">Select a launcher log below. Latest first.</div>
               <div id="runtimeLauncherLogChoices"><span style="color:var(--faint)">No launcher log recorded.</span></div>
               <div id="runtimeLogBrowserText" class="log-browser-text">Select a launcher stdout/stderr log to display its tail.</div>
+            </div>
+          </div>
+          <div class="runtime-card logs history wide">
+            <h3>Internal operator/action log</h3>
+            <p class="card-hint">Persistent operator_console.jsonl for internal console actions, API results, recovery/debug traces, and CSV write warnings. Use the Observation Log CSV above for observer-facing notes.</p>
+            <div class="runtime-list">
+              <div class="runtime-path" title="internal operator/action JSONL path">Path: <b id="runtimeOperatorLog">loading</b></div>
+              <div class="mini-actions">
+                <button id="loadOperatorLog" class="secondary" title="Show the persistent internal operator/action JSONL tail here">Show latest internal log</button>
+              </div>
+              <div id="runtimeOperatorLogText" class="log-browser-text">Click “Show latest internal log” to display recent internal console actions and debug traces.</div>
             </div>
           </div>
           <div class="runtime-card">
@@ -964,7 +1154,8 @@ const PERSISTED_FORM_FIELDS = [
   'mountAz', 'mountEl',
   'targetKind', 'targetName', 'coord1', 'coord2', 'offsetFrame', 'offsetX', 'offsetY', 'cosCorrection',
   'rskyN', 'rskyInteg', 'rskyCh',
-  'skydipInteg', 'skydipCh', 'skydipTpRange'
+  'skydipInteg', 'skydipCh', 'skydipTpRange',
+  'obsLogUser', 'obsLogPrefix', 'obsLogOpenPath'
 ];
 function storageKeyForField(id) { return FORM_STORAGE_PREFIX + id; }
 function saveFormField(id) {
@@ -1695,7 +1886,7 @@ function renderOperatorLog(payload) {
   const body = qs('runtimeOperatorLogText');
   if (!body) return;
   if (!payload) {
-    body.textContent = 'Click “Show latest history” to display recent observation and console actions.';
+    body.textContent = 'Click “Show latest internal log” to display recent internal console actions and debug traces.';
     return;
   }
   if (Array.isArray(payload.entries)) {
@@ -1722,10 +1913,10 @@ function renderOperatorLog(payload) {
       if (pid) details.push(`pid=${pid}`);
       const detailText = details.length ? `\n    ${details.join('\n    ')}` : '';
       return `${when} ${mark}${action}: ${msg}${detailText}`;
-    }).join('\n\n') || '(observation/action history log is empty)';
+    }).join('\n\n') || '(internal operator/action log is empty)';
     return;
   }
-  body.textContent = payload.text || payload.reason || '(observation/action history log is empty)';
+  body.textContent = payload.text || payload.reason || '(internal operator/action log is empty)';
 }
 async function readOperatorLog() {
   const resp = await fetch('/api/operator-log?limit=80');
@@ -1861,7 +2052,7 @@ async function api(action, params={}, pendingKind=null) {
     const resp = await fetch('/api/action', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({action, params, session_id: state.sessionId})
+      body: JSON.stringify({action, params, session_id: state.sessionId, obslog_user: (qs('obsLogUser') ? qs('obsLogUser').value : '')})
     });
     data = await resp.json();
   } catch (err) {
@@ -1894,6 +2085,7 @@ async function refresh() {
     const data = await resp.json();
     state.lastStatus = data;
     renderStatus(data);
+    renderObservationLog(data.observation_log || {});
     renderLog(data.log || []);
   } catch (err) {
     renderStatusRefreshError(err);
@@ -2189,6 +2381,79 @@ function renderStatus(data) {
   validateTarget();
   applyOperationUi(operation);
 }
+
+function basenameFromPath(path) {
+  const text = String(path || '');
+  if (!text) return '';
+  const normalized = text.replace(/\\/g, '/');
+  return normalized.split('/').filter(Boolean).pop() || text;
+}
+function compactUtc(value) {
+  const text = String(value || '');
+  const m = text.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})/);
+  return m ? `${m[1]} ${m[2]}Z` : text;
+}
+function renderObservationLog(log) {
+  if (log && log.observation_log && !log.csv_path) log = log.observation_log;
+  const badge = qs('obsLogBadge');
+  if (!log || log.ok === false) {
+    if (badge) { badge.textContent = 'not configured'; badge.className = 'badge warn'; }
+    if (qs('obsLogFile')) { qs('obsLogFile').textContent = 'not configured'; qs('obsLogFile').title = ''; }
+    if (qs('obsLogCreated')) qs('obsLogCreated').textContent = '';
+    return;
+  }
+  const csvPath = String(log.csv_path || '');
+  const csvName = log.csv_name || basenameFromPath(csvPath) || 'initializing...';
+  const writing = Boolean(log.writing) || (Boolean(csvPath) && log.writing !== false);
+  if (badge) {
+    badge.textContent = writing ? 'writing' : 'closed';
+    badge.className = 'badge ' + (writing ? 'ok' : 'warn');
+  }
+  if (qs('obsLogUser') && document.activeElement !== qs('obsLogUser')) qs('obsLogUser').value = log.observer || qs('obsLogUser').value || 'User';
+  if (qs('obsLogPrefix') && document.activeElement !== qs('obsLogPrefix')) qs('obsLogPrefix').value = log.prefix || qs('obsLogPrefix').value || 'obslog';
+  if (qs('obsLogFile')) {
+    qs('obsLogFile').textContent = csvName;
+    const parts = [];
+    if (csvPath) parts.push('CSV: ' + csvPath);
+    if (log.meta_path) parts.push('Meta JSON: ' + log.meta_path);
+    if (log.log_dir) parts.push('Log dir: ' + log.log_dir);
+    qs('obsLogFile').title = parts.join('\n');
+  }
+  if (qs('obsLogCreated')) {
+    const created = compactUtc(log.created_utc || '');
+    qs('obsLogCreated').textContent = created || '';
+    qs('obsLogCreated').title = log.created_utc || '';
+  }
+  const tooltip = log.tooltips || {};
+  if (qs('obsLogDirHelp') && tooltip.directory) qs('obsLogDirHelp').title = tooltip.directory;
+  if (qs('obsLogHelpText') && tooltip.directory) qs('obsLogHelpText').textContent = tooltip.directory;
+  const rows = Array.isArray(log.last_rows) ? log.last_rows : [];
+  const last = rows[0];
+  if (qs('obsLogLast')) {
+    if (last) {
+      const comment = last.comment ? ` comment=${last.comment}` : '';
+      qs('obsLogLast').textContent = `Last ${compactUtc(last.utc_iso || '')} ${last.mode || ''} ${last.event || ''} ${last.action_or_obsfile || ''}${comment}`;
+    } else {
+      qs('obsLogLast').textContent = 'No observation-log row yet.';
+    }
+  }
+  const warnings = [];
+  if (log.last_error) warnings.push(log.last_error);
+  if (Array.isArray(log.directory_warnings)) warnings.push(...log.directory_warnings);
+  if (!csvPath) warnings.push('active CSV path is not available yet');
+  if (qs('obsLogWarning')) qs('obsLogWarning').textContent = warnings.join(' / ');
+  if (qs('obsLogRecent')) {
+    if (!rows.length) {
+      qs('obsLogRecent').innerHTML = '<div class="file-empty">No rows.</div>';
+    } else {
+      const head = '<tr><th>UTC</th><th>Az</th><th>El</th><th>Comment</th><th>Mode</th><th>Event</th><th>Action/file</th><th>Result</th><th>User</th><th>Record dir</th><th>Session</th><th>Row</th><th>Temp C</th><th>Hum %</th><th>Pressure hPa</th><th>Weather</th></tr>';
+      const body = rows.map(r => `<tr><td>${escapeHtml(r.utc_iso)}</td><td>${escapeHtml(r.enc_az_deg)}</td><td>${escapeHtml(r.enc_el_deg)}</td><td>${escapeHtml(r.comment)}</td><td>${escapeHtml(r.mode)}</td><td>${escapeHtml(r.event)}</td><td>${escapeHtml(r.action_or_obsfile)}</td><td>${escapeHtml(r.result)}</td><td>${escapeHtml(r.user)}</td><td>${escapeHtml(r.record_dir)}</td><td>${escapeHtml(r.session_id)}</td><td>${escapeHtml(r.row_id)}</td><td>${escapeHtml(r.temp_C)}</td><td>${escapeHtml(r.humidity_pct)}</td><td>${escapeHtml(r.pressure_hPa)}</td><td>${escapeHtml(r.weather_source)}</td></tr>`).join('');
+      qs('obsLogRecent').innerHTML = `<table>${head}${body}</table>`;
+    }
+  }
+}
+
+
 function renderLog(items) {
   qs('log').innerHTML = items.map(item => {
     const statusClass = item.ok ? 'ok' : 'bad';
@@ -2512,6 +2777,38 @@ qs('chopperHome').addEventListener('click', () => api('chopper_home'));
 qs('chopperRecover').addEventListener('click', () => api('chopper_recover'));
 qs('runRsky').addEventListener('click', () => api('run_rsky', {n: qs('rskyN').value, integ: qs('rskyInteg').value, ch: qs('rskyCh').value}, 'rsky'));
 qs('runSkydip').addEventListener('click', () => api('run_skydip', {integ: qs('skydipInteg').value, ch: qs('skydipCh').value, tp_range: qs('skydipTpRange').value}, 'skydip'));
+qs('addObsLogComment').addEventListener('click', async () => {
+  const comment = qs('obsLogComment').value;
+  const data = await api('obslog_comment', {comment});
+  if (data.ok) qs('obsLogComment').value = '';
+});
+qs('obsLogComment').addEventListener('keydown', async (ev) => {
+  if (ev.key === 'Enter' && !ev.shiftKey) {
+    ev.preventDefault();
+    qs('addObsLogComment').click();
+  }
+});
+qs('newObsLog').addEventListener('click', async () => {
+  await api('obslog_new', {prefix: qs('obsLogPrefix').value, user: qs('obsLogUser').value});
+});
+qs('openObsLog').addEventListener('click', async () => {
+  const path = qs('obsLogOpenPath').value.trim();
+  if (!path) { alert('Enter a CSV filename or a full container path. Existing files are appended; missing files are created.'); return; }
+  await api('obslog_open_existing', {path, user: qs('obsLogUser').value});
+});
+qs('copyObsLogPath').addEventListener('click', async () => {
+  const log = (state.lastStatus || {}).observation_log || {};
+  const text = String(log.csv_path || qs('obsLogFile').title || '').split('\n')[0].replace(/^CSV:\s*/, '').trim();
+  if (!text || text === 'loading' || text === 'not configured' || text === 'initializing...') return;
+  try { await navigator.clipboard.writeText(text); qs('copyObsLogPath').textContent = 'Copied'; setTimeout(() => qs('copyObsLogPath').textContent = 'Copy path', 900); } catch (_) {}
+});
+qs('obsLogDirHelp').addEventListener('click', () => {
+  const box = qs('obsLogHelpText');
+  const btn = qs('obsLogDirHelp');
+  const willShow = box.hidden;
+  box.hidden = !willShow;
+  btn.setAttribute('aria-expanded', String(willShow));
+});
 qs('clearLog').addEventListener('click', () => api('clear_log'));
 qs('refreshRuntime').addEventListener('click', refresh);
 qs('loadOperatorLog').addEventListener('click', readOperatorLog);
@@ -2591,6 +2888,394 @@ main { max-width:1100px; margin:0 auto; padding:18px; }
 </html>
 """
 
+
+
+DEMO_CSV_HEADER = [
+    "utc_iso",
+    "enc_az_deg",
+    "enc_el_deg",
+    "comment",
+    "mode",
+    "event",
+    "action_or_obsfile",
+    "result",
+    "user",
+    "record_dir",
+    "session_id",
+    "row_id",
+    "temp_C",
+    "humidity_pct",
+    "pressure_hPa",
+    "weather_source",
+]
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _utc_iso(dt: Optional[datetime] = None) -> str:
+    return (dt or _utc_now()).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _utc_stamp(dt: Optional[datetime] = None) -> str:
+    return (dt or _utc_now()).strftime("%Y%m%dT%H%M%SZ")
+
+
+
+
+def _demo_last_path_component(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    trimmed = text.rstrip("/\\")
+    if not trimmed:
+        return text
+    if "\\" in trimmed and "/" not in trimmed:
+        name = PureWindowsPath(trimmed).name
+    else:
+        name = Path(trimmed).name
+    return name or trimmed
+
+
+def _safe_prefix(text: Any) -> str:
+    raw = str(text or "obslog").strip() or "obslog"
+    out = "".join(ch if ch.isalnum() or ch in "_.-" else "_" for ch in raw).strip("._-")
+    return (out or "obslog")[:64]
+
+
+class DemoObservationLog:
+    """Small real CSV writer for the standalone demo.
+
+    The real console uses necst.web.observation_log.  The demo intentionally
+    stays independent from ROS/NECST imports, but it should still behave like an
+    observer-facing append-only CSV logger so the UI can be tested honestly.
+    """
+
+    def __init__(self, *, prefix: str = "obslog", observer: str = "User") -> None:
+        self.log_dir = Path(os.environ.get("NECST_OBSLOG_DIR", "")).expanduser() if os.environ.get("NECST_OBSLOG_DIR") else Path.home() / ".necst" / "demo_observation_logs"
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        self.prefix = _safe_prefix(prefix)
+        self.observer = str(observer or "User").strip() or "User"
+        created = _utc_now()
+        self.created_utc = _utc_iso(created)
+        self.session_id = f"{_utc_stamp(created)}-{uuid.uuid4().hex[:4]}"
+        self.row_id = 0
+        self.last_rows: List[Dict[str, Any]] = []
+        self.last_error = ""
+        self.closed_utc: Optional[str] = None
+        self.csv_path = self._default_path(self.prefix, created)
+        self.meta_path = self.csv_path.with_suffix(self.csv_path.suffix + ".meta.json")
+        self._fh: Any = None
+        self._writer: Optional[csv.writer] = None
+        self._lock = threading.RLock()
+        self._open(self.csv_path)
+        self.write_event(mode="Console", event="console_start", action_or_obsfile="demo console started", result="success")
+
+    def _default_path(self, prefix: str, created: Optional[datetime] = None) -> Path:
+        stamp = _utc_stamp(created)
+        path = self.log_dir / f"{_safe_prefix(prefix)}_{stamp}.csv"
+        if not path.exists():
+            return path
+        for idx in range(2, 1000):
+            candidate = self.log_dir / f"{_safe_prefix(prefix)}_{stamp}_{idx}.csv"
+            if not candidate.exists():
+                return candidate
+        return self.log_dir / f"{_safe_prefix(prefix)}_{stamp}_{uuid.uuid4().hex[:6]}.csv"
+
+    def _sync(self) -> None:
+        if self._fh is None:
+            return
+        self._fh.flush()
+        os.fsync(self._fh.fileno())
+
+    def _write_meta(self) -> None:
+        payload = {
+            "schema_version": "demo-1.0",
+            "session_id": self.session_id,
+            "created_utc": self.created_utc,
+            "closed_utc": self.closed_utc,
+            "observer": self.observer,
+            "prefix": self.prefix,
+            "csv_path": str(self.csv_path),
+            "meta_path": str(self.meta_path),
+            "log_dir": str(self.log_dir),
+            "log_dir_source": "NECST_OBSLOG_DIR" if os.environ.get("NECST_OBSLOG_DIR") else "demo_home_fallback",
+            "notes": "Standalone demo observation log. Paths are inside the console container/process environment.",
+        }
+        tmp = self.meta_path.with_suffix(self.meta_path.suffix + ".tmp")
+        with tmp.open("w", encoding="utf-8") as fh:
+            json.dump(payload, fh, ensure_ascii=False, indent=2, sort_keys=True)
+            fh.write("\n")
+            fh.flush()
+            try:
+                os.fsync(fh.fileno())
+            except Exception:
+                pass
+        tmp.replace(self.meta_path)
+
+    def _open(self, path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        existed = path.exists()
+        size = path.stat().st_size if existed else 0
+        self.csv_path = path
+        self.meta_path = path.with_suffix(path.suffix + ".meta.json")
+        self.last_rows = []
+        self._fh = path.open("a", encoding="utf-8", newline="")
+        self._writer = csv.writer(self._fh)
+        if size == 0:
+            self.row_id = 0
+            self._writer.writerow(DEMO_CSV_HEADER)
+            self._sync()
+        else:
+            try:
+                with path.open("r", encoding="utf-8", newline="") as fh:
+                    reader = csv.reader(fh)
+                    header = next(reader, [])
+                    row_count = 0
+                    max_existing_row_id = 0
+                    recent: List[Dict[str, Any]] = []
+                    for row in reader:
+                        if not row or not any(str(cell).strip() for cell in row):
+                            continue
+                        row_count += 1
+                        if header == DEMO_CSV_HEADER:
+                            values = list(row)[: len(DEMO_CSV_HEADER)]
+                            if len(values) < len(DEMO_CSV_HEADER):
+                                values.extend([""] * (len(DEMO_CSV_HEADER) - len(values)))
+                            row_dict = dict(zip(DEMO_CSV_HEADER, values))
+                            try:
+                                max_existing_row_id = max(max_existing_row_id, int(str(row_dict.get("row_id") or "0")))
+                            except Exception:
+                                pass
+                            recent.append(row_dict)
+                            if len(recent) > 20:
+                                del recent[0]
+                self.row_id = max_existing_row_id if header == DEMO_CSV_HEADER and max_existing_row_id > 0 else row_count
+                if header == DEMO_CSV_HEADER:
+                    self.last_rows = list(reversed(recent))
+                else:
+                    self.last_error = "CSV header differs from the demo observation-log schema; appending anyway"
+            except Exception as exc:
+                self.row_id = 0
+                self.last_error = f"failed to inspect existing CSV header; appending anyway: {exc}"
+        self._write_meta()
+
+    def _resolve_user_csv_path(self, path_text: Any) -> Path:
+        raw = str(path_text or "").strip()
+        if not raw:
+            raise ValueError("CSV path is empty")
+        path = Path(raw).expanduser()
+        if not path.is_absolute():
+            if any(part == ".." for part in path.parts):
+                raise ValueError("relative observation log path must not contain '..'")
+            path = self.log_dir / path
+        if raw.endswith(("/", "\\")):
+            raise ValueError("observation log path must include a CSV filename")
+        if path.suffix == "":
+            path = path.with_suffix(".csv")
+        elif path.suffix.lower() != ".csv":
+            raise ValueError("observation log path must end with .csv")
+        return path
+
+    def _preflight_csv_path(self, path: Path) -> None:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8", newline="") as fh:
+                fh.flush()
+                try:
+                    os.fsync(fh.fileno())
+                except Exception:
+                    pass
+        except Exception as exc:
+            raise OSError(f"observation log path is not writable: {path}: {exc}") from exc
+
+    def _record_open_failure(self, path: Path, exc: BaseException) -> None:
+        self.write_event(comment=str(exc), mode="Console", event="log_open_failed", action_or_obsfile=str(path), result="failed")
+
+    def _restore_previous_after_switch_failure(self, previous: Optional[Path], target: Path, exc: BaseException) -> None:
+        try:
+            if self._fh is not None:
+                self._fh.close()
+        except Exception:
+            pass
+        self._fh = None
+        self._writer = None
+        if previous is None:
+            self.last_error = str(exc)
+            return
+        try:
+            self.closed_utc = None
+            self._open(previous)
+            self.write_event(comment=str(exc), mode="Console", event="log_open_failed", action_or_obsfile=str(target), result="failed")
+        except Exception as restore_exc:
+            self.last_error = f"failed to open {target}: {exc}; failed to restore {previous}: {restore_exc}"
+
+    def update_observer(self, observer: Any) -> None:
+        with self._lock:
+            self._update_observer_unlocked(observer)
+
+    def _update_observer_unlocked(self, observer: Any) -> None:
+        new = str(observer or "").strip()
+        if new and new != self.observer:
+            old = self.observer
+            self.observer = new[:128]
+            self.write_event(mode="Console", event="observer_changed", action_or_obsfile=f"{old} -> {self.observer}", result="success")
+            self._write_meta()
+
+    def open_new(self, *, prefix: Any = None, observer: Any = None) -> None:
+        with self._lock:
+            self._open_new_unlocked(prefix=prefix, observer=observer)
+
+    def _open_new_unlocked(self, *, prefix: Any = None, observer: Any = None) -> None:
+        old_observer = self.observer
+        old_prefix = self.prefix
+        if observer:
+            self.observer = str(observer).strip()[:128] or "User"
+        if prefix:
+            self.prefix = _safe_prefix(prefix)
+        new_path = self._default_path(self.prefix)
+        previous = getattr(self, "csv_path", None)
+        try:
+            self._preflight_csv_path(new_path)
+        except Exception as exc:
+            self.observer = old_observer
+            self.prefix = old_prefix
+            self._record_open_failure(new_path, exc)
+            raise
+        self.write_event(mode="Console", event="log_closed", action_or_obsfile=str(new_path), result="success")
+        self.close(write_log_closed=False)
+        self.closed_utc = None
+        self.created_utc = _utc_iso()
+        try:
+            self._open(new_path)
+        except Exception as exc:
+            self._restore_previous_after_switch_failure(previous, new_path, exc)
+            raise
+        self.write_event(mode="Console", event="log_opened", action_or_obsfile=f"from {previous}", result="success")
+
+    def open_existing(self, path_text: Any, *, observer: Any = None) -> None:
+        with self._lock:
+            self._open_existing_unlocked(path_text, observer=observer)
+
+    def _open_existing_unlocked(self, path_text: Any, *, observer: Any = None) -> None:
+        try:
+            path = self._resolve_user_csv_path(path_text)
+        except Exception as exc:
+            fallback = self.log_dir / str(path_text or "")
+            self._record_open_failure(fallback, exc)
+            raise
+        old_observer = self.observer
+        if observer:
+            self.observer = str(observer).strip()[:128] or "User"
+        previous = getattr(self, "csv_path", None)
+        try:
+            self._preflight_csv_path(path)
+        except Exception as exc:
+            self.observer = old_observer
+            self._record_open_failure(path, exc)
+            raise
+        self.write_event(mode="Console", event="log_closed", action_or_obsfile=str(path), result="success")
+        self.close(write_log_closed=False)
+        self.closed_utc = None
+        self.created_utc = _utc_iso()
+        try:
+            self._open(path)
+        except Exception as exc:
+            self._restore_previous_after_switch_failure(previous, path, exc)
+            raise
+        self.write_event(mode="Console", event="log_opened", action_or_obsfile=f"from {previous}", result="success")
+
+    def write_event(self, *, state: Optional["DemoState"] = None, comment: str = "", mode: str = "Console", event: str = "event", action_or_obsfile: str = "", result: str = "unknown", record_dir: str = "") -> bool:
+        with self._lock:
+            return self._write_event_unlocked(state=state, comment=comment, mode=mode, event=event, action_or_obsfile=action_or_obsfile, result=result, record_dir=record_dir)
+
+    def _write_event_unlocked(self, *, state: Optional["DemoState"] = None, comment: str = "", mode: str = "Console", event: str = "event", action_or_obsfile: str = "", result: str = "unknown", record_dir: str = "") -> bool:
+        if self._writer is None:
+            return False
+        try:
+            az = f"{float(state.az):.4f}" if state is not None else ""
+            el = f"{float(state.el):.4f}" if state is not None else ""
+            if not record_dir and state is not None:
+                record_dir = state.local_recording_dir or state.recording_dir or state.progress_record_dir or ""
+            record_dir = _demo_last_path_component(record_dir)
+            next_row_id = self.row_id + 1
+            row = [
+                _utc_iso(), az, el, str(comment or ""), str(mode or ""), str(event or ""), str(action_or_obsfile or ""), str(result or ""),
+                self.observer, str(record_dir or ""), self.session_id, next_row_id, "", "", "", "",
+            ]
+            self._writer.writerow(row)
+            self._fh.flush()
+            fsync_error = ""
+            try:
+                os.fsync(self._fh.fileno())
+            except Exception as exc:
+                fsync_error = str(exc)
+            self.row_id = next_row_id
+            row_dict = dict(zip(DEMO_CSV_HEADER, row))
+            self.last_rows.insert(0, row_dict)
+            del self.last_rows[20:]
+            self.last_error = fsync_error
+            return not bool(fsync_error)
+        except Exception as exc:
+            self.last_error = str(exc)
+            return False
+
+    def close(self, *, write_log_closed: bool = True) -> None:
+        with self._lock:
+            self._close_unlocked(write_log_closed=write_log_closed)
+
+    def _close_unlocked(self, *, write_log_closed: bool = True) -> None:
+        if self._fh is None:
+            return
+        if write_log_closed:
+            self.write_event(mode="Console", event="log_closed", action_or_obsfile="demo console stopping", result="success")
+        self.closed_utc = _utc_iso()
+        try:
+            self._write_meta()
+        except Exception as exc:
+            self.last_error = str(exc)
+        try:
+            self._sync()
+        finally:
+            try:
+                self._fh.close()
+            finally:
+                self._fh = None
+                self._writer = None
+
+    def status(self) -> Dict[str, Any]:
+        with self._lock:
+            return self._status_unlocked()
+
+    def _status_unlocked(self) -> Dict[str, Any]:
+        return {
+            "ok": self._writer is not None,
+            "writing": self._writer is not None,
+            "csv_path": str(self.csv_path),
+            "csv_name": self.csv_path.name,
+            "meta_path": str(self.meta_path),
+            "meta_name": self.meta_path.name,
+            "created_utc": self.created_utc,
+            "closed_utc": self.closed_utc,
+            "log_dir": str(self.log_dir),
+            "log_dir_source": "NECST_OBSLOG_DIR" if os.environ.get("NECST_OBSLOG_DIR") else "demo_home_fallback",
+            "record_root": None,
+            "prefix": self.prefix,
+            "observer": self.observer,
+            "session_id": self.session_id,
+            "row_id": self.row_id,
+            "schema_version": "demo-1.0",
+            "columns": list(DEMO_CSV_HEADER),
+            "last_rows": list(self.last_rows),
+            "last_error": self.last_error,
+            "directory_warnings": [],
+            "tooltips": {
+                "directory": "Log directory selection:\n1. NECST_OBSLOG_DIR, if set.\n2. <record root>/obslogs, if available.\n3. ~/.necst/observation_logs as fallback.\nThis path is inside the console container. Use a bind-mounted path if you need the log on the host.",
+                "file": "A new log file is created when the console server starts. Reloading the web page does not change the log file.",
+                "switch": "Close the current log file and continue writing to a new or selected CSV file. This does not rename the existing file.",
+            },
+        }
 
 @dataclass
 class LogEntry:
@@ -2721,6 +3406,7 @@ class ConsoleDemoServer(ThreadingHTTPServer):
         self.progress_port = int(progress_port)
         self._progress_server: Optional[ThreadingHTTPServer] = None
         self._progress_thread: Optional[threading.Thread] = None
+        self.observation_log = DemoObservationLog(prefix=os.environ.get("NECST_OBSLOG_PREFIX", "obslog"), observer=os.environ.get("NECST_OBSLOG_USER", "User"))
         self.add_log(True, "console demo v7 started; no real telescope command is sent")
 
     def add_log(self, ok: bool, message: str) -> None:
@@ -2820,7 +3506,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/status":
             with self.server.lock:
-                self._send_json(self.server.state.to_dict())
+                payload = self.server.state.to_dict()
+                payload["observation_log"] = self.server.observation_log.status()
+                self._send_json(payload)
             return
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/operator-log":
@@ -2895,9 +3583,16 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(params, dict):
             self._send_json({"ok": False, "reason": "params must be an object"}, 400)
             return
+        obslog_user = str(payload.get("obslog_user") or "").strip()
         with self.server.lock:
+            if obslog_user:
+                self.server.observation_log.update_observer(obslog_user)
             ok, reason = handle_action(self.server, action, params, session_id)
-            self._send_json({"ok": ok, "reason": reason, "state": self.server.state.to_dict()})
+            if not action.startswith("obslog_"):
+                _demo_write_observation_log_for_action(self.server, action, params, ok, reason)
+            state_payload = self.server.state.to_dict()
+            state_payload["observation_log"] = self.server.observation_log.status()
+            self._send_json({"ok": ok, "reason": reason, "state": state_payload, "observation_log": self.server.observation_log.status()})
 
 
 def _as_float(value: Any, name: str) -> Tuple[Optional[float], Optional[str]]:
@@ -3172,6 +3867,92 @@ def _demo_active_operation_reason(state: DemoState, requested_action: str) -> Op
         return f"cannot start {requested_action}: active task is {state.active_task}; use STOP/ABORT or wait until READY"
     return None
 
+
+def _demo_obslog_mode_for_action(action: str, params: Dict[str, Any]) -> str:
+    if action in {"start_observation", "check_observation", "dry_run_observation", "abort_observation"}:
+        mode = str(params.get("mode") or "Observation")
+        return mode.upper() if mode else "Observation"
+    if action.startswith("chopper_"):
+        return "Chopper"
+    if action in {"mount_move", "mount_move_dry_run"}:
+        return "Mount"
+    if action in {"start_tracking", "stop_tracking"}:
+        return "Tracking"
+    if action == "run_rsky":
+        return "RSky"
+    if action == "run_skydip":
+        return "SkyDip"
+    if action.startswith("terminate_") or action in {"kill_process"}:
+        return "Recovery"
+    return "Console"
+
+
+def _demo_obslog_event_for_action(action: str) -> Optional[str]:
+    mapping = {
+        "check_observation": "check_clicked",
+        "dry_run_observation": "dry_run_clicked",
+        "start_observation": "observation_start_clicked",
+        "abort_observation": "abort_clicked",
+        "stop": "stop_clicked",
+        "mount_move": "mount_move_clicked",
+        "mount_move_dry_run": "mount_move_dry_run_clicked",
+        "start_tracking": "tracking_start_clicked",
+        "stop_tracking": "tracking_stop_clicked",
+        "chopper_in": "chopper_in_clicked",
+        "chopper_out": "chopper_out_clicked",
+        "chopper_status": "chopper_status_clicked",
+        "chopper_alarm_reset": "chopper_alarm_reset_clicked",
+        "chopper_home": "chopper_home_clicked",
+        "chopper_recover": "chopper_recover_clicked",
+        "run_rsky": "rsky_clicked",
+        "run_skydip": "skydip_clicked",
+        "terminate_process": "local_launcher_force_kill_clicked",
+        "kill_process": "local_launcher_force_kill_clicked",
+        "terminate_observation_launcher": "local_observation_launcher_force_kill_clicked",
+        "terminate_calibration_launcher": "local_calibration_launcher_force_kill_clicked",
+        "terminate_all_launchers": "local_launchers_force_kill_clicked",
+    }
+    return mapping.get(action)
+
+
+def _demo_obslog_action_text(action: str, params: Dict[str, Any]) -> str:
+    if action in {"start_observation", "check_observation", "dry_run_observation"}:
+        return _demo_last_path_component(params.get("file") or "")
+    if action in {"mount_move", "mount_move_dry_run"}:
+        return f"Az={params.get('az', '')}, El={params.get('el', '')}"
+    if action == "start_tracking":
+        return str(params.get("kind") or "target")
+    if action in {"run_rsky", "run_skydip"}:
+        bits = []
+        for key in ("n", "integ", "ch", "tp_range"):
+            if params.get(key) not in (None, ""):
+                bits.append(f"{key}={params.get(key)}")
+        return ", ".join(bits)
+    if action.startswith("terminate_") or action in {"kill_process"}:
+        pid = params.get("pid")
+        return f"{action}" + (f" pid={pid}" if pid not in (None, "") else "")
+    return action
+
+
+def _demo_write_observation_log_for_action(server: ConsoleDemoServer, action: str, params: Dict[str, Any], ok: bool, reason: str) -> None:
+    event = _demo_obslog_event_for_action(action)
+    if event is None:
+        return
+    result = "success" if ok else "failed"
+    if action == "start_observation" and ok:
+        result = "running"
+    if action == "abort_observation" and ok:
+        result = "aborted"
+    if action == "stop" and ok:
+        result = "stopped"
+    server.observation_log.write_event(
+        state=server.state,
+        mode=_demo_obslog_mode_for_action(action, params),
+        event=event,
+        action_or_obsfile=_demo_obslog_action_text(action, params),
+        result=result,
+    )
+
 def handle_action(
     server: ConsoleDemoServer, action: str, params: Dict[str, Any], session_id: str
 ) -> Tuple[bool, str]:
@@ -3181,6 +3962,33 @@ def handle_action(
     if active_reason is not None:
         server.add_log(False, active_reason)
         return False, active_reason
+
+    if action == "obslog_comment":
+        comment = str(params.get("comment") or "").strip()
+        if not comment:
+            server.add_log(False, "observation-log comment not written: empty comment")
+            return False, "comment is empty; no observation-log row was written"
+        written = server.observation_log.write_event(state=state, comment=comment, mode="Comment", event="comment", action_or_obsfile="manual comment", result="success")
+        if not written:
+            reason = f"failed to append observation CSV log comment: {server.observation_log.last_error or 'unknown error'}"
+            server.add_log(False, reason)
+            return False, reason
+        server.add_log(True, "observation-log comment appended")
+        return True, "comment appended to observation CSV log"
+
+    if action == "obslog_new":
+        server.observation_log.open_new(prefix=params.get("prefix") or server.observation_log.prefix, observer=params.get("user") or server.observation_log.observer)
+        server.add_log(True, f"new observation CSV log opened: {server.observation_log.csv_path.name}")
+        return True, "new observation CSV log opened"
+
+    if action == "obslog_open_existing":
+        try:
+            server.observation_log.open_existing(params.get("path"), observer=params.get("user") or server.observation_log.observer)
+        except Exception as exc:
+            server.add_log(False, f"observation CSV open/append failed: {exc}")
+            return False, str(exc)
+        server.add_log(True, f"observation CSV log opened for append: {server.observation_log.csv_path.name}")
+        return True, "existing observation CSV log opened for append"
 
     if action == "launch_progress":
         ok, reason, url = server.launch_progress()
@@ -3515,6 +4323,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     finally:
         signal.signal(signal.SIGINT, old_int)
         signal.signal(signal.SIGTERM, old_term)
+        try:
+            server.observation_log.close(write_log_closed=True)
+        except Exception:
+            pass
         server.stop_progress()
         server.server_close()
         thread.join(timeout=2.0)
