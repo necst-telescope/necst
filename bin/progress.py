@@ -3679,17 +3679,24 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
 #events th:nth-child(1), #events td:nth-child(1) { width:4.2rem; white-space:nowrap; }
 #events th:nth-child(2), #events td:nth-child(2) { width:7.6rem; }
 #events th:nth-child(3), #events td:nth-child(3) { width:auto; }
-.plotbox { min-height: 210px; display:flex; align-items:center; justify-content:center; }
-.plotbox svg { width:100%; height:100%; max-height:none; color:var(--plot-text); }
+.plotbox { min-height: 210px; min-width:0; display:flex; align-items:center; justify-content:center; overflow:hidden; box-sizing:border-box; }
+.plotbox svg { display:block; width:var(--plan-plot-render-w, 100%); height:var(--plan-plot-render-h, 100%); max-width:none; max-height:none; color:var(--plot-text); flex:0 0 auto; }
 .plotbox svg text { fill: currentColor; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
-.legend { display:flex; gap:.45rem; flex-wrap:wrap; margin:.08rem 0 .14rem; font-size:.92em; color:var(--muted); }
+.legend { display:flex; gap:.45rem; flex-wrap:wrap; margin:.08rem 0 .14rem; font-size:.92em; color:var(--muted); align-items:center; }
 .legend-note { flex-basis:auto; font-size:.89em; }
+.plot-scale-tools { margin-left:auto; display:inline-flex; align-items:center; gap:.16rem; flex:0 0 auto; flex-wrap:nowrap; white-space:nowrap; }
+.plot-scale-btn, .plot-scale-reset { font:inherit; font-size:.70rem; line-height:1.05; padding:.10rem .28rem; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--fg); cursor:pointer; }
+.plot-scale-btn:hover, .plot-scale-reset:hover { background:#9992; }
+#plotScaleReadout { min-width:2.35rem; text-align:right; color:var(--muted); font-size:.84em; }
 .dot { display:inline-block; width:.62rem; height:.62rem; border-radius:999px; vertical-align:-.06rem; margin-right:.18rem; }
 .small { font-size:.70rem; color:var(--muted); }
 .card .small { font-size:.92em; }
 .queueview, .spectrometerview, .traceview, .envview, .terminalview, .filesview, .eventview { min-height: 0; }
-.planview { min-height:0; }
-.planview .plotbox { min-height: 0; height: calc(100% - 3.0rem); }
+.planview { min-height:0; overflow:hidden; }
+.planview .card-content { display:flex; flex-direction:column; height:100%; min-height:0; }
+.planview h2 { flex:0 0 auto; }
+.planview .legend { flex:0 0 auto; }
+.planview .plotbox { flex:1 1 auto; min-height:0; height:auto; width:100%; }
 .planview svg { max-height:none; }
 #terminal { max-height: none; }
 .axis-label { font-size:var(--card-plot-font-size, 11px); fill:currentColor; }
@@ -3716,6 +3723,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
   .grid { display:flex; flex-direction:column; gap:.45rem; grid-template-columns:none; grid-auto-rows:auto; }
   .card[data-card-id] { grid-column:auto !important; grid-row:auto !important; min-height:auto !important; height:auto !important; overflow:visible; }
   .plotbox { min-height: 260px; }
+  .planview .card-content { height:auto; }
   .planview .plotbox { height:min(72vw, 430px) !important; min-height:270px; }
   .planview svg { max-height:none; }
   .kv, .bigpos, .obsview .kv, .planinfoview .kv, .activityview .kv { grid-template-columns: 7.0rem minmax(0, 1fr); }
@@ -3723,6 +3731,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
 body.narrow-layout .grid { display:flex; flex-direction:column; gap:.45rem; grid-template-columns:none; grid-auto-rows:auto; }
 body.narrow-layout .card[data-card-id] { grid-column:auto !important; grid-row:auto !important; min-height:auto !important; height:auto !important; overflow:visible; }
 body.narrow-layout .plotbox { min-height:260px; }
+body.narrow-layout .planview .card-content { height:auto; }
 body.narrow-layout .planview .plotbox { height:min(72vw, 430px) !important; min-height:270px; }
 body.narrow-layout .kv, body.narrow-layout .bigpos, body.narrow-layout .obsview .kv, body.narrow-layout .planinfoview .kv, body.narrow-layout .activityview .kv { grid-template-columns:7.0rem minmax(0, 1fr); }
 
@@ -3779,7 +3788,7 @@ body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse
 <section class="card planinfoview" data-card-id="plan"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
 <section class="card activityview" data-card-id="activity"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
 <section class="card geometryview" data-card-id="geometry"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
-<section class="card planview" data-card-id="planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>pending</span><span class="legend-note">OTF lines / ON visits</span></div><div id="plotview" class="plotbox small">-</div></section>
+<section class="card planview" data-card-id="planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>pending</span><span class="legend-note">OTF lines / ON visits</span><span class="plot-scale-tools" title="Change the Plan View plot size inside this card"><button type="button" id="plotScaleMinus" class="plot-scale-btn" title="Make Plan View smaller">−</button><button type="button" id="plotScaleReset" class="plot-scale-reset" title="Fit Plan View to card">Fit</button><button type="button" id="plotScalePlus" class="plot-scale-btn" title="Make Plan View larger">+</button><span id="plotScaleReadout">100%</span></span></div><div id="plotview" class="plotbox small">-</div></section>
 <section class="card traceview" data-card-id="trace"><h2>System Trace</h2><div class="kv" id="trace"></div></section>
 <section class="card queueview" data-card-id="queue"><h2>Command Queue</h2><div class="kv" id="queue"></div></section>
 <section class="card spectrometerview" data-card-id="spectrometer"><h2>Spectrometer</h2><div class="kv" id="spectrometer"></div></section>
@@ -3790,15 +3799,16 @@ body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse
 </div>
 <script>
 const refreshMs = __REFRESH_MS__;
-const layoutStorageKey = 'necst-progress-card-layout-v52';
-const oldLayoutStorageKeys = ['necst-progress-card-layout-v51', 'necst-progress-card-layout-v50', 'necst-progress-card-layout-v49', 'necst-progress-card-layout-v48', 'necst-progress-card-layout-v47', 'necst-progress-card-layout-v46', 'necst-progress-card-layout-v45', 'necst-progress-card-layout-v44', 'necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
+const PLOT = {w: 660, h: 460, left: 64, right: 612, top: 42, bottom: 362};
+const layoutStorageKey = 'necst-progress-card-layout-v54';
+const oldLayoutStorageKeys = ['necst-progress-card-layout-v53', 'necst-progress-card-layout-v52', 'necst-progress-card-layout-v51', 'necst-progress-card-layout-v50', 'necst-progress-card-layout-v49', 'necst-progress-card-layout-v48', 'necst-progress-card-layout-v47', 'necst-progress-card-layout-v46', 'necst-progress-card-layout-v45', 'necst-progress-card-layout-v44', 'necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
 const defaultCardLayout = [
   {id:'position', col:3, row:12},
   {id:'observation', col:3, row:12},
   {id:'activity', col:2, row:12},
   {id:'geometry', col:2, row:12},
   {id:'environment', col:2, row:12},
-  {id:'planview', col:5, row:20},
+  {id:'planview', col:5, row:24},
   {id:'plan', col:2, row:20},
   {id:'queue', col:2, row:20},
   {id:'spectrometer', col:3, row:20},
@@ -3819,6 +3829,11 @@ const defaultCardFontScale = 1.0;
 const minCardFontScale = 0.70;
 const maxCardFontScale = 1.40;
 const cardFontScaleStep = 0.05;
+const planPlotScaleStorageKey = 'necst-progress-plan-plot-scale-v2';
+const defaultPlanPlotScale = 1.0;
+const minPlanPlotScale = 0.65;
+const maxPlanPlotScale = 1.35;
+const planPlotScaleStep = 0.08;
 const supportsCssZoom = (() => { try { return !!(window.CSS && CSS.supports && CSS.supports('zoom', '1')); } catch (_) { return false; } })();
 const isSafariBrowser = (() => {
   const ua = String(navigator.userAgent || '');
@@ -4013,6 +4028,7 @@ function applyLayoutState(state) {
     el.style.minHeight = '';
     delete el.dataset.layoutMinHeight;
   });
+  schedulePlanPlotResize();
 }
 function currentLayoutState() {
   const def = defaultLayoutState();
@@ -4159,6 +4175,71 @@ function ensureCardFontControls(card) {
   tools.append(dec, reset, inc);
   card.appendChild(tools);
 }
+function readPlanPlotScale() {
+  try {
+    const raw = Number(localStorage.getItem(planPlotScaleStorageKey));
+    if (Number.isFinite(raw)) return clampNumber(raw, minPlanPlotScale, maxPlanPlotScale);
+  } catch (_) {}
+  return defaultPlanPlotScale;
+}
+function resizePlanPlotToCard() {
+  const plot = document.getElementById('plotview');
+  const svg = plot ? plot.querySelector('svg') : null;
+  if (!plot || !svg) return;
+  const width = Math.max(1, plot.clientWidth || plot.getBoundingClientRect().width || 1);
+  const height = Math.max(1, plot.clientHeight || plot.getBoundingClientRect().height || 1);
+  const fit = Math.min(width / PLOT.w, height / PLOT.h);
+  if (!Number.isFinite(fit) || fit <= 0) return;
+  const scale = readPlanPlotScale();
+  const renderW = Math.max(1, PLOT.w * fit * scale);
+  const renderH = Math.max(1, PLOT.h * fit * scale);
+  plot.style.setProperty('--plan-plot-render-w', `${renderW.toFixed(1)}px`);
+  plot.style.setProperty('--plan-plot-render-h', `${renderH.toFixed(1)}px`);
+}
+function schedulePlanPlotResize() {
+  if (typeof window === 'undefined') return;
+  window.requestAnimationFrame(() => resizePlanPlotToCard());
+}
+function applyPlanPlotScale(scale) {
+  const value = clampNumber(scale, minPlanPlotScale, maxPlanPlotScale);
+  const readout = document.getElementById('plotScaleReadout');
+  if (readout) readout.textContent = `${Math.round(value * 100)}%`;
+  schedulePlanPlotResize();
+  return value;
+}
+function setPlanPlotScale(scale, persist=true) {
+  const value = applyPlanPlotScale(scale);
+  if (persist) {
+    try { localStorage.setItem(planPlotScaleStorageKey, String(value)); } catch (_) {}
+  }
+}
+function initPlanPlotControls() {
+  applyPlanPlotScale(readPlanPlotScale());
+  const minus = document.getElementById('plotScaleMinus');
+  const plus = document.getElementById('plotScalePlus');
+  const reset = document.getElementById('plotScaleReset');
+  const stopBubble = (event) => { event.stopPropagation(); };
+  const stopDrag = (event) => { event.preventDefault(); event.stopPropagation(); };
+  const handleClick = (event) => { event.preventDefault(); event.stopPropagation(); };
+  for (const el of [minus, plus, reset]) {
+    if (!el) continue;
+    el.draggable = false;
+    el.addEventListener('pointerdown', stopBubble);
+    el.addEventListener('mousedown', stopBubble);
+    el.addEventListener('touchstart', stopBubble, {passive:true});
+    el.addEventListener('dragstart', stopDrag);
+  }
+  if (minus) minus.addEventListener('click', (event) => { handleClick(event); setPlanPlotScale(readPlanPlotScale() - planPlotScaleStep); });
+  if (plus) plus.addEventListener('click', (event) => { handleClick(event); setPlanPlotScale(readPlanPlotScale() + planPlotScaleStep); });
+  if (reset) reset.addEventListener('click', (event) => { handleClick(event); setPlanPlotScale(defaultPlanPlotScale); });
+  const plot = document.getElementById('plotview');
+  if (plot && typeof ResizeObserver !== 'undefined') {
+    const observer = new ResizeObserver(() => schedulePlanPlotResize());
+    observer.observe(plot);
+    const card = document.querySelector('[data-card-id="planview"]');
+    if (card) observer.observe(card);
+  }
+}
 function initLayoutEditor() {
   document.body.classList.toggle('safari-browser', isSafariBrowser);
   applyLayoutState(readLayoutState());
@@ -4178,8 +4259,9 @@ function initLayoutEditor() {
     saveAndApplyLayout(st);
   });
   if (reset) reset.addEventListener('click', () => {
-    try { localStorage.removeItem(layoutStorageKey); for (const key of oldLayoutStorageKeys) localStorage.removeItem(key); } catch (_) {}
+    try { localStorage.removeItem(layoutStorageKey); for (const key of oldLayoutStorageKeys) localStorage.removeItem(key); localStorage.removeItem(planPlotScaleStorageKey); localStorage.removeItem('necst-progress-plan-plot-scale-v1'); } catch (_) {}
     applyLayoutState(defaultLayoutState());
+    setPlanPlotScale(defaultPlanPlotScale);
     setLayoutUnlocked(false);
   });
   for (const card of document.querySelectorAll('.card[data-card-id]')) {
@@ -4217,11 +4299,12 @@ function initLayoutEditor() {
       saveAndApplyLayout(state);
     });
   }
-  const onViewportResize = () => applyLayoutState(readLayoutState());
+  const onViewportResize = () => { applyLayoutState(readLayoutState()); schedulePlanPlotResize(); };
   window.addEventListener('resize', onViewportResize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', onViewportResize);
 }
 initLayoutEditor();
+initPlanPlotControls();
 
 function esc(v) { return String(v ?? '-').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
 function isTimeLike(label, key) {
@@ -5037,7 +5120,6 @@ function statusFor(item, snapshot, events) {
   if (!finalState && ((cur && (uid === cur || parent === cur)) || inRange(item, cr))) return 'current';
   return 'pending';
 }
-const PLOT = {w: 660, h: 460, left: 64, right: 612, top: 42, bottom: 362};
 function sx(x, bounds) { return PLOT.left + (x-bounds.xmin) * (PLOT.right-PLOT.left) / Math.max(1e-9, bounds.xmax-bounds.xmin); }
 function sy(y, bounds) { return PLOT.bottom - (y-bounds.ymin) * (PLOT.bottom-PLOT.top) / Math.max(1e-9, bounds.ymax-bounds.ymin); }
 function colorFor(status) { return status === 'done' ? '#2ca02c' : status === 'current' ? '#ff7f0e' : '#bdbdbd'; }
@@ -5046,9 +5128,20 @@ function renderPlanView(snapshot, plan, events, serverTimeUnix=null) {
   const kinds = new Set(items.map(it=>geomOf(it).kind));
   const obsType = String(snapshot?.observation?.type || '').toLowerCase();
   const plot = document.getElementById('plotview');
-  if (kinds.has('skydip_elevation') || obsType.includes('sky')) { plot.innerHTML = renderSkydipSvg(snapshot, items, events); return; }
-  if ([...kinds].some(k => ['scan_line','scan_block_line','point','grid_point'].includes(k))) { plot.innerHTML = renderMapSvg(snapshot, items, events, serverTimeUnix); return; }
+  if (!plot) return;
+  if (kinds.has('skydip_elevation') || obsType.includes('sky')) {
+    plot.innerHTML = renderSkydipSvg(snapshot, items, events);
+    schedulePlanPlotResize();
+    return;
+  }
+  if ([...kinds].some(k => ['scan_line','scan_block_line','point','grid_point'].includes(k))) {
+    plot.innerHTML = renderMapSvg(snapshot, items, events, serverTimeUnix);
+    schedulePlanPlotResize();
+    return;
+  }
   plot.innerHTML = '<div>No plottable geometry yet.</div>';
+  plot.style.removeProperty('--plan-plot-render-w');
+  plot.style.removeProperty('--plan-plot-render-h');
 }
 function itemMode(item) { return String(item?.mode || geomOf(item).mode || '').toUpperCase(); }
 function pointKind(item) {
@@ -5523,7 +5616,7 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
     countText = `Point ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}`;
     note = 'orange=current; HOT hidden';
   }
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.bottom+42}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">${esc(note)}</text></svg>`;
+  return `<svg width="${PLOT.w}" height="${PLOT.h}" viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.bottom+42}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">${esc(note)}</text></svg>`;
 }
 function skydipRowsFrom(snapshot, items, events) {
   const rows=[];
@@ -5563,7 +5656,7 @@ function renderSkydipSvg(snapshot, items, events) {
   const c = pointCounts(rows);
   const cur = rows.find(r=>r.status==='current');
   const curText = cur ? `Current elevation ${cur.y.toFixed(1)} deg at step ${cur.x}/${rows.length}` : `Elevation sequence ${rows.length} steps`;
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${grid}<polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.bottom+42}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">Skydip ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}: ${esc(curText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">elevation vs sequence; HOT/load labelled when present</text></svg>`;
+  return `<svg width="${PLOT.w}" height="${PLOT.h}" viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${grid}<polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.bottom+42}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">Skydip ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}: ${esc(curText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">elevation vs sequence; HOT/load labelled when present</text></svg>`;
 }
 async function update() {
   try {
