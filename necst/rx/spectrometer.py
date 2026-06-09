@@ -353,7 +353,11 @@ class SpectralData(DeviceNode):
                 self.spectral_recording_runtime.latch_fatal_error(message)
             return
 
+        requested = str(getattr(msg, "spectrometer", "") or "").replace("_", "").lower()
         for key, io in self.io.items():
+            key_norm = str(key).replace("_", "").lower()
+            if requested and requested != key_norm:
+                continue
             record_chan = msg.ch
             io.change_spec_ch(record_chan)
             self.logger.info(
