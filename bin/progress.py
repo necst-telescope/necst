@@ -4177,8 +4177,14 @@ function ensureCardFontControls(card) {
 }
 function readPlanPlotScale() {
   try {
-    const raw = Number(localStorage.getItem(planPlotScaleStorageKey));
-    if (Number.isFinite(raw)) return clampNumber(raw, minPlanPlotScale, maxPlanPlotScale);
+    const text = localStorage.getItem(planPlotScaleStorageKey);
+    // localStorage.getItem() returns null when the key is absent.
+    // Number(null) is 0 in JavaScript, which was accidentally clamped to
+    // minPlanPlotScale (=65%) and made first-time Plan View too small.
+    if (text !== null && String(text).trim() !== '') {
+      const raw = Number(text);
+      if (Number.isFinite(raw)) return clampNumber(raw, minPlanPlotScale, maxPlanPlotScale);
+    }
   } catch (_) {}
   return defaultPlanPlotScale;
 }
