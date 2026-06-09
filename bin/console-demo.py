@@ -514,6 +514,8 @@ summary { cursor: pointer; color: var(--muted); }
           <div class="run-actions">
             <button id="startObs" class="primary large" disabled title="Start the selected observation sequence. Check and Dry run are optional; Start always performs server-side validation before launching.">Start observation</button>
             <button id="abortObs" class="danger large" title="Abort a running observation sequence and request recorder/gate/progress cleanup. Safety action: kept clickable even if status has not yet detected observing.">ABORT observation</button>
+            <button id="terminateObsLauncherQuick" class="secondary compact" type="button" disabled title="Terminate the local observation launcher subprocess only. This does not send telescope STOP and should be used only after confirming the hardware is safe.">Terminate launcher</button>
+            <button id="clearStaleObs" class="secondary compact" type="button" disabled title="Recover the console from stale progress state after confirming the telescope/recorder are safe. This archives only current progress pointer files; it does not send hardware commands or delete data.">Clear stale state</button>
           </div>
         </div>
         <div id="obsOutputDirBox" class="obs-output-dir" aria-live="polite">
@@ -1130,13 +1132,44 @@ function safetyReleaseLooksIdle(data, ageSec) {
 }
 function actualOperationFromStatus(data) {
   data = data || {};
+  const stale = data.stale_observation || {};
+  if (stale.launcher_stuck || stale.running_stale) {
+    const age = Number(stale.age_sec);
+    const ageText = Number.isFinite(age) ? `${age.toFixed(1)} s` : 'unknown age';
+    const record = stale.record_name || 'unknown record';
+    if (stale.launcher_stuck) {
+      const safetyAge = Number(stale.safety_release_age_sec);
+      const safetyText = Number.isFinite(safetyAge) ? `${safetyAge.toFixed(1)} s since STOP/ABORT` : 'launcher still active';
+      return {
+        phase: 'attention',
+        kind: 'observation',
+        label: 'ATTENTION: OBSERVATION LAUNCHER STUCK',
+        detail: `Observation launcher still appears active for ${record} while the system is error/abort-stalled (${safetyText}). Confirm hardware is safe, then terminate the local launcher. Clear stale state may be needed after that.`
+      };
+    }
+    return {
+      phase: 'attention',
+      kind: 'observation',
+      label: 'ATTENTION: STALE OBSERVATION STATE',
+      detail: `Progress still says observation is running for ${record}, but no active launcher/fresh progress update is confirmed (${ageText}). Confirm the hardware is safe, then use Clear stale state.`
+    };
+  }
   const sys = lowerText(data.state || 'idle');
   const manual = lowerText(data.manual_state || 'idle');
   const task = lowerText(data.active_task || 'none');
   const progress = data.progress || {};
-  const finalOrIdle = ['idle', 'finished', 'aborted', 'error', 'failed'].includes(sys);
-  const obsActive = sys === 'observing' || (!finalOrIdle && task.includes('observation')) || (!finalOrIdle && Boolean(progress.observation_running)) || processCategoryActive(data, 'observation');
-  const calActive = sys === 'calibrating' || (!finalOrIdle && manual === 'calibration') || (!finalOrIdle && (task.includes('rsky') || task.includes('skydip'))) || processCategoryActive(data, 'calibration');
+  const errorLike = ['error', 'failed', 'stale_observation'].includes(sys);
+  const finalOrIdle = ['idle', 'finished', 'aborted', 'error', 'failed', 'stale_observation'].includes(sys);
+  if (errorLike && (processCategoryActive(data, 'observation') || Boolean(progress.observation_running))) {
+    return {
+      phase: 'attention',
+      kind: 'observation',
+      label: 'ATTENTION: OBSERVATION STATE ERROR',
+      detail: 'Observation-related state remains while the system lifecycle is error/failed. Use ABORT first; if it does not clear, terminate the local launcher and clear stale state after confirming hardware safety.'
+    };
+  }
+  const obsActive = sys === 'observing' || (!finalOrIdle && task.includes('observation')) || (!finalOrIdle && Boolean(progress.observation_running)) || (!finalOrIdle && processCategoryActive(data, 'observation'));
+  const calActive = sys === 'calibrating' || (!finalOrIdle && manual === 'calibration') || (!finalOrIdle && (task.includes('rsky') || task.includes('skydip'))) || (!finalOrIdle && processCategoryActive(data, 'calibration'));
   const explicitTrackingActive = task.includes('target tracking');
   const atTargetIdle = Boolean((data.mount_target_reached || data.mount_hold_at_target) && data.motion_live_active === false);
   const mountActive = !atTargetIdle && (manual === 'moving' || (manual === 'tracking' && !explicitTrackingActive) || task.includes('mount move') || task.includes('manual mount'));
@@ -1980,6 +2013,26 @@ function renderStatus(data) {
   // ABORT is a safety action.  It must stay clickable even when the
   // observation state cannot be inferred from status/progress yet.
   qs('abortObs').disabled = false;
+  const staleObs = data.stale_observation || {};
+  const terminateQuick = qs('terminateObsLauncherQuick');
+  if (terminateQuick) {
+    const canTerminate = Boolean(staleObs.can_terminate_launcher || staleObs.launcher_stuck || operation.label === 'ATTENTION: OBSERVATION LAUNCHER STUCK');
+    terminateQuick.disabled = !canTerminate;
+    terminateQuick.style.display = canTerminate ? '' : 'none';
+    if (canTerminate) {
+      terminateQuick.title = 'Terminate the local observation launcher subprocess only. Confirm hardware is safe first; this does not send telescope STOP.';
+    }
+  }
+  const staleButton = qs('clearStaleObs');
+  if (staleButton) {
+    const canClearStale = Boolean(staleObs.can_clear || staleObs.running_stale || operation.label === 'ATTENTION: STALE OBSERVATION STATE');
+    staleButton.disabled = !canClearStale;
+    staleButton.style.display = canClearStale ? '' : 'none';
+    if (canClearStale) {
+      const record = staleObs.record_name || 'unknown record';
+      staleButton.title = `Clear stale console/progress state for ${record}. Confirm hardware is safe first. This does not send hardware commands or delete data.`;
+    }
+  }
   qs('manualBadge').textContent = ['mount', 'tracking', 'rsky', 'skydip', 'calibration'].includes(operation.kind) ? operation.label : data.manual_state;
   qs('manualBadge').className = 'badge ' + (operation.phase === 'attention' ? 'bad' : (operation.phase === 'running' ? 'warn' : motionClass));
   qs('motionSummary').textContent = data.manual_state;
@@ -2278,6 +2331,20 @@ qs('startObs').addEventListener('click', async () => {
 qs('abortObs').addEventListener('click', async () => {
   if (confirm('Abort current observation and request recorder/gate/progress cleanup?')) await api('abort_observation', {}, 'abort');
 });
+qs('terminateObsLauncherQuick').addEventListener('click', async () => {
+  if (!confirm('Terminate the local observation launcher subprocess only?\n\nUse this only after confirming the telescope/recorder/XFFTS are safe. This does not send telescope STOP.')) return;
+  clearPendingOperation();
+  const resp = await api('terminate_observation_launcher');
+  if (!resp.ok) alert('Terminate observation launcher failed: ' + (resp.reason || 'unknown reason'));
+});
+qs('clearStaleObs').addEventListener('click', async () => {
+  const stale = (state.lastStatus || {}).stale_observation || {};
+  const record = stale.record_name || 'unknown record';
+  if (!confirm(`Clear stale observation/progress state for ${record}?\n\nOnly use this after confirming the telescope, recorder, and XFFTS are safe. This does not send hardware commands and does not delete observation data.`)) return;
+  clearPendingOperation();
+  const resp = await api('clear_stale_observation_state');
+  if (!resp.ok) alert('Clear stale state failed: ' + (resp.reason || 'unknown reason'));
+});
 qs('copyObsOutputDir').addEventListener('click', copyObservationOutputDir);
 qs('authorityButton').addEventListener('click', async () => {
   const resp = await fetch('/api/status');
@@ -2459,6 +2526,11 @@ class DemoState:
                 "url": self.progress_url,
                 "running": self.progress_running,
                 "owned_by_console": self.progress_owned_by_console,
+            },
+            "stale_observation": {
+                "running_stale": False,
+                "can_clear": False,
+                "record_name": self.record_name,
             },
             "state": self.state,
             "observation": {
@@ -2992,6 +3064,16 @@ def handle_action(
         state.log.clear()
         server.add_log(True, "operation log cleared")
         return True, "cleared"
+
+    if action == "clear_stale_observation_state":
+        _demo_clear_exclusive_start_guard(state)
+        state.state = "idle"
+        state.manual_state = "idle"
+        state.active_task = "none"
+        state.command_az = None
+        state.command_el = None
+        server.add_log(True, "stale observation state cleared in demo")
+        return True, "stale observation state cleared"
 
     if action == "acquire_authority":
         if state.authority_held and state.authority_session_id != session_id:
