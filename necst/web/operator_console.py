@@ -18,6 +18,7 @@ import sys
 import json
 import math
 import os
+import shutil
 import threading
 import time
 import uuid
@@ -88,6 +89,13 @@ EXCLUSIVE_START_STATUS_SEC = 15.0
 # This prevents STOP REQUESTED from degrading into ATTENTION while the telescope
 # is already stopped and ready for the next command.
 SAFETY_RELEASE_ASSUME_IDLE_AFTER_SEC = 1.0
+
+# A progress sidecar can remain in a non-final lifecycle if an observation
+# launcher dies or blocks before writing its final snapshot.  Do not keep the
+# operator UI in OBSERVATION RUNNING forever when no local launcher is active
+# and the sidecar has not been updated for this long.  This only changes the
+# console status; it does not send telescope commands or delete data.
+STALE_OBSERVATION_PROGRESS_SEC = float(os.environ.get("NECST_CONSOLE_STALE_OBSERVATION_SEC", "60.0"))
 
 LIVE_ACTION_GUARD_MESSAGE = (
     "live write actions are guarded by --guard-live-actions; "
@@ -977,6 +985,169 @@ def _active_launcher_summary(
     return "active launcher already exists: " + ", ".join(labels)
 
 
+
+def _active_launcher_categories(state: OperatorConsoleState) -> set[str]:
+    """Return active launcher categories currently owned by this console."""
+
+    return {
+        str(record.category or "").strip().lower()
+        for record in state.process_registry.active()
+        if str(record.category or "").strip()
+    }
+
+
+def _progress_snapshot_update_age_sec(status_state: Mapping[str, Any]) -> Optional[float]:
+    """Return age of the current progress snapshot update, if known."""
+
+    now = time.time()
+    snapshot = status_state.get("snapshot") if isinstance(status_state, Mapping) else {}
+    snapshot = snapshot if isinstance(snapshot, Mapping) else {}
+    timing = snapshot.get("time") if isinstance(snapshot.get("time"), Mapping) else {}
+    candidates = [
+        timing.get("updated_at_unix"),
+        timing.get("last_update_unix"),
+        timing.get("server_time_unix"),
+    ]
+    raw = status_state.get("raw_snapshot") if isinstance(status_state, Mapping) else {}
+    raw = raw if isinstance(raw, Mapping) else {}
+    raw_timing = raw.get("time") if isinstance(raw.get("time"), Mapping) else {}
+    candidates.extend([
+        raw_timing.get("updated_at_unix"),
+        raw_timing.get("last_update_unix"),
+    ])
+    for value in candidates:
+        try:
+            ts = float(value)
+        except Exception:
+            continue
+        if math.isfinite(ts) and ts > 0:
+            return max(0.0, now - ts)
+    try:
+        path = Path(str((status_state.get("paths") or {}).get("snapshot") or ""))
+        if path.exists():
+            return max(0.0, now - path.stat().st_mtime)
+    except Exception:
+        pass
+    return None
+
+
+def _stale_observation_state(
+    state: OperatorConsoleState,
+    status_state: Mapping[str, Any],
+    operator_status: Optional[Mapping[str, Any]] = None,
+) -> JsonDict:
+    """Classify stale observation-running sidecars.
+
+    This is intentionally conservative.  It does not declare a live observation
+    stale while a console-owned observation/calibration launcher is still active.
+    It only marks the status as stale when a progress sidecar still says the
+    lifecycle is non-final but the sidecar has not been refreshed for the
+    configured timeout.
+    """
+
+    op = operator_status if isinstance(operator_status, Mapping) else {}
+    if not op:
+        op = status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
+        op = op if isinstance(op, Mapping) else {}
+    system = op.get("system") if isinstance(op.get("system"), Mapping) else {}
+    progress = op.get("progress") if isinstance(op.get("progress"), Mapping) else {}
+    observation = op.get("observation") if isinstance(op.get("observation"), Mapping) else {}
+    lifecycle = str(system.get("state") or "unknown").strip().lower()
+    percent = progress.get("percent")
+    nonfinal_lifecycle = lifecycle not in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
+    progress_running = bool(nonfinal_lifecycle or percent is not None)
+    active_categories = _active_launcher_categories(state)
+    active_launcher = bool(active_categories.intersection({"observation", "calibration"}))
+    age = _progress_snapshot_update_age_sec(status_state)
+    threshold = max(5.0, float(STALE_OBSERVATION_PROGRESS_SEC))
+    running_stale = bool(
+        progress_running
+        and not active_launcher
+        and age is not None
+        and age >= threshold
+    )
+    return {
+        "running_stale": running_stale,
+        "progress_running": bool(progress_running),
+        "active_launcher": active_launcher,
+        "active_launcher_categories": sorted(active_categories),
+        "age_sec": age,
+        "threshold_sec": threshold,
+        "lifecycle_state": lifecycle,
+        "record_name": observation.get("record_name"),
+        "progress_record_dir": observation.get("progress_record_dir"),
+        "reason": (
+            "progress sidecar is non-final/still-running, but no console-owned "
+            "observation launcher is active and the sidecar update is stale"
+            if running_stale
+            else ""
+        ),
+        "can_clear": bool(running_stale and not active_launcher),
+    }
+
+
+def _clear_stale_observation_state(state: OperatorConsoleState) -> Tuple[bool, str, JsonDict]:
+    """Archive stale current-observation pointers so the console can return READY.
+
+    This is an explicit operator recovery action.  It never sends hardware
+    commands and it does not delete the per-record progress directory or data.
+    It only moves the global current-observation pointer files out of the way.
+    """
+
+    active = _active_launcher_categories(state).intersection({"observation", "calibration"})
+    if active:
+        return False, (
+            "cannot clear stale observation state while a console-owned launcher "
+            f"is still active: {', '.join(sorted(active))}"
+        ), {"active_launcher_categories": sorted(active), "cleared": False}
+
+    root = state.progress_root
+    stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+    archive_dir = root / "stale_console_clear" / stamp
+    moved: List[Dict[str, str]] = []
+    missing: List[str] = []
+    errors: List[str] = []
+    for name in ("current_observation_progress.json", "current_observation_record.txt"):
+        src = root / name
+        if not src.exists():
+            missing.append(str(src))
+            continue
+        try:
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            dst = archive_dir / name
+            shutil.move(str(src), str(dst))
+            moved.append({"from": str(src), "to": str(dst)})
+        except Exception as exc:
+            errors.append(f"{src}: {exc}")
+    if errors:
+        return False, "failed to clear one or more stale progress pointer files", {
+            "cleared": False,
+            "moved": moved,
+            "missing": missing,
+            "errors": errors,
+            "archive_dir": str(archive_dir),
+        }
+
+    _clear_exclusive_start_guard(state)
+    _clear_safety_release_request(state)
+    _clear_last_mount_target(state)
+    state.last_manual_state = "idle"
+    state.last_active_task = "none"
+    state.last_command_az = None
+    state.last_command_el = None
+    message = "stale observation state cleared"
+    if moved:
+        message += f"; archived {len(moved)} current progress pointer file(s)"
+    else:
+        message += "; no current progress pointer files were present"
+    return True, message, {
+        "cleared": True,
+        "moved": moved,
+        "missing": missing,
+        "archive_dir": str(archive_dir) if moved else None,
+        "note": "per-record progress/data directories were not deleted",
+    }
+
 def _last_mount_target_reached(
     state: OperatorConsoleState,
     *,
@@ -1167,6 +1338,12 @@ def _operator_status_operation_conflict(
         )
         op = status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
         op = op if isinstance(op, Mapping) else {}
+        stale = _stale_observation_state(state, status_state, op)
+        if stale.get("running_stale"):
+            return (
+                f"cannot start {requested_action}: stale observation state remains "
+                f"for record {stale.get('record_name') or 'unknown'}; use Clear stale observation state"
+            )
         system = op.get("system") if isinstance(op.get("system"), Mapping) else {}
         motion = op.get("motion") if isinstance(op.get("motion"), Mapping) else {}
         sys_state = str(system.get("state") or "").strip().lower()
@@ -1399,6 +1576,11 @@ def dispatch_action(
             ),
             "shutdown": _shutdown_snapshot(state),
         }
+
+    if action == "clear_stale_observation_state":
+        ok, message, data = _clear_stale_observation_state(state)
+        data["action"] = action
+        return ok, message, data
 
     live_allowed, live_reason, live_data = _live_write_guard(state, action)
     if not live_allowed:
@@ -1930,7 +2112,13 @@ def _operator_status_to_v7_status(
         for record in process_records
         if bool(record.is_active())
     }
-    if sys_state == "idle":
+    stale_observation = _stale_observation_state(state, status_state, op)
+    if stale_observation.get("running_stale"):
+        sys_state = "stale_observation"
+        warnings = list(warnings) + [
+            "stale observation progress state remains; use Clear stale observation state after confirming hardware is safe"
+        ]
+    elif sys_state == "idle":
         if "observation" in active_process_categories:
             sys_state = "observing"
         elif "calibration" in active_process_categories:
@@ -2103,6 +2291,7 @@ def _operator_status_to_v7_status(
             "position": chopper_position if chopper_position is not None else "unknown",
             "age": age_text,
         },
+        "stale_observation": stale_observation,
         "progress": {
             "running": bool(progress_running),
             "url": str(monitor_status.get("url") or state.progress_url),
