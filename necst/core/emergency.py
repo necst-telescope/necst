@@ -1,28 +1,24 @@
-"""Small operator-facing emergency and manual mount command CLIs."""
+"""Small operator-facing emergency and manual command CLIs."""
 
 from __future__ import annotations
 
 import argparse
 import sys
-import time
 from typing import Optional
 
-import rclpy
-
-from .commander import Commander
-
-
-def _ensure_rclpy() -> bool:
-    """Initialize rclpy if needed and return whether this function did it."""
-    if rclpy.ok():
-        return False
-    rclpy.init()
-    return True
-
-
-def _shutdown_if_needed(should_shutdown: bool) -> None:
-    if should_shutdown:
-        rclpy.shutdown()
+from .. import config
+from .operator_actions import (
+    OperatorActionError,
+    OperatorActionTimeout,
+    abort_observation,
+    antenna_stop,
+    chopper_maintenance,
+    chopper_move,
+    chopper_status,
+    format_chopper_status as _format_chopper_status,
+    mount_move,
+    wait_chopper_position as _wait_chopper_position,
+)
 
 
 def main_stop(argv: Optional[list[str]] = None) -> int:
@@ -51,16 +47,18 @@ def main_stop(argv: Optional[list[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    should_shutdown = _ensure_rclpy()
-    com = Commander()
     try:
-        com.antenna("stop", timeout_sec=max(0.0, float(args.confirm_timeout_sec)))
-        if args.settle_sec > 0:
-            time.sleep(float(args.settle_sec))
+        antenna_stop(
+            confirm_timeout_sec=args.confirm_timeout_sec,
+            settle_sec=args.settle_sec,
+        )
         return 0
-    finally:
-        com.destroy_node()
-        _shutdown_if_needed(should_shutdown)
+    except OperatorActionError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        print("interrupted", file=sys.stderr)
+        return 130
 
 
 def main_abort(argv: Optional[list[str]] = None) -> int:
@@ -106,25 +104,25 @@ def main_abort(argv: Optional[list[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    should_shutdown = _ensure_rclpy()
-    com = Commander()
     try:
-        if args.settle_sec > 0:
-            time.sleep(float(args.settle_sec))
-        request_id = com.observation_abort(
+        result = abort_observation(
             reason=args.reason,
             requester=args.requester,
-            repeat=max(1, int(args.repeat)),
-            interval_sec=max(0.0, float(args.interval_sec)),
+            antenna_stop_after_abort=not args.no_antenna_stop,
+            repeat=args.repeat,
+            interval_sec=args.interval_sec,
+            settle_sec=args.settle_sec,
         )
-        print(f"abort request sent: {request_id}")
+        print(f"abort request sent: {result.data.get('request_id')}")
         if not args.no_antenna_stop:
             print("sending antenna stop...")
-            com.antenna("stop")
         return 0
-    finally:
-        com.destroy_node()
-        _shutdown_if_needed(should_shutdown)
+    except OperatorActionError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        print("interrupted", file=sys.stderr)
+        return 130
 
 
 def main_mount_move(argv: Optional[list[str]] = None) -> int:
@@ -192,45 +190,153 @@ def main_mount_move(argv: Optional[list[str]] = None) -> int:
     print("  frame     = altaz")
     print("  direct    = true")
     print("  az mode   = mount")
-    if args.dry_run:
-        return 0
 
-    should_shutdown = _ensure_rclpy()
-    com = Commander()
     try:
-        if not com.get_privilege():
-            print("failed to acquire NECST privilege", file=sys.stderr)
-            return 2
-        cmd_id = com.antenna(
-            "point",
-            target=(az, el, "altaz"),
-            unit="deg",
-            direct_mode=True,
-            az_target_mode="mount",
-            wait=False,
+        result = mount_move(
+            az,
+            el,
+            wait=not args.no_wait,
+            timeout_sec=args.timeout_sec,
+            dry_run=args.dry_run,
         )
-        print(f"command id: {cmd_id}")
-        if not args.no_wait:
-            try:
-                com.wait_mount_point(
-                    az, el, command_id=cmd_id, timeout_sec=args.timeout_sec
-                )
-            except KeyboardInterrupt:
-                print("interrupted: sending antenna stop...", file=sys.stderr)
-                com.antenna("stop")
-                return 130
+        if not args.dry_run:
+            print(f"command id: {result.data.get('command_id')}")
         return 0
     except KeyboardInterrupt:
         print("interrupted: sending antenna stop...", file=sys.stderr)
         try:
-            com.antenna("stop")
+            antenna_stop()
         except Exception:
             pass
         return 130
-    finally:
-        try:
-            com.quit_privilege()
-        except Exception:
-            pass
-        com.destroy_node()
-        _shutdown_if_needed(should_shutdown)
+    except OperatorActionError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+
+def main_chopper(argv: Optional[list[str]] = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="necst chopper",
+        description=(
+            "Move or query the chopper.  'in' inserts the ambient load; "
+            "'out' removes it.  'status' only reads telemetry."
+        ),
+    )
+    parser.add_argument(
+        "command",
+        choices=[
+            "in",
+            "out",
+            "status",
+            "insert",
+            "remove",
+            "?",
+            "alarm-reset",
+            "alarm_reset",
+            "reset-alarm",
+            "home",
+            "zero",
+            "zero-point",
+            "recover",
+        ],
+        help=(
+            "Chopper command: in/out/status/alarm-reset/home/recover. "
+            "insert/remove/? and zero/zero-point are aliases."
+        ),
+    )
+    parser.add_argument(
+        "--no-wait",
+        action="store_true",
+        help="Return after publishing the command without waiting for status.",
+    )
+    parser.add_argument(
+        "--timeout-sec",
+        type=float,
+        default=10.0,
+        help="Maximum time to wait for in/out completion (default: 10).",
+    )
+    parser.add_argument(
+        "--settle-sec",
+        type=float,
+        default=0.2,
+        help="ROS discovery settle delay before publishing/querying (default: 0.2).",
+    )
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=3,
+        help="Number of command publications for in/out (default: 3).",
+    )
+    parser.add_argument(
+        "--interval-sec",
+        type=float,
+        default=0.1,
+        help="Interval between repeated command publications (default: 0.1).",
+    )
+    args = parser.parse_args(argv)
+
+    command = str(args.command).lower()
+    if command == "insert":
+        command = "in"
+    elif command == "remove":
+        command = "out"
+    elif command == "?":
+        command = "status"
+    elif command in {"alarm_reset", "reset-alarm"}:
+        command = "alarm-reset"
+    elif command in {"zero", "zero-point"}:
+        command = "home"
+
+    try:
+        if command == "status":
+            result = chopper_status(
+                timeout_sec=args.timeout_sec,
+                settle_sec=args.settle_sec,
+            )
+            print(result.message)
+            return 0
+
+        if command in {"alarm-reset", "home", "recover"}:
+            print(f"Chopper maintenance command: {command}")
+            result = chopper_maintenance(command, settle_sec=args.settle_sec)
+            print(result.message)
+            return 0 if result.success else 1
+
+        if command == "in":
+            label = "IN"
+            target_position = int(config.chopper_motor_position["insert"])
+        elif command == "out":
+            label = "OUT"
+            target_position = int(config.chopper_motor_position["remove"])
+        else:
+            parser.error(f"unknown command: {args.command!r}")
+
+        print(f"Chopper command: {label}")
+        print(f"  target position = {target_position}")
+
+        result = chopper_move(
+            command,
+            wait=not args.no_wait,
+            timeout_sec=args.timeout_sec,
+            settle_sec=args.settle_sec,
+            repeat=args.repeat,
+            interval_sec=args.interval_sec,
+        )
+        if not args.no_wait:
+            print(result.message)
+        return 0
+    except OperatorActionTimeout as exc:
+        print(f"timeout: {exc}", file=sys.stderr)
+        return 1
+    except OperatorActionError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        print("interrupted", file=sys.stderr)
+        return 130
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        return 1

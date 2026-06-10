@@ -30,6 +30,7 @@ from necst_msgs.srv import CoordinateCommand, ScanBlockCommand
 
 from ... import config, namespace, service, topic
 from ...core import AlertHandlerNode
+from ...az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
 
 class HorizontalCoord(AlertHandlerNode):
@@ -1153,11 +1154,22 @@ class HorizontalCoord(AlertHandlerNode):
             _az = self._validate_mount_az_target(az)
         else:
             _az = self.optimizer["az"].optimize(enc_az, az.to_value("deg"), unit="deg")
+            _az = self._validate_az_unwrap_disabled_raw_limit(
+                _az, action_label="generated Az command"
+            )
         _el = self.optimizer["el"].optimize(enc_el, el.to_value("deg"), unit="deg")
 
         if (_az is not None) and (_el is not None):
             return _az, _el
         return [], []
+
+    def _validate_az_unwrap_disabled_raw_limit(self, az, *, action_label: str):
+        try:
+            assert_mount_az_allowed_when_unwrap_disabled(az, action_label=action_label)
+        except ValueError as exc:
+            self.logger.warning(str(exc))
+            return None
+        return az
 
     def _validate_mount_az_target(self, az):
         """Validate explicit mount azimuth without modulo candidate selection.
@@ -1182,6 +1194,10 @@ class HorizontalCoord(AlertHandlerNode):
                 "Mount Az target is out of critical drive range: "
                 f"target={az_q}, limit={critical}"
             )
+            return None
+        if self._validate_az_unwrap_disabled_raw_limit(
+            az_q, action_label="mount Az target"
+        ) is None:
             return None
         if not bool(((warning_lower <= az_deg) & (az_deg <= warning_upper)).all()):
             self.logger.warning("Mount Az target nears drive range limit.")

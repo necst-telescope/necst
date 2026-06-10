@@ -309,13 +309,15 @@ class service:
         CCDCommand,
         ComDelaySrv,
         CoordinateCommand,
+        GetAzUnwrapState,
+        SetAzUnwrapState,
         DomeSync,
         File,
         ObservationMode,
         ScanBlockCommand,
         SetSpectralRecordingGate,
     )
-    from std_srvs.srv import Empty
+    from std_srvs.srv import Empty, Trigger
 
     from .utils import Service
 
@@ -324,12 +326,21 @@ class service:
     record_file = Service(File, "record_file", namespace.core)
     com_delay = Service(ComDelaySrv, "com_delay", namespace.core)
     raw_coord = Service(CoordinateCommand, "raw_coord", namespace.antenna)
+    az_unwrap_state_get = Service(
+        GetAzUnwrapState, "az_unwrap_state/get", namespace.antenna
+    )
+    az_unwrap_state_set = Service(
+        SetAzUnwrapState, "az_unwrap_state/set", namespace.antenna
+    )
     scan_block = Service(ScanBlockCommand, "scan_block", namespace.antenna)
     dome_coord = Service(CoordinateCommand, "dome_coord", namespace.dome)
     obsmode = Service(ObservationMode, "obsmode", namespace.ctrl)
     ccd_cmd = Service(CCDCommand, "ccd_cmd", namespace.rx)
     dome_sync = Service(DomeSync, "dome_sync", namespace.dome)
     dome_pid_sync = Service(DomeSync, "dome_pid_sync", namespace.dome)
+    chopper_alarm_reset = Service(Trigger, "chopper/alarm_reset", namespace.calib)
+    chopper_home = Service(Trigger, "chopper/home", namespace.calib)
+    chopper_recover = Service(Trigger, "chopper/recover", namespace.calib)
     apply_spectral_recording_setup = Service(
         ApplySpectralRecordingSetup, "apply_spectral_recording_setup", namespace.rx
     )

@@ -3,9 +3,14 @@ import time
 from neclib.devices import AntennaEncoder
 from necst_msgs.msg import CoordMsg
 
-from .az_unwrap import AzUnwrapRuntime
+from .az_unwrap import (
+    AzUnwrapRuntime,
+    fill_get_response,
+    fill_set_response,
+    report_from_status,
+)
 
-from ... import namespace, topic, config
+from ... import namespace, topic, service, config
 from ...core import DeviceNode
 
 
@@ -19,7 +24,83 @@ class AntennaEncoderController(DeviceNode):
         self.unwrap_publisher = topic.antenna_az_unwrap_status.publisher(self)
         self.encoder = AntennaEncoder()
         self.az_unwrap = AzUnwrapRuntime()
+        self.az_unwrap_state_get_service = service.az_unwrap_state_get.service(
+            self, self.get_az_unwrap_state
+        )
+        self.az_unwrap_state_set_service = service.az_unwrap_state_set.service(
+            self, self.set_az_unwrap_state
+        )
         self.create_timer(1 / config.antenna_enc_frequency, self.stream)
+
+
+    def get_az_unwrap_state(self, _request, response):
+        """Return Az unwrap state from the encoder node process."""
+        report = self.az_unwrap.get_state_report()
+        return fill_get_response(response, report)
+
+    def set_az_unwrap_state(self, request, response):
+        """Set Az unwrap state in the encoder node process.
+
+        The service intentionally writes through self.az_unwrap so the JSON goes
+        to the state_path used by encoder_readout, not to the caller's ~/.necst.
+        """
+        raw_az = float(request.raw_az_deg) if bool(request.use_raw_az) else None
+        continuous_az = (
+            float(request.continuous_az_deg)
+            if bool(request.use_continuous_az)
+            else None
+        )
+        branch = int(request.branch) if bool(request.use_branch) else None
+        try:
+            status = self.az_unwrap.manual_initialize(
+                raw_az=raw_az,
+                continuous_az=continuous_az,
+                branch=branch,
+                reason="manual state set via encoder service",
+            )
+            try:
+                self.unwrap_publisher.publish(status)
+            except Exception as exc:
+                self.get_logger().error(
+                    f"Az unwrap status publish after service set failed: {exc}",
+                    throttle_duration_sec=1,
+                )
+            report = report_from_status(self.az_unwrap, status)
+            return fill_set_response(
+                response,
+                success=report["success"],
+                state=report["state"],
+                reason=report["reason"],
+                state_path=report["state_path"],
+                enabled=report["enabled"],
+                valid=report["valid"],
+                raw_az_deg=report["raw_az_deg"],
+                modulo_az_deg=report["modulo_az_deg"],
+                continuous_az_deg=report["continuous_az_deg"],
+                branch=report["branch"],
+                period_deg=report["period_deg"],
+                drive_min_deg=report["drive_min_deg"],
+                drive_max_deg=report["drive_max_deg"],
+            )
+        except Exception as exc:
+            self.get_logger().error(f"Az unwrap service set rejected: {exc}")
+            report = self.az_unwrap.get_state_report()
+            return fill_set_response(
+                response,
+                success=False,
+                state="rejected",
+                reason=str(exc),
+                state_path=report.get("state_path", ""),
+                enabled=report.get("enabled", False),
+                valid=report.get("valid", False),
+                raw_az_deg=report.get("raw_az_deg", -1.0),
+                modulo_az_deg=report.get("modulo_az_deg", -1.0),
+                continuous_az_deg=report.get("continuous_az_deg", -1.0),
+                branch=report.get("branch", 0),
+                period_deg=report.get("period_deg", 360.0),
+                drive_min_deg=report.get("drive_min_deg", 0.0),
+                drive_max_deg=report.get("drive_max_deg", 360.0),
+            )
 
     def stream(self) -> None:
         record_time = time.time()

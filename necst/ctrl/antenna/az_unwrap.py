@@ -87,6 +87,117 @@ def _drive_range_deg() -> Tuple[float, float]:
     return float(_to_float(lo, "deg", 0.0)), float(_to_float(hi, "deg", 360.0))
 
 
+
+
+def _az_unwrap_az_section() -> Optional[Any]:
+    """Return the configured Az unwrap subsection, if any exists.
+
+    A missing ``antenna_encoder_unwrap`` section means this telescope is not
+    configured for absolute-modulo Az unwrap and must keep the legacy behavior.
+    A present section with ``enabled=false`` means an absolute-modulo encoder is
+    configured but the software unwrap is disabled; in that state commands must
+    not exceed the raw absolute encoder range.
+    """
+
+    root = getattr(config, "antenna_encoder_unwrap", None)
+    if root is None:
+        return None
+    az = _cfg_get(root, "az", None)
+    return root if az is None else az
+
+
+def load_unwrap_disabled_mount_az_limit() -> Optional[dict]:
+    """Return raw-Az command limits when absolute unwrap is configured off.
+
+    When an absolute-modulo Az encoder is configured but
+    ``antenna_encoder_unwrap.az.enabled`` is false, the control system has no
+    branch information.  In that state Az commands must be confined to the raw
+    absolute encoder range (normally 0..360 deg).  If no unwrap section exists,
+    return ``None`` so NANTEN2/incremental-encoder configurations are unchanged.
+    """
+
+    az = _az_unwrap_az_section()
+    if az is None:
+        return None
+    enabled = _to_bool(_cfg_get(az, "enabled", False), False)
+    if enabled:
+        return None
+    mode = str(_cfg_get(az, "mode", "absolute_modulo") or "").strip().lower()
+    if mode not in {"absolute_modulo", "absolute-modulo"}:
+        return None
+    raw_min = float(
+        _to_float(
+            _cfg_get(az, "raw_min", _cfg_get(az, "raw_min_deg", 0.0)),
+            "deg",
+            0.0,
+        )
+    )
+    raw_max = float(
+        _to_float(
+            _cfg_get(az, "raw_max", _cfg_get(az, "raw_max_deg", 360.0)),
+            "deg",
+            360.0,
+        )
+    )
+    if not (math.isfinite(raw_min) and math.isfinite(raw_max)) or raw_min >= raw_max:
+        raise ValueError(
+            "antenna_encoder_unwrap.az raw_min/raw_max are invalid: "
+            f"raw_min={raw_min!r}, raw_max={raw_max!r}"
+        )
+    return {
+        "enabled": False,
+        "mode": mode,
+        "raw_min_deg": raw_min,
+        "raw_max_deg": raw_max,
+    }
+
+
+def _flatten_degree_values(value: Any) -> list[float]:
+    if hasattr(value, "to_value"):
+        value = value.to_value("deg")
+    if hasattr(value, "tolist"):
+        value = value.tolist()
+    if isinstance(value, (str, bytes)):
+        return [float(value)]
+    try:
+        iterator = iter(value)
+    except TypeError:
+        return [float(value)]
+    values: list[float] = []
+    for item in iterator:
+        values.extend(_flatten_degree_values(item))
+    return values
+
+
+def assert_mount_az_allowed_when_unwrap_disabled(
+    az_deg: Any, *, action_label: str = "Az target"
+) -> Optional[dict]:
+    """Reject Az commands outside raw range when unwrap is configured off.
+
+    This is a fail-closed guard for absolute-modulo encoders.  It intentionally
+    uses the configured raw absolute encoder range, not the wider continuous
+    drive range, because without unwrap the controller cannot distinguish e.g.
+    10 deg from 370 deg.
+    """
+
+    limit = load_unwrap_disabled_mount_az_limit()
+    if limit is None:
+        return None
+    raw_min = float(limit["raw_min_deg"])
+    raw_max = float(limit["raw_max_deg"])
+    values = _flatten_degree_values(az_deg)
+    for value in values:
+        if not math.isfinite(value) or value < raw_min or value > raw_max:
+            raise ValueError(
+                f"{action_label}: Az={value:g} deg is outside raw absolute "
+                f"encoder range {raw_min:g}..{raw_max:g} deg while "
+                "antenna_encoder_unwrap.az.enabled=false; enable Az unwrap "
+                "or keep Az commands within raw_min/raw_max."
+            )
+    checked = dict(limit)
+    checked["checked_value_count"] = len(values)
+    return checked
+
 def load_az_unwrap_config() -> (
     tuple[
         AbsoluteModuloUnwrapConfig, Optional[Path], float, float, float, str, str, int
@@ -577,6 +688,137 @@ class AzUnwrapRuntime:
         self._last_status = status
         raise RuntimeError(status.reason)
 
+
+    def get_state_report(self) -> dict:
+        """Return runtime/state-file information for ROS service responses.
+
+        The report is generated inside the encoder node process.  Therefore the
+        reported state_path and state-file content refer to the path that
+        encoder_readout actually uses, not to a caller's local ~/.necst.
+        """
+        status = self._last_status
+        payload = self._load_previous_payload() if self.enabled else None
+        if status is not None:
+            return {
+                "success": True,
+                "enabled": bool(status.enabled),
+                "valid": bool(status.valid),
+                "state": str(status.state),
+                "reason": str(status.reason),
+                "state_path": "" if self.state_path is None else str(self.state_path),
+                "raw_az_deg": float(status.raw_az_deg),
+                "modulo_az_deg": float(status.modulo_az_deg),
+                "continuous_az_deg": float(status.continuous_az_deg),
+                "branch": int(status.branch),
+                "period_deg": float(status.period_deg),
+                "drive_min_deg": float(status.drive_min_deg),
+                "drive_max_deg": float(status.drive_max_deg),
+                "state_age_sec": float(status.state_age_sec),
+                "persist_age_sec": float(status.persist_age_sec),
+            }
+        if payload is not None:
+            age = self._state_payload_age_sec(payload)
+            state = str(payload.get("state", "state-file"))
+            reason = "state file loaded; no encoder status has been published yet"
+            if age is not None and age > self.state_warn_age_sec:
+                state = "old"
+                reason = (
+                    "old state file loaded; "
+                    "no encoder status has been published yet"
+                )
+            return {
+                "success": True,
+                "enabled": bool(self.enabled),
+                "valid": True,
+                "state": state,
+                "reason": reason,
+                "state_path": "" if self.state_path is None else str(self.state_path),
+                "raw_az_deg": float(payload.get("raw_az_deg")),
+                "modulo_az_deg": float(payload.get("modulo_az_deg")),
+                "continuous_az_deg": float(payload.get("continuous_az_deg")),
+                "branch": int(payload.get("branch")),
+                "period_deg": float(self.cfg.period_deg),
+                "drive_min_deg": float(self.cfg.drive_min_deg),
+                "drive_max_deg": float(self.cfg.drive_max_deg),
+                "state_age_sec": 0.0 if age is None else float(age),
+                "persist_age_sec": 0.0 if age is None else float(age),
+            }
+        return {
+            "success": True,
+            "enabled": bool(self.enabled),
+            "valid": False,
+            "state": "no-state",
+            "reason": (
+                "state file does not exist and "
+                "no encoder status has been published yet"
+            ),
+            "state_path": "" if self.state_path is None else str(self.state_path),
+            "raw_az_deg": -1.0,
+            "modulo_az_deg": -1.0,
+            "continuous_az_deg": -1.0,
+            "branch": 0,
+            "period_deg": float(self.cfg.period_deg),
+            "drive_min_deg": float(self.cfg.drive_min_deg),
+            "drive_max_deg": float(self.cfg.drive_max_deg),
+            "state_age_sec": -1.0,
+            "persist_age_sec": -1.0,
+        }
+
+    def manual_initialize(
+        self,
+        *,
+        raw_az: Optional[float],
+        continuous_az: Optional[float],
+        branch: Optional[int],
+        reason: str = "manual state set via encoder service",
+    ) -> AntennaAzUnwrapStatus:
+        """Validate and persist a manual unwrap state inside encoder_readout.
+
+        This is the service-side equivalent of the old local-file CLI.  The
+        validation rules and JSON schema are shared with the local fallback, but
+        the write happens in the encoder node process, so Docker/HOME differences
+        cannot redirect the state file to the wrong computer.
+        """
+        if not self.enabled:
+            raise ValueError("az unwrap is not enabled in the encoder node config")
+        if self.state_path is None:
+            raise ValueError(
+                "antenna_encoder_unwrap.az.state_path is not configured "
+                "in the encoder node config"
+            )
+        payload = _manual_state_payload(
+            self.cfg,
+            self.mode,
+            raw_az=raw_az,
+            continuous_az=continuous_az,
+            branch=branch,
+        )
+        self.writer._write(payload)
+        self._previous_payload = payload
+        self._previous_payload_age_sec = 0.0
+        self._previous_payload_old = False
+        self.unwrapper = AbsoluteModuloUnwrapper(
+            self.cfg, previous_continuous_deg=float(payload["continuous_az_deg"])
+        )
+        self._startup_initialized = True
+        self._startup_state_note = "manual"
+        now = time.time()
+        status = self._make_status(
+            now=now,
+            encoder_time=now,
+            raw_az=float(payload["raw_az_deg"]),
+            modulo_az=float(payload["modulo_az_deg"]),
+            continuous_az=float(payload["continuous_az_deg"]),
+            branch=int(payload["branch"]),
+            branch_changed=False,
+            valid=True,
+            state="manual",
+            reason=reason,
+        )
+        self._last_status = status
+        self._last_state_time = now
+        return status
+
     def close(self) -> None:
         if self._last_status is not None and self.enabled and self._last_status.valid:
             self._persist(self._last_status, force_sync=True)
@@ -772,40 +1014,8 @@ def _manual_state_payload(
     }
 
 
-def main(argv=None) -> int:
-    """Small CLI for manual Az unwrap state inspection/initialization."""
-    import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Inspect or initialize NECST Az unwrap state file."
-    )
-    sub = parser.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("status", help="show current configured state file")
-    setp = sub.add_parser("set", help="write a manual unwrap state")
-
-    def _deg_arg(text: str) -> float:
-        return float(str(text).strip().removesuffix("deg").removesuffix("°"))
-
-    setp.add_argument(
-        "--raw-az",
-        type=_deg_arg,
-        default=None,
-        help="current absolute modulo raw Az [deg]",
-    )
-    setp.add_argument(
-        "--continuous-az",
-        type=_deg_arg,
-        default=None,
-        help="desired continuous Az [deg]",
-    )
-    setp.add_argument(
-        "--branch",
-        type=int,
-        default=None,
-        help="desired branch; requires --raw-az when --continuous-az is omitted",
-    )
-    args = parser.parse_args(argv)
-
+def _local_cli(args) -> int:
     (
         cfg,
         state_path,
@@ -839,10 +1049,239 @@ def main(argv=None) -> int:
         writer._write(payload)
         writer.close()
         print(
-            f"wrote {state_path}: continuous={payload['continuous_az_deg']:.6f} deg branch={payload['branch']} raw={payload['raw_az_deg']:.6f} deg"
+            f"wrote {state_path}: continuous={payload['continuous_az_deg']:.6f} deg "
+            f"branch={payload['branch']} raw={payload['raw_az_deg']:.6f} deg"
         )
         return 0
     return 2
+
+
+def _copy_report_to_response(response: Any, report: Mapping[str, Any]) -> Any:
+    for key, value in report.items():
+        if hasattr(response, key):
+            setattr(response, key, value)
+    return response
+
+
+def fill_get_response(response: Any, report: Mapping[str, Any]) -> Any:
+    """Fill GetAzUnwrapState.Response-like objects from a runtime report."""
+    return _copy_report_to_response(response, report)
+
+
+def fill_set_response(
+    response: Any,
+    *,
+    success: bool,
+    state: str,
+    reason: str,
+    state_path: str,
+    enabled: bool,
+    valid: bool,
+    raw_az_deg: float,
+    modulo_az_deg: float,
+    continuous_az_deg: float,
+    branch: int,
+    period_deg: float,
+    drive_min_deg: float,
+    drive_max_deg: float,
+) -> Any:
+    """Fill SetAzUnwrapState.Response-like objects without importing ROS types."""
+    values = {
+        "success": bool(success),
+        "state": str(state),
+        "reason": str(reason),
+        "state_path": str(state_path),
+        "enabled": bool(enabled),
+        "valid": bool(valid),
+        "raw_az_deg": float(raw_az_deg),
+        "modulo_az_deg": float(modulo_az_deg),
+        "continuous_az_deg": float(continuous_az_deg),
+        "branch": int(branch),
+        "period_deg": float(period_deg),
+        "drive_min_deg": float(drive_min_deg),
+        "drive_max_deg": float(drive_max_deg),
+    }
+    return _copy_report_to_response(response, values)
+
+
+def report_from_status(
+    runtime: AzUnwrapRuntime,
+    status: AntennaAzUnwrapStatus,
+    *,
+    success: bool = True,
+) -> dict:
+    """Convert a status message to a response/report dictionary."""
+    return {
+        "success": bool(success),
+        "enabled": bool(status.enabled),
+        "valid": bool(status.valid),
+        "state": str(status.state),
+        "reason": str(status.reason),
+        "state_path": "" if runtime.state_path is None else str(runtime.state_path),
+        "raw_az_deg": float(status.raw_az_deg),
+        "modulo_az_deg": float(status.modulo_az_deg),
+        "continuous_az_deg": float(status.continuous_az_deg),
+        "branch": int(status.branch),
+        "period_deg": float(status.period_deg),
+        "drive_min_deg": float(status.drive_min_deg),
+        "drive_max_deg": float(status.drive_max_deg),
+        "state_age_sec": float(status.state_age_sec),
+        "persist_age_sec": float(status.persist_age_sec),
+    }
+
+
+def _ros_wait_for_future(rclpy, node, future, *, timeout_sec: float):
+    end_time = time.monotonic() + float(timeout_sec)
+    while rclpy.ok() and not future.done():
+        remaining = end_time - time.monotonic()
+        if remaining <= 0:
+            break
+        rclpy.spin_once(node, timeout_sec=min(0.1, remaining))
+    return future.done()
+
+
+def _response_to_report(response: Any) -> dict:
+    return {
+        name: getattr(response, name)
+        for name in response.get_fields_and_field_types()
+    }
+
+
+def _print_state_report(report: Mapping[str, Any]) -> None:
+    print(
+        "enabled={enabled} valid={valid} state={state} branch={branch} "
+        "raw={raw:.6f} continuous={continuous:.6f} state_path={state_path}".format(
+            enabled=bool(report.get("enabled", False)),
+            valid=bool(report.get("valid", False)),
+            state=str(report.get("state", "")),
+            branch=int(report.get("branch", 0)),
+            raw=float(report.get("raw_az_deg", -1.0)),
+            continuous=float(report.get("continuous_az_deg", -1.0)),
+            state_path=str(report.get("state_path", "")),
+        )
+    )
+    reason = str(report.get("reason", ""))
+    if reason:
+        print(f"reason={reason}")
+
+
+def _ros_cli(args) -> int:
+    import rclpy
+
+    from necst import service
+    from necst_msgs.srv import GetAzUnwrapState, SetAzUnwrapState
+
+    rclpy.init(args=None)
+    node = rclpy.create_node("az_unwrap_state_cli", namespace="/")
+    try:
+        if args.cmd == "status":
+            client = service.az_unwrap_state_get.client(node)
+            if not client.wait_for_service(timeout_sec=args.timeout):
+                raise SystemExit(
+                    "az unwrap get service is not available. "
+                    "Start encoder_readout, or use --local only when "
+                    "intentionally reading the local state_path."
+                )
+            request = GetAzUnwrapState.Request()
+            future = client.call_async(request)
+            if not _ros_wait_for_future(rclpy, node, future, timeout_sec=args.timeout):
+                raise SystemExit("timed out waiting for az unwrap get service response")
+            response = future.result()
+            if response is None:
+                raise SystemExit("az unwrap get service failed without a response")
+            report = _response_to_report(response)
+            _print_state_report(report)
+            return 0 if bool(response.success) else 1
+        if args.cmd == "set":
+            client = service.az_unwrap_state_set.client(node)
+            if not client.wait_for_service(timeout_sec=args.timeout):
+                raise SystemExit(
+                    "az unwrap set service is not available. "
+                    "Start encoder_readout, or run on the encoder node with "
+                    "--local only as an emergency fallback."
+                )
+            request = SetAzUnwrapState.Request()
+            request.use_raw_az = args.raw_az is not None
+            request.raw_az_deg = 0.0 if args.raw_az is None else float(args.raw_az)
+            request.use_continuous_az = args.continuous_az is not None
+            request.continuous_az_deg = (
+                0.0 if args.continuous_az is None else float(args.continuous_az)
+            )
+            request.use_branch = args.branch is not None
+            request.branch = 0 if args.branch is None else int(args.branch)
+            future = client.call_async(request)
+            if not _ros_wait_for_future(rclpy, node, future, timeout_sec=args.timeout):
+                raise SystemExit("timed out waiting for az unwrap set service response")
+            response = future.result()
+            if response is None:
+                raise SystemExit("az unwrap set service failed without a response")
+            report = _response_to_report(response)
+            _print_state_report(report)
+            return 0 if bool(response.success) else 1
+        return 2
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+def main(argv=None) -> int:
+    """Inspect or initialize Az unwrap state.
+
+    Default mode uses ROS services served by encoder_readout, so the state is
+    written to the encoder node's actual state_path.  Use --local only as a
+    deliberate emergency fallback on the encoder PC/container.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Inspect or initialize NECST Az unwrap state "
+            "via encoder_readout service."
+        )
+    )
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help=(
+            "read/write the local state_path directly; "
+            "use only on the encoder PC/container"
+        ),
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=3.0,
+        help="ROS service wait/response timeout [s]",
+    )
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("status", help="show encoder_readout unwrap state")
+    setp = sub.add_parser("set", help="set encoder_readout unwrap state")
+
+    def _deg_arg(text: str) -> float:
+        return float(str(text).strip().removesuffix("deg").removesuffix("°"))
+
+    setp.add_argument(
+        "--raw-az",
+        type=_deg_arg,
+        default=None,
+        help="current absolute modulo raw Az [deg]",
+    )
+    setp.add_argument(
+        "--continuous-az",
+        type=_deg_arg,
+        default=None,
+        help="desired continuous Az [deg]",
+    )
+    setp.add_argument(
+        "--branch",
+        type=int,
+        default=None,
+        help="desired branch; requires --raw-az when --continuous-az is omitted",
+    )
+    args = parser.parse_args(argv)
+    if args.local:
+        return _local_cli(args)
+    return _ros_cli(args)
 
 
 if __name__ == "__main__":
