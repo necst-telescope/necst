@@ -3519,15 +3519,31 @@ def run_server(
             reason="console startup --reset-local-state" + ("/--rescue" if rescue else ""),
         )
     resolved_obs_roots = resolve_obs_roots(obs_roots)
+    obslog_site_config = dict(getattr(site_summary, "observation_log", {}) or {})
+    obslog_record_roots = obslog_site_config.get("record_roots")
+    if not isinstance(obslog_record_roots, list):
+        obslog_record_roots = None
     observer_csv_log = observation_log.ObservationLogManager.create(
         configured_dir=obslog_dir,
+        site_configured_dir=obslog_site_config.get("directory"),
         # Do not use --obs-root here: it is an obs-file browser location, not
-        # necessarily the data/record root.  ObservationLogManager still uses
-        # NECST_CONSOLE_PC_RECORD_ROOT, NECST_RECORD_ROOT, etc. for
-        # <record root>/obslogs before falling back to ~/.necst.
-        record_roots=None,
-        prefix=obslog_prefix or os.environ.get("NECST_OBSLOG_PREFIX", observation_log.DEFAULT_PREFIX),
-        observer=obslog_user or os.environ.get("NECST_OBSLOG_USER", observation_log.DEFAULT_OBSERVER),
+        # necessarily the data/record root.  If a record-root candidate is put
+        # in [console.observation_log], it is used only as a fallback for
+        # <record root>/obslogs, after explicit CLI/env/TOML log directories.
+        # Prefer [console.observation_log].directory for a console-writable path.
+        record_roots=obslog_record_roots,
+        prefix=(
+            obslog_prefix
+            or os.environ.get("NECST_OBSLOG_PREFIX")
+            or obslog_site_config.get("prefix")
+            or observation_log.DEFAULT_PREFIX
+        ),
+        observer=(
+            obslog_user
+            or os.environ.get("NECST_OBSLOG_USER")
+            or obslog_site_config.get("user")
+            or observation_log.DEFAULT_OBSERVER
+        ),
         telescope=telescope,
     )
     progress_script = Path(__file__).resolve().parents[2] / "bin" / "progress.py"
@@ -3697,6 +3713,7 @@ def run_server(
     print(f"  ROS node health monitor: {'enabled' if site_summary.health.enabled else 'disabled'}")
     print(f"  operator log: {operator_log_path}")
     print(f"  observation CSV log: {observer_csv_log.status().get('csv_path')}")
+    print(f"  observation CSV log source: {observer_csv_log.status().get('log_dir_source')}")
     print(f"  observation CSV meta: {observer_csv_log.status().get('meta_path')}")
     print(f"  launcher logs: {resolved_launcher_log_dir}")
     print(f"  progress logs: {resolved_progress_log_dir}")

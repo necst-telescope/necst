@@ -130,14 +130,17 @@ def _ensure_writable_dir(path: Path) -> Tuple[bool, str]:
 def resolve_log_dir(
     configured_dir: Optional[os.PathLike[str] | str] = None,
     *,
+    site_configured_dir: Optional[os.PathLike[str] | str] = None,
     record_roots: Optional[List[os.PathLike[str] | str]] = None,
 ) -> Tuple[Path, str, Optional[str], List[str]]:
     """Return ``(directory, source, record_root, warnings)``.
 
     Directory selection order:
-    1. explicit argument or NECST_OBSLOG_DIR;
-    2. ``<record root>/obslogs`` from known record-root environment variables;
-    3. ``~/.necst/observation_logs``.
+    1. explicit argument, usually CLI ``--obslog-dir``;
+    2. ``NECST_OBSLOG_DIR``;
+    3. site TOML ``[console.observation_log].directory``;
+    4. ``<record root>/obslogs`` from explicit/site/env record-root candidates;
+    5. ``~/.necst/observation_logs``.
     """
 
     warnings: List[str] = []
@@ -156,6 +159,14 @@ def resolve_log_dir(
         if ok:
             return path, "NECST_OBSLOG_DIR", None, warnings
         warnings.append(f"NECST_OBSLOG_DIR is not writable: {path}: {reason}")
+
+    site_dir = str(site_configured_dir or "").strip()
+    if site_dir:
+        path = Path(site_dir).expanduser()
+        ok, reason = _ensure_writable_dir(path)
+        if ok:
+            return path, "site_config_observation_log_dir", None, warnings
+        warnings.append(f"site TOML observation log directory is not writable: {path}: {reason}")
 
     for root in _candidate_record_roots(record_roots):
         path = root / "obslogs"
@@ -373,12 +384,17 @@ class ObservationLogManager:
         cls,
         *,
         configured_dir: Optional[os.PathLike[str] | str] = None,
+        site_configured_dir: Optional[os.PathLike[str] | str] = None,
         record_roots: Optional[List[os.PathLike[str] | str]] = None,
         prefix: Any = DEFAULT_PREFIX,
         observer: Any = DEFAULT_OBSERVER,
         telescope: str = "NECST",
     ) -> "ObservationLogManager":
-        log_dir, source, record_root, warnings = resolve_log_dir(configured_dir, record_roots=record_roots)
+        log_dir, source, record_root, warnings = resolve_log_dir(
+            configured_dir,
+            site_configured_dir=site_configured_dir,
+            record_roots=record_roots,
+        )
         return cls(
             log_dir=log_dir,
             log_dir_source=source,
@@ -810,8 +826,10 @@ class ObservationLogManager:
             "tooltips": {
                 "directory": (
                     "Log directory selection:\n"
-                    "1. NECST_OBSLOG_DIR, if set.\n"
-                    "2. <record root>/obslogs, if available.\n"
+                    "1. --obslog-dir, if set.\n"
+                    "2. NECST_OBSLOG_DIR, if set.\n"
+                    "3. [console.observation_log].directory in site TOML, if set.\n"
+                    "4. <record root>/obslogs, if available.\n"
                     "3. ~/.necst/observation_logs as fallback.\n"
                     "This path is inside the console container. Use a bind-mounted path if you need the log on the host."
                 ),

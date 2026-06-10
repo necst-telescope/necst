@@ -83,7 +83,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "directory for observer-facing CSV observation logs; default is "
-            "$NECST_OBSLOG_DIR, then <record root>/obslogs, then ~/.necst/observation_logs. "
+            "$NECST_OBSLOG_DIR, then [console.observation_log].directory in the site TOML, "
+            "then <record root>/obslogs, then ~/.necst/observation_logs. "
             "If console runs in Docker, this is a Docker/container path."
         ),
     )

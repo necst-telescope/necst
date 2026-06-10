@@ -54,7 +54,7 @@ def _load_operator_console_module() -> Any:
         sys.modules.setdefault("necst.az_unwrap_limits", az_limits_module)
         setattr(necst_pkg, "az_unwrap_limits", az_limits_module)
 
-        for mod_name in ("process_manager", "progress_manager", "status_model", "site_config", "self_check", "log_reader", "live_telemetry", "observation_log"):
+        for mod_name in ("process_manager", "progress_manager", "status_model", "node_health", "site_config", "self_check", "log_reader", "live_telemetry", "observation_log"):
             mod_path = package_path / f"{mod_name}.py"
             spec = importlib.util.spec_from_file_location(f"necst.web.{mod_name}", mod_path)
             if spec is None or spec.loader is None:
