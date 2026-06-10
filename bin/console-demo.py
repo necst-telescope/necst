@@ -104,16 +104,19 @@ small { color: var(--faint); }
 .header-inner {
   display: grid;
   grid-template-columns: minmax(420px, 1fr) auto;
-  gap: 12px;
+  gap: 8px 12px;
   align-items: center;
   padding: 10px 16px;
 }
+.header-main { min-width: 0; }
 .title { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
 .title h1 { margin: 0; font-size: 18px; letter-spacing: 0.01em; }
 .title .subtitle { color: var(--muted); font-size: 12px; }
 .status-line { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-top: 7px; }
 .node-health {
-  margin-top: 6px;
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  width: 100%;
   max-width: 100%;
   border: 1px solid rgba(40,50,74,0.9);
   border-radius: 12px;
@@ -127,6 +130,8 @@ small { color: var(--faint); }
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   padding: 5px 8px;
   list-style: none;
 }
@@ -136,6 +141,8 @@ small { color: var(--faint); }
 .node-health-details {
   display: grid;
   gap: 4px;
+  max-width: min(100%, 980px);
+  margin: 0 auto;
   padding: 0 8px 8px 22px;
   font-size: 12px;
 }
@@ -526,6 +533,37 @@ summary { cursor: pointer; color: var(--muted); }
 .invalid { border-color: var(--bad) !important; }
 .valid { border-color: rgba(86,211,100,0.8) !important; }
 
+.launcher-failure {
+  margin: 10px 0 0;
+  border: 1px solid rgba(255,91,110,0.45);
+  border-radius: 14px;
+  background: rgba(255,91,110,0.08);
+  padding: 10px 12px;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.13);
+}
+.launcher-failure .failure-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+.launcher-failure .failure-title { color: var(--bad); font-weight: 800; letter-spacing: 0.01em; }
+.launcher-failure .failure-summary { margin-top: 3px; color: var(--text); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.launcher-failure .failure-meta { margin-top: 3px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.launcher-failure .failure-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+.launcher-failure pre {
+  margin: 9px 0 0;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  border: 1px solid rgba(255,91,110,0.25);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(0,0,0,0.22);
+  color: var(--text);
+  font-size: 12px;
+}
+
 .obslog-card {
   margin: 12px 0 0;
   border-radius: 14px;
@@ -664,6 +702,8 @@ summary { cursor: pointer; color: var(--muted); }
   .run-bar { position: static; grid-template-columns: 1fr; }
   .run-actions { justify-content: stretch; flex-wrap: wrap; }
   .run-actions button { flex: 1 1 180px; }
+  .launcher-failure .failure-row { grid-template-columns: 1fr; }
+  .launcher-failure .failure-actions { justify-content: flex-start; }
   .row, .row3 { grid-template-columns: 1fr; }
   .stop-button { width: 100%; }
 }
@@ -672,22 +712,22 @@ summary { cursor: pointer; color: var(--muted); }
 <body>
 <header class="header">
   <div class="header-inner">
-    <div>
+    <div class="header-main">
       <div class="title">
         <h1>NECST Operator Console Demo</h1>
         <span class="subtitle">standalone layout preview / no ROS / no telescope command</span>
       </div>
       <div class="status-line" id="statusBadges"></div>
-      <details class="node-health" id="nodeHealthBox" hidden>
-        <summary id="nodeHealthSummary">ROS node health</summary>
-        <div class="node-health-details" id="nodeHealthDetails"></div>
-      </details>
     </div>
     <div class="header-actions">
       <button id="openProgress" class="secondary" title="Start or open the progress-monitor server managed by this console. If this console exits, only a console-owned progress server stops.">Launch progress monitor</button>
       <button id="authorityButton" class="secondary">Acquire authority</button>
       <button id="stopButton" class="stop-button">STOP</button>
     </div>
+    <details class="node-health" id="nodeHealthBox" hidden>
+      <summary id="nodeHealthSummary">ROS node health</summary>
+      <div class="node-health-details" id="nodeHealthDetails"></div>
+    </details>
   </div>
 </header>
 <main class="page">
@@ -697,6 +737,22 @@ summary { cursor: pointer; color: var(--muted); }
       <div class="detail" id="systemStateDetail">No observation, mount move, or calibration is currently confirmed.</div>
     </div>
     <div class="safe">STOP and ABORT remain available.</div>
+  </div>
+  <div class="launcher-failure" id="launcherFailureBanner" hidden aria-live="polite">
+    <div class="failure-row">
+      <div>
+        <div class="failure-title" id="launcherFailureTitle">Last launcher error</div>
+        <div class="failure-summary" id="launcherFailureSummary"></div>
+        <div class="failure-meta" id="launcherFailureMeta"></div>
+      </div>
+      <div class="failure-actions">
+        <button id="launcherFailureStderr" class="secondary compact" type="button">Show stderr</button>
+        <button id="launcherFailureStdout" class="secondary compact" type="button">Show stdout</button>
+        <button id="launcherFailureCopy" class="secondary compact" type="button">Copy summary</button>
+        <button id="launcherFailureClear" class="secondary compact" type="button" title="Hide only this displayed error summary. Logs and CSV records are kept.">Clear</button>
+      </div>
+    </div>
+    <pre id="launcherFailureText" hidden></pre>
   </div>
   <div class="main-grid">
     <section class="card" id="observationCard">
@@ -2015,6 +2071,66 @@ async function readLogFile(path) {
   const resp = await fetch('/api/log-file?max_bytes=32768&path=' + encodeURIComponent(path));
   const data = await resp.json();
   renderLauncherLogBrowser(data);
+  return data;
+}
+function launcherFailurePayload() {
+  const payload = (state.lastStatus || {}).last_launcher_failure || {};
+  return (payload && typeof payload === 'object') ? payload : {};
+}
+function renderLauncherFailure(payload) {
+  const box = qs('launcherFailureBanner');
+  if (!box) return;
+  const f = (payload && typeof payload === 'object') ? payload : {};
+  const summary = String(f.summary || f.message || '').trim();
+  if (!summary) {
+    box.hidden = true;
+    const text = qs('launcherFailureText');
+    if (text) { text.hidden = true; text.textContent = ''; }
+    return;
+  }
+  box.hidden = false;
+  const title = f.label || f.category || 'local launcher';
+  const rc = (f.returncode === null || f.returncode === undefined || f.returncode === '') ? 'unknown' : f.returncode;
+  setText('launcherFailureTitle', `Last ${f.category || 'launcher'} error: ${title}`);
+  setText('launcherFailureSummary', summary);
+  const meta = [
+    f.pid ? `pid=${f.pid}` : '',
+    f.status ? `status=${f.status}` : '',
+    `returncode=${rc}`,
+    f.stream ? `summary from ${f.stream}` : '',
+    f.time || ''
+  ].filter(Boolean).join(' · ');
+  setText('launcherFailureMeta', meta);
+  const stderrBtn = qs('launcherFailureStderr');
+  const stdoutBtn = qs('launcherFailureStdout');
+  if (stderrBtn) stderrBtn.disabled = !f.stderr_path;
+  if (stdoutBtn) stdoutBtn.disabled = !f.stdout_path;
+}
+async function showLauncherFailureLog(stream) {
+  const f = launcherFailurePayload();
+  const path = stream === 'stdout' ? f.stdout_path : f.stderr_path;
+  const out = qs('launcherFailureText');
+  if (!path || !out) return;
+  out.hidden = false;
+  out.textContent = `Loading ${stream} log...\n${path}`;
+  try {
+    const data = await readLogFile(path);
+    const header = `${stream.toUpperCase()} ${data.ok ? 'tail' : 'read failed'}: ${data.path || path}\n${data.reason || ''}\n\n`;
+    out.textContent = header + (data.text || '(log is empty)');
+  } catch (err) {
+    out.textContent = `Failed to read ${stream} log: ${err}`;
+  }
+}
+async function copyLauncherFailureSummary() {
+  const f = launcherFailurePayload();
+  const text = [
+    f.message || f.summary || 'launcher failed',
+    f.pid ? `pid=${f.pid}` : '',
+    f.returncode !== undefined && f.returncode !== null ? `returncode=${f.returncode}` : '',
+    f.stderr_path ? `stderr=${f.stderr_path}` : '',
+    f.stdout_path ? `stdout=${f.stdout_path}` : ''
+  ].filter(Boolean).join('\n');
+  try { await navigator.clipboard.writeText(text); } catch (_) {}
 }
 function progressMonitorText(progress) {
   const mon = progress && (progress.monitor || progress.monitor_status || progress.progress_monitor);
@@ -2414,6 +2530,7 @@ function renderStatus(data) {
     `<span class="badge ${data.warning_count ? 'warn' : 'ok'}">Warnings: ${data.warning_count || 0}</span>`
   ].join('');
   renderNodeHealth(data.node_health);
+  renderLauncherFailure(data.last_launcher_failure);
   qs('authorityButton').textContent = heldByMe ? 'Release authority' : 'Acquire authority';
   qs('authorityButton').disabled = Boolean(state.liveActions.guarded) && !heldByMe;
   qs('obsStateBadge').textContent = operation.kind === 'observation' ? operation.label : data.state;
@@ -2905,6 +3022,16 @@ qs('runtimeLauncherLogChoices').addEventListener('click', async (ev) => {
   const btn = ev.target && ev.target.closest ? ev.target.closest('.log-choice') : null;
   if (!btn) return;
   await readLogFile(btn.dataset.path);
+});
+qs('launcherFailureStderr').addEventListener('click', () => showLauncherFailureLog('stderr'));
+qs('launcherFailureStdout').addEventListener('click', () => showLauncherFailureLog('stdout'));
+qs('launcherFailureCopy').addEventListener('click', copyLauncherFailureSummary);
+qs('launcherFailureClear').addEventListener('click', async () => {
+  const box = qs('launcherFailureBanner');
+  if (box) box.hidden = true;
+  const text = qs('launcherFailureText');
+  if (text) { text.hidden = true; text.textContent = ''; }
+  await api('clear_launcher_failure');
 });
 qs('runSelfCheck').addEventListener('click', async () => {
   const resp = await fetch('/api/self-check');
@@ -3481,6 +3608,7 @@ class DemoState:
     recording_dir: Optional[str] = None
     local_recording_dir: Optional[str] = None
     progress_record_dir: Optional[str] = None
+    last_launcher_failure: Dict[str, Any] = field(default_factory=dict)
     log: List[LogEntry] = field(default_factory=list)
 
     def prune_exclusive_start_guard(self) -> None:
@@ -3548,6 +3676,7 @@ class DemoState:
             },
             "log": [entry.__dict__ for entry in self.log[-80:]],
             "node_health": demo_node_health_payload(),
+            "last_launcher_failure": dict(self.last_launcher_failure or {}),
         }
 
 
@@ -3697,14 +3826,31 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/api/log-file":
             query = urllib.parse.parse_qs(parsed.query)
             requested = (query.get("path") or ["demo://launcher.log"])[0]
+            if requested.startswith("demo://start_observation.stderr"):
+                text = (
+                    "Traceback (most recent call last):\n"
+                    "  File \"/root/ros2_ws/src/necst/bin/psw_file.py\", line 36, in <module>\n"
+                    "    obs.execute()\n"
+                    "  File \"/root/ros2_ws/build/necst/necst/rx/spectral_recording_sg.py\", line 597, in poll_sg_readback\n"
+                    "    raise SpectralRecordingSGValidationError(message)\n"
+                    "necst.rx.spectral_recording_sg.SpectralRecordingSGValidationError: output_required=true but readback output is off\n"
+                )
+            elif requested.startswith("demo://start_observation.stdout"):
+                text = (
+                    "2026-06-10 06:04:28,941: [INFO] Importing configuration from /root/.necst/OMU1p85m_config.toml\n"
+                    "2026-06-10 06:04:42,549: [INFO] Observation finished, took 0.21 min.\n"
+                    "2026-06-10 06:04:42,549: [INFO] Record name: necst_psw_20260610_060429_irc+10216\n"
+                )
+            else:
+                text = "This is the standalone console demo. No real launcher log file exists.\n"
             self._send_json({
                 "ok": True,
                 "reason": "demo launcher log read",
                 "path": requested,
-                "size_bytes": 0,
-                "returned_bytes": 0,
+                "size_bytes": len(text.encode("utf-8")),
+                "returned_bytes": len(text.encode("utf-8")),
                 "truncated_head": False,
-                "text": "This is the standalone console demo. No real launcher log file exists.\n",
+                "text": text,
             })
             return
         if parsed.path == "/api/self-check":
@@ -4167,6 +4313,12 @@ def handle_action(
         server.add_log(True, "operation log cleared")
         return True, "cleared"
 
+    if action == "clear_launcher_failure":
+        had_failure = bool(state.last_launcher_failure)
+        state.last_launcher_failure = {}
+        server.add_log(True, "last launcher error display cleared" if had_failure else "last launcher error display was already clear")
+        return True, "last launcher error display cleared"
+
     if action == "clear_stale_observation_state":
         _demo_clear_exclusive_start_guard(state)
         state.state = "idle"
@@ -4288,6 +4440,29 @@ def handle_action(
         path = str(params.get("file") or "").strip()
         stem = Path(path).name.rsplit('.', 1)[0] if path else 'demo_observation'
         _demo_set_record(state, f"{stem}_{int(time.time())}")
+        if "fail" in path.lower() or "sgfail" in path.lower():
+            _demo_clear_exclusive_start_guard(state)
+            state.state = "idle"
+            state.manual_state = "idle"
+            state.active_task = "none"
+            state.last_launcher_failure = {
+                "ok": False,
+                "category": "observation",
+                "label": f"observation:{mode}",
+                "action": "start_observation",
+                "pid": 12345,
+                "status": "exited",
+                "returncode": 1,
+                "summary": "necst.rx.spectral_recording_sg.SpectralRecordingSGValidationError: output_required=true but readback output is off",
+                "message": "observation launcher failed: output_required=true but readback output is off",
+                "stream": "stderr",
+                "stderr_path": "demo://start_observation.stderr.log",
+                "stdout_path": "demo://start_observation.stdout.log",
+                "time": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+            }
+            server.add_log(False, "demo observation launcher failed: output_required=true but readback output is off")
+            return False, "demo observation launcher failed; see Last observation error"
+        state.last_launcher_failure = {}
         server.add_log(True, f"{authority_msg}: mode={mode}, file={path}")
         return True, "observation started"
 

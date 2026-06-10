@@ -103,6 +103,8 @@ MOUNT_COMMAND_TARGET_REACHED_TOL_DEG = 7.5e-4
 # console status; it does not send telescope commands or delete data.
 STALE_OBSERVATION_PROGRESS_SEC = float(os.environ.get("NECST_CONSOLE_STALE_OBSERVATION_SEC", "60.0"))
 ABORT_STUCK_OBSERVATION_SEC = float(os.environ.get("NECST_CONSOLE_ABORT_STUCK_OBSERVATION_SEC", "15.0"))
+LAUNCHER_FAILURE_TAIL_BYTES = int(os.environ.get("NECST_CONSOLE_LAUNCHER_FAILURE_TAIL_BYTES", "65536"))
+LAUNCHER_FAILURE_SUMMARY_MAX_CHARS = int(os.environ.get("NECST_CONSOLE_LAUNCHER_FAILURE_SUMMARY_MAX_CHARS", "600"))
 
 LIVE_ACTION_GUARD_MESSAGE = (
     "live write actions are guarded by --guard-live-actions; "
@@ -214,6 +216,10 @@ class OperatorConsoleState:
     node_health_cache: JsonDict = field(default_factory=lambda: {"enabled": False})
     node_health_checked_at_unix: float = 0.0
     last_node_health_event_key: str = ""
+    # Last failed local launcher summary shown near the top of the console.
+    # This is intentionally a compact pointer to stdout/stderr logs, not the
+    # full log body, so /api/status stays lightweight.
+    last_launcher_failure: JsonDict = field(default_factory=dict)
     lock: threading.RLock = field(default_factory=threading.RLock)
 
     def add_log(
@@ -1185,6 +1191,113 @@ def run_self_check(state: OperatorConsoleState, *, include_progress_health: bool
     )
 
 
+
+def _truncate_for_status(text: Any, *, max_chars: int = LAUNCHER_FAILURE_SUMMARY_MAX_CHARS) -> str:
+    value = str(text or "").strip()
+    if len(value) <= int(max_chars):
+        return value
+    return value[: max(0, int(max_chars) - 1)].rstrip() + "…"
+
+
+def _read_log_tail_for_summary(path_value: Any, *, max_bytes: int = LAUNCHER_FAILURE_TAIL_BYTES) -> Tuple[str, int, bool, str]:
+    """Return a bounded text tail for launcher failure summarization.
+
+    This is used only for log files that the console itself assigned to a local
+    launcher subprocess.  It never raises: failures are reported as a short
+    reason string so /api/status and process reaping remain robust.
+    """
+
+    raw = str(path_value or "").strip()
+    if not raw:
+        return "", 0, False, "log path is not configured"
+    try:
+        path = Path(raw).expanduser()
+        if not path.exists() or not path.is_file():
+            return "", 0, False, f"log file does not exist: {path}"
+        size = path.stat().st_size
+        max_b = max(1024, min(int(max_bytes or LAUNCHER_FAILURE_TAIL_BYTES), 1024 * 1024))
+        with path.open("rb") as fh:
+            if size > max_b:
+                fh.seek(size - max_b)
+            data = fh.read(max_b)
+        return data.decode("utf-8", errors="replace"), int(size), bool(size > max_b), ""
+    except Exception as exc:
+        return "", 0, False, str(exc)
+
+
+def _extract_failure_summary_from_text(text: Any) -> str:
+    """Extract a compact, human-useful error line from stdout/stderr text."""
+
+    lines = [line.strip() for line in str(text or "").splitlines() if line.strip()]
+    if not lines:
+        return ""
+
+    # Python tracebacks normally end with the actual exception line.  Prefer that
+    # last semantic line and skip stack-frame/context lines where possible.
+    skip_prefixes = (
+        "File ",
+        "Traceback ",
+        "During handling of the above exception",
+        "The above exception was the direct cause",
+        "^",
+    )
+    for line in reversed(lines):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if any(stripped.startswith(prefix) for prefix in skip_prefixes):
+            continue
+        if stripped.startswith("~") and set(stripped) <= {"~", "^", " ", "|"}:
+            continue
+        return _truncate_for_status(stripped)
+
+    return _truncate_for_status(lines[-1])
+
+
+def _launcher_failure_payload(record: process_manager.ManagedProcessRecord) -> JsonDict:
+    """Build a compact failure summary for a finalized local launcher."""
+
+    stderr_tail, stderr_size, stderr_truncated, stderr_error = _read_log_tail_for_summary(record.stderr_path)
+    stdout_tail, stdout_size, stdout_truncated, stdout_error = _read_log_tail_for_summary(record.stdout_path)
+    stderr_summary = _extract_failure_summary_from_text(stderr_tail)
+    stdout_summary = _extract_failure_summary_from_text(stdout_tail)
+    stream = "stderr" if stderr_summary else ("stdout" if stdout_summary else "")
+    summary = stderr_summary or stdout_summary
+    if not summary:
+        if record.status == "lost":
+            summary = "local launcher handle was lost before the exit reason could be read"
+        else:
+            summary = f"launcher exited with return code {record.returncode}"
+        if stderr_error and stdout_error:
+            summary += f"; stderr/stdout unavailable ({stderr_error}; {stdout_error})"
+    payload: JsonDict = {
+        "ok": False,
+        "category": str(record.category or ""),
+        "label": str(record.label or record.action or record.category or "launcher"),
+        "action": str(record.action or ""),
+        "pid": int(record.pid),
+        "status": str(record.status or ""),
+        "returncode": record.returncode,
+        "summary": _truncate_for_status(summary),
+        "stream": stream,
+        "stdout_path": record.stdout_path,
+        "stderr_path": record.stderr_path,
+        "stdout_size_bytes": stdout_size,
+        "stderr_size_bytes": stderr_size,
+        "stdout_truncated_head": stdout_truncated,
+        "stderr_truncated_head": stderr_truncated,
+        "stdout_read_error": stdout_error,
+        "stderr_read_error": stderr_error,
+        "finished_at": record.finished_at,
+        "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    payload["message"] = _truncate_for_status(
+        f"{payload['label']} failed: {payload['summary']}"
+        if payload["summary"]
+        else f"{payload['label']} failed"
+    )
+    return payload
+
 def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
     """Reap child launcher processes and log newly observed final states."""
 
@@ -1194,6 +1307,7 @@ def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
             continue
         record.final_logged = True
         ok = record.returncode in (0, None) and record.status != "lost"
+        failure_payload: Optional[JsonDict] = None
         if record.status == "exited":
             message = (
                 f"{record.label} pid={record.pid} exited with return code "
@@ -1201,7 +1315,14 @@ def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
             )
         else:
             message = f"{record.label} pid={record.pid} is no longer tracked"
-        state.add_log(ok, message, action="process_exit", data=record.to_dict())
+        record_data = record.to_dict()
+        if not ok:
+            failure_payload = _launcher_failure_payload(record)
+            state.last_launcher_failure = dict(failure_payload)
+            summary = failure_payload.get("summary") or "see launcher logs"
+            message = f"{message}: {summary}"
+            record_data["failure"] = failure_payload
+        state.add_log(ok, message, action="process_exit", data=record_data)
         if state.observation_log is not None and record.category in {"observation", "calibration"}:
             label = str(getattr(record, "label", "") or "")
             result_text = "success" if ok else "failed"
@@ -1220,8 +1341,12 @@ def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
             else:
                 mode = label.split(":", 1)[1] if ":" in label else "Calibration"
                 event = f"{mode.lower()}_finished" if ok else f"{mode.lower()}_failed"
+            failure_comment = ""
+            if failure_payload is not None and result_text == "failed":
+                failure_comment = str(failure_payload.get("summary") or "")
             written = state.observation_log.write_event(
                 _observation_log_context(state),
+                comment=failure_comment,
                 mode=mode,
                 event=event,
                 action_or_obsfile=label or getattr(record, "category", ""),
@@ -1952,6 +2077,15 @@ def dispatch_action(
         state.log.clear()
         return True, "operation log cleared", {"action": action}
 
+    if action == "clear_launcher_failure":
+        had_failure = bool(state.last_launcher_failure)
+        state.last_launcher_failure = {}
+        return True, "last launcher error display cleared", {
+            "action": action,
+            "cleared": had_failure,
+            "note": "Display-only clear. Launcher stdout/stderr files, internal operator log, and Observation Log CSV are kept.",
+        }
+
     if action == "obslog_status":
         data = _obslog_status_payload(state)
         return bool(data.get("ok")), "observation CSV log status", data
@@ -2298,6 +2432,7 @@ def dispatch_action(
                 message="target tracking",
             )
             _clear_safety_release_request(state)
+            state.last_launcher_failure = {}
             state.last_command_az = None
             state.last_command_el = None
             _clear_last_mount_target(state)
@@ -2399,6 +2534,7 @@ def dispatch_action(
                 message=f"observation {mode}",
             )
             _clear_safety_release_request(state)
+            state.last_launcher_failure = {}
             state.last_command_az = None
             state.last_command_el = None
             _clear_last_mount_target(state)
@@ -2451,6 +2587,7 @@ def dispatch_action(
                 message="RSky",
             )
             _clear_safety_release_request(state)
+            state.last_launcher_failure = {}
             state.last_command_az = None
             state.last_command_el = None
             _clear_last_mount_target(state)
@@ -2503,6 +2640,7 @@ def dispatch_action(
                 message="SkyDip",
             )
             _clear_safety_release_request(state)
+            state.last_launcher_failure = {}
             state.last_command_az = None
             state.last_command_el = None
             _clear_last_mount_target(state)
@@ -2875,6 +3013,7 @@ def _operator_status_to_v7_status(
         "launcher_log_choices": log_reader.launcher_log_choices([
             r.to_dict() for r in state.process_registry.all_records(refresh=False)
         ]),
+        "last_launcher_failure": dict(state.last_launcher_failure or {}),
         "shutdown": _shutdown_snapshot(state),
         "self_check_endpoint": "/api/self-check",
         "operator_log_path": str(state.operator_log_path) if state.operator_log_path is not None else None,
@@ -3105,6 +3244,7 @@ def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException)
         "processes": processes,
         "process_counts": process_counts,
         "launcher_log_choices": [],
+        "last_launcher_failure": dict(getattr(state, "last_launcher_failure", {}) or {}),
         "shutdown": _shutdown_snapshot(state),
         "self_check_endpoint": "/api/self-check",
         "operator_log_path": str(state.operator_log_path) if state.operator_log_path is not None else None,

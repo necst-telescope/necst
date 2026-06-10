@@ -3809,9 +3809,13 @@ const defaultCardLayout = [
   {id:'geometry', col:2, row:12},
   {id:'environment', col:2, row:12},
   {id:'planview', col:5, row:24},
-  {id:'plan', col:2, row:20},
-  {id:'queue', col:2, row:20},
-  {id:'spectrometer', col:3, row:20},
+  // Keep the three right-side middle cards as tall as Plan View.  If these
+  // are shorter, Reset layout leaves a four-row gap above System Trace/
+  // Terminal, and the Files/Recent Events cards are auto-placed at different
+  // vertical positions by CSS grid.
+  {id:'plan', col:2, row:24},
+  {id:'queue', col:2, row:24},
+  {id:'spectrometer', col:3, row:24},
   {id:'trace', col:3, row:7},
   {id:'terminal', col:3, row:7},
   {id:'files', col:3, row:7},
