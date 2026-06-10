@@ -30,7 +30,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from . import log_reader, observation_log, process_manager, progress_manager, self_check, site_config, status_model, live_telemetry
+from . import log_reader, observation_log, process_manager, progress_manager, self_check, site_config, status_model, live_telemetry, node_health
 from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
 
@@ -211,6 +211,9 @@ class OperatorConsoleState:
     local_state_reset_summary: Dict[str, Any] = field(default_factory=dict)
     last_status_exception_message: str = ""
     last_status_exception_at: Optional[float] = None
+    node_health_cache: JsonDict = field(default_factory=lambda: {"enabled": False})
+    node_health_checked_at_unix: float = 0.0
+    last_node_health_event_key: str = ""
     lock: threading.RLock = field(default_factory=threading.RLock)
 
     def add_log(
@@ -2922,9 +2925,96 @@ def _build_console_status_unchecked(state: OperatorConsoleState) -> JsonDict:
                 "Console started in safe/rescue mode; no hardware command was sent automatically."
             )
             payload["warning_count"] = len(payload.get("warnings") or [])
+        payload["node_health"] = _node_health_snapshot(state)
         if state.local_state_reset_archive:
             payload["local_state_reset"] = dict(state.local_state_reset_summary or {"archive_dir": state.local_state_reset_archive})
         return payload
+
+
+def _node_health_snapshot(state: OperatorConsoleState) -> JsonDict:
+    """Return cached read-only ROS node health without risking /api/status.
+
+    Phase 1 checks only ROS graph node presence against [console.health].  It is
+    display-only and must never send start/stop/restart/kill commands.
+    """
+
+    try:
+        config = state.site_summary.health
+    except Exception:
+        return {"enabled": False}
+    if not config.enabled:
+        state.node_health_cache = {"enabled": False}
+        state.node_health_checked_at_unix = 0.0
+        return dict(state.node_health_cache)
+
+    now = time.time()
+    try:
+        poll_interval = max(0.5, float(config.poll_interval_sec))
+    except Exception:
+        poll_interval = 2.0
+    if (
+        state.node_health_cache
+        and state.node_health_cache.get("enabled") is True
+        and state.node_health_checked_at_unix > 0
+        and now - float(state.node_health_checked_at_unix) < poll_interval
+    ):
+        return dict(state.node_health_cache)
+
+    actual_nodes: List[str] = []
+    error: Optional[str] = None
+    try:
+        if state.live_cache is None:
+            raise RuntimeError("live telemetry ROS is disabled")
+        actual_nodes = state.live_cache.ros_node_names()
+    except Exception as exc:
+        error = str(exc) or f"{type(exc).__name__}"
+
+    payload = node_health.evaluate(config, actual_nodes, error=error)
+    state.node_health_cache = dict(payload)
+    state.node_health_checked_at_unix = now
+
+    try:
+        missing_required = tuple(payload.get("missing_required") or [])
+        missing_optional = tuple(payload.get("missing_optional") or [])
+        event_key = "|".join([
+            str(payload.get("system") or ""),
+            ",".join(missing_required),
+            ",".join(missing_optional),
+            str(payload.get("error") or ""),
+        ])
+        if event_key != state.last_node_health_event_key:
+            state.last_node_health_event_key = event_key
+            if payload.get("system") in {"NG", "UNKNOWN"} or missing_optional:
+                state.add_log(
+                    payload.get("system") not in {"NG", "UNKNOWN"},
+                    "ROS node health: "
+                    f"system={payload.get('system')}, "
+                    f"manual_mount={payload.get('manual_mount')}, "
+                    f"observation={payload.get('observation')}",
+                    action="node_health",
+                    data={
+                        "missing_required": list(missing_required),
+                        "missing_optional": list(missing_optional),
+                        "error": payload.get("error"),
+                    },
+                )
+    except Exception:
+        pass
+    return dict(payload)
+
+
+def _node_health_rescue_payload(state: OperatorConsoleState, message: str) -> JsonDict:
+    try:
+        config = state.site_summary.health
+    except Exception:
+        return {"enabled": False}
+    if not config.enabled:
+        return {"enabled": False}
+    return node_health.evaluate(
+        config,
+        None,
+        error=f"normal status unavailable; node health not refreshed: {message}",
+    )
 
 
 def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException) -> JsonDict:
@@ -3030,6 +3120,7 @@ def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException)
         },
         "status_refresh_ms": int(state.status_refresh_ms),
         "live_telemetry": {"requested": not bool(state.status_no_ros), "available": False, "spin_mode": "rescue", "error": message},
+        "node_health": _node_health_rescue_payload(state, message),
         "operator_status": {},
         "status_error": {"message": message, "time": now},
         "safe_start": bool(state.safe_start),
@@ -3570,6 +3661,13 @@ def run_server(
         + (f", path={site_summary.source_path}" if site_summary.source_path else "")
         + (f", observatory={site_summary.observatory}" if site_summary.observatory else ""),
     )
+    if site_summary.health.enabled:
+        state.add_log(
+            True,
+            "ROS node health monitor enabled; read-only ROS graph check only",
+            action="node_health",
+            data=site_summary.health.to_dict(),
+        )
     for warning in site_summary.warnings:
         state.add_log(False, warning)
     if not limits:
@@ -3596,6 +3694,7 @@ def run_server(
         print("  live write guard: ON by --guard-live-actions (write actions blocked; STOP/ABORT remain available)")
     print(f"  status refresh: {max(200, int(status_refresh_ms))} ms")
     print(f"  console live telemetry ROS: {'disabled' if status_no_ros else 'enabled'}")
+    print(f"  ROS node health monitor: {'enabled' if site_summary.health.enabled else 'disabled'}")
     print(f"  operator log: {operator_log_path}")
     print(f"  observation CSV log: {observer_csv_log.status().get('csv_path')}")
     print(f"  observation CSV meta: {observer_csv_log.status().get('meta_path')}")

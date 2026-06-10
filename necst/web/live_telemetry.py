@@ -13,7 +13,9 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+from . import node_health
 
 
 ENCODER_MOTION_DEADBAND_DEG = 5.0e-4
@@ -475,6 +477,28 @@ class LiveTelemetryCache:
         except Exception as exc:
             self.error = str(exc)
             self.available = False
+
+    def ros_node_names(self) -> List[str]:
+        """Return fully qualified ROS node names from the current graph.
+
+        This is read-only and uses the same rclpy node/context as the live
+        telemetry subscriptions so the operator console does not create another
+        ROS node just for health monitoring.
+        """
+
+        if not (self.available and self._node is not None):
+            raise RuntimeError(self.error or "live telemetry ROS node is unavailable")
+        self.spin_once(timeout_sec=0.0)
+        try:
+            pairs = self._node.get_node_names_and_namespaces()
+        except Exception as exc:
+            self.error = f"failed to read ROS graph node list: {exc}"
+            raise
+        names = [
+            node_health.full_node_name(name, namespace)
+            for name, namespace in pairs
+        ]
+        return sorted(name for name in names if name)
 
     def snapshot(self) -> Dict[str, Any]:
         if self.available:

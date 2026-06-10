@@ -112,6 +112,42 @@ small { color: var(--faint); }
 .title h1 { margin: 0; font-size: 18px; letter-spacing: 0.01em; }
 .title .subtitle { color: var(--muted); font-size: 12px; }
 .status-line { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-top: 7px; }
+.node-health {
+  margin-top: 6px;
+  max-width: 100%;
+  border: 1px solid rgba(40,50,74,0.9);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.035);
+  color: var(--muted);
+}
+.node-health[hidden] { display: none; }
+.node-health summary {
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 8px;
+  list-style: none;
+}
+.node-health summary::-webkit-details-marker { display: none; }
+.node-health summary::before { content: "▸"; color: var(--faint); }
+.node-health[open] summary::before { content: "▾"; }
+.node-health-details {
+  display: grid;
+  gap: 4px;
+  padding: 0 8px 8px 22px;
+  font-size: 12px;
+}
+.node-health-row {
+  display: grid;
+  grid-template-columns: 34px minmax(120px, 210px) minmax(180px, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+.node-health-row .name { overflow-wrap: anywhere; word-break: break-word; color: var(--faint); }
+.node-health-note { color: var(--faint); overflow-wrap: anywhere; word-break: break-word; }
 .header-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
 .badge {
   display: inline-flex;
@@ -642,6 +678,10 @@ summary { cursor: pointer; color: var(--muted); }
         <span class="subtitle">standalone layout preview / no ROS / no telescope command</span>
       </div>
       <div class="status-line" id="statusBadges"></div>
+      <details class="node-health" id="nodeHealthBox" hidden>
+        <summary id="nodeHealthSummary">ROS node health</summary>
+        <div class="node-health-details" id="nodeHealthDetails"></div>
+      </details>
     </div>
     <div class="header-actions">
       <button id="openProgress" class="secondary" title="Start or open the progress-monitor server managed by this console. If this console exits, only a console-owned progress server stops.">Launch progress monitor</button>
@@ -1791,6 +1831,51 @@ function processSummary(counts) {
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
 }
+function healthClass(value) {
+  const text = String(value || '').toUpperCase();
+  if (text === 'OK') return 'ok';
+  if (text === 'NG') return 'bad';
+  if (text === 'DEGRADED' || text === 'UNKNOWN') return 'warn';
+  return 'info';
+}
+function renderNodeHealth(payload) {
+  const box = qs('nodeHealthBox');
+  const summary = qs('nodeHealthSummary');
+  const details = qs('nodeHealthDetails');
+  if (!box || !summary || !details) return;
+  if (!payload || payload.enabled !== true) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const system = payload.system || 'UNKNOWN';
+  const manual = payload.manual_mount || 'UNKNOWN';
+  const observation = payload.observation || 'UNKNOWN';
+  const missingRequired = Array.isArray(payload.missing_required) ? payload.missing_required : [];
+  const missingOptional = Array.isArray(payload.missing_optional) ? payload.missing_optional : [];
+  const missingText = missingRequired.length ? `Missing: ${missingRequired.slice(0, 4).join(', ')}${missingRequired.length > 4 ? ', ...' : ''}` : (missingOptional.length ? `Optional missing: ${missingOptional.slice(0, 4).join(', ')}${missingOptional.length > 4 ? ', ...' : ''}` : 'All configured nodes present');
+  summary.innerHTML = [
+    `<span class="badge ${healthClass(system)}">Node Health: ${escapeHtml(system)}</span>`,
+    `<span class="badge ${healthClass(manual)}">Manual mount: ${escapeHtml(manual)}</span>`,
+    `<span class="badge ${healthClass(observation)}">Observation: ${escapeHtml(observation)}</span>`,
+    `<span class="node-health-note">${escapeHtml(missingText)}</span>`
+  ].join('');
+  const rows = Array.isArray(payload.nodes) ? payload.nodes : [];
+  const rowHtml = rows.length ? rows.map(node => {
+    const present = node.present;
+    const cls = present === true ? 'ok' : (present === false ? 'bad' : 'warn');
+    const mark = present === true ? 'OK' : (present === false ? 'NG' : '--');
+    const label = node.label || node.name || 'node';
+    const nodeClass = node.class || 'optional';
+    return `<div class="node-health-row"><span class="badge ${cls}">${mark}</span><b>${escapeHtml(label)}</b><span class="name">${escapeHtml(node.name || '')} <small>${escapeHtml(nodeClass)}</small></span></div>`;
+  }).join('') : '<div class="node-health-note">No expected nodes are configured.</div>';
+  const errorHtml = payload.error ? `<div class="node-health-note">Error: ${escapeHtml(payload.error)}</div>` : '';
+  const warningHtml = Array.isArray(payload.config_warnings) && payload.config_warnings.length ? `<div class="node-health-note">Config warning: ${escapeHtml(payload.config_warnings.join('; '))}</div>` : '';
+  const checkedHtml = payload.last_checked_utc ? `<div class="node-health-note">Last checked: ${escapeHtml(payload.last_checked_utc)} / poll ${escapeHtml(payload.poll_interval_sec ?? '')} sec</div>` : '';
+  const noteHtml = payload.note ? `<div class="node-health-note">${escapeHtml(payload.note)}</div>` : '';
+  details.innerHTML = `${errorHtml}${warningHtml}${rowHtml}${checkedHtml}${noteHtml}`;
+}
+
 function parseProcessTime(p) {
   const raw = Number(p && p.started_at);
   if (Number.isFinite(raw)) return raw;
@@ -2328,6 +2413,7 @@ function renderStatus(data) {
     `<span class="badge ${processClass}">Launchers: ${runningCount} active</span>`,
     `<span class="badge ${data.warning_count ? 'warn' : 'ok'}">Warnings: ${data.warning_count || 0}</span>`
   ].join('');
+  renderNodeHealth(data.node_health);
   qs('authorityButton').textContent = heldByMe ? 'Release authority' : 'Acquire authority';
   qs('authorityButton').disabled = Boolean(state.liveActions.guarded) && !heldByMe;
   qs('obsStateBadge').textContent = operation.kind === 'observation' ? operation.label : data.state;
@@ -3287,6 +3373,83 @@ class LogEntry:
     message: str
 
 
+
+DEMO_NODE_HEALTH_NODES = [
+    {
+        "name": "/necst/OMU1P85M/ctrl/antenna/encoder_readout",
+        "label": "Antenna encoder",
+        "class": "manual_mount_required",
+        "present": True,
+    },
+    {
+        "name": "/necst/OMU1P85M/ctrl/antenna/motor_driver",
+        "label": "Antenna motor",
+        "class": "manual_mount_required",
+        "present": True,
+    },
+    {
+        "name": "/necst/OMU1P85M/ctrl/antenna/controller",
+        "label": "Antenna controller",
+        "class": "manual_mount_required",
+        "present": True,
+    },
+    {
+        "name": "/necst/OMU1P85M/ctrl/antenna/altaz_coord",
+        "label": "AltAz coordinate",
+        "class": "manual_mount_required",
+        "present": True,
+    },
+    {
+        "name": "/necst/OMU1P85M/rx/spectrometer",
+        "label": "Spectrometer",
+        "class": "observation_required",
+        "present": True,
+    },
+    {
+        "name": "/necst/OMU1P85M/core/recorder",
+        "label": "Recorder",
+        "class": "observation_required",
+        "present": True,
+    },
+    {
+        "name": "/necst/OMU1P85M/ctrl/calib/chopper",
+        "label": "Chopper",
+        "class": "optional",
+        "present": True,
+    },
+    {
+        "name": "/necst/OMU1P85M/thermometer_reader",
+        "label": "Weather station",
+        "class": "optional",
+        "present": True,
+    },
+]
+
+
+def demo_node_health_payload() -> Dict[str, Any]:
+    """Return a static ROS-node-health payload for the standalone demo.
+
+    The real console intentionally hides node health when [console.health] is
+    absent from the site TOML.  The standalone demo has no site TOML or ROS
+    graph, so it publishes a small simulated payload to make the compact UI
+    strip and details view directly checkable.
+    """
+
+    return {
+        "enabled": True,
+        "demo": True,
+        "system": "OK",
+        "manual_mount": "OK",
+        "observation": "OK",
+        "poll_interval_sec": 2.0,
+        "last_checked_utc": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "missing_required": [],
+        "missing_optional": [],
+        "nodes": [dict(node) for node in DEMO_NODE_HEALTH_NODES],
+        "note": "console-demo uses simulated ROS node health; the real console still requires [console.health] in the site TOML.",
+    }
+
+
 @dataclass
 class DemoState:
     telescope: str = "OMU1.85m demo"
@@ -3384,6 +3547,7 @@ class DemoState:
                 "blocking_sec": EXCLUSIVE_START_BLOCK_SEC,
             },
             "log": [entry.__dict__ for entry in self.log[-80:]],
+            "node_health": demo_node_health_payload(),
         }
 
 

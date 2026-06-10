@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
+from . import node_health
+
 try:
     import tomllib  # Python 3.11+
 except Exception:  # pragma: no cover
@@ -35,6 +37,7 @@ class SiteConfigSummary:
     mount_limits: Dict[str, float] = field(default_factory=dict)
     capabilities: Dict[str, bool] = field(default_factory=lambda: dict(_DEFAULT_CAPABILITIES))
     chopper: Dict[str, Any] = field(default_factory=dict)
+    health: node_health.NodeHealthConfig = field(default_factory=node_health.NodeHealthConfig)
     warnings: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -45,6 +48,7 @@ class SiteConfigSummary:
             "mount_limits": dict(self.mount_limits),
             "capabilities": dict(self.capabilities),
             "chopper": dict(self.chopper),
+            "health": self.health.to_dict(),
             "warnings": list(self.warnings),
         }
 
@@ -191,6 +195,7 @@ def resolve_site_config(
                 warnings.append(f"invalid CLI mount limit {key}={value!r}")
     chopper = _chopper_from_config(config)
     caps = _capabilities_from_config(config, chopper)
+    health = node_health.config_from_mapping(config)
     observatory = config.get("observatory") if isinstance(config, Mapping) else None
     return SiteConfigSummary(
         source=source,
@@ -199,5 +204,6 @@ def resolve_site_config(
         mount_limits=limits,
         capabilities=caps,
         chopper=chopper,
-        warnings=warnings,
+        health=health,
+        warnings=warnings + list(health.warnings),
     )
