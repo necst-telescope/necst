@@ -1408,7 +1408,10 @@ function actualOperationFromStatus(data) {
   const calActive = sys === 'calibrating' || (!finalOrIdle && manual === 'calibration') || (!finalOrIdle && (task.includes('rsky') || task.includes('skydip'))) || (!finalOrIdle && processCategoryActive(data, 'calibration'));
   const explicitTrackingActive = task.includes('target tracking');
   const atTargetIdle = Boolean((data.mount_target_reached || data.mount_hold_at_target) && data.motion_live_active === false);
-  const mountActive = !atTargetIdle && (manual === 'moving' || (manual === 'tracking' && !explicitTrackingActive) || task.includes('mount move') || task.includes('manual mount'));
+  const commandTargetReached = mountPendingReached(data || {}, {kind: 'mount', targetAz: data.command_az, targetEl: data.command_el});
+  const commandTargetPending = Boolean(data.operator_mount_command_pending)
+    || (statusHasCommand(data || {}) && !commandTargetReached && !Boolean(data.operator_safety_release_idle));
+  const mountActive = !atTargetIdle && (commandTargetPending || manual === 'moving' || (manual === 'tracking' && !explicitTrackingActive) || task.includes('mount move') || task.includes('manual mount'));
   const trackingActive = !atTargetIdle && (explicitTrackingActive || manual === 'target tracking');
   if (obsActive) {
     return {phase: 'running', kind: 'observation', label: 'OBSERVATION RUNNING', detail: 'Observation execution is confirmed by status/progress/launcher state.'};

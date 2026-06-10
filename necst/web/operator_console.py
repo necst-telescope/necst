@@ -90,6 +90,12 @@ EXCLUSIVE_START_STATUS_SEC = 15.0
 # is already stopped and ready for the next command.
 SAFETY_RELEASE_ASSUME_IDLE_AFTER_SEC = 1.0
 
+# Fixed Az/El mount move is complete only when the current encoder position
+# has reached the commanded mechanical mount coordinate.  Do not infer READY
+# merely because low-level motion/status temporarily reports idle while the
+# command topic still points away from the current encoder position.
+MOUNT_COMMAND_TARGET_REACHED_TOL_DEG = 7.5e-4
+
 # A progress sidecar can remain in a non-final lifecycle if an observation
 # launcher dies or blocks before writing its final snapshot.  Do not keep the
 # operator UI in OBSERVATION RUNNING forever when no local launcher is active
@@ -1537,6 +1543,33 @@ def _clear_stale_observation_state(state: OperatorConsoleState) -> Tuple[bool, s
         "note": "per-record progress/data directories were not deleted",
     }
 
+
+def _mount_target_reached_from_values(
+    *,
+    current_az: Any,
+    current_el: Any,
+    target_az: Any,
+    target_el: Any,
+    tol_deg: float = MOUNT_COMMAND_TARGET_REACHED_TOL_DEG,
+) -> Optional[bool]:
+    """Return whether current Az/El is at target, or None if unknown.
+
+    This intentionally uses direct mechanical Az difference rather than modulo
+    wrapping: the Manual Mount Az/El control treats Az=360 as a real mechanical
+    coordinate, not automatically as Az=0.
+    """
+
+    try:
+        az = float(current_az)
+        el = float(current_el)
+        taz = float(target_az)
+        tel = float(target_el)
+    except Exception:
+        return None
+    if not (math.isfinite(az) and math.isfinite(el) and math.isfinite(taz) and math.isfinite(tel)):
+        return None
+    return bool(abs(az - taz) <= float(tol_deg) and abs(el - tel) <= float(tol_deg))
+
 def _last_mount_target_reached(
     state: OperatorConsoleState,
     *,
@@ -1572,7 +1605,7 @@ def _last_mount_target_reached(
             state.last_mount_target_reached_since = None
         return False
 
-    reached_now = abs(az - target_az) <= float(tol_deg) and abs(el - target_el) <= float(tol_deg)
+    reached_now = bool(_mount_target_reached_from_values(current_az=az, current_el=el, target_az=target_az, target_el=target_el, tol_deg=tol_deg))
     now = time.time()
     if not reached_now:
         if update_state:
@@ -2695,6 +2728,32 @@ def _operator_status_to_v7_status(
         motion_mount_hold_at_target = False
         motion_source_lower = "operator_safety_release"
 
+    command_target_reached = _mount_target_reached_from_values(
+        current_az=az,
+        current_el=el,
+        target_az=cmd_az,
+        target_el=cmd_el,
+    )
+    operator_mount_command_pending = bool(
+        state.action_mode != "dry-run"
+        and not safety_release_idle
+        and cmd_az is not None
+        and cmd_el is not None
+        and command_target_reached is not True
+    )
+    if operator_mount_command_pending:
+        # The command topic still points to a fixed mechanical Az/El target
+        # that the encoder has not reached yet (or the current encoder value is
+        # unavailable).  Some low-level status streams can briefly report idle
+        # between encoder samples or while the mount is moving slowly.  Do not
+        # let that transient idle make the operator UI return READY.
+        manual_state = "moving"
+        active_task = "manual mount move"
+        motion_live_active = True
+        motion_mount_target_reached = False
+        motion_mount_hold_at_target = False
+        motion_source_lower = "operator_command_target_pending"
+
     if state.action_mode == "dry-run":
         chopper_state = str(chopper.get("state") or state.last_chopper_state or "unknown")
         chopper_position = chopper.get("position")
@@ -2740,6 +2799,8 @@ def _operator_status_to_v7_status(
         "operator_last_mount_target_reached_since": state.last_mount_target_reached_since,
         "operator_safety_release_idle": bool(safety_release_idle),
         "operator_safety_release_age_sec": safety_release_age,
+        "operator_mount_command_pending": bool(operator_mount_command_pending),
+        "operator_mount_command_reached": command_target_reached,
         "mount_target_reached_tol_deg": motion.get("mount_target_reached_tol_deg"),
         "encoder_motion_deadband_deg": motion.get("encoder_motion_deadband_deg"),
         "encoder_motion_delta_az_deg": motion.get("encoder_motion_delta_az_deg"),
