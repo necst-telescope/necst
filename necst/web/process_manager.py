@@ -62,6 +62,17 @@ class ManagedProcessRecord:
     stop_reason: str = ""
     _popen: Optional[subprocess.Popen[Any]] = field(default=None, repr=False, compare=False)
 
+    def is_active(self) -> bool:
+        """Return True while the local launcher is still considered active.
+
+        Older console code and status adaptation paths use this method instead
+        of inspecting ``status`` directly.  Keeping it on the record object makes
+        status generation robust even when a process record has not just been
+        converted through ``to_dict()``.
+        """
+
+        return self.status not in {"exited", "lost"}
+
     def refresh(self) -> bool:
         """Poll the subprocess and return True if it finalized now."""
 
@@ -135,7 +146,7 @@ class ManagedProcessRecord:
             "finished_at": self.finished_at,
             "returncode": self.returncode,
             "status": self.status,
-            "active": self.status not in {"exited", "lost"},
+            "active": self.is_active(),
             "final_logged": bool(self.final_logged),
             "stop_requested_at": self.stop_requested_at,
             "stop_reason": self.stop_reason,

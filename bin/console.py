@@ -207,6 +207,27 @@ def main(argv: Optional[list[str]] = None) -> int:
             "--action-mode dry-run is the recommended no-hardware mode"
         ),
     )
+    parser.add_argument(
+        "--safe-start",
+        action="store_true",
+        help=(
+            "start the console in a conservative recovery-friendly mode. "
+            "No hardware command is sent automatically; previous local state is not trusted for startup checks."
+        ),
+    )
+    parser.add_argument(
+        "--reset-local-state",
+        action="store_true",
+        help=(
+            "archive local console/progress pointer files before startup. "
+            "This does not send telescope, recorder, or XFFTS commands."
+        ),
+    )
+    parser.add_argument(
+        "--rescue",
+        action="store_true",
+        help="equivalent to --safe-start --reset-local-state; use when the console cannot recover normally",
+    )
     parser.add_argument("--open", action="store_true", help="open the URL in a browser")
     parser.add_argument("--quiet", action="store_true", help="suppress HTTP request logs")
     parser.add_argument("--events-limit", type=int, default=12, help="number of recent events in status model")
@@ -260,6 +281,9 @@ def main(argv: Optional[list[str]] = None) -> int:
                 shutdown_terminate_launchers=bool(args.shutdown_terminate_launchers),
                 shutdown_launcher_timeout_sec=float(args.shutdown_launcher_timeout),
                 shutdown_launcher_kill_timeout_sec=float(args.shutdown_launcher_kill_timeout),
+                safe_start=bool(args.safe_start),
+                reset_local_state=bool(args.reset_local_state),
+                rescue=bool(args.rescue),
                 az_min=args.az_min,
                 az_max=args.az_max,
                 el_min=args.el_min,

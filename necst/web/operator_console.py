@@ -199,6 +199,12 @@ class OperatorConsoleState:
     exclusive_start_session_id: Optional[str] = None
     exclusive_start_started_at: Optional[float] = None
     exclusive_start_message: str = ""
+    safe_start: bool = False
+    rescue_mode: bool = False
+    local_state_reset_archive: Optional[str] = None
+    local_state_reset_summary: Dict[str, Any] = field(default_factory=dict)
+    last_status_exception_message: str = ""
+    last_status_exception_at: Optional[float] = None
     lock: threading.RLock = field(default_factory=threading.RLock)
 
     def add_log(
@@ -1036,6 +1042,7 @@ def _obslog_event_for_action(action: str) -> Optional[str]:
         "chopper_home": "chopper_home_clicked",
         "chopper_recover": "chopper_recover_clicked",
         "clear_stale_observation_state": "stale_state_cleared",
+        "reset_local_console_state": "local_state_reset",
         "terminate_observation_launcher": "local_observation_launcher_force_kill_clicked",
         "terminate_calibration_launcher": "local_calibration_launcher_force_kill_clicked",
         "terminate_all_launchers": "local_launchers_force_kill_clicked",
@@ -1066,7 +1073,7 @@ def _obslog_mode_for_action(
         return "SkyDip"
     if action.startswith("chopper_"):
         return "Chopper"
-    if action in {"stop", "abort_observation", "clear_stale_observation_state"}:
+    if action in {"stop", "abort_observation", "clear_stale_observation_state", "reset_local_console_state"}:
         return "Console"
     if action.startswith("terminate_") or action in {"kill_process"}:
         return "Recovery"
@@ -1290,6 +1297,99 @@ def _progress_snapshot_update_age_sec(status_state: Mapping[str, Any]) -> Option
         pass
     return None
 
+
+
+def _utc_reset_stamp() -> str:
+    return time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+
+
+def reset_local_console_state_files(
+    *,
+    progress_root: os.PathLike[str] | str,
+    operator_log_dir: os.PathLike[str] | str,
+    reason: str = "operator request",
+) -> JsonDict:
+    """Archive only local console/progress state files.
+
+    This never sends telescope, recorder, spectrometer, or ROS commands.  It is
+    intentionally limited to files that can make the web console believe a stale
+    observation is still current after an interrupted previous run.
+    """
+
+    stamp = _utc_reset_stamp()
+    archive_dir = Path(operator_log_dir).expanduser() / "reset_archive" / stamp
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    candidates = [
+        Path(progress_root).expanduser() / "current_observation_progress.json",
+        Path(progress_root).expanduser() / "current_observation_record.txt",
+    ]
+    moved: List[JsonDict] = []
+    missing: List[str] = []
+    errors: List[JsonDict] = []
+    for path in candidates:
+        try:
+            if not path.exists():
+                missing.append(str(path))
+                continue
+            target = archive_dir / path.name
+            if target.exists():
+                target = archive_dir / f"{path.stem}_{uuid.uuid4().hex[:6]}{path.suffix}"
+            shutil.move(str(path), str(target))
+            moved.append({"from": str(path), "to": str(target)})
+        except Exception as exc:
+            errors.append({"path": str(path), "error": str(exc)})
+    payload: JsonDict = {
+        "ok": not bool(errors),
+        "reason": str(reason or "operator request"),
+        "archive_dir": str(archive_dir),
+        "moved": moved,
+        "missing": missing,
+        "errors": errors,
+        "hardware_command_sent": False,
+    }
+    try:
+        manifest = archive_dir / "reset_manifest.json"
+        with manifest.open("w", encoding="utf-8") as fh:
+            json.dump(payload, fh, ensure_ascii=False, indent=2, sort_keys=True)
+            fh.write("\n")
+            fh.flush()
+            try:
+                os.fsync(fh.fileno())
+            except Exception:
+                pass
+        payload["manifest"] = str(manifest)
+    except Exception as exc:
+        payload.setdefault("errors", []).append({"path": str(archive_dir / "reset_manifest.json"), "error": str(exc)})
+        payload["ok"] = False
+    return payload
+
+
+def _reset_local_console_state(state: OperatorConsoleState, *, reason: str = "operator request") -> Tuple[bool, str, JsonDict]:
+    operator_dir = state.operator_log_path.parent if state.operator_log_path is not None else Path.home() / ".necst" / "operator_console"
+    data = reset_local_console_state_files(
+        progress_root=state.progress_root,
+        operator_log_dir=operator_dir,
+        reason=reason,
+    )
+    state.local_state_reset_archive = str(data.get("archive_dir") or "")
+    state.local_state_reset_summary = dict(data)
+    moved_count = len(data.get("moved") or [])
+    if state.observation_log is not None:
+        try:
+            state.observation_log.write_event(
+                {},
+                mode="Console",
+                event="local_state_reset",
+                action_or_obsfile=str(data.get("archive_dir") or ""),
+                result="success" if data.get("ok") else "failed",
+                comment=f"archived {moved_count} local state file(s); no hardware command sent",
+            )
+        except Exception:
+            pass
+    message = f"local console state reset; archived {moved_count} file(s); no hardware command sent"
+    if not data.get("ok"):
+        message = "local console state reset had errors; no hardware command sent"
+    return bool(data.get("ok")), message, data
 
 def _stale_observation_state(
     state: OperatorConsoleState,
@@ -1916,6 +2016,11 @@ def dispatch_action(
             "shutdown": _shutdown_snapshot(state),
         }
 
+    if action == "reset_local_console_state":
+        ok, message, data = _reset_local_console_state(state, reason="browser action")
+        data["action"] = action
+        return ok, message, data
+
     if action == "clear_stale_observation_state":
         ok, message, data = _clear_stale_observation_state(state)
         data["action"] = action
@@ -2462,7 +2567,11 @@ def _operator_status_to_v7_status(
     active_process_categories = {
         str(record.category or "")
         for record in process_records
-        if bool(record.is_active())
+        if bool(
+            record.is_active()
+            if hasattr(record, "is_active")
+            else getattr(record, "status", "") not in {"exited", "lost"}
+        )
     }
     stale_observation = _stale_observation_state(state, status_state, op)
     if stale_observation.get("running_stale") or stale_observation.get("launcher_stuck"):
@@ -2733,7 +2842,7 @@ def _operator_status_to_v7_status(
     }
 
 
-def build_console_status(state: OperatorConsoleState) -> JsonDict:
+def _build_console_status_unchecked(state: OperatorConsoleState) -> JsonDict:
     with state.lock:
         _refresh_processes_and_log(state)
         _sync_authority_state(state)
@@ -2744,7 +2853,148 @@ def build_console_status(state: OperatorConsoleState) -> JsonDict:
             events_limit=state.events_limit,
             live_payload=live_payload,
         )
-        return _operator_status_to_v7_status(state, status_state)
+        payload = _operator_status_to_v7_status(state, status_state)
+        if state.safe_start or state.rescue_mode:
+            payload["safe_start"] = bool(state.safe_start)
+            payload["rescue_mode"] = bool(state.rescue_mode)
+            payload.setdefault("warnings", []).append(
+                "Console started in safe/rescue mode; no hardware command was sent automatically."
+            )
+            payload["warning_count"] = len(payload.get("warnings") or [])
+        if state.local_state_reset_archive:
+            payload["local_state_reset"] = dict(state.local_state_reset_summary or {"archive_dir": state.local_state_reset_archive})
+        return payload
+
+
+def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException) -> JsonDict:
+    """Return a status payload that is deliberately hard to break.
+
+    The browser must keep showing STOP/ABORT and local recovery controls even if
+    the normal status builder has a bug or a corrupted local pointer file.
+    """
+
+    message = f"{type(exc).__name__}: {exc}"
+    now = time.time()
+    try:
+        process_records = state.process_registry.all_records(refresh=False)
+        processes = [r.to_dict() for r in process_records]
+        process_counts = state.process_registry.counts()
+    except Exception as proc_exc:
+        processes = []
+        process_counts = {"total": 0, "active": 0, "finished": 0, "by_category": {}, "error": str(proc_exc)}
+    try:
+        obslog_status = state.observation_log.status() if state.observation_log is not None else {"ok": False}
+    except Exception as log_exc:
+        obslog_status = {"ok": False, "last_error": str(log_exc)}
+    try:
+        log_entries = [entry.__dict__ for entry in state.log]
+    except Exception:
+        log_entries = []
+    try:
+        site_dict = state.site_summary.to_dict()
+    except Exception:
+        site_dict = {"source": "unavailable"}
+    try:
+        mount_limits = dict(state.mount_limits)
+    except Exception:
+        mount_limits = {}
+    try:
+        progress_status = state.progress_monitor.status().to_dict() if state.progress_monitor is not None else {}
+    except Exception as progress_exc:
+        progress_status = {"status": "error", "message": str(progress_exc)}
+    warnings = [
+        "Normal console status generation failed; showing minimal rescue status.",
+        message,
+        "STOP/ABORT and local recovery actions remain available. No hardware command was sent automatically.",
+    ]
+    payload: JsonDict = {
+        "telescope": state.telescope,
+        "progress_url": state.progress_url,
+        "progress": {
+            "url": state.progress_url,
+            "running": False,
+            "owned_by_console": bool(progress_status.get("owned_by_console")),
+            "monitor": progress_status,
+        },
+        "state": "status_error",
+        "manual_state": "unknown",
+        "active_task": "status builder failed",
+        "az": None,
+        "el": None,
+        "command_az": None,
+        "command_el": None,
+        "mount_limits": mount_limits,
+        "site": site_dict,
+        "capabilities": dict(getattr(state, "site_capabilities", {}) or {}),
+        "warning_count": len(warnings),
+        "warnings": warnings,
+        "authority": {
+            "held": bool(getattr(state.authority, "held", False)),
+            "session_id": getattr(state.authority, "session_id", None),
+            "necst_held": bool(getattr(state.authority, "necst_held", False)),
+            "mode": getattr(state.authority, "mode", "unknown"),
+            "safety_actions_bypass_browser_gate": True,
+            "safety_actions": ["stop", "stop_tracking", "abort_observation", "terminate_*_launcher"],
+        },
+        "chopper": {
+            "state": getattr(state, "last_chopper_state", "unknown") or "unknown",
+            "position": getattr(state, "last_chopper_position", None),
+            "age": "status unavailable",
+        },
+        "observation": {},
+        "stale_observation": {
+            "running_stale": True,
+            "launcher_stuck": bool((process_counts or {}).get("active", 0)),
+            "can_clear": True,
+            "can_terminate_launcher": bool((process_counts or {}).get("active", 0)),
+            "record_name": "unknown",
+            "reason": "normal status builder failed; clear only local console/progress state after confirming hardware safety",
+        },
+        "log": log_entries,
+        "processes": processes,
+        "process_counts": process_counts,
+        "launcher_log_choices": [],
+        "shutdown": _shutdown_snapshot(state),
+        "self_check_endpoint": "/api/self-check",
+        "operator_log_path": str(state.operator_log_path) if state.operator_log_path is not None else None,
+        "launcher_log_dir": str(state.launcher_log_dir) if state.launcher_log_dir is not None else None,
+        "observation_log": obslog_status,
+        "action_mode": state.action_mode,
+        "live_actions": {
+            "enabled": bool(state.live_actions_enabled),
+            "guarded": state.action_mode == "live" and not bool(state.live_actions_enabled),
+            "write_actions": sorted(LIVE_WRITE_ACTIONS),
+            "safety_actions": sorted(SAFETY_ACTIONS),
+            "message": "minimal rescue status after status builder failure",
+        },
+        "status_refresh_ms": int(state.status_refresh_ms),
+        "live_telemetry": {"requested": not bool(state.status_no_ros), "available": False, "spin_mode": "rescue", "error": message},
+        "operator_status": {},
+        "status_error": {"message": message, "time": now},
+        "safe_start": bool(state.safe_start),
+        "rescue_mode": bool(state.rescue_mode),
+        "local_state_reset": dict(state.local_state_reset_summary or {}),
+    }
+    return payload
+
+
+def build_console_status(state: OperatorConsoleState) -> JsonDict:
+    try:
+        return _build_console_status_unchecked(state)
+    except Exception as exc:
+        message = f"{type(exc).__name__}: {exc}"
+        # Log sparingly so a refresh loop does not flood the internal JSONL log.
+        try:
+            with state.lock:
+                last = getattr(state, "last_status_exception_message", "")
+                last_at = float(getattr(state, "last_status_exception_at", 0.0) or 0.0)
+                if message != last or (time.time() - last_at) > 30.0:
+                    state.last_status_exception_message = message
+                    state.last_status_exception_at = time.time()
+                    state.add_log(False, f"normal status generation failed; using minimal rescue status: {message}", action="status_rescue")
+        except Exception:
+            pass
+        return build_minimal_rescue_status(state, exc)
 
 
 def load_demo_html(status_refresh_ms: int = 1000) -> str:
@@ -2831,6 +3081,9 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
         if self.path == "/api/status":
             self._send_json(build_console_status(self.server.state))
             return
+        if self.path == "/api/rescue/status":
+            self._send_json(build_minimal_rescue_status(self.server.state, RuntimeError("rescue status requested")))
+            return
         parsed = urllib.parse.urlparse(self.path)
         query = urllib.parse.parse_qs(parsed.query)
         if parsed.path == "/api/obs-roots":
@@ -2853,13 +3106,16 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/operator-status":
             state = self.server.state
-            live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
-            status_state = status_model.build_progress_status_state(
-                state.progress_root,
-                events_limit=state.events_limit,
-                live_payload=live_payload,
-            )
-            self._send_json(status_state.get("operator_status", {}))
+            try:
+                live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
+                status_state = status_model.build_progress_status_state(
+                    state.progress_root,
+                    events_limit=state.events_limit,
+                    live_payload=live_payload,
+                )
+                self._send_json(status_state.get("operator_status", {}))
+            except Exception as exc:
+                self._send_json({"ok": False, "reason": str(exc), "operator_status": {}}, status=200)
             return
         if parsed.path == "/api/processes":
             state = self.server.state
@@ -3062,6 +3318,9 @@ def run_server(
     shutdown_terminate_launchers: bool = True,
     shutdown_launcher_timeout_sec: float = 3.0,
     shutdown_launcher_kill_timeout_sec: float = 1.0,
+    safe_start: bool = False,
+    reset_local_state: bool = False,
+    rescue: bool = False,
     az_min: Optional[float] = None,
     az_max: Optional[float] = None,
     el_min: Optional[float] = None,
@@ -3097,6 +3356,16 @@ def run_server(
     resolved_launcher_log_dir.mkdir(parents=True, exist_ok=True)
     resolved_progress_log_dir.mkdir(parents=True, exist_ok=True)
     operator_log_path = resolved_operator_log_dir / "operator_console.jsonl"
+    rescue = bool(rescue)
+    safe_start = bool(safe_start or rescue)
+    reset_local_state = bool(reset_local_state or rescue)
+    local_state_reset_summary: JsonDict = {}
+    if reset_local_state:
+        local_state_reset_summary = reset_local_console_state_files(
+            progress_root=progress_root,
+            operator_log_dir=resolved_operator_log_dir,
+            reason="console startup --reset-local-state" + ("/--rescue" if rescue else ""),
+        )
     resolved_obs_roots = resolve_obs_roots(obs_roots)
     observer_csv_log = observation_log.ObservationLogManager.create(
         configured_dir=obslog_dir,
@@ -3143,9 +3412,13 @@ def run_server(
         shutdown_terminate_launchers=bool(shutdown_terminate_launchers),
         shutdown_launcher_timeout_sec=float(shutdown_launcher_timeout_sec),
         shutdown_launcher_kill_timeout_sec=float(shutdown_launcher_kill_timeout_sec),
+        safe_start=bool(safe_start),
+        rescue_mode=bool(rescue),
+        local_state_reset_archive=str(local_state_reset_summary.get("archive_dir") or ""),
+        local_state_reset_summary=dict(local_state_reset_summary),
     )
     state.live_cache = live_telemetry.LiveTelemetryCache(enabled=not bool(status_no_ros))
-    if state.live_cache is not None and state.live_cache.available:
+    if state.live_cache is not None and state.live_cache.available and not bool(safe_start):
         # Wait briefly for the first encoder/pointing sample so the console
         # starts with real Current Az/El whenever ROS status topics are alive.
         # This is read-only; it does not send any telescope command.
@@ -3153,7 +3426,32 @@ def run_server(
             state.live_cache.wait_for_initial_position(timeout_sec=2.0)
         except Exception as exc:
             state.live_cache.error = f"initial live telemetry wait failed: {exc}"
-    state.add_log(True, f"console started in action_mode={action_mode}")
+    state.add_log(True, f"console started in action_mode={action_mode}" + (" (safe/rescue mode)" if (safe_start or rescue) else ""))
+    if safe_start or rescue:
+        state.add_log(
+            True,
+            "console safe/rescue start active; no hardware command was sent automatically",
+            action="console_safe_start",
+            data={"safe_start": bool(safe_start), "rescue": bool(rescue)},
+        )
+    if local_state_reset_summary:
+        state.add_log(
+            bool(local_state_reset_summary.get("ok")),
+            "local console state reset at startup; no hardware command sent",
+            action="local_state_reset",
+            data=local_state_reset_summary,
+        )
+        try:
+            observer_csv_log.write_event(
+                {},
+                mode="Console",
+                event="local_state_reset",
+                action_or_obsfile=str(local_state_reset_summary.get("archive_dir") or ""),
+                result="success" if local_state_reset_summary.get("ok") else "failed",
+                comment="startup reset; no hardware command sent",
+            )
+        except Exception:
+            pass
     state.add_log(
         bool(observer_csv_log.status().get("ok")),
         "observation CSV log configured",
@@ -3229,6 +3527,10 @@ def run_server(
     print(f"  managed progress bind: {progress_host}:{int(progress_port)}")
     print(f"  action mode: {action_mode}")
     print(f"  live write actions enabled: {bool(live_actions_enabled)}")
+    print(f"  safe start: {bool(safe_start)}")
+    print(f"  rescue mode: {bool(rescue)}")
+    if local_state_reset_summary:
+        print(f"  local state reset archive: {local_state_reset_summary.get('archive_dir')}")
     if action_mode == "live" and not live_actions_enabled:
         print("  live write guard: ON by --guard-live-actions (write actions blocked; STOP/ABORT remain available)")
     print(f"  status refresh: {max(200, int(status_refresh_ms))} ms")
