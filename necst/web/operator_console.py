@@ -277,6 +277,44 @@ def _optional_positive_int(value: Any, *, name: str) -> Optional[int]:
     return number
 
 
+def _normalize_skydip_tp_range(value: Any) -> str:
+    """Return a normalized START END integer-pair string for the web launcher.
+
+    The empty string means the SkyDip default total-power range.  This mirrors
+    the CLI expectation while giving the operator a clearer web-facing error
+    before the local launcher is started.
+    """
+
+    if value in (None, ""):
+        return ""
+    if isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return ""
+        tokens = raw.replace(",", " ").split()
+    else:
+        try:
+            tokens = [str(x) for x in value]
+        except TypeError as exc:
+            raise ValueError("SkyDip TP channel range must be blank or integer START END pairs") from exc
+    values: List[int] = []
+    for token in tokens:
+        text = str(token).strip()
+        if not text:
+            continue
+        try:
+            number = int(text)
+        except Exception as exc:
+            raise ValueError(
+                "SkyDip TP channel range must be blank or integer START END pairs "
+                f"(invalid token: {text!r})"
+            ) from exc
+        values.append(number)
+    if len(values) % 2 != 0:
+        raise ValueError("SkyDip TP channel range must contain START END integer pairs")
+    return " ".join(str(x) for x in values)
+
+
 def resolve_site_summary(
     *,
     site_config_path: Optional[os.PathLike[str] | str] = None,
@@ -2607,12 +2645,13 @@ def dispatch_action(
     if action == "run_skydip":
         validate_site_capability(state, "skydip", action_label="SkyDip")
         dry_run = state.action_mode == "dry-run"
+        skydip_tp_range = _normalize_skydip_tp_range(params.get("tp_range"))
         actions = _load_operator_actions()
         if not dry_run:
             preflight = actions.run_skydip(
                 integ=params.get("integ", 2),
                 channel=params.get("ch"),
-                tp_range=params.get("tp_range"),
+                tp_range=skydip_tp_range,
                 background=True,
                 dry_run=True,
             )
@@ -2625,7 +2664,7 @@ def dispatch_action(
         result = actions.run_skydip(
             integ=params.get("integ", 2),
             channel=params.get("ch"),
-            tp_range=params.get("tp_range"),
+            tp_range=skydip_tp_range,
             background=True,
             dry_run=dry_run,
             stdout_path=stdout_path,

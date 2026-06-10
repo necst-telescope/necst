@@ -1039,7 +1039,7 @@ summary { cursor: pointer; color: var(--muted); }
                 <div class="field"><label for="skydipInteg">integ [s]</label><input id="skydipInteg" type="number" min="0.1" step="0.5" value="10" inputmode="decimal"></div>
                 <details><summary>Advanced</summary>
                   <div class="field" style="margin-top:10px"><label for="skydipCh">channel</label><input id="skydipCh" placeholder="empty = default"></div>
-                  <div class="field"><label for="skydipTpRange">tp_range</label><input id="skydipTpRange" placeholder="e.g. 5000 6000 17000 18000"></div>
+                  <div class="field"><label for="skydipTpRange">TP channel range</label><input id="skydipTpRange" placeholder="blank = default; e.g. 5000 6000 17000 18000" inputmode="numeric" title="Optional. Leave blank for the default SkyDip total-power range, or enter START END integer pairs."><small id="skydipTpRangeHelp">Optional. Leave blank unless a specific total-power channel range is needed. Use integer START END pairs.</small></div>
                 </details>
                 <button id="runSkydip" class="primary">Run SkyDip</button>
               </div>
@@ -1260,6 +1260,10 @@ function saveFormField(id) {
   try { localStorage.setItem(storageKeyForField(id), el.value); } catch (_) {}
 }
 function restoreFormField(id) {
+  if (id === 'skydipTpRange') {
+    restoreSkydipTpRangeField();
+    return;
+  }
   const el = qs(id);
   if (!el) return;
   try {
@@ -1283,6 +1287,72 @@ function numberOrNaN(value) {
 function finite(value) { return Number.isFinite(value); }
 function finiteStatusNumber(value) {
   return value !== null && value !== undefined && String(value).trim() !== '' && Number.isFinite(Number(value));
+}
+function parseSkydipTpRange(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return {ok: true, value: '', tokens: []};
+  const tokens = raw.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+  const bad = tokens.find(t => !/^[-+]?\d+$/.test(t));
+  if (bad) {
+    return {ok: false, value: raw, reason: `SkyDip TP channel range must be blank or integer START END pairs. Invalid token: ${bad}`};
+  }
+  if (tokens.length % 2 !== 0) {
+    return {ok: false, value: raw, reason: 'SkyDip TP channel range must contain START END integer pairs.'};
+  }
+  return {ok: true, value: tokens.map(t => String(Number(t))).join(' '), tokens};
+}
+function setSkydipTpRangeValidation(result) {
+  const input = qs('skydipTpRange');
+  const help = qs('skydipTpRangeHelp');
+  if (!input || !help) return;
+  const ok = !result || result.ok;
+  input.classList.toggle('invalid', !ok);
+  if (ok) {
+    help.textContent = 'Optional. Leave blank unless a specific total-power channel range is needed. Use integer START END pairs.';
+    help.style.color = '';
+  } else {
+    help.textContent = result.reason || 'Invalid TP channel range.';
+    help.style.color = 'var(--bad)';
+  }
+}
+function restoreSkydipTpRangeField() {
+  const el = qs('skydipTpRange');
+  if (!el) return;
+  try {
+    const saved = localStorage.getItem(storageKeyForField('skydipTpRange'));
+    if (saved !== null && saved !== undefined) {
+      const parsed = parseSkydipTpRange(saved);
+      if (parsed.ok) {
+        el.value = parsed.value;
+      } else {
+        el.value = '';
+        localStorage.removeItem(storageKeyForField('skydipTpRange'));
+        setSkydipTpRangeValidation({ok: false, reason: 'A previously saved invalid SkyDip TP range was cleared. Leave blank for default.'});
+      }
+    }
+  } catch (_) {}
+}
+function skydipParamsFromUi() {
+  const parsed = parseSkydipTpRange(qs('skydipTpRange') ? qs('skydipTpRange').value : '');
+  setSkydipTpRangeValidation(parsed);
+  if (!parsed.ok) return {ok: false, reason: parsed.reason};
+  if (qs('skydipTpRange')) {
+    qs('skydipTpRange').value = parsed.value;
+    saveFormField('skydipTpRange');
+  }
+  return {ok: true, params: {integ: qs('skydipInteg').value, ch: qs('skydipCh').value, tp_range: parsed.value}};
+}
+function runSkydipFromUi() {
+  const prepared = skydipParamsFromUi();
+  if (!prepared.ok) {
+    const msg = prepared.reason || 'Invalid SkyDip TP channel range.';
+    try { console.warn(msg); } catch (_) {}
+    const op = {phase: 'attention', kind: 'skydip', label: 'SKYDIP INPUT CHECK', detail: msg};
+    state.currentOperation = op;
+    applyOperationUi(op);
+    return Promise.resolve({ok: false, action: 'run_skydip', reason: msg, local_validation: true});
+  }
+  return api('run_skydip', prepared.params, 'skydip');
 }
 
 function parseSexagesimalAngle(value, isRa) {
@@ -2831,6 +2901,7 @@ function selectPanel(id) {
 
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => selectPanel(b.dataset.panel)));
 ['recentDir','obsFilename','obsPreview','obsChannel','obsMode'].forEach(id => qs(id).addEventListener('input', () => { state.obsChecked = false; validateObs(); }));
+if (qs('skydipTpRange')) qs('skydipTpRange').addEventListener('input', () => setSkydipTpRangeValidation(parseSkydipTpRange(qs('skydipTpRange').value)));
 ['mountAz','mountEl'].forEach(id => qs(id).addEventListener('input', validateMount));
 ['targetKind','targetName','coord1','coord2','offsetFrame','offsetX','offsetY','cosCorrection'].forEach(id => qs(id).addEventListener('input', updateTargetFields));
 qs('obsFile').addEventListener('change', async (ev) => {
@@ -2982,7 +3053,7 @@ qs('chopperAlarmReset').addEventListener('click', () => api('chopper_alarm_reset
 qs('chopperHome').addEventListener('click', () => api('chopper_home'));
 qs('chopperRecover').addEventListener('click', () => api('chopper_recover'));
 qs('runRsky').addEventListener('click', () => api('run_rsky', {n: qs('rskyN').value, integ: qs('rskyInteg').value, ch: qs('rskyCh').value}, 'rsky'));
-qs('runSkydip').addEventListener('click', () => api('run_skydip', {integ: qs('skydipInteg').value, ch: qs('skydipCh').value, tp_range: qs('skydipTpRange').value}, 'skydip'));
+qs('runSkydip').addEventListener('click', () => runSkydipFromUi());
 qs('addObsLogComment').addEventListener('click', async () => {
   const comment = qs('obsLogComment').value;
   const data = await api('obslog_comment', {comment});
@@ -4107,6 +4178,22 @@ def _validate_positive_float(value: Any, name: str) -> Tuple[bool, str, Optional
     return True, "ok", number
 
 
+def _demo_parse_skydip_tp_range(value: Any) -> Tuple[bool, str, List[int]]:
+    raw = str(value or "").strip()
+    if not raw:
+        return True, "", []
+    tokens = raw.replace(",", " ").split()
+    values: List[int] = []
+    for token in tokens:
+        try:
+            values.append(int(token))
+        except Exception:
+            return False, f"SkyDip TP channel range must be blank or integer START END pairs (invalid token: {token!r})", []
+    if len(values) % 2 != 0:
+        return False, "SkyDip TP channel range must contain START END integer pairs", []
+    return True, "", values
+
+
 def _with_authority(server: ConsoleDemoServer, session_id: str, action_text: str) -> str:
     state = server.state
     if state.authority_held:
@@ -4566,18 +4653,10 @@ def handle_action(
         if err:
             server.add_log(False, f"SkyDip not started: {err}")
             return False, err
-        tp = str(params.get("tp_range") or "").split()
-        if tp:
-            try:
-                tp_values = [int(x) for x in tp]
-            except Exception:
-                reason = "tp_range must be integers"
-                server.add_log(False, f"SkyDip not started: {reason}")
-                return False, reason
-            if len(tp_values) % 2 != 0:
-                reason = "tp_range must contain START END pairs"
-                server.add_log(False, f"SkyDip not started: {reason}")
-                return False, reason
+        tp_ok, tp_reason, _tp_values = _demo_parse_skydip_tp_range(params.get("tp_range"))
+        if not tp_ok:
+            server.add_log(False, f"SkyDip not started: {tp_reason}")
+            return False, tp_reason
         authority_msg = _with_authority(server, session_id, "SkyDip")
         if "rejected" in authority_msg:
             server.add_log(False, authority_msg)
