@@ -45,5 +45,5 @@ RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/nec
     && chmod +x /entrypoint.sh \
     && python3 -c "import neclib"
 
-ENTRYPOINT [ "bash", "/entrypoint.sh" ]
-CMD ["bash"]
+# ENTRYPOINT [ "bash", "/entrypoint.sh" ]
+# CMD ["bash"]
