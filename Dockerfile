@@ -34,5 +34,5 @@ RUN git clone https://github.com/necst-telescope/necst-msgs.git $ROS2_WS/src/nec
     && echo -e ". $ROS2_WS/install/setup.bash\n. /ros_entrypoint.sh $@" > /entrypoint.sh \
     && chmod +x /entrypoint.sh
 
-ENTRYPOINT [ "bash", "/entrypoint.sh" ]
-CMD ["bash"]
+# ENTRYPOINT [ "bash", "/entrypoint.sh" ]
+# CMD ["bash"]
