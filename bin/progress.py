@@ -5362,11 +5362,22 @@ function gridSequencePath(pointRows, b) {
 }
 function pointSequencePath(pointRows, b) {
   // Visiting order for plain point-by-point plans (e.g. optical pointing).
-  // Solid blue, not gray/dashed, so it never reads as the axisDecorations
-  // zero-reference line (which is gray, dashed "3 3", opacity 0.45).
+  // Kept subtle: the traveled (done) part is a muted green tying it to the
+  // "done" dot color; the remaining part is faint neutral. Both are solid
+  // (no dash), so neither is mistaken for axisDecorations' dashed "3 3"
+  // zero-reference line even where the color is similar.
   if (pointRows.length < 2) return '';
-  const pts = pointRows.map(r => `${sx(r.a[0],b)},${sy(r.a[1],b)}`).join(' ');
-  return `<polyline points="${pts}" fill="none" stroke="#4a90d9" stroke-width="1.5" opacity="0.65"/>`;
+  let out = '';
+  for (let i = 0; i < pointRows.length - 1; i++) {
+    const p1 = pointRows[i], p2 = pointRows[i + 1];
+    const x1 = sx(p1.a[0], b), y1 = sy(p1.a[1], b);
+    const x2 = sx(p2.a[0], b), y2 = sy(p2.a[1], b);
+    const traveled = p1.status === 'done' && p2.status !== 'pending';
+    const stroke = traveled ? '#2ca02c' : 'var(--muted)';
+    const opacity = traveled ? 0.45 : 0.25;
+    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="1.2" opacity="${opacity}"/>`;
+  }
+  return out;
 }
 function scheduleStep(plan) {
   if (Number.isInteger(plan?.index0) && Number.isInteger(plan?.total) && plan.total > 0) {
