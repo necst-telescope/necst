@@ -55,7 +55,7 @@ class OpticalPointing(Observation):
                     f"(RA={float(sorted_list['ra'][i]):.3f}, "
                     f"Dec={float(sorted_list['dec'][i]):.3f})"
                 ),
-                "mode": "OPTICAL_POINTING",
+                "mode": "POINT",
                 "role": "pointing",
                 "obs_id": str(i),
                 "drive_kind": "point",
