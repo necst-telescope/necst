@@ -5539,6 +5539,8 @@ function mapAxisLabels(rows) {
   }
   const r = rows.find(x=>x.frame) || rows[0] || {};
   const frame = r.frame || 'map'; const unit = r.unit || 'deg';
+  if (frameLooksRadec(frame)) return {x:`RA (${unit})`, y:`Dec (${unit})`, unit};
+  if (frameLooksGalactic(frame)) return {x:`Galactic l (${unit})`, y:`Galactic b (${unit})`, unit};
   return {x:`${frame} x (${unit})`, y:`${frame} y (${unit})`, unit};
 }
 function fmtAxisNumber(v, axes) {
