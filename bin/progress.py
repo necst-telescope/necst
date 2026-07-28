@@ -5360,6 +5360,14 @@ function gridSequencePath(pointRows, b) {
   const pts = on.map(r => `${sx(r.a[0],b)},${sy(r.a[1],b)}`).join(' ');
   return `<polyline points="${pts}" fill="none" stroke="var(--muted)" stroke-width="1.3" opacity="0.45" stroke-dasharray="4 3"/>`;
 }
+function pointSequencePath(pointRows, b) {
+  // Visiting order for plain point-by-point plans (e.g. optical pointing).
+  // Solid blue, not gray/dashed, so it never reads as the axisDecorations
+  // zero-reference line (which is gray, dashed "3 3", opacity 0.45).
+  if (pointRows.length < 2) return '';
+  const pts = pointRows.map(r => `${sx(r.a[0],b)},${sy(r.a[1],b)}`).join(' ');
+  return `<polyline points="${pts}" fill="none" stroke="#4a90d9" stroke-width="1.5" opacity="0.65"/>`;
+}
 function scheduleStep(plan) {
   if (Number.isInteger(plan?.index0) && Number.isInteger(plan?.total) && plan.total > 0) {
     const end = Number.isInteger(plan?.index0_end) && plan.index0_end >= plan.index0 ? plan.index0_end : plan.index0;
@@ -5589,7 +5597,9 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   const pointRows = rows.filter(r=>!r.b);
   const onRows = pointRows.filter(r=>String(r.mode || r.pointLabel || '').toUpperCase()==='ON' || r.kind === 'grid_point');
   const drawRows = rowsForDrawing(rows).sort((a,b)=>({pending:0,done:1,current:2}[a.status]-{pending:0,done:1,current:2}[b.status]));
-  const sequencePath = obsType.includes('grid') ? gridSequencePath(onRows, b) : '';
+  const sequencePath = obsType.includes('grid')
+    ? gridSequencePath(onRows, b)
+    : (!ls.total && pointRows.length >= 2 ? pointSequencePath(pointRows, b) : '');
   const lineEls = drawRows.map(r => {
     if (!r.b) return renderPoint(r,b);
     const x1=sx(r.a[0],b), y1=sy(r.a[1],b), x2=sx(r.b[0],b), y2=sy(r.b[1],b);
