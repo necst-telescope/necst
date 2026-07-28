@@ -28,10 +28,7 @@ class OpticalPointing(Observation):
         sorted_list = opt_pointing.sort(
             catalog_file=file, magnitude=(float(magnitude[0]), float(magnitude[1]))
         )
-        current_coord = self.com.antenna("?")
-        sorted_list = opt_pointing.resolve_mount_targets(
-            sorted_list, current_az=float(current_coord.lon)
-        )
+        sorted_list = opt_pointing.resolve_mount_targets(sorted_list)
         t_tot = opt_pointing.estimate_time(sorted_list)
         if obstime is None:
             self.logger.info(f"{len(sorted_list)} stars will be captured. ")
