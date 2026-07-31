@@ -518,8 +518,6 @@ def mount_move(
 ) -> OperatorActionResult:
     """Move to explicit mount mechanical Az/El.
 
-    Definitions
-    -----------
     Input Az/El are mount mechanical coordinates in degrees.  The command sent
     to Commander is always ``direct_mode=True`` and ``az_target_mode="mount"``.
     ``Az=360`` is therefore a mount angle, not automatically wrapped to zero.
@@ -899,8 +897,6 @@ def start_target_tracking(
 ) -> OperatorActionResult:
     """Start target tracking through the shared Commander path.
 
-    Definitions
-    -----------
     ``kind`` selects one of: ``sun``, ``moon``, ``name``, ``radec``,
     ``galactic``.  RA/Dec and Galactic coordinates are validated in degrees;
     RA also accepts sexagesimal hour notation.  Offsets are accepted in arcsec
