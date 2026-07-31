@@ -220,8 +220,8 @@ class AntennaPIDController(AlertHandlerNode):
         bool
             True if cutover was applied and PID state should be reset once.
 
-        Rationale
-        ---------
+        Notes
+        -----
         We use the local append sequence, not command timestamps, because old and new
         epochs can overlap in time for point/track-like trajectories. Timestamps alone
         cannot distinguish "stale old future commands" from "fresh new commands".
