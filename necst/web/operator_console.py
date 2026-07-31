@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from . import (
     log_reader,
@@ -2212,9 +2212,6 @@ def _operator_status_operation_conflict(
         command_absent = (
             antenna.get("command_az_deg") is None
             and antenna.get("command_el_deg") is None
-        )
-        motion_source_lower = (
-            str(motion.get("live_motion_source") or "").strip().lower()
         )
         safety_release_age = _recent_safety_release_request_age_sec(state)
         safety_release_idle = bool(

@@ -7,13 +7,12 @@ not send telescope, recorder, or spectrometer commands.
 from __future__ import annotations
 
 import os
-import signal
 import subprocess
 import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 
 def _now() -> float:
@@ -21,7 +20,9 @@ def _now() -> float:
 
 
 def _safe_stem(text: Any) -> str:
-    stem = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in str(text or "launcher"))
+    stem = "".join(
+        ch if ch.isalnum() or ch in "._-" else "_" for ch in str(text or "launcher")
+    )
     stem = stem.strip("._-") or "launcher"
     return stem[:80]
 
@@ -60,7 +61,9 @@ class ManagedProcessRecord:
     final_logged: bool = False
     stop_requested_at: Optional[float] = None
     stop_reason: str = ""
-    _popen: Optional[subprocess.Popen[Any]] = field(default=None, repr=False, compare=False)
+    _popen: Optional[subprocess.Popen[Any]] = field(
+        default=None, repr=False, compare=False
+    )
 
     def is_active(self) -> bool:
         """Return True while the local launcher is still considered active.
@@ -87,7 +90,9 @@ class ManagedProcessRecord:
             return True
         rc = popen.poll()
         if rc is None:
-            self.status = "stopping" if self.stop_requested_at is not None else "running"
+            self.status = (
+                "stopping" if self.stop_requested_at is not None else "running"
+            )
             return False
         self.returncode = int(rc)
         self.status = "exited"
@@ -171,7 +176,9 @@ class ProcessRegistry:
         popen = result_data.get("_popen") if isinstance(result_data, Mapping) else None
         if popen is None or not hasattr(popen, "pid"):
             return None
-        command = result_data.get("command") if isinstance(result_data, Mapping) else None
+        command = (
+            result_data.get("command") if isinstance(result_data, Mapping) else None
+        )
         if command is None and hasattr(popen, "args"):
             command = popen.args
         if isinstance(command, (str, bytes)):
@@ -229,7 +236,12 @@ class ProcessRegistry:
             by_category: Dict[str, int] = {}
             for record in self._records:
                 by_category[record.category] = by_category.get(record.category, 0) + 1
-            return {"total": total, "active": active, "finished": total - active, "by_category": by_category}
+            return {
+                "total": total,
+                "active": active,
+                "finished": total - active,
+                "by_category": by_category,
+            }
 
     def request_stop(
         self,
@@ -260,7 +272,9 @@ class ProcessRegistry:
         for record in targets:
             record.request_stop(kill=False, reason=reason)
         deadline = _now() + max(0.0, float(timeout_sec))
-        while _now() < deadline and any(r.status not in {"exited", "lost"} for r in targets):
+        while _now() < deadline and any(
+            r.status not in {"exited", "lost"} for r in targets
+        ):
             self.refresh()
             time.sleep(0.05)
         still_active = [r for r in targets if r.status not in {"exited", "lost"}]
@@ -268,7 +282,9 @@ class ProcessRegistry:
             record.request_stop(kill=True, reason=reason + " (kill after timeout)")
         if still_active:
             kill_deadline = _now() + max(0.0, float(kill_timeout_sec))
-            while _now() < kill_deadline and any(r.status not in {"exited", "lost"} for r in still_active):
+            while _now() < kill_deadline and any(
+                r.status not in {"exited", "lost"} for r in still_active
+            ):
                 self.refresh()
                 time.sleep(0.05)
         self.refresh()
@@ -276,7 +292,11 @@ class ProcessRegistry:
         stopped = [r.to_dict() for r in targets]
         return {
             "ok": not bool(remaining),
-            "message": "launcher shutdown cleanup finished" if not remaining else "some launchers remain active after cleanup",
+            "message": (
+                "launcher shutdown cleanup finished"
+                if not remaining
+                else "some launchers remain active after cleanup"
+            ),
             "terminated": stopped,
             "remaining": remaining,
             "counts": self.counts(),

@@ -459,7 +459,6 @@ def merge_live_telemetry(
     # and may contain interpolated/extrapolated command values even after the
     # real altaz command stream stops.  Do not use it for Current, Command,
     # Tracking, or Moving state in operator-facing displays.
-    pointing: Dict[str, Any] = {}
     az_unwrap = (
         live_payload.get("az_unwrap_status")
         if isinstance(live_payload.get("az_unwrap_status"), dict)
@@ -472,11 +471,6 @@ def merge_live_telemetry(
     # even when no real command topic is being published.
     command_valid = False
     command_source = "none"
-    live_ages = (
-        live_payload.get("last_message_age_sec")
-        if isinstance(live_payload.get("last_message_age_sec"), dict)
-        else {}
-    )
     command_topic_age = _topic_receipt_age_sec(live_payload, "command")
     command_topic_fresh = _topic_received_fresh(live_payload, "command")
     direct_cmd_az = _finite_float(

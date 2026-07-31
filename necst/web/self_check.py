@@ -103,13 +103,19 @@ def _mount_limit_check(mount_limits: Mapping[str, Any]) -> JsonDict:
 
 def _capability_check(capabilities: Mapping[str, Any]) -> JsonDict:
     missing = [key for key in _EXPECTED_CAPABILITIES if key not in capabilities]
-    non_bool = [key for key, value in capabilities.items() if not isinstance(value, bool)]
+    non_bool = [
+        key for key, value in capabilities.items() if not isinstance(value, bool)
+    ]
     if missing or non_bool:
         return _check_item(
             "site_capabilities",
             False,
             "site capabilities are incomplete or non-boolean",
-            data={"missing": missing, "non_bool": non_bool, "capabilities": dict(capabilities)},
+            data={
+                "missing": missing,
+                "non_bool": non_bool,
+                "capabilities": dict(capabilities),
+            },
         )
     disabled = sorted(key for key, value in capabilities.items() if not value)
     message = "site capabilities OK"
@@ -126,7 +132,9 @@ def _capability_check(capabilities: Mapping[str, Any]) -> JsonDict:
     )
 
 
-def _chopper_check(chopper: Mapping[str, Any], capabilities: Mapping[str, Any]) -> JsonDict:
+def _chopper_check(
+    chopper: Mapping[str, Any], capabilities: Mapping[str, Any]
+) -> JsonDict:
     if not bool(capabilities.get("chopper_move", False)):
         return _check_item(
             "chopper_config",
@@ -156,7 +164,9 @@ def _chopper_check(chopper: Mapping[str, Any], capabilities: Mapping[str, Any]) 
     )
 
 
-def _log_path_check(path_value: Any, *, name: str, expect_file: bool = False) -> JsonDict:
+def _log_path_check(
+    path_value: Any, *, name: str, expect_file: bool = False
+) -> JsonDict:
     if path_value in (None, ""):
         return _check_item(name, False, f"{name} is not configured")
     path = Path(str(path_value))
@@ -257,22 +267,36 @@ def run_console_self_check(
     checks.append(_capability_check(capabilities))
     checks.append(_chopper_check(chopper_config, capabilities))
 
-    live_snapshot = live_telemetry_snapshot if isinstance(live_telemetry_snapshot, Mapping) else {}
+    live_snapshot = (
+        live_telemetry_snapshot if isinstance(live_telemetry_snapshot, Mapping) else {}
+    )
     live_requested = bool(live_snapshot.get("requested"))
     live_available = bool(live_snapshot.get("available"))
     live_error = live_snapshot.get("error")
     if live_requested and live_available:
         has_position = bool(live_snapshot.get("has_position"))
-        sample_counts = live_snapshot.get("sample_counts") if isinstance(live_snapshot.get("sample_counts"), Mapping) else {}
+        sample_counts = (
+            live_snapshot.get("sample_counts")
+            if isinstance(live_snapshot.get("sample_counts"), Mapping)
+            else {}
+        )
         checks.append(
             _check_item(
                 "live_telemetry",
                 has_position or action_mode != "live",
                 (
                     f"console ROS live telemetry available ({live_snapshot.get('spin_mode') or 'unknown spin mode'}); "
-                    + ("encoder/pointing position sample received" if has_position else "waiting for encoder/pointing position sample")
+                    + (
+                        "encoder/pointing position sample received"
+                        if has_position
+                        else "waiting for encoder/pointing position sample"
+                    )
                 ),
-                severity="info" if has_position else ("error" if action_mode == "live" else "warning"),
+                severity=(
+                    "info"
+                    if has_position
+                    else ("error" if action_mode == "live" else "warning")
+                ),
                 data={**dict(live_snapshot), "sample_counts": dict(sample_counts)},
             )
         )
@@ -303,12 +327,20 @@ def run_console_self_check(
             "progress_root",
             progress_root.exists() and progress_root.is_dir(),
             f"progress root {'exists' if progress_root.exists() else 'does not exist'}: {progress_root}",
-            severity="info" if progress_root.exists() and progress_root.is_dir() else "warning",
+            severity=(
+                "info"
+                if progress_root.exists() and progress_root.is_dir()
+                else "warning"
+            ),
             data={"path": str(progress_root)},
         )
     )
-    checks.append(_log_path_check(operator_log_path, name="operator_log", expect_file=True))
-    checks.append(_log_path_check(launcher_log_dir, name="launcher_log_dir", expect_file=False))
+    checks.append(
+        _log_path_check(operator_log_path, name="operator_log", expect_file=True)
+    )
+    checks.append(
+        _log_path_check(launcher_log_dir, name="launcher_log_dir", expect_file=False)
+    )
 
     try:
         counts = process_registry.counts()
@@ -323,7 +355,9 @@ def run_console_self_check(
             )
         )
     except Exception as exc:
-        checks.append(_check_item("launcher_registry", False, f"launcher registry failed: {exc}"))
+        checks.append(
+            _check_item("launcher_registry", False, f"launcher registry failed: {exc}")
+        )
 
     progress_data: JsonDict = {"url": None, "running": False, "owned_by_console": False}
     if progress_monitor is None:
@@ -338,19 +372,29 @@ def run_console_self_check(
         )
     else:
         try:
-            status = progress_monitor.status(check_external=bool(include_progress_health))
+            status = progress_monitor.status(
+                check_external=bool(include_progress_health)
+            )
             progress_data = status.to_dict()
             checks.append(
                 _check_item(
                     "progress_monitor",
                     True,
-                    str(progress_data.get("message") or progress_data.get("status") or "progress monitor status OK"),
+                    str(
+                        progress_data.get("message")
+                        or progress_data.get("status")
+                        or "progress monitor status OK"
+                    ),
                     severity="info" if progress_data.get("running") else "warning",
                     data=progress_data,
                 )
             )
         except Exception as exc:
-            checks.append(_check_item("progress_monitor", False, f"progress monitor status failed: {exc}"))
+            checks.append(
+                _check_item(
+                    "progress_monitor", False, f"progress monitor status failed: {exc}"
+                )
+            )
 
     try:
         status_state = status_model.build_progress_status_state(
@@ -363,11 +407,17 @@ def run_console_self_check(
             _check_item(
                 "status_model",
                 isinstance(op, Mapping),
-                "status_model.build_progress_status_state returned operator_status"
-                if isinstance(op, Mapping)
-                else "status_model did not return operator_status mapping",
+                (
+                    "status_model.build_progress_status_state returned operator_status"
+                    if isinstance(op, Mapping)
+                    else "status_model did not return operator_status mapping"
+                ),
                 severity="info" if isinstance(op, Mapping) else "error",
-                data={"operator_status_schema": op.get("schema") if isinstance(op, Mapping) else None},
+                data={
+                    "operator_status_schema": (
+                        op.get("schema") if isinstance(op, Mapping) else None
+                    )
+                },
             )
         )
     except Exception as exc:
@@ -379,7 +429,8 @@ def run_console_self_check(
     warning_count = sum(
         1
         for item in checks
-        if item.get("severity") == "warning" or (not item.get("ok") and item.get("severity") != "error")
+        if item.get("severity") == "warning"
+        or (not item.get("ok") and item.get("severity") != "error")
     )
     ok = error_count == 0
     status = "ok" if ok and warning_count == 0 else ("warning" if ok else "error")

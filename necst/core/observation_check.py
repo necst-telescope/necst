@@ -9,7 +9,6 @@ Console so that Check / Dry run semantics stay consistent.
 
 from __future__ import annotations
 
-import builtins
 import math
 import os
 import re
@@ -116,7 +115,9 @@ def validate_obs_file_path(file_path: Any, *, require_exists: bool) -> Path:
         raise ObservationCheckError("obs file extension must be .obs or .toml")
     if require_exists:
         if not path.exists():
-            raise ObservationCheckError(f"obs file does not exist on this computer: {path}")
+            raise ObservationCheckError(
+                f"obs file does not exist on this computer: {path}"
+            )
         if not path.is_file():
             raise ObservationCheckError(f"obs file is not a regular file: {path}")
         if not os.access(path, os.R_OK):
@@ -150,7 +151,9 @@ def _params_from_toml(data: Mapping[str, Any]) -> Dict[str, Any]:
     return params
 
 
-def _apply_v16_defaults(params: Mapping[str, Any]) -> tuple[Dict[str, Any], Dict[str, bool]]:
+def _apply_v16_defaults(
+    params: Mapping[str, Any],
+) -> tuple[Dict[str, Any], Dict[str, bool]]:
     expanded = dict(params)
     explicit: Dict[str, bool] = {}
     for key, value in _V16_DEFAULTS.items():
@@ -183,7 +186,9 @@ def _resolve_reference_path(obs_path: Path, ref: str) -> Path:
     return p
 
 
-def _check_reference_files(obs_path: Path, params: Mapping[str, Any]) -> list[Dict[str, Any]]:
+def _check_reference_files(
+    obs_path: Path, params: Mapping[str, Any]
+) -> list[Dict[str, Any]]:
     refs = []
     for key, value in _iter_reference_files(params):
         resolved = _resolve_reference_path(obs_path, value)
@@ -261,7 +266,9 @@ def _summarize_observation_properties(data: Mapping[str, Any]) -> Dict[str, Any]
         "object": obs.get("OBJECT") or obs.get("object") or obs.get("target"),
         "molecule_1": obs.get("MOLECULE_1") or obs.get("molecule_1"),
         "coord_sys": coord.get("COORD_SYS") or coord.get("coord_sys"),
-        "relative": coord.get("RELATIVE") if "RELATIVE" in coord else coord.get("relative"),
+        "relative": (
+            coord.get("RELATIVE") if "RELATIVE" in coord else coord.get("relative")
+        ),
     }
 
 
@@ -269,7 +276,12 @@ def _mode_required_sections(mode: str) -> tuple[str, ...]:
     if mode in {"otf", "grid", "psw"}:
         return ("observation_property", "coordinate", "calibration")
     if mode in {"radio_pointing", "radio-pointing", "radiopointing"}:
-        return ("observation_property", "coordinate", "pointing_property", "calibration")
+        return (
+            "observation_property",
+            "coordinate",
+            "pointing_property",
+            "calibration",
+        )
     return ("observation_property", "coordinate")
 
 
@@ -289,7 +301,9 @@ def _static_section_warnings(mode: str, data: Mapping[str, Any]) -> list[str]:
     return warnings
 
 
-def _estimate_plan(mode: str, data: Mapping[str, Any], expanded_params: Mapping[str, Any]) -> Dict[str, Any]:
+def _estimate_plan(
+    mode: str, data: Mapping[str, Any], expanded_params: Mapping[str, Any]
+) -> Dict[str, Any]:
     scan = _mapping(data.get("scan_property"))
     pointing = _mapping(data.get("pointing_property"))
     calib = _mapping(data.get("calibration"))
@@ -310,9 +324,15 @@ def _estimate_plan(mode: str, data: Mapping[str, Any], expanded_params: Mapping[
     off_interval = _first_value((calib, params), "off_interval")
     load_interval = _first_value((calib, params), "load_interval")
 
-    scan_spacing_arcsec = _parse_angle_arcsec(_first_value((scan, params), "scan_spacing"))
-    scan_length_arcsec = _parse_angle_arcsec(_first_value((scan, params), "scan_length"))
-    scan_velocity_arcsec_s = _parse_angle_arcsec(_first_value((scan, params), "scan_velocity"))
+    scan_spacing_arcsec = _parse_angle_arcsec(
+        _first_value((scan, params), "scan_spacing")
+    )
+    scan_length_arcsec = _parse_angle_arcsec(
+        _first_value((scan, params), "scan_length")
+    )
+    scan_velocity_arcsec_s = _parse_angle_arcsec(
+        _first_value((scan, params), "scan_velocity")
+    )
     scan_direction = _first_value((scan, params), "SCAN_DIRECTION", "scan_direction")
 
     estimated_scan_sec = None
@@ -384,7 +404,9 @@ def _try_neclib_parser(mode: str, path: Path) -> Dict[str, Any]:
             "ok": True,
             "spec_class": spec_name,
             "target": target,
-            "parameter_keys": sorted(params.keys()) if isinstance(params, Mapping) else [],
+            "parameter_keys": (
+                sorted(params.keys()) if isinstance(params, Mapping) else []
+            ),
         }
     except Exception as exc:
         return {
@@ -435,13 +457,19 @@ def check_observation_file(
     warnings = _static_section_warnings(normalized_mode, data)
     missing_refs = [r for r in references if not r["readable"]]
     for ref in missing_refs:
-        warnings.append(f"reference file for {ref['key']} is not readable: {ref['path']}")
+        warnings.append(
+            f"reference file for {ref['key']} is not readable: {ref['path']}"
+        )
 
-    neclib_parse = _try_neclib_parser(normalized_mode, path) if use_neclib_parser else {
-        "available": False,
-        "ok": False,
-        "reason": "disabled",
-    }
+    neclib_parse = (
+        _try_neclib_parser(normalized_mode, path)
+        if use_neclib_parser
+        else {
+            "available": False,
+            "ok": False,
+            "reason": "disabled",
+        }
+    )
     if use_neclib_parser and not neclib_parse.get("ok"):
         warnings.append(
             "neclib mode-specific parser was not available or did not complete; "
@@ -453,8 +481,7 @@ def check_observation_file(
     line_count = len(path.read_text(encoding="utf-8", errors="replace").splitlines())
     byte_size = path.stat().st_size
     default_sources = {
-        key: "explicit" if explicit.get(key) else "default"
-        for key in _V16_DEFAULTS
+        key: "explicit" if explicit.get(key) else "default" for key in _V16_DEFAULTS
     }
     summary = (
         f"Check OK: mode={_ALLOWED_MODES[normalized_mode]}, file={path}, "

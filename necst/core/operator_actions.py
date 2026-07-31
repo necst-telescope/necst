@@ -252,11 +252,15 @@ def _parse_sexagesimal_angle(value: Any, *, name: str, is_ra: bool) -> float:
         a1 = float(parts[1]) if len(parts) >= 2 else 0.0
         a2 = float(parts[2]) if len(parts) >= 3 else 0.0
     except Exception as exc:
-        raise OperatorActionError(f"{name} contains a non-numeric sexagesimal field") from exc
+        raise OperatorActionError(
+            f"{name} contains a non-numeric sexagesimal field"
+        ) from exc
     if not all(math.isfinite(x) for x in (a0, a1, a2)):
         raise OperatorActionError(f"{name} is not finite")
     if a1 < 0 or a1 >= 60 or a2 < 0 or a2 >= 60:
-        raise OperatorActionError(f"{name} minutes/seconds must satisfy 0 <= value < 60")
+        raise OperatorActionError(
+            f"{name} minutes/seconds must satisfy 0 <= value < 60"
+        )
     value_in_units = sign * (abs(a0) + a1 / 60.0 + a2 / 3600.0)
     return value_in_units * 15.0 if is_ra else value_in_units
 
@@ -339,7 +343,9 @@ def _tracking_request_payload(
     target_label = normalized
     commander_kwargs: Dict[str, Any] = {"unit": "deg", "wait": bool(wait)}
     if timeout_sec is not None:
-        commander_kwargs["timeout_sec"] = max(0.0, _finite_float(timeout_sec, name="timeout_sec"))
+        commander_kwargs["timeout_sec"] = max(
+            0.0, _finite_float(timeout_sec, name="timeout_sec")
+        )
 
     if normalized in {"sun", "moon"}:
         commander_kwargs["name"] = normalized
@@ -731,7 +737,11 @@ def chopper_status(
             action="chopper_status",
             success=True,
             message=f"chopper {state}: {detail}",
-            data={"state": state, "detail": detail, "used_held_authority": not owns_commander},
+            data={
+                "state": state,
+                "detail": detail,
+                "used_held_authority": not owns_commander,
+            },
         )
     finally:
         if owns_commander:
@@ -855,7 +865,8 @@ def chopper_maintenance(
         return OperatorActionResult(
             action=f"chopper_{normalized.replace('-', '_')}",
             success=success,
-            message=f"chopper {normalized} {status}" + (f": {message}" if message else ""),
+            message=f"chopper {normalized} {status}"
+            + (f": {message}" if message else ""),
             data={
                 "command": normalized,
                 "service_success": success,
@@ -1232,7 +1243,9 @@ def start_observation(
             "observation mode must be OTF, PSW, Grid, or Radio Pointing"
         )
     if not dry_run and not check_exists:
-        raise OperatorActionError("live observation start requires obs file existence check")
+        raise OperatorActionError(
+            "live observation start requires obs file existence check"
+        )
     obs_path = _validate_obs_path(
         file_path,
         check_exists=bool(check_exists),
@@ -1295,7 +1308,9 @@ def _parse_tp_range(value: Any) -> list[int]:
         try:
             tokens = list(value)
         except TypeError as exc:
-            raise OperatorActionError("SkyDip tp_range must be a string or sequence") from exc
+            raise OperatorActionError(
+                "SkyDip tp_range must be a string or sequence"
+            ) from exc
     try:
         out = [int(x) for x in tokens]
     except Exception as exc:
@@ -1335,7 +1350,5 @@ def run_skydip(
         stdout_path=stdout_path,
         stderr_path=stderr_path,
     )
-    result.data.update(
-        {"integ_sec": integ_sec, "channel": ch, "tp_range": tp_values}
-    )
+    result.data.update({"integ_sec": integ_sec, "channel": ch, "tp_range": tp_values})
     return result

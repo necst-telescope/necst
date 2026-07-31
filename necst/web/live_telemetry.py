@@ -17,7 +17,6 @@ from typing import Any, Dict, List, Optional
 
 from . import node_health
 
-
 ENCODER_MOTION_DEADBAND_DEG = 5.0e-4
 ENCODER_MOTION_START_CUMULATIVE_DEG = 8.0e-4
 ENCODER_MOTION_HOLD_SEC = 0.8
@@ -68,7 +67,9 @@ def _msg_coord(msg: Any, *, prefix: str) -> Dict[str, Any]:
 class LiveTelemetryCache:
     """Read-only ROS status cache for current antenna/chopper console display."""
 
-    def __init__(self, *, enabled: bool = True, node_name: str = "necst_operator_console_status") -> None:
+    def __init__(
+        self, *, enabled: bool = True, node_name: str = "necst_operator_console_status"
+    ) -> None:
         self.requested = bool(enabled)
         self.available = False
         self.error: Optional[str] = None
@@ -138,7 +139,8 @@ class LiveTelemetryCache:
         cumulative_start_significant = False
         was_recently_moving = bool(
             self._last_significant_encoder_motion_unix is not None
-            and now - self._last_significant_encoder_motion_unix <= ENCODER_MOTION_HOLD_SEC
+            and now - self._last_significant_encoder_motion_unix
+            <= ENCODER_MOTION_HOLD_SEC
         )
         if previous is not None:
             delta_az = abs(lon - previous.get("lon", lon))
@@ -178,7 +180,8 @@ class LiveTelemetryCache:
             self._last_significant_encoder_motion_unix = now
         held = bool(
             self._last_significant_encoder_motion_unix is not None
-            and now - self._last_significant_encoder_motion_unix <= ENCODER_MOTION_HOLD_SEC
+            and now - self._last_significant_encoder_motion_unix
+            <= ENCODER_MOTION_HOLD_SEC
         )
         moving = bool(significant or held)
         if self._encoder_motion_anchor is None or (was_recently_moving and not moving):
@@ -222,7 +225,11 @@ class LiveTelemetryCache:
             if self.has_position():
                 return True
             self.spin_once(timeout_sec=0.05)
-            if self._executor is not None and self._spin_thread is not None and self._spin_thread.is_alive():
+            if (
+                self._executor is not None
+                and self._spin_thread is not None
+                and self._spin_thread.is_alive()
+            ):
                 time.sleep(0.05)
         return self.has_position()
 
@@ -265,18 +272,34 @@ class LiveTelemetryCache:
                 with self._lock:
                     self.pointing_status = {
                         "valid": bool(getattr(msg, "valid", False)),
-                        "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
-                        "command_time_unix": _finite_float(getattr(msg, "command_time_unix", None)),
-                        "encoder_time_unix": _finite_float(getattr(msg, "encoder_time_unix", None)),
+                        "publish_time_unix": _finite_float(
+                            getattr(msg, "publish_time_unix", None)
+                        ),
+                        "command_time_unix": _finite_float(
+                            getattr(msg, "command_time_unix", None)
+                        ),
+                        "encoder_time_unix": _finite_float(
+                            getattr(msg, "encoder_time_unix", None)
+                        ),
                         "cmd_az_deg": _finite_float(getattr(msg, "cmd_az_deg", None)),
                         "cmd_el_deg": _finite_float(getattr(msg, "cmd_el_deg", None)),
                         "enc_az_deg": _finite_float(getattr(msg, "enc_az_deg", None)),
                         "enc_el_deg": _finite_float(getattr(msg, "enc_el_deg", None)),
-                        "delta_az_deg": _finite_float(getattr(msg, "delta_az_deg", None)),
-                        "delta_el_deg": _finite_float(getattr(msg, "delta_el_deg", None)),
-                        "delta_az_cos_el_deg": _finite_float(getattr(msg, "delta_az_cos_el_deg", None)),
-                        "tracking_error_deg": _finite_float(getattr(msg, "tracking_error_deg", None)),
-                        "tracking_threshold_deg": _finite_float(getattr(msg, "tracking_threshold_deg", None)),
+                        "delta_az_deg": _finite_float(
+                            getattr(msg, "delta_az_deg", None)
+                        ),
+                        "delta_el_deg": _finite_float(
+                            getattr(msg, "delta_el_deg", None)
+                        ),
+                        "delta_az_cos_el_deg": _finite_float(
+                            getattr(msg, "delta_az_cos_el_deg", None)
+                        ),
+                        "tracking_error_deg": _finite_float(
+                            getattr(msg, "tracking_error_deg", None)
+                        ),
+                        "tracking_threshold_deg": _finite_float(
+                            getattr(msg, "tracking_threshold_deg", None)
+                        ),
                         "tracking_ok": bool(getattr(msg, "tracking_ok", False)),
                         "cmd_age_sec": _finite_float(getattr(msg, "cmd_age_sec", None)),
                         "enc_age_sec": _finite_float(getattr(msg, "enc_age_sec", None)),
@@ -299,9 +322,15 @@ class LiveTelemetryCache:
                         "section_kind": str(getattr(msg, "section_kind", "")),
                         "section_label": str(getattr(msg, "section_label", "")),
                         "line_index": line_index,
-                        "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
-                        "query_time_unix": _finite_float(getattr(msg, "query_time_unix", None)),
-                        "command_time_unix": _finite_float(getattr(msg, "command_time_unix", None)),
+                        "publish_time_unix": _finite_float(
+                            getattr(msg, "publish_time_unix", None)
+                        ),
+                        "query_time_unix": _finite_float(
+                            getattr(msg, "query_time_unix", None)
+                        ),
+                        "command_time_unix": _finite_float(
+                            getattr(msg, "command_time_unix", None)
+                        ),
                         "status_basis": str(getattr(msg, "status_basis", "")),
                     }
                     self._record_sample_locked("section_status")
@@ -314,13 +343,23 @@ class LiveTelemetryCache:
                         "mode": str(getattr(msg, "mode", "")),
                         "state": str(getattr(msg, "state", "")),
                         "reason": str(getattr(msg, "reason", "")),
-                        "publish_time_unix": _finite_float(getattr(msg, "publish_time_unix", None)),
-                        "encoder_time_unix": _finite_float(getattr(msg, "encoder_time_unix", None)),
+                        "publish_time_unix": _finite_float(
+                            getattr(msg, "publish_time_unix", None)
+                        ),
+                        "encoder_time_unix": _finite_float(
+                            getattr(msg, "encoder_time_unix", None)
+                        ),
                         "raw_az_deg": _finite_float(getattr(msg, "raw_az_deg", None)),
-                        "modulo_az_deg": _finite_float(getattr(msg, "modulo_az_deg", None)),
-                        "continuous_az_deg": _finite_float(getattr(msg, "continuous_az_deg", None)),
+                        "modulo_az_deg": _finite_float(
+                            getattr(msg, "modulo_az_deg", None)
+                        ),
+                        "continuous_az_deg": _finite_float(
+                            getattr(msg, "continuous_az_deg", None)
+                        ),
                         "branch": int(getattr(msg, "branch", 0)),
-                        "state_age_sec": _finite_float(getattr(msg, "state_age_sec", None)),
+                        "state_age_sec": _finite_float(
+                            getattr(msg, "state_age_sec", None)
+                        ),
                     }
                     self._record_sample_locked("az_unwrap_status")
 
@@ -356,13 +395,25 @@ class LiveTelemetryCache:
                     insert_position = None
                     remove_position = None
                 try:
-                    simulator_boolean_only = bool(getattr(necst_config, "simulator", False))
+                    simulator_boolean_only = bool(
+                        getattr(necst_config, "simulator", False)
+                    )
                 except Exception:
                     simulator_boolean_only = False
 
-                if position is not None and insert_position is not None and int(position) == insert_position and insert is not False:
+                if (
+                    position is not None
+                    and insert_position is not None
+                    and int(position) == insert_position
+                    and insert is not False
+                ):
                     state = "in"
-                elif position is not None and remove_position is not None and int(position) == remove_position and insert is not True:
+                elif (
+                    position is not None
+                    and remove_position is not None
+                    and int(position) == remove_position
+                    and insert is not True
+                ):
                     state = "out"
                 elif simulator_boolean_only and position == 0 and insert is True:
                     state = "in"
@@ -386,11 +437,19 @@ class LiveTelemetryCache:
             def weather_cb(key: str):
                 def _callback(msg: Any) -> None:
                     payload = {
-                        "temperature_k": _finite_float(getattr(msg, "temperature", None)),
+                        "temperature_k": _finite_float(
+                            getattr(msg, "temperature", None)
+                        ),
                         "pressure_hpa": _finite_float(getattr(msg, "pressure", None)),
-                        "humidity_percent": _finite_float(getattr(msg, "humidity", None)),
-                        "wind_speed_mps": _finite_float(getattr(msg, "wind_speed", None)),
-                        "wind_direction_deg": _finite_float(getattr(msg, "wind_direction", None)),
+                        "humidity_percent": _finite_float(
+                            getattr(msg, "humidity", None)
+                        ),
+                        "wind_speed_mps": _finite_float(
+                            getattr(msg, "wind_speed", None)
+                        ),
+                        "wind_direction_deg": _finite_float(
+                            getattr(msg, "wind_direction", None)
+                        ),
                         "time_unix": _finite_float(getattr(msg, "time", None)),
                     }
                     with self._lock:
@@ -495,8 +554,7 @@ class LiveTelemetryCache:
             self.error = f"failed to read ROS graph node list: {exc}"
             raise
         names = [
-            node_health.full_node_name(name, namespace)
-            for name, namespace in pairs
+            node_health.full_node_name(name, namespace) for name, namespace in pairs
         ]
         return sorted(name for name in names if name)
 
@@ -544,7 +602,9 @@ class LiveTelemetryCache:
             if self.spectrometer_status:
                 payload["spectrometer_status"] = dict(self.spectrometer_status)
             if self.weather:
-                payload["weather"] = {key: dict(value) for key, value in self.weather.items()}
+                payload["weather"] = {
+                    key: dict(value) for key, value in self.weather.items()
+                }
             return payload
 
     def close(self) -> None:

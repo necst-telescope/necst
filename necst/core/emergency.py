@@ -15,9 +15,7 @@ from .operator_actions import (
     chopper_maintenance,
     chopper_move,
     chopper_status,
-    format_chopper_status as _format_chopper_status,
     mount_move,
-    wait_chopper_position as _wait_chopper_position,
 )
 
 

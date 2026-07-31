@@ -15,7 +15,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 JsonDict = Dict[str, Any]
 
@@ -89,7 +89,13 @@ def _item(
     severity: str = "error",
     data: Optional[Mapping[str, Any]] = None,
 ) -> SmokeItem:
-    return SmokeItem(name=name, ok=bool(ok), message=str(message), severity=str(severity), data=dict(data or {}))
+    return SmokeItem(
+        name=name,
+        ok=bool(ok),
+        message=str(message),
+        severity=str(severity),
+        data=dict(data or {}),
+    )
 
 
 def _mapping(value: Any) -> Mapping[str, Any]:
@@ -106,7 +112,12 @@ def _check_health(base_url: str, timeout: float) -> Tuple[SmokeItem, JsonDict]:
     except Exception as exc:
         return _item("health", False, f"/health failed: {exc}"), {}
     ok = bool(data.get("ok"))
-    return _item("health", ok, "/health OK" if ok else "/health did not report ok", data=data), data
+    return (
+        _item(
+            "health", ok, "/health OK" if ok else "/health did not report ok", data=data
+        ),
+        data,
+    )
 
 
 def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonDict]:
@@ -119,12 +130,18 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
         _item("api_status", True, "/api/status returned JSON", severity="info")
     ]
     mount_limits = _mapping(data.get("mount_limits"))
-    missing_limits = [k for k in ("az_min", "az_max", "el_min", "el_max") if k not in mount_limits]
+    missing_limits = [
+        k for k in ("az_min", "az_max", "el_min", "el_max") if k not in mount_limits
+    ]
     items.append(
         _item(
             "status_mount_limits",
             not missing_limits,
-            "mount limits present" if not missing_limits else "mount limits are incomplete",
+            (
+                "mount limits present"
+                if not missing_limits
+                else "mount limits are incomplete"
+            ),
             data={"missing": missing_limits, "mount_limits": dict(mount_limits)},
         )
     )
@@ -145,8 +162,16 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
         _item(
             "status_capabilities",
             not missing_caps and not non_bool_caps,
-            "capabilities present" if not missing_caps and not non_bool_caps else "capabilities are incomplete or non-boolean",
-            data={"missing": missing_caps, "non_bool": non_bool_caps, "capabilities": dict(capabilities)},
+            (
+                "capabilities present"
+                if not missing_caps and not non_bool_caps
+                else "capabilities are incomplete or non-boolean"
+            ),
+            data={
+                "missing": missing_caps,
+                "non_bool": non_bool_caps,
+                "capabilities": dict(capabilities),
+            },
         )
     )
     self_check_endpoint = data.get("self_check_endpoint")
@@ -154,7 +179,11 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
         _item(
             "status_self_check_endpoint",
             self_check_endpoint == "/api/self-check",
-            "self-check endpoint advertised" if self_check_endpoint == "/api/self-check" else "self-check endpoint is missing",
+            (
+                "self-check endpoint advertised"
+                if self_check_endpoint == "/api/self-check"
+                else "self-check endpoint is missing"
+            ),
             data={"self_check_endpoint": self_check_endpoint},
         )
     )
@@ -167,7 +196,11 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
         _item(
             "status_refresh_interval",
             status_refresh_ms >= 200,
-            f"console status refresh interval = {status_refresh_ms} ms" if status_refresh_ms else "console status refresh interval is missing",
+            (
+                f"console status refresh interval = {status_refresh_ms} ms"
+                if status_refresh_ms
+                else "console status refresh interval is missing"
+            ),
             severity="info" if status_refresh_ms >= 200 else "warning",
             data={"status_refresh_ms": status_refresh_ms},
         )
@@ -217,9 +250,15 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
                 has_position or not live_mode,
                 (
                     f"console live telemetry available ({live_telemetry.get('spin_mode') or 'unknown spin mode'}); "
-                    + ("position sample received" if has_position else "waiting for encoder/pointing position sample")
+                    + (
+                        "position sample received"
+                        if has_position
+                        else "waiting for encoder/pointing position sample"
+                    )
                 ),
-                severity="info" if has_position else ("error" if live_mode else "warning"),
+                severity=(
+                    "info" if has_position else ("error" if live_mode else "warning")
+                ),
                 data={"live_telemetry": dict(live_telemetry)},
             )
         )
@@ -240,7 +279,9 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
                 "status_live_telemetry",
                 True,
                 "console live telemetry disabled",
-                severity="warning" if str(data.get("action_mode")) == "live" else "info",
+                severity=(
+                    "warning" if str(data.get("action_mode")) == "live" else "info"
+                ),
                 data={"live_telemetry": dict(live_telemetry)},
             )
         )
@@ -258,11 +299,15 @@ def _check_status(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonD
     return items, data
 
 
-def _check_self_check(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonDict]:
+def _check_self_check(
+    base_url: str, timeout: float
+) -> Tuple[List[SmokeItem], JsonDict]:
     try:
         data = _json_request(base_url, "/api/self-check", timeout=timeout)
     except Exception as exc:
-        return [_item("self_check_endpoint", False, f"/api/self-check failed: {exc}")], {}
+        return [
+            _item("self_check_endpoint", False, f"/api/self-check failed: {exc}")
+        ], {}
 
     summary = _mapping(data.get("summary"))
     error_count = int(summary.get("error_count", 0) or 0)
@@ -314,29 +359,46 @@ def _check_processes(base_url: str, timeout: float) -> Tuple[List[SmokeItem], Js
     return items, data
 
 
-def _check_operator_log(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonDict]:
+def _check_operator_log(
+    base_url: str, timeout: float
+) -> Tuple[List[SmokeItem], JsonDict]:
     try:
         data = _json_request(base_url, "/api/operator-log?limit=5", timeout=timeout)
     except Exception as exc:
-        return [_item("operator_log_endpoint", False, f"/api/operator-log failed: {exc}")], {}
+        return [
+            _item("operator_log_endpoint", False, f"/api/operator-log failed: {exc}")
+        ], {}
     ok = bool(data.get("ok", True)) and isinstance(data.get("entries", []), list)
     return [
         _item(
             "operator_log_endpoint",
             ok,
-            "/api/operator-log returned JSONL tail" if ok else str(data.get("reason") or "operator log endpoint returned not-ok"),
+            (
+                "/api/operator-log returned JSONL tail"
+                if ok
+                else str(data.get("reason") or "operator log endpoint returned not-ok")
+            ),
             severity="info" if ok else "error",
-            data={"path": data.get("path"), "returned_count": data.get("returned_count")},
+            data={
+                "path": data.get("path"),
+                "returned_count": data.get("returned_count"),
+            },
         )
     ], data
 
 
-def _check_action_self_check(base_url: str, timeout: float) -> Tuple[List[SmokeItem], JsonDict]:
+def _check_action_self_check(
+    base_url: str, timeout: float
+) -> Tuple[List[SmokeItem], JsonDict]:
     payload = {"action": "self_check", "params": {}, "session_id": "console-check"}
     try:
-        data = _json_request(base_url, "/api/action", method="POST", payload=payload, timeout=timeout)
+        data = _json_request(
+            base_url, "/api/action", method="POST", payload=payload, timeout=timeout
+        )
     except Exception as exc:
-        return [_item("action_self_check", False, f"action=self_check failed: {exc}")], {}
+        return [
+            _item("action_self_check", False, f"action=self_check failed: {exc}")
+        ], {}
     ok = bool(data.get("ok"))
     action_data = _mapping(data.get("data"))
     self_data = _mapping(action_data.get("self_check"))
@@ -347,7 +409,11 @@ def _check_action_self_check(base_url: str, timeout: float) -> Tuple[List[SmokeI
         _item(
             "action_self_check",
             item_ok,
-            "action=self_check OK" if item_ok else str(data.get("reason") or "action=self_check reported errors"),
+            (
+                "action=self_check OK"
+                if item_ok
+                else str(data.get("reason") or "action=self_check reported errors")
+            ),
             severity="warning" if ok and not item_ok else "error",
             data={"response": data},
         )
@@ -394,7 +460,11 @@ def run_smoke_test(
         raw["action_self_check"] = raw_action
 
     error_count = sum(1 for item in items if not item.ok and item.severity == "error")
-    warning_count = sum(1 for item in items if item.severity == "warning" or (not item.ok and item.severity != "error"))
+    warning_count = sum(
+        1
+        for item in items
+        if item.severity == "warning" or (not item.ok and item.severity != "error")
+    )
     ok = error_count == 0 and (warning_count == 0 or not bool(fail_on_warning))
     status = "ok" if ok and warning_count == 0 else ("warning" if ok else "error")
     finished_at = time.time()
@@ -434,7 +504,11 @@ def print_smoke_report(result: Mapping[str, Any], *, stream: Any = None) -> None
             continue
         ok = bool(item.get("ok"))
         severity = str(item.get("severity") or "error")
-        marker = "OK" if ok and severity != "warning" else ("WARN" if severity == "warning" else "FAIL")
+        marker = (
+            "OK"
+            if ok and severity != "warning"
+            else ("WARN" if severity == "warning" else "FAIL")
+        )
         print(f"  [{marker}] {item.get('name')}: {item.get('message')}", file=stream)
 
 

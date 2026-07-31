@@ -30,7 +30,9 @@ def _cfg_get(obj: Any, key: str, default: Any = None) -> Any:
     return default if value is None else value
 
 
-def _to_float(value: Any, unit: str = "deg", default: Optional[float] = None) -> Optional[float]:
+def _to_float(
+    value: Any, unit: str = "deg", default: Optional[float] = None
+) -> Optional[float]:
     if value is None:
         return default
     if hasattr(value, "to_value"):

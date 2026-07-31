@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 import math
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set
 
-
 VALID_CLASSES = {
     "manual_mount_required",
     "observation_required",
@@ -51,8 +50,10 @@ class NodeHealthConfig:
 
 
 def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace(
-        "+00:00", "Z"
+    return (
+        datetime.now(timezone.utc)
+        .isoformat(timespec="milliseconds")
+        .replace("+00:00", "Z")
     )
 
 
@@ -85,7 +86,9 @@ def config_from_mapping(config: Mapping[str, Any]) -> NodeHealthConfig:
     start normally.
     """
 
-    console = config.get("console") if isinstance(config.get("console"), Mapping) else None
+    console = (
+        config.get("console") if isinstance(config.get("console"), Mapping) else None
+    )
     health = console.get("health") if isinstance(console, Mapping) else None
     if not isinstance(health, Mapping):
         return NodeHealthConfig(enabled=False)
@@ -187,9 +190,7 @@ def evaluate(
                 "error": str(error),
                 "missing_required": [],
                 "missing_optional": [],
-                "nodes": [
-                    {**node.to_dict(), "present": None} for node in config.nodes
-                ],
+                "nodes": [{**node.to_dict(), "present": None} for node in config.nodes],
             }
         )
         return base

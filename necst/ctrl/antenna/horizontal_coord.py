@@ -1195,9 +1195,12 @@ class HorizontalCoord(AlertHandlerNode):
                 f"target={az_q}, limit={critical}"
             )
             return None
-        if self._validate_az_unwrap_disabled_raw_limit(
-            az_q, action_label="mount Az target"
-        ) is None:
+        if (
+            self._validate_az_unwrap_disabled_raw_limit(
+                az_q, action_label="mount Az target"
+            )
+            is None
+        ):
             return None
         if not bool(((warning_lower <= az_deg) & (az_deg <= warning_upper)).all()):
             self.logger.warning("Mount Az target nears drive range limit.")

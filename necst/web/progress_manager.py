@@ -104,17 +104,25 @@ class ProgressMonitorManager:
     def _health_url(self) -> str:
         return self.url.rstrip("/") + "/api/health"
 
-    def check_health(self, *, timeout_sec: float = 0.25) -> Tuple[bool, Dict[str, Any], str]:
+    def check_health(
+        self, *, timeout_sec: float = 0.25
+    ) -> Tuple[bool, Dict[str, Any], str]:
         """Return ``(ok, payload, message)`` from /api/health."""
 
         try:
-            with urllib.request.urlopen(self._health_url(), timeout=float(timeout_sec)) as resp:
+            with urllib.request.urlopen(
+                self._health_url(), timeout=float(timeout_sec)
+            ) as resp:
                 raw = resp.read(1024 * 256)
             payload = json.loads(raw.decode("utf-8") or "{}")
             if not isinstance(payload, dict):
                 payload = {"payload": payload}
             ok = bool(payload.get("ok", True))
-            message = "progress monitor health OK" if ok else "progress monitor health returned not-ok"
+            message = (
+                "progress monitor health OK"
+                if ok
+                else "progress monitor health returned not-ok"
+            )
             self._last_health = payload
             self._last_message = message
             return ok, payload, message
@@ -276,7 +284,9 @@ class ProgressMonitorManager:
         data = self.status().to_dict()
         data["progress_url"] = self.url
         if rc is None:
-            message = f"managed progress monitor started; health is pending ({last_message})"
+            message = (
+                f"managed progress monitor started; health is pending ({last_message})"
+            )
             self._last_message = message
             return True, message, data
         message = f"progress monitor exited during startup with return code {rc}"
@@ -285,12 +295,18 @@ class ProgressMonitorManager:
         self._popen = None
         return False, message, data
 
-    def stop_if_owned(self, *, timeout_sec: float = 2.0) -> Tuple[bool, str, Dict[str, Any]]:
+    def stop_if_owned(
+        self, *, timeout_sec: float = 2.0
+    ) -> Tuple[bool, str, Dict[str, Any]]:
         """Stop only the progress monitor started by this console."""
 
         popen = self._popen
         if popen is None:
-            return True, "no console-owned progress monitor to stop", self.status().to_dict()
+            return (
+                True,
+                "no console-owned progress monitor to stop",
+                self.status().to_dict(),
+            )
         if popen.poll() is None:
             try:
                 popen.terminate()
@@ -341,8 +357,12 @@ class ProgressMonitorManager:
             status=status,
             message=message,
             health=health,
-            stdout_path=str(self._stdout_path) if self._stdout_path is not None else None,
-            stderr_path=str(self._stderr_path) if self._stderr_path is not None else None,
+            stdout_path=(
+                str(self._stdout_path) if self._stdout_path is not None else None
+            ),
+            stderr_path=(
+                str(self._stderr_path) if self._stderr_path is not None else None
+            ),
             command=list(self._command),
             started_at=self._started_at,
             returncode=rc,

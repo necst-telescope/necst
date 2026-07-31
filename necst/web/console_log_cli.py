@@ -19,7 +19,11 @@ def default_operator_log_dir() -> Path:
 
 
 def default_operator_log_path(log_dir: Optional[str | os.PathLike[str]] = None) -> Path:
-    base = Path(log_dir).expanduser() if log_dir not in (None, "") else default_operator_log_dir()
+    base = (
+        Path(log_dir).expanduser()
+        if log_dir not in (None, "")
+        else default_operator_log_dir()
+    )
     return base / "operator_console.jsonl"
 
 
@@ -52,16 +56,30 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["tail", "path", "cat"],
         help="tail parsed JSONL entries, print path, or print raw JSONL tail",
     )
-    parser.add_argument("--operator-log-dir", default=None, help="operator log directory; default is $NECST_OPERATOR_LOG_DIR or ~/.necst/operator_console")
-    parser.add_argument("--path", default=None, help="explicit operator_console.jsonl path")
-    parser.add_argument("--limit", type=int, default=80, help="number of JSONL records/lines to show")
-    parser.add_argument("--json", action="store_true", help="print parsed payload as JSON")
+    parser.add_argument(
+        "--operator-log-dir",
+        default=None,
+        help="operator log directory; default is $NECST_OPERATOR_LOG_DIR or ~/.necst/operator_console",
+    )
+    parser.add_argument(
+        "--path", default=None, help="explicit operator_console.jsonl path"
+    )
+    parser.add_argument(
+        "--limit", type=int, default=80, help="number of JSONL records/lines to show"
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="print parsed payload as JSON"
+    )
     return parser
 
 
 def main(argv: Optional[list[str]] = None) -> int:
     args = build_parser().parse_args(argv)
-    log_path = Path(args.path).expanduser() if args.path else default_operator_log_path(args.operator_log_dir)
+    log_path = (
+        Path(args.path).expanduser()
+        if args.path
+        else default_operator_log_path(args.operator_log_dir)
+    )
     if args.command == "path":
         print(str(log_path))
         return 0

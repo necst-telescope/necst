@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
@@ -20,10 +19,19 @@ def _tail_lines(path: Path, *, limit: int = 100) -> List[str]:
 
 def read_operator_log(path_value: Any, *, limit: Any = 100) -> Dict[str, Any]:
     if path_value in (None, ""):
-        return {"ok": False, "reason": "operator log path is not configured", "entries": []}
+        return {
+            "ok": False,
+            "reason": "operator log path is not configured",
+            "entries": [],
+        }
     path = Path(str(path_value)).expanduser()
     if not path.exists():
-        return {"ok": True, "reason": "operator log does not exist yet", "path": str(path), "entries": []}
+        return {
+            "ok": True,
+            "reason": "operator log does not exist yet",
+            "path": str(path),
+            "entries": [],
+        }
     entries: List[Dict[str, Any]] = []
     parse_errors = 0
     for line in _tail_lines(path, limit=int(limit or 100)):
@@ -86,7 +94,11 @@ def _resolve_safe_log_path(
     if not raw:
         raise ValueError("log file path is empty")
     path = Path(raw).expanduser()
-    roots = _allowed_paths(launcher_log_dir=launcher_log_dir, operator_log_path=operator_log_path, extra_roots=extra_roots)
+    roots = _allowed_paths(
+        launcher_log_dir=launcher_log_dir,
+        operator_log_path=operator_log_path,
+        extra_roots=extra_roots,
+    )
     if not path.is_absolute():
         if any(part == ".." for part in path.parts):
             raise ValueError("relative log path must not contain '..'")
@@ -120,7 +132,11 @@ def read_text_log(
         )
         max_b = max(1024, min(int(max_bytes or 32768), 1024 * 1024))
         if not path.exists() or not path.is_file():
-            return {"ok": False, "reason": f"log file does not exist: {path}", "path": str(path)}
+            return {
+                "ok": False,
+                "reason": f"log file does not exist: {path}",
+                "path": str(path),
+            }
         size = path.stat().st_size
         with path.open("rb") as fh:
             if size > max_b:
@@ -139,7 +155,9 @@ def read_text_log(
         return {"ok": False, "reason": str(exc), "path": str(path_value or "")}
 
 
-def launcher_log_choices(process_records: Iterable[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+def launcher_log_choices(
+    process_records: Iterable[Mapping[str, Any]],
+) -> List[Dict[str, Any]]:
     choices: List[Dict[str, Any]] = []
     for record in process_records or []:
         if not isinstance(record, Mapping):
@@ -150,11 +168,13 @@ def launcher_log_choices(process_records: Iterable[Mapping[str, Any]]) -> List[D
             path = record.get(key)
             if not path:
                 continue
-            choices.append({
-                "label": f"{label} pid={pid} {stream}",
-                "path": str(path),
-                "stream": stream,
-                "pid": pid,
-                "category": record.get("category"),
-            })
+            choices.append(
+                {
+                    "label": f"{label} pid={pid} {stream}",
+                    "path": str(path),
+                    "stream": stream,
+                    "pid": pid,
+                    "category": record.get("category"),
+                }
+            )
     return choices

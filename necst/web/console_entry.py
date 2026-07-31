@@ -19,7 +19,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Serve the NECST Operator Console")
     parser.add_argument("--host", default="127.0.0.1", help="web bind address")
     parser.add_argument("--port", type=int, default=8092, help="web bind port")
-    parser.add_argument("--telescope", default="NECST", help="telescope label shown in the UI")
+    parser.add_argument(
+        "--telescope", default="NECST", help="telescope label shown in the UI"
+    )
     parser.add_argument(
         "--progress-root",
         default="/tmp/necst_progress",
@@ -170,24 +172,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="equivalent to --safe-start --reset-local-state; use when the console cannot recover normally",
     )
     parser.add_argument("--open", action="store_true", help="open the URL in a browser")
-    parser.add_argument("--quiet", action="store_true", help="suppress HTTP request logs")
-    parser.add_argument("--events-limit", type=int, default=12, help="number of recent events in status model")
+    parser.add_argument(
+        "--quiet", action="store_true", help="suppress HTTP request logs"
+    )
+    parser.add_argument(
+        "--events-limit",
+        type=int,
+        default=12,
+        help="number of recent events in status model",
+    )
     parser.add_argument(
         "--site-config",
         default=None,
         help="explicit site TOML path for console validation; defaults to active necst.config",
     )
-    parser.add_argument("--az-min", type=float, default=None, help="fallback mount Az lower limit [deg]")
-    parser.add_argument("--az-max", type=float, default=None, help="fallback mount Az upper limit [deg]")
-    parser.add_argument("--el-min", type=float, default=None, help="fallback mount El lower limit [deg]")
-    parser.add_argument("--el-max", type=float, default=None, help="fallback mount El upper limit [deg]")
+    parser.add_argument(
+        "--az-min", type=float, default=None, help="fallback mount Az lower limit [deg]"
+    )
+    parser.add_argument(
+        "--az-max", type=float, default=None, help="fallback mount Az upper limit [deg]"
+    )
+    parser.add_argument(
+        "--el-min", type=float, default=None, help="fallback mount El lower limit [deg]"
+    )
+    parser.add_argument(
+        "--el-max", type=float, default=None, help="fallback mount El upper limit [deg]"
+    )
     return parser
 
 
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    progress_url = str(args.progress_url or f"http://{args.progress_host}:{int(args.progress_port)}/")
+    progress_url = str(
+        args.progress_url or f"http://{args.progress_host}:{int(args.progress_port)}/"
+    )
     stop_event = threading.Event()
 
     def _signal_handler(_signum: int, _frame: Any) -> None:
@@ -212,7 +231,10 @@ def main(argv: Optional[list[str]] = None) -> int:
                 obs_roots=args.obs_root,
                 status_no_ros=bool(args.no_ros),
                 action_mode=str(args.action_mode),
-                live_actions_enabled=(str(args.action_mode) == "live" and not bool(args.guard_live_actions)),
+                live_actions_enabled=(
+                    str(args.action_mode) == "live"
+                    and not bool(args.guard_live_actions)
+                ),
                 quiet=bool(args.quiet),
                 open_browser=bool(args.open),
                 events_limit=int(args.events_limit),
@@ -224,7 +246,9 @@ def main(argv: Optional[list[str]] = None) -> int:
                 obslog_user=args.obslog_user,
                 shutdown_terminate_launchers=bool(args.shutdown_terminate_launchers),
                 shutdown_launcher_timeout_sec=float(args.shutdown_launcher_timeout),
-                shutdown_launcher_kill_timeout_sec=float(args.shutdown_launcher_kill_timeout),
+                shutdown_launcher_kill_timeout_sec=float(
+                    args.shutdown_launcher_kill_timeout
+                ),
                 safe_start=bool(args.safe_start),
                 reset_local_state=bool(args.reset_local_state),
                 rescue=bool(args.rescue),
