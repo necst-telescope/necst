@@ -1214,8 +1214,6 @@ def start_observation(
 ) -> OperatorActionResult:
     """Start a file-based observation through the existing NECST launcher.
 
-    Inputs
-    ------
     mode
         One of ``otf``, ``psw``, ``grid``, or ``radio_pointing``.
     file_path
