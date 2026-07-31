@@ -19,7 +19,6 @@ from datetime import datetime, timezone
 from pathlib import Path, PureWindowsPath
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-
 CSV_HEADER = [
     "utc_iso",
     "enc_az_deg",
@@ -79,7 +78,9 @@ def _split_env_paths(value: str) -> List[str]:
     return out
 
 
-def _candidate_record_roots(extra_roots: Optional[List[os.PathLike[str] | str]] = None) -> List[Path]:
+def _candidate_record_roots(
+    extra_roots: Optional[List[os.PathLike[str] | str]] = None,
+) -> List[Path]:
     raw: List[str] = []
     for value in extra_roots or []:
         if str(value or "").strip():
@@ -150,7 +151,9 @@ def resolve_log_dir(
         ok, reason = _ensure_writable_dir(path)
         if ok:
             return path, "configured_dir", None, warnings
-        warnings.append(f"configured observation log directory is not writable: {path}: {reason}")
+        warnings.append(
+            f"configured observation log directory is not writable: {path}: {reason}"
+        )
 
     explicit_env = str(os.environ.get("NECST_OBSLOG_DIR", "")).strip()
     if explicit_env:
@@ -166,7 +169,9 @@ def resolve_log_dir(
         ok, reason = _ensure_writable_dir(path)
         if ok:
             return path, "site_config_observation_log_dir", None, warnings
-        warnings.append(f"site TOML observation log directory is not writable: {path}: {reason}")
+        warnings.append(
+            f"site TOML observation log directory is not writable: {path}: {reason}"
+        )
 
     for root in _candidate_record_roots(record_roots):
         path = root / "obslogs"
@@ -179,7 +184,9 @@ def resolve_log_dir(
     ok, reason = _ensure_writable_dir(fallback)
     if ok:
         return fallback, "home_fallback", None, warnings
-    warnings.append(f"fallback observation log directory is not writable: {fallback}: {reason}")
+    warnings.append(
+        f"fallback observation log directory is not writable: {fallback}: {reason}"
+    )
     # Let the caller fail explicitly when it tries to open the path.
     return fallback, "home_fallback_unwritable", None, warnings
 
@@ -203,8 +210,6 @@ def _format_float(value: Any, ndigits: int) -> str:
     if number is None:
         return ""
     return f"{number:.{ndigits}f}"
-
-
 
 
 def _last_path_component(value: Any) -> str:
@@ -247,7 +252,9 @@ def _first_present(payload: Mapping[str, Any], keys: Tuple[str, ...]) -> Any:
     return None
 
 
-def _temperature_c_from_weather(payload: Mapping[str, Any], *, inside: bool = False) -> str:
+def _temperature_c_from_weather(
+    payload: Mapping[str, Any], *, inside: bool = False
+) -> str:
     if inside:
         c_value = _first_present(payload, ("in_temperature_c", "in_temperature_degC"))
         k_value = _first_present(payload, ("in_temperature_k", "in_temperature"))
@@ -265,11 +272,17 @@ def _temperature_c_from_weather(payload: Mapping[str, Any], *, inside: bool = Fa
     return _format_float(number - 273.15, 2)
 
 
-def _humidity_pct_from_weather(payload: Mapping[str, Any], *, inside: bool = False) -> str:
+def _humidity_pct_from_weather(
+    payload: Mapping[str, Any], *, inside: bool = False
+) -> str:
     if inside:
-        value = _first_present(payload, ("in_humidity_percent", "in_humidity_pct", "in_humidity"))
+        value = _first_present(
+            payload, ("in_humidity_percent", "in_humidity_pct", "in_humidity")
+        )
     else:
-        value = _first_present(payload, ("humidity_percent", "humidity_pct", "humidity"))
+        value = _first_present(
+            payload, ("humidity_percent", "humidity_pct", "humidity")
+        )
     number = _finite_number(value)
     if number is None:
         return ""
@@ -280,15 +293,23 @@ def _humidity_pct_from_weather(payload: Mapping[str, Any], *, inside: bool = Fal
     return _format_float(number, 2)
 
 
-def _pressure_hpa_from_weather(payload: Mapping[str, Any], *, inside: bool = False) -> str:
+def _pressure_hpa_from_weather(
+    payload: Mapping[str, Any], *, inside: bool = False
+) -> str:
     if inside:
-        value = _first_present(payload, ("in_pressure_hpa", "in_pressure_hPa", "in_pressure"))
+        value = _first_present(
+            payload, ("in_pressure_hpa", "in_pressure_hPa", "in_pressure")
+        )
         if value is not None:
             return _format_float(value, 2)
-    return _format_float(_first_present(payload, ("pressure_hpa", "pressure_hPa", "pressure")), 2)
+    return _format_float(
+        _first_present(payload, ("pressure_hpa", "pressure_hPa", "pressure")), 2
+    )
 
 
-def _weather_from_payload(payload: Mapping[str, Any], *, source: str, inside: bool = False) -> Tuple[str, str, str, str]:
+def _weather_from_payload(
+    payload: Mapping[str, Any], *, source: str, inside: bool = False
+) -> Tuple[str, str, str, str]:
     temp = _temperature_c_from_weather(payload, inside=inside)
     humidity = _humidity_pct_from_weather(payload, inside=inside)
     pressure = _pressure_hpa_from_weather(payload, inside=inside)
@@ -366,7 +387,9 @@ class ObservationLogManager:
     closed_utc: Optional[str] = field(default=None, init=False)
     last_rows: List[Dict[str, Any]] = field(default_factory=list, init=False)
     last_error: str = field(default="", init=False)
-    _lock: threading.RLock = field(default_factory=threading.RLock, init=False, repr=False)
+    _lock: threading.RLock = field(
+        default_factory=threading.RLock, init=False, repr=False
+    )
     _pending_open_warning: str = field(default="", init=False, repr=False)
     _fh: Any = field(default=None, init=False, repr=False)
     _writer: Optional[csv.writer] = field(default=None, init=False, repr=False)
@@ -377,7 +400,9 @@ class ObservationLogManager:
         created = utc_now()
         self.created_utc = utc_iso(created)
         self.session_id = f"{utc_stamp(created)}-{uuid.uuid4().hex[:4]}"
-        self.open_new(prefix=self.prefix, observer=self.observer, initial=True, created=created)
+        self.open_new(
+            prefix=self.prefix, observer=self.observer, initial=True, created=created
+        )
 
     @classmethod
     def create(
@@ -414,7 +439,10 @@ class ObservationLogManager:
             candidate = self.log_dir / f"{sanitize_prefix(prefix)}_{stamp}_{idx}.csv"
             if not candidate.exists():
                 return candidate
-        return self.log_dir / f"{sanitize_prefix(prefix)}_{stamp}_{uuid.uuid4().hex[:6]}.csv"
+        return (
+            self.log_dir
+            / f"{sanitize_prefix(prefix)}_{stamp}_{uuid.uuid4().hex[:6]}.csv"
+        )
 
     def _write_meta(self) -> None:
         payload = {
@@ -479,13 +507,20 @@ class ObservationLogManager:
                                 values.extend([""] * (len(CSV_HEADER) - len(values)))
                             row_dict = dict(zip(CSV_HEADER, values))
                             try:
-                                max_existing_row_id = max(max_existing_row_id, int(str(row_dict.get("row_id") or "0")))
+                                max_existing_row_id = max(
+                                    max_existing_row_id,
+                                    int(str(row_dict.get("row_id") or "0")),
+                                )
                             except Exception:
                                 pass
                             recent.append(row_dict)
                             if len(recent) > 20:
                                 del recent[0]
-                self.row_id = max_existing_row_id if header == CSV_HEADER and max_existing_row_id > 0 else row_count
+                self.row_id = (
+                    max_existing_row_id
+                    if header == CSV_HEADER and max_existing_row_id > 0
+                    else row_count
+                )
                 if header != CSV_HEADER:
                     self._pending_open_warning = "CSV header differs from the current observation-log schema; appending anyway"
                     self.last_error = self._pending_open_warning
@@ -493,7 +528,9 @@ class ObservationLogManager:
                     self.last_rows = list(reversed(recent))
             except Exception as exc:
                 self.row_id = 0
-                self._pending_open_warning = f"failed to inspect existing CSV header; appending anyway: {exc}"
+                self._pending_open_warning = (
+                    f"failed to inspect existing CSV header; appending anyway: {exc}"
+                )
                 self.last_error = self._pending_open_warning
         self._write_meta()
 
@@ -527,7 +564,9 @@ class ObservationLogManager:
                 except Exception:
                     pass
         except Exception as exc:
-            raise OSError(f"observation log path is not writable: {path}: {exc}") from exc
+            raise OSError(
+                f"observation log path is not writable: {path}: {exc}"
+            ) from exc
 
     def _record_switch_failure(self, path: Path, exc: BaseException) -> None:
         try:
@@ -542,7 +581,9 @@ class ObservationLogManager:
         except Exception:
             self.last_error = str(exc)
 
-    def _restore_previous_after_switch_failure(self, previous: Optional[Path], target: Path, exc: BaseException) -> None:
+    def _restore_previous_after_switch_failure(
+        self, previous: Optional[Path], target: Path, exc: BaseException
+    ) -> None:
         try:
             if self._fh is not None:
                 self._fh.close()
@@ -603,7 +644,9 @@ class ObservationLogManager:
         created: Optional[datetime] = None,
     ) -> None:
         with self._lock:
-            self._open_new_unlocked(prefix=prefix, observer=observer, initial=initial, created=created)
+            self._open_new_unlocked(
+                prefix=prefix, observer=observer, initial=initial, created=created
+            )
 
     def _open_new_unlocked(
         self,
@@ -675,7 +718,13 @@ class ObservationLogManager:
             self._record_switch_failure(path, exc)
             raise
         if self._fh is not None:
-            self.write_event({}, mode="Console", event="log_closed", action_or_obsfile=str(path), result="success")
+            self.write_event(
+                {},
+                mode="Console",
+                event="log_closed",
+                action_or_obsfile=str(path),
+                result="success",
+            )
             self.close(write_log_closed=False)
         self.closed_utc = None
         self.created_utc = utc_iso()
@@ -731,9 +780,19 @@ class ObservationLogManager:
             return False
         try:
             weather = context.get("weather") if isinstance(context, Mapping) else {}
-            temp, humidity, pressure, weather_source = select_weather(weather if isinstance(weather, Mapping) else {})
-            enc_az = _format_float(context.get("enc_az_deg"), 4) if isinstance(context, Mapping) else ""
-            enc_el = _format_float(context.get("enc_el_deg"), 4) if isinstance(context, Mapping) else ""
+            temp, humidity, pressure, weather_source = select_weather(
+                weather if isinstance(weather, Mapping) else {}
+            )
+            enc_az = (
+                _format_float(context.get("enc_az_deg"), 4)
+                if isinstance(context, Mapping)
+                else ""
+            )
+            enc_el = (
+                _format_float(context.get("enc_el_deg"), 4)
+                if isinstance(context, Mapping)
+                else ""
+            )
             chosen_record_dir = record_dir
             if chosen_record_dir in (None, "") and isinstance(context, Mapping):
                 chosen_record_dir = context.get("record_dir")
@@ -782,7 +841,13 @@ class ObservationLogManager:
         if self._fh is None:
             return
         if write_log_closed:
-            self.write_event({}, mode="Console", event="log_closed", action_or_obsfile="console server stopping", result="success")
+            self.write_event(
+                {},
+                mode="Console",
+                event="log_closed",
+                action_or_obsfile="console server stopping",
+                result="success",
+            )
         self.closed_utc = utc_iso()
         try:
             self._write_meta()

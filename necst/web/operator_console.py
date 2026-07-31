@@ -30,9 +30,18 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from . import log_reader, observation_log, process_manager, progress_manager, self_check, site_config, status_model, live_telemetry, node_health
+from . import (
+    log_reader,
+    observation_log,
+    process_manager,
+    progress_manager,
+    self_check,
+    site_config,
+    status_model,
+    live_telemetry,
+    node_health,
+)
 from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
-
 
 JsonDict = Dict[str, Any]
 
@@ -101,10 +110,18 @@ MOUNT_COMMAND_TARGET_REACHED_TOL_DEG = 7.5e-4
 # operator UI in OBSERVATION RUNNING forever when no local launcher is active
 # and the sidecar has not been updated for this long.  This only changes the
 # console status; it does not send telescope commands or delete data.
-STALE_OBSERVATION_PROGRESS_SEC = float(os.environ.get("NECST_CONSOLE_STALE_OBSERVATION_SEC", "60.0"))
-ABORT_STUCK_OBSERVATION_SEC = float(os.environ.get("NECST_CONSOLE_ABORT_STUCK_OBSERVATION_SEC", "15.0"))
-LAUNCHER_FAILURE_TAIL_BYTES = int(os.environ.get("NECST_CONSOLE_LAUNCHER_FAILURE_TAIL_BYTES", "65536"))
-LAUNCHER_FAILURE_SUMMARY_MAX_CHARS = int(os.environ.get("NECST_CONSOLE_LAUNCHER_FAILURE_SUMMARY_MAX_CHARS", "600"))
+STALE_OBSERVATION_PROGRESS_SEC = float(
+    os.environ.get("NECST_CONSOLE_STALE_OBSERVATION_SEC", "60.0")
+)
+ABORT_STUCK_OBSERVATION_SEC = float(
+    os.environ.get("NECST_CONSOLE_ABORT_STUCK_OBSERVATION_SEC", "15.0")
+)
+LAUNCHER_FAILURE_TAIL_BYTES = int(
+    os.environ.get("NECST_CONSOLE_LAUNCHER_FAILURE_TAIL_BYTES", "65536")
+)
+LAUNCHER_FAILURE_SUMMARY_MAX_CHARS = int(
+    os.environ.get("NECST_CONSOLE_LAUNCHER_FAILURE_SUMMARY_MAX_CHARS", "600")
+)
 
 LIVE_ACTION_GUARD_MESSAGE = (
     "live write actions are guarded by --guard-live-actions; "
@@ -246,9 +263,13 @@ class OperatorConsoleState:
             try:
                 self.operator_log_path.parent.mkdir(parents=True, exist_ok=True)
                 payload = dict(entry.__dict__)
-                payload["time_iso"] = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime())
+                payload["time_iso"] = time.strftime(
+                    "%Y-%m-%dT%H:%M:%S%z", time.localtime()
+                )
                 with self.operator_log_path.open("a", encoding="utf-8") as fh:
-                    fh.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
+                    fh.write(
+                        json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n"
+                    )
             except Exception:
                 # The browser log must remain usable even if the persistent log
                 # path becomes temporarily unwritable.
@@ -296,7 +317,9 @@ def _normalize_skydip_tp_range(value: Any) -> str:
         try:
             tokens = [str(x) for x in value]
         except TypeError as exc:
-            raise ValueError("SkyDip TP channel range must be blank or integer START END pairs") from exc
+            raise ValueError(
+                "SkyDip TP channel range must be blank or integer START END pairs"
+            ) from exc
     values: List[int] = []
     for token in tokens:
         text = str(token).strip()
@@ -354,6 +377,7 @@ def resolve_mount_limits(
         ).mount_limits
     )
 
+
 def validate_mount_target(
     params: Mapping[str, Any], mount_limits: Mapping[str, Any]
 ) -> Tuple[float, float]:
@@ -373,16 +397,22 @@ def validate_mount_target(
     if el_min >= el_max:
         raise ValueError("site TOML El min/max are invalid")
     if not (az_min <= az <= az_max):
-        raise ValueError(f"Az={az:g} deg is outside site TOML range {az_min:g}..{az_max:g} deg")
+        raise ValueError(
+            f"Az={az:g} deg is outside site TOML range {az_min:g}..{az_max:g} deg"
+        )
     assert_mount_az_allowed_when_unwrap_disabled(
         az, action_label="operator console mount move"
     )
     if not (el_min <= el <= el_max):
-        raise ValueError(f"El={el:g} deg is outside site TOML range {el_min:g}..{el_max:g} deg")
+        raise ValueError(
+            f"El={el:g} deg is outside site TOML range {el_min:g}..{el_max:g} deg"
+        )
     return az, el
 
 
-def validate_observation_selection(params: Mapping[str, Any]) -> Tuple[str, str, Optional[int]]:
+def validate_observation_selection(
+    params: Mapping[str, Any],
+) -> Tuple[str, str, Optional[int]]:
     """Static obs-file selection validation; does not touch hardware."""
 
     mode = str(params.get("mode") or "").strip().lower()
@@ -441,7 +471,11 @@ def _auto_obs_root_candidates() -> List[Path]:
         os.environ.get("NECST_OBS_BASE", ""),
         os.environ.get("NECST_RECORD_ROOT", ""),
         os.environ.get("ROS2_WS", ""),
-        os.environ.get("COLCON_PREFIX_PATH", "").split(os.pathsep)[0] if os.environ.get("COLCON_PREFIX_PATH") else "",
+        (
+            os.environ.get("COLCON_PREFIX_PATH", "").split(os.pathsep)[0]
+            if os.environ.get("COLCON_PREFIX_PATH")
+            else ""
+        ),
         str(Path.cwd()),
         str(Path.home()),
         str(Path.home() / "obs"),
@@ -472,7 +506,14 @@ def _auto_obs_root_candidates() -> List[Path]:
     # Put obs-like directories first when they exist, but do not hide the
     # broader filesystem roots.  Users can still narrow the chooser by passing
     # --obs-root or NECST_CONSOLE_OBS_ROOTS.
-    obs_names = ("obs", "obsfiles", "obs_files", "observation", "observations", "observation_files")
+    obs_names = (
+        "obs",
+        "obsfiles",
+        "obs_files",
+        "observation",
+        "observations",
+        "observation_files",
+    )
     expanded: List[Path] = []
     for raw in raw_candidates:
         try:
@@ -486,7 +527,9 @@ def _auto_obs_root_candidates() -> List[Path]:
     return expanded
 
 
-def resolve_obs_roots(configured_roots: Optional[List[os.PathLike[str] | str]] = None) -> List[Path]:
+def resolve_obs_roots(
+    configured_roots: Optional[List[os.PathLike[str] | str]] = None,
+) -> List[Path]:
     """Return NECST-side browse roots for preview and obs selection.
 
     If ``--obs-root`` or ``NECST_CONSOLE_OBS_ROOTS`` is supplied, those paths
@@ -560,7 +603,9 @@ def _path_under_root(path: Path, roots: List[Path]) -> bool:
 
 def _safe_obs_path(raw_path: str, roots: List[Path]) -> Path:
     if not roots:
-        raise ValueError("no NECST-side locations are available; check filesystem permissions or set --obs-root")
+        raise ValueError(
+            "no NECST-side locations are available; check filesystem permissions or set --obs-root"
+        )
     if not str(raw_path or "").strip():
         raise ValueError("obs path is empty")
     path = Path(str(raw_path)).expanduser()
@@ -572,14 +617,18 @@ def _safe_obs_path(raw_path: str, roots: List[Path]) -> Path:
         raise ValueError(f"cannot resolve NECST-side path: {exc}") from exc
     if not _path_under_root(resolved, roots):
         root_text = ", ".join(str(r) for r in roots)
-        raise ValueError(f"NECST-side path is outside configured locations: {resolved}; roots={root_text}")
+        raise ValueError(
+            f"NECST-side path is outside configured locations: {resolved}; roots={root_text}"
+        )
     return resolved
 
 
 def obs_roots_payload(roots: List[Path]) -> JsonDict:
     return {
         "ok": True,
-        "roots": [{"path": str(root), "label": _obs_root_label(root)} for root in roots],
+        "roots": [
+            {"path": str(root), "label": _obs_root_label(root)} for root in roots
+        ],
         "message": (
             "NECST-side locations are paths visible to the process running this console"
             if roots
@@ -591,32 +640,54 @@ def obs_roots_payload(roots: List[Path]) -> JsonDict:
 def list_server_obs_files(roots: List[Path], directory: str = "") -> JsonDict:
     browse_dir = _safe_obs_path(directory or (str(roots[0]) if roots else ""), roots)
     if not browse_dir.exists() or not browse_dir.is_dir():
-        raise ValueError(f"NECST-side directory does not exist or is not a directory: {browse_dir}")
+        raise ValueError(
+            f"NECST-side directory does not exist or is not a directory: {browse_dir}"
+        )
     entries: List[JsonDict] = []
     parent = browse_dir.parent
     if parent != browse_dir and _path_under_root(parent, roots):
-        entries.append({"type": "directory", "name": "..", "path": str(parent), "size": None})
+        entries.append(
+            {"type": "directory", "name": "..", "path": str(parent), "size": None}
+        )
     try:
         children = list(browse_dir.iterdir())
     except Exception as exc:
-        raise ValueError(f"failed to list NECST-side directory {browse_dir}: {exc}") from exc
+        raise ValueError(
+            f"failed to list NECST-side directory {browse_dir}: {exc}"
+        ) from exc
     for child in sorted(children, key=lambda p: (not p.is_dir(), p.name.lower())):
         try:
             if child.is_dir():
-                entries.append({"type": "directory", "name": child.name, "path": str(child.resolve()), "size": None})
+                entries.append(
+                    {
+                        "type": "directory",
+                        "name": child.name,
+                        "path": str(child.resolve()),
+                        "size": None,
+                    }
+                )
             elif child.is_file() and child.suffix.lower() in {".obs", ".toml"}:
-                entries.append({
-                    "type": "file",
-                    "name": child.name,
-                    "path": str(child.resolve()),
-                    "size": int(child.stat().st_size),
-                })
+                entries.append(
+                    {
+                        "type": "file",
+                        "name": child.name,
+                        "path": str(child.resolve()),
+                        "size": int(child.stat().st_size),
+                    }
+                )
         except Exception:
             continue
-    return {"ok": True, "directory": str(browse_dir), "entries": entries, "root_count": len(roots)}
+    return {
+        "ok": True,
+        "directory": str(browse_dir),
+        "entries": entries,
+        "root_count": len(roots),
+    }
 
 
-def preview_server_obs_file(roots: List[Path], path: str, *, max_bytes: int = 65536) -> JsonDict:
+def preview_server_obs_file(
+    roots: List[Path], path: str, *, max_bytes: int = 65536
+) -> JsonDict:
     obs_path = _safe_obs_path(path, roots)
     if obs_path.suffix.lower() not in {".obs", ".toml", ".txt"}:
         raise ValueError("NECST-side preview only allows .obs, .toml, or .txt files")
@@ -638,6 +709,7 @@ def preview_server_obs_file(roots: List[Path], path: str, *, max_bytes: int = 65
         "line_count": len(preview_text.splitlines()),
         "truncated": bool(truncated),
     }
+
 
 def validate_site_capability(
     state: OperatorConsoleState,
@@ -692,7 +764,9 @@ def _load_operator_actions() -> Any:
         core_pkg = sys.modules.setdefault("necst.core", types.ModuleType("necst.core"))
         setattr(necst_pkg, "core", core_pkg)
 
-        config_mod = sys.modules.setdefault("necst.config", types.ModuleType("necst.config"))
+        config_mod = sys.modules.setdefault(
+            "necst.config", types.ModuleType("necst.config")
+        )
         if not hasattr(config_mod, "chopper_motor_position"):
             config_mod.chopper_motor_position = {"insert": 4750, "remove": 19700}
         if not hasattr(config_mod, "simulator"):
@@ -703,9 +777,12 @@ def _load_operator_actions() -> Any:
             "necst.core.commander", types.ModuleType("necst.core.commander")
         )
         if not hasattr(commander_mod, "Commander"):
+
             class _UnavailableCommander:  # pragma: no cover - fallback only
                 def __init__(self, *args: Any, **kwargs: Any) -> None:
-                    raise RuntimeError("Commander is unavailable in reduced environment")
+                    raise RuntimeError(
+                        "Commander is unavailable in reduced environment"
+                    )
 
             commander_mod.Commander = _UnavailableCommander
 
@@ -715,9 +792,13 @@ def _load_operator_actions() -> Any:
         obs_check_name = "necst.core.observation_check"
         if obs_check_name not in sys.modules:
             obs_check_path = core_path / "observation_check.py"
-            obs_spec = importlib.util.spec_from_file_location(obs_check_name, obs_check_path)
+            obs_spec = importlib.util.spec_from_file_location(
+                obs_check_name, obs_check_path
+            )
             if obs_spec is None or obs_spec.loader is None:
-                raise RuntimeError(f"failed to load observation_check.py from {obs_check_path}")
+                raise RuntimeError(
+                    f"failed to load observation_check.py from {obs_check_path}"
+                )
             obs_module = importlib.util.module_from_spec(obs_spec)
             sys.modules[obs_check_name] = obs_module
             setattr(core_pkg, "observation_check", obs_module)
@@ -751,7 +832,9 @@ def _reject_not_connected(action: str) -> Tuple[bool, str, JsonDict]:
     )
 
 
-def _live_write_guard(state: OperatorConsoleState, action: str) -> Tuple[bool, str, JsonDict]:
+def _live_write_guard(
+    state: OperatorConsoleState, action: str
+) -> Tuple[bool, str, JsonDict]:
     """Return whether a write-like live action may be dispatched.
 
     ``--action-mode dry-run`` is the normal no-hardware validation mode.
@@ -764,19 +847,31 @@ def _live_write_guard(state: OperatorConsoleState, action: str) -> Tuple[bool, s
     if state.action_mode != "live":
         return True, "dry-run mode", {"live_write_guard": "not_live"}
     if action not in LIVE_WRITE_ACTIONS:
-        return True, "read-only/local/safety action", {"live_write_guard": "not_write_action"}
+        return (
+            True,
+            "read-only/local/safety action",
+            {"live_write_guard": "not_write_action"},
+        )
     if state.live_actions_enabled:
-        return True, "live write actions enabled", {
-            "live_write_guard": "enabled",
-            "live_actions_enabled": True,
-        }
-    return False, LIVE_ACTION_GUARD_MESSAGE, {
-        "action": action,
-        "live_write_guard": "blocked",
-        "live_actions_enabled": False,
-        "guard_option": "--guard-live-actions",
-        "safety_actions_still_available": sorted(SAFETY_ACTIONS),
-    }
+        return (
+            True,
+            "live write actions enabled",
+            {
+                "live_write_guard": "enabled",
+                "live_actions_enabled": True,
+            },
+        )
+    return (
+        False,
+        LIVE_ACTION_GUARD_MESSAGE,
+        {
+            "action": action,
+            "live_write_guard": "blocked",
+            "live_actions_enabled": False,
+            "guard_option": "--guard-live-actions",
+            "safety_actions_still_available": sorted(SAFETY_ACTIONS),
+        },
+    )
 
 
 def _authority_allows(state: OperatorConsoleState, session_id: str) -> Tuple[bool, str]:
@@ -883,7 +978,9 @@ def _sync_authority_state(
         return {"changed": True, "held": False, "reason": "status_check_failed"}
 
     if not handle_held:
-        note = "authority handle no longer reports NECST authority; cleared browser gate"
+        note = (
+            "authority handle no longer reports NECST authority; cleared browser gate"
+        )
         _clear_authority_state(state)
         if log_if_cleared:
             state.add_log(False, note, action="authority_sync")
@@ -994,10 +1091,18 @@ def _observation_log_context(state: OperatorConsoleState) -> JsonDict:
     }
     live_payload = state.live_cache.snapshot() if state.live_cache is not None else {}
     if isinstance(live_payload, Mapping):
-        encoder = live_payload.get("encoder") if isinstance(live_payload.get("encoder"), Mapping) else {}
+        encoder = (
+            live_payload.get("encoder")
+            if isinstance(live_payload.get("encoder"), Mapping)
+            else {}
+        )
         context["enc_az_deg"] = encoder.get("encoder_lon_deg")
         context["enc_el_deg"] = encoder.get("encoder_lat_deg")
-        weather = live_payload.get("weather") if isinstance(live_payload.get("weather"), Mapping) else {}
+        weather = (
+            live_payload.get("weather")
+            if isinstance(live_payload.get("weather"), Mapping)
+            else {}
+        )
         context["weather"] = dict(weather)
     try:
         status_state = status_model.build_progress_status_state(
@@ -1005,14 +1110,24 @@ def _observation_log_context(state: OperatorConsoleState) -> JsonDict:
             events_limit=1,
             live_payload=live_payload if isinstance(live_payload, Mapping) else None,
         )
-        op = status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
+        op = (
+            status_state.get("operator_status")
+            if isinstance(status_state, Mapping)
+            else {}
+        )
         if isinstance(op, Mapping):
-            antenna = op.get("antenna") if isinstance(op.get("antenna"), Mapping) else {}
+            antenna = (
+                op.get("antenna") if isinstance(op.get("antenna"), Mapping) else {}
+            )
             if context.get("enc_az_deg") is None:
                 context["enc_az_deg"] = antenna.get("current_az_deg")
             if context.get("enc_el_deg") is None:
                 context["enc_el_deg"] = antenna.get("current_el_deg")
-            observation = op.get("observation") if isinstance(op.get("observation"), Mapping) else {}
+            observation = (
+                op.get("observation")
+                if isinstance(op.get("observation"), Mapping)
+                else {}
+            )
             paths = op.get("paths") if isinstance(op.get("paths"), Mapping) else {}
             context["record_dir"] = (
                 observation.get("local_recording_dir")
@@ -1023,7 +1138,11 @@ def _observation_log_context(state: OperatorConsoleState) -> JsonDict:
                 or paths.get("progress_record_dir")
                 or ""
             )
-        weather_state = status_state.get("weather") if isinstance(status_state.get("weather"), Mapping) else {}
+        weather_state = (
+            status_state.get("weather")
+            if isinstance(status_state.get("weather"), Mapping)
+            else {}
+        )
         if weather_state and not context.get("weather"):
             context["weather"] = dict(weather_state)
     except Exception:
@@ -1047,7 +1166,10 @@ def _obslog_result(ok: bool, action: str, data: Mapping[str, Any]) -> str:
 
 def _active_process_labels(state: OperatorConsoleState, *, category: str) -> List[str]:
     try:
-        return [str(record.label or record.category or "") for record in state.process_registry.active(category=category)]
+        return [
+            str(record.label or record.category or "")
+            for record in state.process_registry.active(category=category)
+        ]
     except Exception:
         return []
 
@@ -1069,7 +1191,11 @@ def _active_observation_mode(state: OperatorConsoleState) -> str:
 
 
 def _active_observation_text(state: OperatorConsoleState, *, fallback: str) -> str:
-    labels = [label for label in _active_process_labels(state, category="observation") if label]
+    labels = [
+        label
+        for label in _active_process_labels(state, category="observation")
+        if label
+    ]
     if labels:
         return ", ".join(labels)
     return fallback
@@ -1126,7 +1252,12 @@ def _obslog_mode_for_action(
         return "SkyDip"
     if action.startswith("chopper_"):
         return "Chopper"
-    if action in {"stop", "abort_observation", "clear_stale_observation_state", "reset_local_console_state"}:
+    if action in {
+        "stop",
+        "abort_observation",
+        "clear_stale_observation_state",
+        "reset_local_console_state",
+    }:
         return "Console"
     if action.startswith("terminate_") or action in {"kill_process"}:
         return "Recovery"
@@ -1140,7 +1271,9 @@ def _obslog_action_text(
     state: Optional[OperatorConsoleState] = None,
 ) -> str:
     if action in {"check_observation", "dry_run_observation", "start_observation"}:
-        return observation_log.obsfile_name_for_csv(data.get("obs_path") or params.get("file") or "")
+        return observation_log.obsfile_name_for_csv(
+            data.get("obs_path") or params.get("file") or ""
+        )
     if action in {"abort_observation", "stop"} and state is not None:
         labels = _active_process_labels(state, category="observation")
         if labels:
@@ -1148,7 +1281,13 @@ def _obslog_action_text(
     if action in {"mount_move", "mount_move_dry_run"}:
         return f"Az={params.get('az', '')}, El={params.get('el', '')}"
     if action == "start_tracking":
-        target = params.get("target") or params.get("target_kind") or params.get("kind") or params.get("name") or "target"
+        target = (
+            params.get("target")
+            or params.get("target_kind")
+            or params.get("kind")
+            or params.get("name")
+            or "target"
+        )
         return str(target)
     if action in {"run_rsky", "run_skydip"}:
         return ", ".join(f"{k}={v}" for k, v in params.items() if v not in (None, ""))
@@ -1179,7 +1318,11 @@ def _write_observation_log_for_action(
     context = _observation_log_context(state)
     record_dir = None
     if action == "start_observation":
-        record_dir = data.get("recording_dir") or data.get("local_recording_dir") or data.get("progress_record_dir")
+        record_dir = (
+            data.get("recording_dir")
+            or data.get("local_recording_dir")
+            or data.get("progress_record_dir")
+        )
     written = manager.write_event(
         context,
         mode=_obslog_mode_for_action(action, params, data, state),
@@ -1203,7 +1346,10 @@ def _obslog_status_payload(state: OperatorConsoleState) -> JsonDict:
         return {"ok": False, "reason": "observation CSV log is not configured"}
     return {"ok": True, "observation_log": manager.status()}
 
-def run_self_check(state: OperatorConsoleState, *, include_progress_health: bool = True) -> JsonDict:
+
+def run_self_check(
+    state: OperatorConsoleState, *, include_progress_health: bool = True
+) -> JsonDict:
     """Run read-only console self-checks without sending telescope commands."""
 
     return self_check.run_console_self_check(
@@ -1229,15 +1375,18 @@ def run_self_check(state: OperatorConsoleState, *, include_progress_health: bool
     )
 
 
-
-def _truncate_for_status(text: Any, *, max_chars: int = LAUNCHER_FAILURE_SUMMARY_MAX_CHARS) -> str:
+def _truncate_for_status(
+    text: Any, *, max_chars: int = LAUNCHER_FAILURE_SUMMARY_MAX_CHARS
+) -> str:
     value = str(text or "").strip()
     if len(value) <= int(max_chars):
         return value
     return value[: max(0, int(max_chars) - 1)].rstrip() + "…"
 
 
-def _read_log_tail_for_summary(path_value: Any, *, max_bytes: int = LAUNCHER_FAILURE_TAIL_BYTES) -> Tuple[str, int, bool, str]:
+def _read_log_tail_for_summary(
+    path_value: Any, *, max_bytes: int = LAUNCHER_FAILURE_TAIL_BYTES
+) -> Tuple[str, int, bool, str]:
     """Return a bounded text tail for launcher failure summarization.
 
     This is used only for log files that the console itself assigned to a local
@@ -1253,7 +1402,9 @@ def _read_log_tail_for_summary(path_value: Any, *, max_bytes: int = LAUNCHER_FAI
         if not path.exists() or not path.is_file():
             return "", 0, False, f"log file does not exist: {path}"
         size = path.stat().st_size
-        max_b = max(1024, min(int(max_bytes or LAUNCHER_FAILURE_TAIL_BYTES), 1024 * 1024))
+        max_b = max(
+            1024, min(int(max_bytes or LAUNCHER_FAILURE_TAIL_BYTES), 1024 * 1024)
+        )
         with path.open("rb") as fh:
             if size > max_b:
                 fh.seek(size - max_b)
@@ -1295,15 +1446,21 @@ def _extract_failure_summary_from_text(text: Any) -> str:
 def _launcher_failure_payload(record: process_manager.ManagedProcessRecord) -> JsonDict:
     """Build a compact failure summary for a finalized local launcher."""
 
-    stderr_tail, stderr_size, stderr_truncated, stderr_error = _read_log_tail_for_summary(record.stderr_path)
-    stdout_tail, stdout_size, stdout_truncated, stdout_error = _read_log_tail_for_summary(record.stdout_path)
+    stderr_tail, stderr_size, stderr_truncated, stderr_error = (
+        _read_log_tail_for_summary(record.stderr_path)
+    )
+    stdout_tail, stdout_size, stdout_truncated, stdout_error = (
+        _read_log_tail_for_summary(record.stdout_path)
+    )
     stderr_summary = _extract_failure_summary_from_text(stderr_tail)
     stdout_summary = _extract_failure_summary_from_text(stdout_tail)
     stream = "stderr" if stderr_summary else ("stdout" if stdout_summary else "")
     summary = stderr_summary or stdout_summary
     if not summary:
         if record.status == "lost":
-            summary = "local launcher handle was lost before the exit reason could be read"
+            summary = (
+                "local launcher handle was lost before the exit reason could be read"
+            )
         else:
             summary = f"launcher exited with return code {record.returncode}"
         if stderr_error and stdout_error:
@@ -1336,6 +1493,7 @@ def _launcher_failure_payload(record: process_manager.ManagedProcessRecord) -> J
     )
     return payload
 
+
 def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
     """Reap child launcher processes and log newly observed final states."""
 
@@ -1361,17 +1519,28 @@ def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
             message = f"{message}: {summary}"
             record_data["failure"] = failure_payload
         state.add_log(ok, message, action="process_exit", data=record_data)
-        if state.observation_log is not None and record.category in {"observation", "calibration"}:
+        if state.observation_log is not None and record.category in {
+            "observation",
+            "calibration",
+        }:
             label = str(getattr(record, "label", "") or "")
             result_text = "success" if ok else "failed"
             if record.category == "observation":
                 mode = label.split(":", 1)[1].upper() if ":" in label else "Observation"
-                safety_labels = list(getattr(state, "last_observation_safety_labels", []) or [])
+                safety_labels = list(
+                    getattr(state, "last_observation_safety_labels", []) or []
+                )
                 safety_matches = (not safety_labels) or (label in safety_labels)
-                if state.last_observation_abort_requested_at is not None and safety_matches:
+                if (
+                    state.last_observation_abort_requested_at is not None
+                    and safety_matches
+                ):
                     event = "observation_aborted"
                     result_text = "aborted"
-                elif state.last_observation_stop_requested_at is not None and safety_matches:
+                elif (
+                    state.last_observation_stop_requested_at is not None
+                    and safety_matches
+                ):
                     event = "observation_stopped"
                     result_text = "stopped"
                 else:
@@ -1397,7 +1566,9 @@ def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
                     action="observation_csv_log",
                     data={"source_action": "process_exit", "label": label},
                 )
-        if record.category == "observation" and not state.process_registry.active(category="observation"):
+        if record.category == "observation" and not state.process_registry.active(
+            category="observation"
+        ):
             state.last_observation_abort_requested_at = None
             state.last_observation_stop_requested_at = None
             state.last_observation_safety_labels = []
@@ -1405,7 +1576,9 @@ def _refresh_processes_and_log(state: OperatorConsoleState) -> None:
                 state.last_active_task = "none"
             if state.last_manual_state == "observing sequence":
                 state.last_manual_state = "idle"
-        if record.category == "calibration" and not state.process_registry.active(category="calibration"):
+        if record.category == "calibration" and not state.process_registry.active(
+            category="calibration"
+        ):
             if state.last_active_task in {"RSky", "SkyDip"}:
                 state.last_active_task = "none"
             if state.last_manual_state == "calibration":
@@ -1424,7 +1597,6 @@ def _active_launcher_summary(
     return "active launcher already exists: " + ", ".join(labels)
 
 
-
 def _active_launcher_categories(state: OperatorConsoleState) -> set[str]:
     """Return active launcher categories currently owned by this console."""
 
@@ -1435,7 +1607,9 @@ def _active_launcher_categories(state: OperatorConsoleState) -> set[str]:
     }
 
 
-def _progress_snapshot_update_age_sec(status_state: Mapping[str, Any]) -> Optional[float]:
+def _progress_snapshot_update_age_sec(
+    status_state: Mapping[str, Any],
+) -> Optional[float]:
     """Return age of the current progress snapshot update, if known."""
 
     now = time.time()
@@ -1450,10 +1624,12 @@ def _progress_snapshot_update_age_sec(status_state: Mapping[str, Any]) -> Option
     raw = status_state.get("raw_snapshot") if isinstance(status_state, Mapping) else {}
     raw = raw if isinstance(raw, Mapping) else {}
     raw_timing = raw.get("time") if isinstance(raw.get("time"), Mapping) else {}
-    candidates.extend([
-        raw_timing.get("updated_at_unix"),
-        raw_timing.get("last_update_unix"),
-    ])
+    candidates.extend(
+        [
+            raw_timing.get("updated_at_unix"),
+            raw_timing.get("last_update_unix"),
+        ]
+    )
     for value in candidates:
         try:
             ts = float(value)
@@ -1468,7 +1644,6 @@ def _progress_snapshot_update_age_sec(status_state: Mapping[str, Any]) -> Option
     except Exception:
         pass
     return None
-
 
 
 def _utc_reset_stamp() -> str:
@@ -1505,7 +1680,9 @@ def reset_local_console_state_files(
                 continue
             target = archive_dir / path.name
             if target.exists():
-                target = archive_dir / f"{path.stem}_{uuid.uuid4().hex[:6]}{path.suffix}"
+                target = (
+                    archive_dir / f"{path.stem}_{uuid.uuid4().hex[:6]}{path.suffix}"
+                )
             shutil.move(str(path), str(target))
             moved.append({"from": str(path), "to": str(target)})
         except Exception as exc:
@@ -1531,13 +1708,21 @@ def reset_local_console_state_files(
                 pass
         payload["manifest"] = str(manifest)
     except Exception as exc:
-        payload.setdefault("errors", []).append({"path": str(archive_dir / "reset_manifest.json"), "error": str(exc)})
+        payload.setdefault("errors", []).append(
+            {"path": str(archive_dir / "reset_manifest.json"), "error": str(exc)}
+        )
         payload["ok"] = False
     return payload
 
 
-def _reset_local_console_state(state: OperatorConsoleState, *, reason: str = "operator request") -> Tuple[bool, str, JsonDict]:
-    operator_dir = state.operator_log_path.parent if state.operator_log_path is not None else Path.home() / ".necst" / "operator_console"
+def _reset_local_console_state(
+    state: OperatorConsoleState, *, reason: str = "operator request"
+) -> Tuple[bool, str, JsonDict]:
+    operator_dir = (
+        state.operator_log_path.parent
+        if state.operator_log_path is not None
+        else Path.home() / ".necst" / "operator_console"
+    )
     data = reset_local_console_state_files(
         progress_root=state.progress_root,
         operator_log_dir=operator_dir,
@@ -1563,6 +1748,7 @@ def _reset_local_console_state(state: OperatorConsoleState, *, reason: str = "op
         message = "local console state reset had errors; no hardware command sent"
     return bool(data.get("ok")), message, data
 
+
 def _stale_observation_state(
     state: OperatorConsoleState,
     status_state: Mapping[str, Any],
@@ -1579,17 +1765,33 @@ def _stale_observation_state(
 
     op = operator_status if isinstance(operator_status, Mapping) else {}
     if not op:
-        op = status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
+        op = (
+            status_state.get("operator_status")
+            if isinstance(status_state, Mapping)
+            else {}
+        )
         op = op if isinstance(op, Mapping) else {}
     system = op.get("system") if isinstance(op.get("system"), Mapping) else {}
     progress = op.get("progress") if isinstance(op.get("progress"), Mapping) else {}
-    observation = op.get("observation") if isinstance(op.get("observation"), Mapping) else {}
+    observation = (
+        op.get("observation") if isinstance(op.get("observation"), Mapping) else {}
+    )
     lifecycle = str(system.get("state") or "unknown").strip().lower()
     percent = progress.get("percent")
-    nonfinal_lifecycle = lifecycle not in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
+    nonfinal_lifecycle = lifecycle not in {
+        "",
+        "idle",
+        "unknown",
+        "finished",
+        "aborted",
+        "error",
+        "failed",
+    }
     progress_running = bool(nonfinal_lifecycle or percent is not None)
     active_categories = _active_launcher_categories(state)
-    active_launcher = bool(active_categories.intersection({"observation", "calibration"}))
+    active_launcher = bool(
+        active_categories.intersection({"observation", "calibration"})
+    )
     age = _progress_snapshot_update_age_sec(status_state)
     threshold = max(5.0, float(STALE_OBSERVATION_PROGRESS_SEC))
     safety_age = _recent_safety_release_request_age_sec(state, max_age_sec=3600.0)
@@ -1646,7 +1848,10 @@ def _stale_observation_state(
         "can_terminate_launcher": bool(launcher_stuck and active_launcher),
     }
 
-def _clear_stale_observation_state(state: OperatorConsoleState) -> Tuple[bool, str, JsonDict]:
+
+def _clear_stale_observation_state(
+    state: OperatorConsoleState,
+) -> Tuple[bool, str, JsonDict]:
     """Archive stale current-observation pointers so the console can return READY.
 
     This is an explicit operator recovery action.  It never sends hardware
@@ -1654,13 +1859,19 @@ def _clear_stale_observation_state(state: OperatorConsoleState) -> Tuple[bool, s
     It only moves the global current-observation pointer files out of the way.
     """
 
-    active = _active_launcher_categories(state).intersection({"observation", "calibration"})
+    active = _active_launcher_categories(state).intersection(
+        {"observation", "calibration"}
+    )
     if active:
-        return False, (
-            "cannot clear stale observation state while a console-owned launcher "
-            f"is still active: {', '.join(sorted(active))}. Force-kill the local "
-            "observation launcher first after confirming the hardware is safe."
-        ), {"active_launcher_categories": sorted(active), "cleared": False}
+        return (
+            False,
+            (
+                "cannot clear stale observation state while a console-owned launcher "
+                f"is still active: {', '.join(sorted(active))}. Force-kill the local "
+                "observation launcher first after confirming the hardware is safe."
+            ),
+            {"active_launcher_categories": sorted(active), "cleared": False},
+        )
 
     root = state.progress_root
     stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
@@ -1681,13 +1892,17 @@ def _clear_stale_observation_state(state: OperatorConsoleState) -> Tuple[bool, s
         except Exception as exc:
             errors.append(f"{src}: {exc}")
     if errors:
-        return False, "failed to clear one or more stale progress pointer files", {
-            "cleared": False,
-            "moved": moved,
-            "missing": missing,
-            "errors": errors,
-            "archive_dir": str(archive_dir),
-        }
+        return (
+            False,
+            "failed to clear one or more stale progress pointer files",
+            {
+                "cleared": False,
+                "moved": moved,
+                "missing": missing,
+                "errors": errors,
+                "archive_dir": str(archive_dir),
+            },
+        )
 
     _clear_exclusive_start_guard(state)
     _clear_safety_release_request(state)
@@ -1701,13 +1916,17 @@ def _clear_stale_observation_state(state: OperatorConsoleState) -> Tuple[bool, s
         message += f"; archived {len(moved)} current progress pointer file(s)"
     else:
         message += "; no current progress pointer files were present"
-    return True, message, {
-        "cleared": True,
-        "moved": moved,
-        "missing": missing,
-        "archive_dir": str(archive_dir) if moved else None,
-        "note": "per-record progress/data directories were not deleted",
-    }
+    return (
+        True,
+        message,
+        {
+            "cleared": True,
+            "moved": moved,
+            "missing": missing,
+            "archive_dir": str(archive_dir) if moved else None,
+            "note": "per-record progress/data directories were not deleted",
+        },
+    )
 
 
 def _mount_target_reached_from_values(
@@ -1732,9 +1951,15 @@ def _mount_target_reached_from_values(
         tel = float(target_el)
     except Exception:
         return None
-    if not (math.isfinite(az) and math.isfinite(el) and math.isfinite(taz) and math.isfinite(tel)):
+    if not (
+        math.isfinite(az)
+        and math.isfinite(el)
+        and math.isfinite(taz)
+        and math.isfinite(tel)
+    ):
         return None
     return bool(abs(az - taz) <= float(tol_deg) and abs(el - tel) <= float(tol_deg))
+
 
 def _last_mount_target_reached(
     state: OperatorConsoleState,
@@ -1766,12 +1991,25 @@ def _last_mount_target_reached(
         if update_state:
             state.last_mount_target_reached_since = None
         return False
-    if not (math.isfinite(az) and math.isfinite(el) and math.isfinite(target_az) and math.isfinite(target_el)):
+    if not (
+        math.isfinite(az)
+        and math.isfinite(el)
+        and math.isfinite(target_az)
+        and math.isfinite(target_el)
+    ):
         if update_state:
             state.last_mount_target_reached_since = None
         return False
 
-    reached_now = bool(_mount_target_reached_from_values(current_az=az, current_el=el, target_az=target_az, target_el=target_el, tol_deg=tol_deg))
+    reached_now = bool(
+        _mount_target_reached_from_values(
+            current_az=az,
+            current_el=el,
+            target_az=target_az,
+            target_el=target_el,
+            tol_deg=tol_deg,
+        )
+    )
     now = time.time()
     if not reached_now:
         if update_state:
@@ -1779,7 +2017,11 @@ def _last_mount_target_reached(
         return False
     if update_state and state.last_mount_target_reached_since is None:
         state.last_mount_target_reached_since = now
-    since = state.last_mount_target_reached_since if state.last_mount_target_reached_since is not None else now
+    since = (
+        state.last_mount_target_reached_since
+        if state.last_mount_target_reached_since is not None
+        else now
+    )
     try:
         settled = (now - float(since)) >= float(require_settle_sec)
     except Exception:
@@ -1819,7 +2061,6 @@ def _recent_safety_release_request_age_sec(
         state.last_safety_release_requested_at = None
         return None
     return age
-
 
 
 def _prune_exclusive_start_guard(state: OperatorConsoleState) -> None:
@@ -1901,7 +2142,9 @@ def _operator_status_operation_conflict(
             "Use STOP/ABORT or force-kill the stuck local launcher before starting another operation."
         )
 
-    recent_guard = _exclusive_start_guard_reason(state, requested_action=requested_action)
+    recent_guard = _exclusive_start_guard_reason(
+        state, requested_action=requested_action
+    )
     if recent_guard is not None:
         return recent_guard
 
@@ -1913,18 +2156,29 @@ def _operator_status_operation_conflict(
         manual = str(state.last_manual_state or "").strip()
         if task.lower() not in {"", "none", "idle", "unknown"}:
             return f"cannot start {requested_action}: active task is {task}; use STOP/ABORT or wait until READY"
-        if manual.lower() in {"moving", "tracking", "calibration", "observing sequence"}:
+        if manual.lower() in {
+            "moving",
+            "tracking",
+            "calibration",
+            "observing sequence",
+        }:
             return f"cannot start {requested_action}: manual state is {manual}; use STOP/ABORT or wait until READY"
         return None
 
     try:
-        live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
+        live_payload = (
+            state.live_cache.snapshot() if state.live_cache is not None else None
+        )
         status_state = status_model.build_progress_status_state(
             state.progress_root,
             events_limit=state.events_limit,
             live_payload=live_payload,
         )
-        op = status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
+        op = (
+            status_state.get("operator_status")
+            if isinstance(status_state, Mapping)
+            else {}
+        )
         op = op if isinstance(op, Mapping) else {}
         stale = _stale_observation_state(state, status_state, op)
         if stale.get("running_stale") or stale.get("launcher_stuck"):
@@ -1940,27 +2194,49 @@ def _operator_status_operation_conflict(
         system = op.get("system") if isinstance(op.get("system"), Mapping) else {}
         motion = op.get("motion") if isinstance(op.get("motion"), Mapping) else {}
         sys_state = str(system.get("state") or "").strip().lower()
-        if sys_state not in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}:
+        if sys_state not in {
+            "",
+            "idle",
+            "unknown",
+            "finished",
+            "aborted",
+            "error",
+            "failed",
+        }:
             return f"cannot start {requested_action}: system state is {sys_state}; use STOP/ABORT or wait until READY"
         at_target_idle = bool(
             motion.get("mount_target_reached")
             and motion.get("live_motion_active") is False
         )
         antenna = op.get("antenna") if isinstance(op.get("antenna"), Mapping) else {}
-        command_absent = antenna.get("command_az_deg") is None and antenna.get("command_el_deg") is None
-        motion_source_lower = str(motion.get("live_motion_source") or "").strip().lower()
+        command_absent = (
+            antenna.get("command_az_deg") is None
+            and antenna.get("command_el_deg") is None
+        )
+        motion_source_lower = (
+            str(motion.get("live_motion_source") or "").strip().lower()
+        )
         safety_release_age = _recent_safety_release_request_age_sec(state)
         safety_release_idle = bool(
             state.action_mode != "dry-run"
             and safety_release_age is not None
-            and sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
+            and sys_state
+            in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
             and command_absent
             and safety_release_age >= SAFETY_RELEASE_ASSUME_IDLE_AFTER_SEC
         )
         if safety_release_idle:
             at_target_idle = True
         operator_target_idle = False
-        if sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}:
+        if sys_state in {
+            "",
+            "idle",
+            "unknown",
+            "finished",
+            "aborted",
+            "error",
+            "failed",
+        }:
             operator_target_idle = _last_mount_target_reached(
                 state,
                 current_az=antenna.get("current_az_deg"),
@@ -1971,7 +2247,10 @@ def _operator_status_operation_conflict(
         if operator_target_idle:
             at_target_idle = True
         active_task = str(motion.get("active_task") or "").strip()
-        if active_task.lower() not in {"", "none", "idle", "unknown"} and not at_target_idle:
+        if (
+            active_task.lower() not in {"", "none", "idle", "unknown"}
+            and not at_target_idle
+        ):
             return f"cannot start {requested_action}: active task is {active_task}; use STOP/ABORT or wait until READY"
         stage = str(motion.get("stage") or "").strip()
         # Low-level antenna control can report a hold/tracking-like stage after
@@ -2001,6 +2280,7 @@ def _operator_status_operation_conflict(
         # the telemetry problem to the operator.
         return None
     return None
+
 
 def _launcher_log_paths(
     state: OperatorConsoleState,
@@ -2040,7 +2320,6 @@ def _register_launcher_if_needed(
     return record
 
 
-
 def _request_launcher_stop(
     state: OperatorConsoleState,
     *,
@@ -2073,13 +2352,17 @@ def _request_launcher_stop(
     )
     if not records:
         selector = f"pid={pid}" if pid is not None else f"category={category or 'any'}"
-        return False, f"no active launcher matched {selector}; no local launcher process was force-killed", {
-            "action": action,
-            "pid": pid,
-            "category": category,
-            "kill": bool(kill),
-            "terminated": [],
-        }
+        return (
+            False,
+            f"no active launcher matched {selector}; no local launcher process was force-killed",
+            {
+                "action": action,
+                "pid": pid,
+                "category": category,
+                "kill": bool(kill),
+                "terminated": [],
+            },
+        )
     signal_name = "SIGKILL" if kill else "SIGTERM"
     data = {
         "action": action,
@@ -2118,11 +2401,15 @@ def dispatch_action(
     if action == "clear_launcher_failure":
         had_failure = bool(state.last_launcher_failure)
         state.last_launcher_failure = {}
-        return True, "last launcher error display cleared", {
-            "action": action,
-            "cleared": had_failure,
-            "note": "Display-only clear. Launcher stdout/stderr files, internal operator log, and Observation Log CSV are kept.",
-        }
+        return (
+            True,
+            "last launcher error display cleared",
+            {
+                "action": action,
+                "cleared": had_failure,
+                "note": "Display-only clear. Launcher stdout/stderr files, internal operator log, and Observation Log CSV are kept.",
+            },
+        )
 
     if action == "obslog_status":
         data = _obslog_status_payload(state)
@@ -2134,7 +2421,11 @@ def dispatch_action(
             return False, "observation CSV log is not configured", {"action": action}
         comment = str(params.get("comment") or "").strip()
         if not comment:
-            return False, "comment is empty; no observation-log row was written", {"action": action}
+            return (
+                False,
+                "comment is empty; no observation-log row was written",
+                {"action": action},
+            )
         written = manager.write_event(
             _observation_log_context(state),
             comment=comment,
@@ -2144,61 +2435,101 @@ def dispatch_action(
             result="success",
         )
         if not written:
-            return False, f"failed to append observation CSV log comment: {manager.last_error or 'unknown error'}", {
-                "action": action,
-                "observation_log": manager.status(),
-            }
-        return True, "comment appended to observation CSV log", {"action": action, "observation_log": manager.status()}
+            return (
+                False,
+                f"failed to append observation CSV log comment: {manager.last_error or 'unknown error'}",
+                {
+                    "action": action,
+                    "observation_log": manager.status(),
+                },
+            )
+        return (
+            True,
+            "comment appended to observation CSV log",
+            {"action": action, "observation_log": manager.status()},
+        )
 
     if action == "obslog_new":
         manager = state.observation_log
         if manager is None:
             return False, "observation CSV log is not configured", {"action": action}
-        manager.open_new(prefix=params.get("prefix") or manager.prefix, observer=params.get("user") or manager.observer)
-        return True, "new observation CSV log opened", {"action": action, "observation_log": manager.status()}
+        manager.open_new(
+            prefix=params.get("prefix") or manager.prefix,
+            observer=params.get("user") or manager.observer,
+        )
+        return (
+            True,
+            "new observation CSV log opened",
+            {"action": action, "observation_log": manager.status()},
+        )
 
     if action == "obslog_open_existing":
         manager = state.observation_log
         if manager is None:
             return False, "observation CSV log is not configured", {"action": action}
-        manager.open_existing(params.get("path"), observer=params.get("user") or manager.observer)
-        return True, "existing observation CSV log opened for append", {"action": action, "observation_log": manager.status()}
+        manager.open_existing(
+            params.get("path"), observer=params.get("user") or manager.observer
+        )
+        return (
+            True,
+            "existing observation CSV log opened for append",
+            {"action": action, "observation_log": manager.status()},
+        )
 
     if action == "launch_progress":
         if state.progress_monitor is None:
-            return True, f"progress monitor URL: {state.progress_url}", {
-                "action": action,
-                "url": state.progress_url,
-                "progress_url": state.progress_url,
-                "managed": False,
-            }
+            return (
+                True,
+                f"progress monitor URL: {state.progress_url}",
+                {
+                    "action": action,
+                    "url": state.progress_url,
+                    "progress_url": state.progress_url,
+                    "managed": False,
+                },
+            )
         ok, message, data = state.progress_monitor.launch()
         data = dict(data)
         data["action"] = action
         data["url"] = data.get("url") or state.progress_url
-        data["progress_url"] = data.get("progress_url") or data.get("url") or state.progress_url
+        data["progress_url"] = (
+            data.get("progress_url") or data.get("url") or state.progress_url
+        )
         state.progress_url = str(data["progress_url"])
         return ok, message, data
 
     if action == "list_processes":
-        records = [r.to_dict() for r in state.process_registry.all_records(refresh=True)]
-        return True, f"{len(records)} launcher process record(s)", {
-            "action": action,
-            "processes": records,
-            "process_counts": state.process_registry.counts(),
-            "launcher_log_choices": log_reader.launcher_log_choices(records),
-            "shutdown": _shutdown_snapshot(state),
-        }
+        records = [
+            r.to_dict() for r in state.process_registry.all_records(refresh=True)
+        ]
+        return (
+            True,
+            f"{len(records)} launcher process record(s)",
+            {
+                "action": action,
+                "processes": records,
+                "process_counts": state.process_registry.counts(),
+                "launcher_log_choices": log_reader.launcher_log_choices(records),
+                "shutdown": _shutdown_snapshot(state),
+            },
+        )
 
     if action == "read_operator_log":
         limit = params.get("limit", 100)
         data = log_reader.read_operator_log(state.operator_log_path, limit=limit)
         data["action"] = action
-        return bool(data.get("ok")), str(data.get("reason") or "operator log read"), data
+        return (
+            bool(data.get("ok")),
+            str(data.get("reason") or "operator log read"),
+            data,
+        )
 
     if action == "read_log_file":
         extra_roots = []
-        if state.progress_monitor is not None and getattr(state.progress_monitor, "log_dir", None) is not None:
+        if (
+            state.progress_monitor is not None
+            and getattr(state.progress_monitor, "log_dir", None) is not None
+        ):
             extra_roots.append(Path(state.progress_monitor.log_dir))
         data = log_reader.read_text_log(
             params.get("path"),
@@ -2211,18 +2542,28 @@ def dispatch_action(
         return bool(data.get("ok")), str(data.get("reason") or "log file read"), data
 
     if action == "cleanup_status":
-        records = [r.to_dict() for r in state.process_registry.all_records(refresh=True)]
-        return True, "console cleanup status", {
-            "action": action,
-            "processes": records,
-            "process_counts": state.process_registry.counts(),
-            "progress_monitor": (
-                state.progress_monitor.status(check_external=True).to_dict()
-                if state.progress_monitor is not None
-                else {"url": state.progress_url, "running": False, "owned_by_console": False}
-            ),
-            "shutdown": _shutdown_snapshot(state),
-        }
+        records = [
+            r.to_dict() for r in state.process_registry.all_records(refresh=True)
+        ]
+        return (
+            True,
+            "console cleanup status",
+            {
+                "action": action,
+                "processes": records,
+                "process_counts": state.process_registry.counts(),
+                "progress_monitor": (
+                    state.progress_monitor.status(check_external=True).to_dict()
+                    if state.progress_monitor is not None
+                    else {
+                        "url": state.progress_url,
+                        "running": False,
+                        "owned_by_console": False,
+                    }
+                ),
+                "shutdown": _shutdown_snapshot(state),
+            },
+        )
 
     if action == "reset_local_console_state":
         ok, message, data = _reset_local_console_state(state, reason="browser action")
@@ -2244,10 +2585,14 @@ def dispatch_action(
             state,
             include_progress_health=bool(include_progress_health),
         )
-        return bool(result.get("ok")), "operator console self-check completed", {
-            "action": action,
-            "self_check": result,
-        }
+        return (
+            bool(result.get("ok")),
+            "operator console self-check completed",
+            {
+                "action": action,
+                "self_check": result,
+            },
+        )
 
     if action in {"terminate_process", "kill_process"}:
         return _request_launcher_stop(
@@ -2284,7 +2629,9 @@ def dispatch_action(
             kill=False,
         )
 
-    conflict_reason = _operator_status_operation_conflict(state, requested_action=action)
+    conflict_reason = _operator_status_operation_conflict(
+        state, requested_action=action
+    )
     if conflict_reason is not None:
         return False, conflict_reason, {"action": action, "operation_conflict": True}
 
@@ -2292,25 +2639,39 @@ def dispatch_action(
         progress = (
             state.progress_monitor.status(check_external=True).to_dict()
             if state.progress_monitor is not None
-            else {"url": state.progress_url, "running": False, "owned_by_console": False}
+            else {
+                "url": state.progress_url,
+                "running": False,
+                "owned_by_console": False,
+            }
         )
-        return True, "progress monitor status", {
-            "action": action,
-            "progress_monitor": progress,
-            "progress_url": progress.get("url") or state.progress_url,
-        }
+        return (
+            True,
+            "progress monitor status",
+            {
+                "action": action,
+                "progress_monitor": progress,
+                "progress_url": progress.get("url") or state.progress_url,
+            },
+        )
 
     if action == "acquire_authority":
         if state.authority.held and state.authority.session_id != session_id:
             return False, "authority is already held by another browser session", {}
         if state.authority.held and state.authority.session_id == session_id:
-            return True, "authority is already held by this browser session", {
-                "necst_held": state.authority.necst_held,
-                "identity": state.authority.necst_identity,
-                "mode": state.authority.mode,
-            }
+            return (
+                True,
+                "authority is already held by this browser session",
+                {
+                    "necst_held": state.authority.necst_held,
+                    "identity": state.authority.necst_identity,
+                    "mode": state.authority.mode,
+                },
+            )
         actions = _load_operator_actions()
-        handle = actions.OperatorAuthoritySession(dry_run=state.action_mode == "dry-run")
+        handle = actions.OperatorAuthoritySession(
+            dry_run=state.action_mode == "dry-run"
+        )
         result = handle.acquire()
         ok, message, data = _result_to_response(result)
         if not ok:
@@ -2318,7 +2679,9 @@ def dispatch_action(
         state.authority_handle = handle
         state.authority.held = True
         state.authority.session_id = session_id
-        state.authority.necst_held = bool(data.get("held")) and state.action_mode != "dry-run"
+        state.authority.necst_held = (
+            bool(data.get("held")) and state.action_mode != "dry-run"
+        )
         state.authority.necst_identity = data.get("identity")
         state.authority.mode = "dry-run" if state.action_mode == "dry-run" else "necst"
         state.authority.note = message
@@ -2355,7 +2718,18 @@ def dispatch_action(
         data["action"] = action
         return ok, message, data
 
-    if action in {"mount_move", "start_tracking", "start_observation", "run_rsky", "run_skydip", "chopper_in", "chopper_out", "chopper_alarm_reset", "chopper_home", "chopper_recover"}:
+    if action in {
+        "mount_move",
+        "start_tracking",
+        "start_observation",
+        "run_rsky",
+        "run_skydip",
+        "chopper_in",
+        "chopper_out",
+        "chopper_alarm_reset",
+        "chopper_home",
+        "chopper_recover",
+    }:
         allowed, reason = _authority_allows(state, session_id)
         if not allowed:
             return False, reason, {"action": action}
@@ -2363,14 +2737,18 @@ def dispatch_action(
     if action == "mount_move_dry_run":
         validate_site_capability(state, "mount_move", action_label="mount move")
         az, el = validate_mount_target(params, state.mount_limits)
-        return True, f"dry-run mount move OK: Az={az:.6f} deg, El={el:.6f} deg; no command was sent", {
-            "action": action,
-            "az_deg": az,
-            "el_deg": el,
-            "unit": "deg",
-            "direct_mode": True,
-            "az_target_mode": "mount",
-        }
+        return (
+            True,
+            f"dry-run mount move OK: Az={az:.6f} deg, El={el:.6f} deg; no command was sent",
+            {
+                "action": action,
+                "az_deg": az,
+                "el_deg": el,
+                "unit": "deg",
+                "direct_mode": True,
+                "az_target_mode": "mount",
+            },
+        )
 
     if action == "mount_move":
         validate_site_capability(state, "mount_move", action_label="mount move")
@@ -2382,15 +2760,19 @@ def dispatch_action(
             state.last_mount_target_el = el
             state.last_mount_target_started_at = time.time()
             state.last_mount_target_reached_since = None
-            return True, f"dry-run mount move: Az={az:.6f} deg, El={el:.6f} deg; no command was sent", {
-                "action": action,
-                "az_deg": az,
-                "el_deg": el,
-                "unit": "deg",
-                "direct_mode": True,
-                "az_target_mode": "mount",
-                "dry_run": True,
-            }
+            return (
+                True,
+                f"dry-run mount move: Az={az:.6f} deg, El={el:.6f} deg; no command was sent",
+                {
+                    "action": action,
+                    "az_deg": az,
+                    "el_deg": el,
+                    "unit": "deg",
+                    "direct_mode": True,
+                    "az_target_mode": "mount",
+                    "dry_run": True,
+                },
+            )
         result = _load_operator_actions().mount_move(
             az,
             el,
@@ -2445,7 +2827,9 @@ def dispatch_action(
         return ok, message, data
 
     if action == "start_tracking":
-        validate_site_capability(state, "target_tracking", action_label="target tracking")
+        validate_site_capability(
+            state, "target_tracking", action_label="target tracking"
+        )
         actions = _load_operator_actions()
         dry_run = state.action_mode == "dry-run"
         result = actions.start_target_tracking(
@@ -2483,7 +2867,11 @@ def dispatch_action(
         if state.action_mode == "dry-run":
             data = {"action": action, "dry_run": True}
             data.update(safety_data)
-            return True, "dry-run Stop tracking: antenna stop command was not sent", data
+            return (
+                True,
+                "dry-run Stop tracking: antenna stop command was not sent",
+                data,
+            )
         result = _load_operator_actions().stop_tracking(
             commander=_any_held_commander(state),
         )
@@ -2525,7 +2913,9 @@ def dispatch_action(
         return ok, message, data
 
     if action == "start_observation":
-        validate_site_capability(state, "observation_start", action_label="observation start")
+        validate_site_capability(
+            state, "observation_start", action_label="observation start"
+        )
         mode, path, channel = validate_observation_selection(params)
         dry_run = state.action_mode == "dry-run"
         actions = _load_operator_actions()
@@ -2699,17 +3089,23 @@ def dispatch_action(
     if action == "chopper_status":
         validate_site_capability(state, "chopper_status", action_label="chopper status")
         if state.action_mode == "dry-run":
-            return True, "dry-run chopper status: no telemetry query was sent", {
-                "action": action,
-                "dry_run": True,
-                "site_config": state.site_summary.to_dict(),
-            }
+            return (
+                True,
+                "dry-run chopper status: no telemetry query was sent",
+                {
+                    "action": action,
+                    "dry_run": True,
+                    "site_config": state.site_summary.to_dict(),
+                },
+            )
         result = _load_operator_actions().chopper_status(
             commander=_held_commander_for_session(state, session_id),
         )
         ok, message, data = _result_to_response(result)
         if ok:
-            state.last_chopper_state = str(data.get("state") or state.last_chopper_state)
+            state.last_chopper_state = str(
+                data.get("state") or state.last_chopper_state
+            )
         return ok, message, data
 
     if action in {"chopper_in", "chopper_out"}:
@@ -2718,7 +3114,11 @@ def dispatch_action(
         if state.action_mode == "dry-run":
             data = chopper_dry_run_payload(state, command)
             data.update({"action": action, "dry_run": True})
-            return True, f"dry-run chopper {command.upper()}: command was not sent", data
+            return (
+                True,
+                f"dry-run chopper {command.upper()}: command was not sent",
+                data,
+            )
         result = _load_operator_actions().chopper_move(
             command,
             wait=False,
@@ -2741,11 +3141,15 @@ def dispatch_action(
             "chopper_recover": "recover",
         }[action]
         if state.action_mode == "dry-run":
-            return True, f"dry-run chopper {maintenance}: command was not sent", {
-                "action": action,
-                "dry_run": True,
-                "command": maintenance,
-            }
+            return (
+                True,
+                f"dry-run chopper {maintenance}: command was not sent",
+                {
+                    "action": action,
+                    "dry_run": True,
+                    "command": maintenance,
+                },
+            )
         result = _load_operator_actions().chopper_maintenance(
             maintenance,
             commander=_held_commander_for_session(state, session_id),
@@ -2760,7 +3164,9 @@ def _operator_status_to_v7_status(
 ) -> JsonDict:
     """Adapt canonical operator_status to the v7 console-demo JSON shape."""
 
-    op = status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
+    op = (
+        status_state.get("operator_status") if isinstance(status_state, Mapping) else {}
+    )
     if not isinstance(op, Mapping):
         op = {}
     system = op.get("system") if isinstance(op.get("system"), Mapping) else {}
@@ -2768,7 +3174,9 @@ def _operator_status_to_v7_status(
     antenna = op.get("antenna") if isinstance(op.get("antenna"), Mapping) else {}
     chopper = op.get("chopper") if isinstance(op.get("chopper"), Mapping) else {}
     progress = op.get("progress") if isinstance(op.get("progress"), Mapping) else {}
-    observation = op.get("observation") if isinstance(op.get("observation"), Mapping) else {}
+    observation = (
+        op.get("observation") if isinstance(op.get("observation"), Mapping) else {}
+    )
     paths = op.get("paths") if isinstance(op.get("paths"), Mapping) else {}
     warnings = op.get("warnings") if isinstance(op.get("warnings"), list) else []
 
@@ -2787,7 +3195,9 @@ def _operator_status_to_v7_status(
         )
     }
     stale_observation = _stale_observation_state(state, status_state, op)
-    if stale_observation.get("running_stale") or stale_observation.get("launcher_stuck"):
+    if stale_observation.get("running_stale") or stale_observation.get(
+        "launcher_stuck"
+    ):
         sys_state = "stale_observation"
         warnings = list(warnings) + [
             stale_observation.get("reason")
@@ -2815,7 +3225,11 @@ def _operator_status_to_v7_status(
         # stale fallback made the Manual panel keep showing "moving" after
         # an abort or after the command/status topics disappeared.  Dry-run
         # still uses the local action memory because there are no live topics.
-        active_task = str(state.last_active_task or "none") if state.action_mode == "dry-run" else "none"
+        active_task = (
+            str(state.last_active_task or "none")
+            if state.action_mode == "dry-run"
+            else "none"
+        )
     else:
         active_task = raw_active_task
     if active_task.lower() in {"", "idle", "unknown"}:
@@ -2825,7 +3239,11 @@ def _operator_status_to_v7_status(
     if motion_at_target_idle:
         raw_manual_state = "idle"
     if raw_manual_state.lower() in {"", "idle", "none", "unknown"}:
-        manual_state = str(state.last_manual_state or "idle") if state.action_mode == "dry-run" else "idle"
+        manual_state = (
+            str(state.last_manual_state or "idle")
+            if state.action_mode == "dry-run"
+            else "idle"
+        )
     else:
         manual_state = raw_manual_state
     if manual_state.lower() in {"", "none", "unknown"}:
@@ -2857,7 +3275,15 @@ def _operator_status_to_v7_status(
     motion_source_lower = str(motion.get("live_motion_source") or "").strip().lower()
     operator_mount_target_reached = False
     operator_mount_target_idle = False
-    if state.action_mode != "dry-run" and sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}:
+    if state.action_mode != "dry-run" and sys_state in {
+        "",
+        "idle",
+        "unknown",
+        "finished",
+        "aborted",
+        "error",
+        "failed",
+    }:
         operator_mount_target_reached = _last_mount_target_reached(
             state,
             current_az=az,
@@ -2892,7 +3318,8 @@ def _operator_status_to_v7_status(
     safety_release_idle = bool(
         state.action_mode != "dry-run"
         and safety_release_age is not None
-        and sys_state in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
+        and sys_state
+        in {"", "idle", "unknown", "finished", "aborted", "error", "failed"}
         and command_absent
         and safety_release_age >= SAFETY_RELEASE_ASSUME_IDLE_AFTER_SEC
     )
@@ -2935,7 +3362,9 @@ def _operator_status_to_v7_status(
         motion_source_lower = "operator_command_target_pending"
 
     if state.action_mode == "dry-run":
-        chopper_state = str(chopper.get("state") or state.last_chopper_state or "unknown")
+        chopper_state = str(
+            chopper.get("state") or state.last_chopper_state or "unknown"
+        )
         chopper_position = chopper.get("position")
         if chopper_position is None:
             chopper_position = state.last_chopper_position
@@ -2961,7 +3390,9 @@ def _operator_status_to_v7_status(
         if state.progress_monitor is not None
         else {"url": state.progress_url, "running": False, "owned_by_console": False}
     )
-    progress_running = bool(monitor_status.get("running")) or bool(observation_progress_running)
+    progress_running = bool(monitor_status.get("running")) or bool(
+        observation_progress_running
+    )
 
     return {
         "telescope": state.telescope,
@@ -3008,10 +3439,15 @@ def _operator_status_to_v7_status(
         "observation": {
             "record_name": observation.get("record_name"),
             "obs_file": observation.get("obs_file"),
-            "recording_dir": observation.get("recording_dir") or paths.get("recording_dir"),
-            "local_recording_dir": observation.get("local_recording_dir") or paths.get("local_recording_dir"),
-            "record_path_display_mode": observation.get("record_path_display_mode") or paths.get("record_path_display_mode") or "local",
-            "progress_record_dir": observation.get("progress_record_dir") or paths.get("progress_record_dir"),
+            "recording_dir": observation.get("recording_dir")
+            or paths.get("recording_dir"),
+            "local_recording_dir": observation.get("local_recording_dir")
+            or paths.get("local_recording_dir"),
+            "record_path_display_mode": observation.get("record_path_display_mode")
+            or paths.get("record_path_display_mode")
+            or "local",
+            "progress_record_dir": observation.get("progress_record_dir")
+            or paths.get("progress_record_dir"),
         },
         "authority": {
             "held": state.authority.held,
@@ -3026,7 +3462,12 @@ def _operator_status_to_v7_status(
                 else "already_free"
             ),
             "safety_actions_bypass_browser_gate": True,
-            "safety_actions": ["stop", "stop_tracking", "abort_observation", "terminate_*_launcher"],
+            "safety_actions": [
+                "stop",
+                "stop_tracking",
+                "abort_observation",
+                "terminate_*_launcher",
+            ],
         },
         "mount_limits": dict(state.mount_limits),
         "site": state.site_summary.to_dict(),
@@ -3034,7 +3475,9 @@ def _operator_status_to_v7_status(
         "warning_count": len(warnings) + len(state.site_summary.warnings),
         "warnings": list(warnings) + list(state.site_summary.warnings),
         "log": [entry.__dict__ for entry in state.log],
-        "processes": [r.to_dict() for r in state.process_registry.all_records(refresh=False)],
+        "processes": [
+            r.to_dict() for r in state.process_registry.all_records(refresh=False)
+        ],
         "process_counts": state.process_registry.counts(),
         "exclusive_start_guard": {
             "action": state.exclusive_start_action,
@@ -3049,15 +3492,25 @@ def _operator_status_to_v7_status(
             "guard_sec": EXCLUSIVE_START_STATUS_SEC,
             "blocking_sec": EXCLUSIVE_START_BLOCK_SEC,
         },
-        "launcher_log_choices": log_reader.launcher_log_choices([
-            r.to_dict() for r in state.process_registry.all_records(refresh=False)
-        ]),
+        "launcher_log_choices": log_reader.launcher_log_choices(
+            [r.to_dict() for r in state.process_registry.all_records(refresh=False)]
+        ),
         "last_launcher_failure": dict(state.last_launcher_failure or {}),
         "shutdown": _shutdown_snapshot(state),
         "self_check_endpoint": "/api/self-check",
-        "operator_log_path": str(state.operator_log_path) if state.operator_log_path is not None else None,
-        "launcher_log_dir": str(state.launcher_log_dir) if state.launcher_log_dir is not None else None,
-        "observation_log": (state.observation_log.status() if state.observation_log is not None else {"ok": False}),
+        "operator_log_path": (
+            str(state.operator_log_path)
+            if state.operator_log_path is not None
+            else None
+        ),
+        "launcher_log_dir": (
+            str(state.launcher_log_dir) if state.launcher_log_dir is not None else None
+        ),
+        "observation_log": (
+            state.observation_log.status()
+            if state.observation_log is not None
+            else {"ok": False}
+        ),
         "action_mode": state.action_mode,
         "live_actions": {
             "enabled": bool(state.live_actions_enabled),
@@ -3089,7 +3542,9 @@ def _build_console_status_unchecked(state: OperatorConsoleState) -> JsonDict:
         _refresh_processes_and_log(state)
         _sync_authority_state(state)
         _prune_exclusive_start_guard(state)
-        live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
+        live_payload = (
+            state.live_cache.snapshot() if state.live_cache is not None else None
+        )
         status_state = status_model.build_progress_status_state(
             state.progress_root,
             events_limit=state.events_limit,
@@ -3105,7 +3560,10 @@ def _build_console_status_unchecked(state: OperatorConsoleState) -> JsonDict:
             payload["warning_count"] = len(payload.get("warnings") or [])
         payload["node_health"] = _node_health_snapshot(state)
         if state.local_state_reset_archive:
-            payload["local_state_reset"] = dict(state.local_state_reset_summary or {"archive_dir": state.local_state_reset_archive})
+            payload["local_state_reset"] = dict(
+                state.local_state_reset_summary
+                or {"archive_dir": state.local_state_reset_archive}
+            )
         return payload
 
 
@@ -3154,12 +3612,14 @@ def _node_health_snapshot(state: OperatorConsoleState) -> JsonDict:
     try:
         missing_required = tuple(payload.get("missing_required") or [])
         missing_optional = tuple(payload.get("missing_optional") or [])
-        event_key = "|".join([
-            str(payload.get("system") or ""),
-            ",".join(missing_required),
-            ",".join(missing_optional),
-            str(payload.get("error") or ""),
-        ])
+        event_key = "|".join(
+            [
+                str(payload.get("system") or ""),
+                ",".join(missing_required),
+                ",".join(missing_optional),
+                str(payload.get("error") or ""),
+            ]
+        )
         if event_key != state.last_node_health_event_key:
             state.last_node_health_event_key = event_key
             if payload.get("system") in {"NG", "UNKNOWN"} or missing_optional:
@@ -3195,7 +3655,9 @@ def _node_health_rescue_payload(state: OperatorConsoleState, message: str) -> Js
     )
 
 
-def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException) -> JsonDict:
+def build_minimal_rescue_status(
+    state: OperatorConsoleState, exc: BaseException
+) -> JsonDict:
     """Return a status payload that is deliberately hard to break.
 
     The browser must keep showing STOP/ABORT and local recovery controls even if
@@ -3210,9 +3672,19 @@ def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException)
         process_counts = state.process_registry.counts()
     except Exception as proc_exc:
         processes = []
-        process_counts = {"total": 0, "active": 0, "finished": 0, "by_category": {}, "error": str(proc_exc)}
+        process_counts = {
+            "total": 0,
+            "active": 0,
+            "finished": 0,
+            "by_category": {},
+            "error": str(proc_exc),
+        }
     try:
-        obslog_status = state.observation_log.status() if state.observation_log is not None else {"ok": False}
+        obslog_status = (
+            state.observation_log.status()
+            if state.observation_log is not None
+            else {"ok": False}
+        )
     except Exception as log_exc:
         obslog_status = {"ok": False, "last_error": str(log_exc)}
     try:
@@ -3228,7 +3700,11 @@ def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException)
     except Exception:
         mount_limits = {}
     try:
-        progress_status = state.progress_monitor.status().to_dict() if state.progress_monitor is not None else {}
+        progress_status = (
+            state.progress_monitor.status().to_dict()
+            if state.progress_monitor is not None
+            else {}
+        )
     except Exception as progress_exc:
         progress_status = {"status": "error", "message": str(progress_exc)}
     warnings = [
@@ -3263,7 +3739,12 @@ def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException)
             "necst_held": bool(getattr(state.authority, "necst_held", False)),
             "mode": getattr(state.authority, "mode", "unknown"),
             "safety_actions_bypass_browser_gate": True,
-            "safety_actions": ["stop", "stop_tracking", "abort_observation", "terminate_*_launcher"],
+            "safety_actions": [
+                "stop",
+                "stop_tracking",
+                "abort_observation",
+                "terminate_*_launcher",
+            ],
         },
         "chopper": {
             "state": getattr(state, "last_chopper_state", "unknown") or "unknown",
@@ -3283,22 +3764,36 @@ def build_minimal_rescue_status(state: OperatorConsoleState, exc: BaseException)
         "processes": processes,
         "process_counts": process_counts,
         "launcher_log_choices": [],
-        "last_launcher_failure": dict(getattr(state, "last_launcher_failure", {}) or {}),
+        "last_launcher_failure": dict(
+            getattr(state, "last_launcher_failure", {}) or {}
+        ),
         "shutdown": _shutdown_snapshot(state),
         "self_check_endpoint": "/api/self-check",
-        "operator_log_path": str(state.operator_log_path) if state.operator_log_path is not None else None,
-        "launcher_log_dir": str(state.launcher_log_dir) if state.launcher_log_dir is not None else None,
+        "operator_log_path": (
+            str(state.operator_log_path)
+            if state.operator_log_path is not None
+            else None
+        ),
+        "launcher_log_dir": (
+            str(state.launcher_log_dir) if state.launcher_log_dir is not None else None
+        ),
         "observation_log": obslog_status,
         "action_mode": state.action_mode,
         "live_actions": {
             "enabled": bool(state.live_actions_enabled),
-            "guarded": state.action_mode == "live" and not bool(state.live_actions_enabled),
+            "guarded": state.action_mode == "live"
+            and not bool(state.live_actions_enabled),
             "write_actions": sorted(LIVE_WRITE_ACTIONS),
             "safety_actions": sorted(SAFETY_ACTIONS),
             "message": "minimal rescue status after status builder failure",
         },
         "status_refresh_ms": int(state.status_refresh_ms),
-        "live_telemetry": {"requested": not bool(state.status_no_ros), "available": False, "spin_mode": "rescue", "error": message},
+        "live_telemetry": {
+            "requested": not bool(state.status_no_ros),
+            "available": False,
+            "spin_mode": "rescue",
+            "error": message,
+        },
         "node_health": _node_health_rescue_payload(state, message),
         "operator_status": {},
         "status_error": {"message": message, "time": now},
@@ -3322,7 +3817,11 @@ def build_console_status(state: OperatorConsoleState) -> JsonDict:
                 if message != last or (time.time() - last_at) > 30.0:
                     state.last_status_exception_message = message
                     state.last_status_exception_at = time.time()
-                    state.add_log(False, f"normal status generation failed; using minimal rescue status: {message}", action="status_rescue")
+                    state.add_log(
+                        False,
+                        f"normal status generation failed; using minimal rescue status: {message}",
+                        action="status_rescue",
+                    )
         except Exception:
             pass
         return build_minimal_rescue_status(state, exc)
@@ -3371,7 +3870,9 @@ class OperatorConsoleHTTPServer(ThreadingHTTPServer):
     ) -> None:
         super().__init__(server_address, handler_class)
         self.state = state
-        self.html = html if html is not None else load_demo_html(state.status_refresh_ms)
+        self.html = (
+            html if html is not None else load_demo_html(state.status_refresh_ms)
+        )
 
 
 class OperatorConsoleHandler(BaseHTTPRequestHandler):
@@ -3389,7 +3890,9 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _send_text(self, text: str, content_type: str = "text/html; charset=utf-8") -> None:
+    def _send_text(
+        self, text: str, content_type: str = "text/html; charset=utf-8"
+    ) -> None:
         body = text.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", content_type)
@@ -3402,18 +3905,26 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
             self._send_text(self.server.html)
             return
         if self.path == "/health":
-            self._send_json({
-                "ok": True,
-                "action_mode": self.server.state.action_mode,
-                "live_actions_enabled": bool(self.server.state.live_actions_enabled),
-                "status_refresh_ms": int(self.server.state.status_refresh_ms),
-            })
+            self._send_json(
+                {
+                    "ok": True,
+                    "action_mode": self.server.state.action_mode,
+                    "live_actions_enabled": bool(
+                        self.server.state.live_actions_enabled
+                    ),
+                    "status_refresh_ms": int(self.server.state.status_refresh_ms),
+                }
+            )
             return
         if self.path == "/api/status":
             self._send_json(build_console_status(self.server.state))
             return
         if self.path == "/api/rescue/status":
-            self._send_json(build_minimal_rescue_status(self.server.state, RuntimeError("rescue status requested")))
+            self._send_json(
+                build_minimal_rescue_status(
+                    self.server.state, RuntimeError("rescue status requested")
+                )
+            )
             return
         parsed = urllib.parse.urlparse(self.path)
         query = urllib.parse.parse_qs(parsed.query)
@@ -3423,22 +3934,36 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/obs-list":
             try:
                 directory = (query.get("dir") or [""])[0]
-                self._send_json(list_server_obs_files(self.server.state.obs_roots, directory))
+                self._send_json(
+                    list_server_obs_files(self.server.state.obs_roots, directory)
+                )
             except Exception as exc:
-                self._send_json({"ok": False, "reason": str(exc), "entries": []}, status=400)
+                self._send_json(
+                    {"ok": False, "reason": str(exc), "entries": []}, status=400
+                )
             return
         if parsed.path == "/api/obs-preview":
             try:
                 path = (query.get("path") or [""])[0]
                 max_bytes = int((query.get("max_bytes") or [65536])[0])
-                self._send_json(preview_server_obs_file(self.server.state.obs_roots, path, max_bytes=max_bytes))
+                self._send_json(
+                    preview_server_obs_file(
+                        self.server.state.obs_roots, path, max_bytes=max_bytes
+                    )
+                )
             except Exception as exc:
-                self._send_json({"ok": False, "reason": str(exc), "text": ""}, status=400)
+                self._send_json(
+                    {"ok": False, "reason": str(exc), "text": ""}, status=400
+                )
             return
         if self.path == "/api/operator-status":
             state = self.server.state
             try:
-                live_payload = state.live_cache.snapshot() if state.live_cache is not None else None
+                live_payload = (
+                    state.live_cache.snapshot()
+                    if state.live_cache is not None
+                    else None
+                )
                 status_state = status_model.build_progress_status_state(
                     state.progress_root,
                     events_limit=state.events_limit,
@@ -3446,33 +3971,56 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
                 )
                 self._send_json(status_state.get("operator_status", {}))
             except Exception as exc:
-                self._send_json({"ok": False, "reason": str(exc), "operator_status": {}}, status=200)
+                self._send_json(
+                    {"ok": False, "reason": str(exc), "operator_status": {}}, status=200
+                )
             return
         if parsed.path == "/api/processes":
             state = self.server.state
             with state.lock:
                 _refresh_processes_and_log(state)
-                process_records = [r.to_dict() for r in state.process_registry.all_records(refresh=False)]
-                self._send_json({
-                    "processes": process_records,
-                    "process_counts": state.process_registry.counts(),
-                    "launcher_log_choices": log_reader.launcher_log_choices(process_records),
-                    "progress_monitor": (
-                        state.progress_monitor.status(check_external=True).to_dict()
-                        if state.progress_monitor is not None
-                        else {"url": state.progress_url, "running": False, "owned_by_console": False}
-                    ),
-                    "shutdown": _shutdown_snapshot(state),
-                    "operator_log_path": str(state.operator_log_path) if state.operator_log_path is not None else None,
-                    "launcher_log_dir": str(state.launcher_log_dir) if state.launcher_log_dir is not None else None,
-                })
+                process_records = [
+                    r.to_dict()
+                    for r in state.process_registry.all_records(refresh=False)
+                ]
+                self._send_json(
+                    {
+                        "processes": process_records,
+                        "process_counts": state.process_registry.counts(),
+                        "launcher_log_choices": log_reader.launcher_log_choices(
+                            process_records
+                        ),
+                        "progress_monitor": (
+                            state.progress_monitor.status(check_external=True).to_dict()
+                            if state.progress_monitor is not None
+                            else {
+                                "url": state.progress_url,
+                                "running": False,
+                                "owned_by_console": False,
+                            }
+                        ),
+                        "shutdown": _shutdown_snapshot(state),
+                        "operator_log_path": (
+                            str(state.operator_log_path)
+                            if state.operator_log_path is not None
+                            else None
+                        ),
+                        "launcher_log_dir": (
+                            str(state.launcher_log_dir)
+                            if state.launcher_log_dir is not None
+                            else None
+                        ),
+                    }
+                )
             return
         if parsed.path == "/api/operator-log":
             state = self.server.state
             with state.lock:
                 _refresh_processes_and_log(state)
                 limit = (query.get("limit") or [100])[0]
-                self._send_json(log_reader.read_operator_log(state.operator_log_path, limit=limit))
+                self._send_json(
+                    log_reader.read_operator_log(state.operator_log_path, limit=limit)
+                )
             return
         if parsed.path == "/api/log-file":
             state = self.server.state
@@ -3480,15 +4028,20 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
                 path = (query.get("path") or [""])[0]
                 max_bytes = (query.get("max_bytes") or [32768])[0]
                 extra_roots = []
-                if state.progress_monitor is not None and getattr(state.progress_monitor, "log_dir", None) is not None:
+                if (
+                    state.progress_monitor is not None
+                    and getattr(state.progress_monitor, "log_dir", None) is not None
+                ):
                     extra_roots.append(Path(state.progress_monitor.log_dir))
-                self._send_json(log_reader.read_text_log(
-                    path,
-                    launcher_log_dir=state.launcher_log_dir,
-                    operator_log_path=state.operator_log_path,
-                    max_bytes=max_bytes,
-                    extra_roots=extra_roots,
-                ))
+                self._send_json(
+                    log_reader.read_text_log(
+                        path,
+                        launcher_log_dir=state.launcher_log_dir,
+                        operator_log_path=state.operator_log_path,
+                        max_bytes=max_bytes,
+                        extra_roots=extra_roots,
+                    )
+                )
             return
         if parsed.path == "/api/self-check":
             state = self.server.state
@@ -3509,7 +4062,9 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
             self._send_json({"ok": False, "reason": f"invalid JSON: {exc}"}, status=400)
             return
         action = str(payload.get("action") or "")
-        params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
+        params = (
+            payload.get("params") if isinstance(payload.get("params"), dict) else {}
+        )
         session_id = str(payload.get("session_id") or uuid.uuid4())
         with self.server.state.lock:
             try:
@@ -3524,8 +4079,14 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
                     session_id,
                 )
             except Exception as exc:
-                ok, reason, data = False, str(exc), {"exception_type": type(exc).__name__}
-            self.server.state.add_log(ok, reason, action=action, session_id=session_id, data=data)
+                ok, reason, data = (
+                    False,
+                    str(exc),
+                    {"exception_type": type(exc).__name__},
+                )
+            self.server.state.add_log(
+                ok, reason, action=action, session_id=session_id, data=data
+            )
             if isinstance(data, Mapping):
                 _write_observation_log_for_action(
                     self.server.state,
@@ -3541,7 +4102,6 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
             elif data.get("url") is not None and action == "launch_progress":
                 response["progress_url"] = data.get("url")
         self._send_json(response)
-
 
 
 def _run_shutdown_cleanup(state: OperatorConsoleState) -> JsonDict:
@@ -3564,7 +4124,9 @@ def _run_shutdown_cleanup(state: OperatorConsoleState) -> JsonDict:
 
     ok, message, data = _release_console_authority(state, force=True)
     summary["authority"] = {"ok": ok, "message": message, "data": data}
-    state.add_log(ok, f"console shutdown: {message}", action="authority_release", data=data)
+    state.add_log(
+        ok, f"console shutdown: {message}", action="authority_release", data=data
+    )
 
     if state.shutdown_terminate_launchers:
         launcher_summary = state.process_registry.graceful_shutdown(
@@ -3620,6 +4182,7 @@ def _run_shutdown_cleanup(state: OperatorConsoleState) -> JsonDict:
     state.cleanup_summary = summary
     return summary
 
+
 def run_server(
     *,
     host: str,
@@ -3671,7 +4234,11 @@ def run_server(
     resolved_operator_log_dir = (
         Path(operator_log_dir).expanduser()
         if operator_log_dir not in (None, "")
-        else Path(os.environ.get("NECST_OPERATOR_LOG_DIR", Path.home() / ".necst" / "operator_console")).expanduser()
+        else Path(
+            os.environ.get(
+                "NECST_OPERATOR_LOG_DIR", Path.home() / ".necst" / "operator_console"
+            )
+        ).expanduser()
     )
     resolved_launcher_log_dir = (
         Path(launcher_log_dir)
@@ -3695,7 +4262,8 @@ def run_server(
         local_state_reset_summary = reset_local_console_state_files(
             progress_root=progress_root,
             operator_log_dir=resolved_operator_log_dir,
-            reason="console startup --reset-local-state" + ("/--rescue" if rescue else ""),
+            reason="console startup --reset-local-state"
+            + ("/--rescue" if rescue else ""),
         )
     resolved_obs_roots = resolve_obs_roots(obs_roots)
     obslog_site_config = dict(getattr(site_summary, "observation_log", {}) or {})
@@ -3761,11 +4329,19 @@ def run_server(
         shutdown_launcher_kill_timeout_sec=float(shutdown_launcher_kill_timeout_sec),
         safe_start=bool(safe_start),
         rescue_mode=bool(rescue),
-        local_state_reset_archive=str(local_state_reset_summary.get("archive_dir") or ""),
+        local_state_reset_archive=str(
+            local_state_reset_summary.get("archive_dir") or ""
+        ),
         local_state_reset_summary=dict(local_state_reset_summary),
     )
-    state.live_cache = live_telemetry.LiveTelemetryCache(enabled=not bool(status_no_ros))
-    if state.live_cache is not None and state.live_cache.available and not bool(safe_start):
+    state.live_cache = live_telemetry.LiveTelemetryCache(
+        enabled=not bool(status_no_ros)
+    )
+    if (
+        state.live_cache is not None
+        and state.live_cache.available
+        and not bool(safe_start)
+    ):
         # Wait briefly for the first encoder/pointing sample so the console
         # starts with real Current Az/El whenever ROS status topics are alive.
         # This is read-only; it does not send any telescope command.
@@ -3773,7 +4349,11 @@ def run_server(
             state.live_cache.wait_for_initial_position(timeout_sec=2.0)
         except Exception as exc:
             state.live_cache.error = f"initial live telemetry wait failed: {exc}"
-    state.add_log(True, f"console started in action_mode={action_mode}" + (" (safe/rescue mode)" if (safe_start or rescue) else ""))
+    state.add_log(
+        True,
+        f"console started in action_mode={action_mode}"
+        + (" (safe/rescue mode)" if (safe_start or rescue) else ""),
+    )
     if safe_start or rescue:
         state.add_log(
             True,
@@ -3793,7 +4373,9 @@ def run_server(
                 {},
                 mode="Console",
                 event="local_state_reset",
-                action_or_obsfile=str(local_state_reset_summary.get("archive_dir") or ""),
+                action_or_obsfile=str(
+                    local_state_reset_summary.get("archive_dir") or ""
+                ),
                 result="success" if local_state_reset_summary.get("ok") else "failed",
                 comment="startup reset; no hardware command sent",
             )
@@ -3820,7 +4402,8 @@ def run_server(
     state.add_log(
         bool(resolved_obs_roots),
         (
-            "NECST-side file chooser locations configured: " + ", ".join(str(p) for p in resolved_obs_roots)
+            "NECST-side file chooser locations configured: "
+            + ", ".join(str(p) for p in resolved_obs_roots)
             if resolved_obs_roots
             else "NECST-side file chooser found no existing locations; check filesystem permissions or use --obs-root"
         ),
@@ -3844,17 +4427,29 @@ def run_server(
                 data={"sample_counts": live_snapshot.get("sample_counts", {})},
             )
         else:
-            state.add_log(False, f"live telemetry unavailable: {live_snapshot.get('error', 'disabled')}", action="live_telemetry")
+            state.add_log(
+                False,
+                f"live telemetry unavailable: {live_snapshot.get('error', 'disabled')}",
+                action="live_telemetry",
+            )
     if action_mode == "live" and not live_actions_enabled:
         state.add_log(False, LIVE_ACTION_GUARD_MESSAGE, action="live_write_guard")
     if action_mode == "live" and live_actions_enabled:
-        state.add_log(True, "live write actions enabled by default in live mode", action="live_write_guard")
+        state.add_log(
+            True,
+            "live write actions enabled by default in live mode",
+            action="live_write_guard",
+        )
     state.add_log(
         True,
         "site config: "
         f"source={site_summary.source}"
         + (f", path={site_summary.source_path}" if site_summary.source_path else "")
-        + (f", observatory={site_summary.observatory}" if site_summary.observatory else ""),
+        + (
+            f", observatory={site_summary.observatory}"
+            if site_summary.observatory
+            else ""
+        ),
     )
     if site_summary.health.enabled:
         state.add_log(
@@ -3866,7 +4461,9 @@ def run_server(
     for warning in site_summary.warnings:
         state.add_log(False, warning)
     if not limits:
-        state.add_log(False, "site TOML mount limits are unavailable; mount move will be rejected")
+        state.add_log(
+            False, "site TOML mount limits are unavailable; mount move will be rejected"
+        )
 
     server = OperatorConsoleHTTPServer(
         (str(host), int(port)),
@@ -3884,15 +4481,23 @@ def run_server(
     print(f"  safe start: {bool(safe_start)}")
     print(f"  rescue mode: {bool(rescue)}")
     if local_state_reset_summary:
-        print(f"  local state reset archive: {local_state_reset_summary.get('archive_dir')}")
+        print(
+            f"  local state reset archive: {local_state_reset_summary.get('archive_dir')}"
+        )
     if action_mode == "live" and not live_actions_enabled:
-        print("  live write guard: ON by --guard-live-actions (write actions blocked; STOP/ABORT remain available)")
+        print(
+            "  live write guard: ON by --guard-live-actions (write actions blocked; STOP/ABORT remain available)"
+        )
     print(f"  status refresh: {max(200, int(status_refresh_ms))} ms")
     print(f"  console live telemetry ROS: {'disabled' if status_no_ros else 'enabled'}")
-    print(f"  ROS node health monitor: {'enabled' if site_summary.health.enabled else 'disabled'}")
+    print(
+        f"  ROS node health monitor: {'enabled' if site_summary.health.enabled else 'disabled'}"
+    )
     print(f"  operator log: {operator_log_path}")
     print(f"  observation CSV log: {observer_csv_log.status().get('csv_path')}")
-    print(f"  observation CSV log source: {observer_csv_log.status().get('log_dir_source')}")
+    print(
+        f"  observation CSV log source: {observer_csv_log.status().get('log_dir_source')}"
+    )
     print(f"  observation CSV meta: {observer_csv_log.status().get('meta_path')}")
     print(f"  launcher logs: {resolved_launcher_log_dir}")
     print(f"  progress logs: {resolved_progress_log_dir}")
@@ -3902,7 +4507,10 @@ def run_server(
         f"timeout={float(shutdown_launcher_timeout_sec)}s, "
         f"kill_timeout={float(shutdown_launcher_kill_timeout_sec)}s"
     )
-    print(f"  site config source: {site_summary.source}" + (f" ({site_summary.source_path})" if site_summary.source_path else ""))
+    print(
+        f"  site config source: {site_summary.source}"
+        + (f" ({site_summary.source_path})" if site_summary.source_path else "")
+    )
     print(f"  observatory: {site_summary.observatory or 'unknown'}")
     if limits:
         print(
@@ -3928,7 +4536,9 @@ def run_server(
         except Exception:
             pass
 
-    thread = threading.Thread(target=server.serve_forever, name="necst-console", daemon=True)
+    thread = threading.Thread(
+        target=server.serve_forever, name="necst-console", daemon=True
+    )
     thread.start()
     event = stop_event or threading.Event()
     try:
@@ -3944,17 +4554,29 @@ def run_server(
             try:
                 _refresh_processes_and_log(state)
             except Exception as exc:
-                state.add_log(False, f"failed to refresh launcher exits during shutdown: {exc}", action="process_exit")
+                state.add_log(
+                    False,
+                    f"failed to refresh launcher exits during shutdown: {exc}",
+                    action="process_exit",
+                )
             if state.observation_log is not None:
                 try:
                     state.observation_log.close(write_log_closed=True)
                 except Exception as exc:
-                    state.add_log(False, f"failed to close observation CSV log: {exc}", action="observation_csv_log")
+                    state.add_log(
+                        False,
+                        f"failed to close observation CSV log: {exc}",
+                        action="observation_csv_log",
+                    )
             if state.live_cache is not None:
                 try:
                     state.live_cache.close()
                 except Exception as exc:
-                    state.add_log(False, f"failed to close live telemetry cache: {exc}", action="live_telemetry")
+                    state.add_log(
+                        False,
+                        f"failed to close live telemetry cache: {exc}",
+                        action="live_telemetry",
+                    )
         server.shutdown()
         server.server_close()
         thread.join(timeout=2.0)

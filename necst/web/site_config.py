@@ -35,10 +35,14 @@ class SiteConfigSummary:
     source_path: Optional[str] = None
     observatory: Optional[str] = None
     mount_limits: Dict[str, float] = field(default_factory=dict)
-    capabilities: Dict[str, bool] = field(default_factory=lambda: dict(_DEFAULT_CAPABILITIES))
+    capabilities: Dict[str, bool] = field(
+        default_factory=lambda: dict(_DEFAULT_CAPABILITIES)
+    )
     chopper: Dict[str, Any] = field(default_factory=dict)
     observation_log: Dict[str, Any] = field(default_factory=dict)
-    health: node_health.NodeHealthConfig = field(default_factory=node_health.NodeHealthConfig)
+    health: node_health.NodeHealthConfig = field(
+        default_factory=node_health.NodeHealthConfig
+    )
     warnings: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -76,18 +80,27 @@ def _read_toml(path: Path) -> Dict[str, Any]:
 
 
 def _telescope_config_filename() -> str:
-    telescope = str(os.environ.get("TELESCOPE", os.environ.get("NECST_TELESCOPE", ""))).strip()
+    telescope = str(
+        os.environ.get("TELESCOPE", os.environ.get("NECST_TELESCOPE", ""))
+    ).strip()
     return f"{telescope}_config.toml" if telescope else "config.toml"
 
 
-def _candidate_config_paths(site_config_path: Optional[os.PathLike[str] | str]) -> List[Path]:
+def _candidate_config_paths(
+    site_config_path: Optional[os.PathLike[str] | str],
+) -> List[Path]:
     raw: List[str] = []
     if site_config_path not in (None, ""):
         raw.append(str(site_config_path))
 
     # Explicit overrides first.  These are console-specific escape hatches and
     # keep working even if neclib is not importable in a reduced smoke-test env.
-    for env_name in ("NECST_SITE_CONFIG", "NECST_CONFIG", "NECLIB_CONFIG", "NECST_CONFIG_PATH"):
+    for env_name in (
+        "NECST_SITE_CONFIG",
+        "NECST_CONFIG",
+        "NECLIB_CONFIG",
+        "NECST_CONFIG_PATH",
+    ):
         value = str(os.environ.get(env_name, "")).strip()
         if value:
             raw.append(value)
@@ -112,9 +125,15 @@ def _candidate_config_paths(site_config_path: Optional[os.PathLike[str] | str]) 
     except Exception:
         pass
 
-    telescope_key = str(os.environ.get("TELESCOPE", os.environ.get("NECST_TELESCOPE", ""))).strip().lower()
+    telescope_key = (
+        str(os.environ.get("TELESCOPE", os.environ.get("NECST_TELESCOPE", "")))
+        .strip()
+        .lower()
+    )
     default_dirs: List[Path] = []
-    source_tree_defaults = Path(__file__).resolve().parents[3] / "neclib-main" / "neclib" / "defaults"
+    source_tree_defaults = (
+        Path(__file__).resolve().parents[3] / "neclib-main" / "neclib" / "defaults"
+    )
     default_dirs.append(source_tree_defaults)
     try:
         import neclib  # type: ignore
@@ -130,7 +149,11 @@ def _candidate_config_paths(site_config_path: Optional[os.PathLike[str] | str]) 
             raw.append(str(defaults_dir / config_file_name))
             if "nanten2" in telescope_key:
                 raw.append(str(defaults_dir / "NANTEN2_config.toml"))
-            elif "1p85" in telescope_key or "1.85" in telescope_key or "omu" in telescope_key:
+            elif (
+                "1p85" in telescope_key
+                or "1.85" in telescope_key
+                or "omu" in telescope_key
+            ):
                 raw.append(str(defaults_dir / "OMU1p85m_config.toml"))
         raw.append(str(defaults_dir / "config.toml"))
     paths: List[Path] = []
@@ -148,7 +171,9 @@ def _candidate_config_paths(site_config_path: Optional[os.PathLike[str] | str]) 
 
 
 def _limits_from_config(config: Mapping[str, Any]) -> Dict[str, float]:
-    antenna = config.get("antenna") if isinstance(config.get("antenna"), Mapping) else {}
+    antenna = (
+        config.get("antenna") if isinstance(config.get("antenna"), Mapping) else {}
+    )
     limits: Dict[str, float] = {}
     az_range = antenna.get("drive_range_az") if isinstance(antenna, Mapping) else None
     el_range = antenna.get("drive_range_el") if isinstance(antenna, Mapping) else None
@@ -168,8 +193,16 @@ def _limits_from_config(config: Mapping[str, Any]) -> Dict[str, float]:
 
 
 def _chopper_from_config(config: Mapping[str, Any]) -> Dict[str, Any]:
-    motor = config.get("chopper_motor") if isinstance(config.get("chopper_motor"), Mapping) else {}
-    pos = motor.get("position") if isinstance(motor, Mapping) and isinstance(motor.get("position"), Mapping) else {}
+    motor = (
+        config.get("chopper_motor")
+        if isinstance(config.get("chopper_motor"), Mapping)
+        else {}
+    )
+    pos = (
+        motor.get("position")
+        if isinstance(motor, Mapping) and isinstance(motor.get("position"), Mapping)
+        else {}
+    )
     insert = pos.get("insert") if isinstance(pos, Mapping) else None
     remove = pos.get("remove") if isinstance(pos, Mapping) else None
     available = bool(motor) and insert not in (None, "") and remove not in (None, "")
@@ -181,18 +214,26 @@ def _chopper_from_config(config: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _capabilities_from_config(config: Mapping[str, Any], chopper: Mapping[str, Any]) -> Dict[str, bool]:
+def _capabilities_from_config(
+    config: Mapping[str, Any], chopper: Mapping[str, Any]
+) -> Dict[str, bool]:
     caps = dict(_DEFAULT_CAPABILITIES)
-    custom = config.get("operator_console") if isinstance(config.get("operator_console"), Mapping) else {}
-    custom_caps = custom.get("capabilities") if isinstance(custom.get("capabilities"), Mapping) else {}
+    custom = (
+        config.get("operator_console")
+        if isinstance(config.get("operator_console"), Mapping)
+        else {}
+    )
+    custom_caps = (
+        custom.get("capabilities")
+        if isinstance(custom.get("capabilities"), Mapping)
+        else {}
+    )
     for key, value in custom_caps.items():
         caps[str(key)] = bool(value)
     if not bool(chopper.get("available")):
         caps["chopper_move"] = False
         caps["chopper_maintenance"] = False
     return caps
-
-
 
 
 def _observation_log_from_config(config: Mapping[str, Any]) -> Dict[str, Any]:
@@ -202,7 +243,9 @@ def _observation_log_from_config(config: Mapping[str, Any]) -> Dict[str, Any]:
     the preferred key because the observation CSV must be written by the
     operator-console process, not necessarily by the recorder/spectrometer PC.
     """
-    console = config.get("console") if isinstance(config.get("console"), Mapping) else {}
+    console = (
+        config.get("console") if isinstance(config.get("console"), Mapping) else {}
+    )
     raw = {}
     if isinstance(console, Mapping):
         for key in ("observation_log", "obslog"):
@@ -237,7 +280,9 @@ def _observation_log_from_config(config: Mapping[str, Any]) -> Dict[str, Any]:
         if value in (None, ""):
             continue
         if isinstance(value, (list, tuple)):
-            record_roots.extend(str(item).strip() for item in value if str(item or "").strip())
+            record_roots.extend(
+                str(item).strip() for item in value if str(item or "").strip()
+            )
         else:
             record_roots.append(str(value).strip())
     if record_roots:
@@ -250,6 +295,7 @@ def _observation_log_from_config(config: Mapping[str, Any]) -> Dict[str, Any]:
     if warnings:
         out["warnings"] = warnings
     return out
+
 
 def resolve_site_config(
     *,
@@ -268,13 +314,20 @@ def resolve_site_config(
             continue
         try:
             config = _read_toml(path)
-            source = "site_config_path" if site_config_path not in (None, "") and Path(site_config_path).expanduser() == path else "default_config"
+            source = (
+                "site_config_path"
+                if site_config_path not in (None, "")
+                and Path(site_config_path).expanduser() == path
+                else "default_config"
+            )
             source_path = str(path)
             break
         except Exception as exc:
             warnings.append(f"failed to read site config {path}: {exc}")
     if not config:
-        warnings.append("no site TOML config found; using conservative console defaults")
+        warnings.append(
+            "no site TOML config found; using conservative console defaults"
+        )
     limits = _limits_from_config(config)
     overrides = {"az_min": az_min, "az_max": az_max, "el_min": el_min, "el_max": el_max}
     for key, value in overrides.items():

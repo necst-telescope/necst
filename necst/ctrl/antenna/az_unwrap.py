@@ -87,8 +87,6 @@ def _drive_range_deg() -> Tuple[float, float]:
     return float(_to_float(lo, "deg", 0.0)), float(_to_float(hi, "deg", 360.0))
 
 
-
-
 def _az_unwrap_az_section() -> Optional[Any]:
     """Return the configured Az unwrap subsection, if any exists.
 
@@ -197,6 +195,7 @@ def assert_mount_az_allowed_when_unwrap_disabled(
     checked = dict(limit)
     checked["checked_value_count"] = len(values)
     return checked
+
 
 def load_az_unwrap_config() -> (
     tuple[
@@ -688,7 +687,6 @@ class AzUnwrapRuntime:
         self._last_status = status
         raise RuntimeError(status.reason)
 
-
     def get_state_report(self) -> dict:
         """Return runtime/state-file information for ROS service responses.
 
@@ -723,8 +721,7 @@ class AzUnwrapRuntime:
             if age is not None and age > self.state_warn_age_sec:
                 state = "old"
                 reason = (
-                    "old state file loaded; "
-                    "no encoder status has been published yet"
+                    "old state file loaded; " "no encoder status has been published yet"
                 )
             return {
                 "success": True,
@@ -1014,7 +1011,6 @@ def _manual_state_payload(
     }
 
 
-
 def _local_cli(args) -> int:
     (
         cfg,
@@ -1142,8 +1138,7 @@ def _ros_wait_for_future(rclpy, node, future, *, timeout_sec: float):
 
 def _response_to_report(response: Any) -> dict:
     return {
-        name: getattr(response, name)
-        for name in response.get_fields_and_field_types()
+        name: getattr(response, name) for name in response.get_fields_and_field_types()
     }
 
 

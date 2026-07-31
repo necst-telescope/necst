@@ -32,7 +32,6 @@ class AntennaEncoderController(DeviceNode):
         )
         self.create_timer(1 / config.antenna_enc_frequency, self.stream)
 
-
     def get_az_unwrap_state(self, _request, response):
         """Return Az unwrap state from the encoder node process."""
         report = self.az_unwrap.get_state_report()

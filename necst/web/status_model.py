@@ -86,7 +86,9 @@ def read_json(path: Optional[Path]) -> Optional[Dict[str, Any]]:
         return {"_error": f"failed to read {path}: {exc}"}
 
 
-def read_jsonl(path: Optional[Path], limit: Optional[int] = None) -> List[Dict[str, Any]]:
+def read_jsonl(
+    path: Optional[Path], limit: Optional[int] = None
+) -> List[Dict[str, Any]]:
     if path is None:
         return []
     try:
@@ -140,7 +142,9 @@ def default_record_root() -> Path:
     The recorder defaults to ``$NECST_RECORD_ROOT`` or ``~/data``.  This helper
     mirrors that logic for display only; it does not create directories.
     """
-    return Path(os.environ.get("NECST_RECORD_ROOT", str(Path.home() / "data"))).expanduser()
+    return Path(
+        os.environ.get("NECST_RECORD_ROOT", str(Path.home() / "data"))
+    ).expanduser()
 
 
 def record_path_display_mode() -> str:
@@ -152,9 +156,9 @@ def record_path_display_mode() -> str:
     ``NECST_CONSOLE_SHOW_CONTAINER_RECORD_PATH=1``) only when the Docker/container
     path itself should be displayed.
     """
-    legacy_container_flag = os.environ.get(
-        "NECST_CONSOLE_SHOW_CONTAINER_RECORD_PATH", ""
-    ).strip().lower()
+    legacy_container_flag = (
+        os.environ.get("NECST_CONSOLE_SHOW_CONTAINER_RECORD_PATH", "").strip().lower()
+    )
     if legacy_container_flag in {"1", "true", "yes", "on", "container"}:
         return "container"
     mode = os.environ.get("NECST_CONSOLE_RECORD_PATH_MODE", "local").strip().lower()
@@ -270,7 +274,9 @@ def _finite_float(value: Any) -> Optional[float]:
     return out if math.isfinite(out) else None
 
 
-def _axis_delta_deg(a: Optional[float], b: Optional[float], *, wrap: bool = False) -> Optional[float]:
+def _axis_delta_deg(
+    a: Optional[float], b: Optional[float], *, wrap: bool = False
+) -> Optional[float]:
     if a is None or b is None:
         return None
     direct = abs(float(a) - float(b))
@@ -315,7 +321,9 @@ def apply_dynamic_remaining(
     if not isinstance(snapshot, dict):
         return snapshot
     timing = snapshot.get("time")
-    lifecycle = snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
+    lifecycle = (
+        snapshot.get("lifecycle") if isinstance(snapshot.get("lifecycle"), dict) else {}
+    )
     if not isinstance(timing, dict):
         return snapshot
     state = str(lifecycle.get("state") or "").lower()
@@ -329,6 +337,7 @@ def apply_dynamic_remaining(
             0.0, completion - float(now_unix if now_unix is not None else time.time())
         )
     return snapshot
+
 
 def _live_payload_has_position(live_payload: Mapping[str, Any]) -> bool:
     """Return True when live ROS telemetry has enough antenna data to display.
@@ -700,9 +709,6 @@ def merge_live_telemetry(
     return apply_dynamic_remaining(out)
 
 
-
-
-
 def _topic_age_sec(
     live_payload: Mapping[str, Any],
     key: str,
@@ -823,24 +829,46 @@ def _live_truth_scrub_stale_motion(
         antenna["tracking_status_available"] = False
         antenna.setdefault("command_source", "none")
 
-    queue = live_payload.get("queue_status") if isinstance(live_payload.get("queue_status"), Mapping) else {}
-    section = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), Mapping) else {}
-    control = live_payload.get("control") if isinstance(live_payload.get("control"), Mapping) else {}
-    encoder_motion = live_payload.get("encoder_motion") if isinstance(live_payload.get("encoder_motion"), Mapping) else {}
+    queue = (
+        live_payload.get("queue_status")
+        if isinstance(live_payload.get("queue_status"), Mapping)
+        else {}
+    )
+    section = (
+        live_payload.get("section_status")
+        if isinstance(live_payload.get("section_status"), Mapping)
+        else {}
+    )
+    control = (
+        live_payload.get("control")
+        if isinstance(live_payload.get("control"), Mapping)
+        else {}
+    )
+    encoder_motion = (
+        live_payload.get("encoder_motion")
+        if isinstance(live_payload.get("encoder_motion"), Mapping)
+        else {}
+    )
 
     section_fresh = _topic_received_fresh(live_payload, "section_status")
     section_active = bool(section_fresh and section.get("active"))
-    section_stage = str(section.get("section_kind") or section.get("section_label") or "").strip()
+    section_stage = str(
+        section.get("section_kind") or section.get("section_label") or ""
+    ).strip()
 
     queue_fresh = _topic_received_fresh(live_payload, "queue_status")
     try:
-        queue_depth = int(queue.get("queue_depth", 0)) if isinstance(queue, Mapping) else 0
+        queue_depth = (
+            int(queue.get("queue_depth", 0)) if isinstance(queue, Mapping) else 0
+        )
     except Exception:
         queue_depth = 0
     queue_active = bool(queue_fresh and (queue.get("active") or queue_depth > 0))
 
     control_fresh = _topic_received_fresh(live_payload, "control")
-    control_stage = str(control.get("section_kind") or control.get("section_label") or "").strip()
+    control_stage = str(
+        control.get("section_kind") or control.get("section_label") or ""
+    ).strip()
     control_active = bool(
         control_fresh
         and (control.get("controlled") or control.get("tight") or control_stage)
@@ -856,12 +884,16 @@ def _live_truth_scrub_stale_motion(
         _first_present(antenna, "encoder_lat_deg", "enc_el_deg", "el_deg")
     )
     command_az = (
-        _finite_float(_first_present(antenna, "command_lon_deg", "cmd_az_deg", "az_cmd_deg"))
+        _finite_float(
+            _first_present(antenna, "command_lon_deg", "cmd_az_deg", "az_cmd_deg")
+        )
         if command_valid
         else None
     )
     command_el = (
-        _finite_float(_first_present(antenna, "command_lat_deg", "cmd_el_deg", "el_cmd_deg"))
+        _finite_float(
+            _first_present(antenna, "command_lat_deg", "cmd_el_deg", "el_cmd_deg")
+        )
         if command_valid
         else None
     )
@@ -877,9 +909,20 @@ def _live_truth_scrub_stale_motion(
         (section_active and section_stage_lower in MOUNT_HOLD_STAGE_NAMES)
         or (control_active and control_stage_lower in MOUNT_HOLD_STAGE_NAMES)
     )
-    lifecycle = out.get("lifecycle") if isinstance(out.get("lifecycle"), Mapping) else {}
-    lifecycle_state = str(_first_present(lifecycle, "state", "status") or "").strip().lower()
-    lifecycle_final_or_idle = lifecycle_state in {"", "idle", "finished", "aborted", "error", "failed"}
+    lifecycle = (
+        out.get("lifecycle") if isinstance(out.get("lifecycle"), Mapping) else {}
+    )
+    lifecycle_state = (
+        str(_first_present(lifecycle, "state", "status") or "").strip().lower()
+    )
+    lifecycle_final_or_idle = lifecycle_state in {
+        "",
+        "idle",
+        "finished",
+        "aborted",
+        "error",
+        "failed",
+    }
 
     # A fixed Az/El mount-move can leave fresh low-level status such as
     # section=SKY, stage=tracking, or queue/control active even after the mount
@@ -899,9 +942,7 @@ def _live_truth_scrub_stale_motion(
     # Otherwise the operator can get trapped in MOUNT MOVING after pressing STOP
     # simply because a low-level section_status kept reporting SKY.
     mount_final_idle_without_command = bool(
-        lifecycle_final_or_idle
-        and not command_valid
-        and not encoder_moving
+        lifecycle_final_or_idle and not command_valid and not encoder_moving
     )
 
     # command_valid keeps Tracking diagnostics meaningful, but by itself it is
@@ -961,7 +1002,9 @@ def _live_truth_scrub_stale_motion(
             activity.pop(key, None)
         activity["live_motion_active"] = False
         activity["live_motion_source"] = (
-            "mount_target_reached" if mount_hold_at_target else "final_idle_no_encoder_motion"
+            "mount_target_reached"
+            if mount_hold_at_target
+            else "final_idle_no_encoder_motion"
         )
         activity["active_task"] = "idle"
         activity["phase"] = "IDLE"
@@ -969,9 +1012,13 @@ def _live_truth_scrub_stale_motion(
         activity["drive_kind"] = "idle"
         activity["control_section_active"] = False
         activity["control_section_fresh"] = bool(section_fresh or control_fresh)
-        activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+        activity["control_section_age_sec"] = _topic_age_sec(
+            live_payload, "section_status", section
+        )
         activity["mount_hold_at_target"] = bool(mount_hold_at_target)
-        activity["mount_final_idle_without_command"] = bool(mount_final_idle_without_command)
+        activity["mount_final_idle_without_command"] = bool(
+            mount_final_idle_without_command
+        )
         return
 
     if section_active:
@@ -980,11 +1027,15 @@ def _live_truth_scrub_stale_motion(
             activity["control_section_kind"] = section_stage
         activity["control_section_active"] = True
         activity["control_section_fresh"] = True
-        activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+        activity["control_section_age_sec"] = _topic_age_sec(
+            live_payload, "section_status", section
+        )
         return
 
     if queue_active:
-        if not activity.get("motion_stage") or str(activity.get("motion_stage")).lower() in {"idle", "none", "unknown"}:
+        if not activity.get("motion_stage") or str(
+            activity.get("motion_stage")
+        ).lower() in {"idle", "none", "unknown"}:
             activity["motion_stage"] = "moving"
         return
 
@@ -992,7 +1043,9 @@ def _live_truth_scrub_stale_motion(
         if control_stage:
             activity["motion_stage"] = control_stage
             activity["control_section_kind"] = control_stage
-        elif not activity.get("motion_stage") or str(activity.get("motion_stage")).lower() in {"idle", "none", "unknown"}:
+        elif not activity.get("motion_stage") or str(
+            activity.get("motion_stage")
+        ).lower() in {"idle", "none", "unknown"}:
             activity["motion_stage"] = "moving"
         return
 
@@ -1030,7 +1083,9 @@ def _live_truth_scrub_stale_motion(
     activity["drive_kind"] = "idle"
     activity["control_section_active"] = False
     activity["control_section_fresh"] = False
-    activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+    activity["control_section_age_sec"] = _topic_age_sec(
+        live_payload, "section_status", section
+    )
 
     geometry = out.get("geometry")
     if isinstance(geometry, dict):
@@ -1039,6 +1094,8 @@ def _live_truth_scrub_stale_motion(
             "live_section_geometry",
         ):
             geometry.pop(key, None)
+
+
 def _first_present(mapping: Mapping[str, Any], *keys: str) -> Any:
     for key in keys:
         value = mapping.get(key)
@@ -1103,12 +1160,27 @@ def build_operator_status(
     observation_record = obs.get("record_name")
     observation_target = obs.get("target")
     progress_record_directory = (
-        str(progress_record_dir(Path(str(paths.get("root") or "")) if isinstance(paths, Mapping) and paths.get("root") else progress_root(), observation_record))
+        str(
+            progress_record_dir(
+                (
+                    Path(str(paths.get("root") or ""))
+                    if isinstance(paths, Mapping) and paths.get("root")
+                    else progress_root()
+                ),
+                observation_record,
+            )
+        )
         if observation_record
         else None
     )
-    recording_directory = str(recording_data_dir(observation_record)) if observation_record else None
-    local_recording_directory = str(local_recording_data_dir(observation_record)) if observation_record else None
+    recording_directory = (
+        str(recording_data_dir(observation_record)) if observation_record else None
+    )
+    local_recording_directory = (
+        str(local_recording_data_dir(observation_record))
+        if observation_record
+        else None
+    )
     record_display_mode = record_path_display_mode()
 
     if activity.get("live_motion_active") is False:
@@ -1122,16 +1194,22 @@ def build_operator_status(
             "motion_stage",
         )
         if active_task in (None, ""):
-            active_task = "observation" if lifecycle_state not in {"idle", "unknown"} else "idle"
+            active_task = (
+                "observation" if lifecycle_state not in {"idle", "unknown"} else "idle"
+            )
 
     command_fields_valid = antenna.get("command_valid") is True
     command_lon = (
-        _finite_float(_first_present(antenna, "command_lon_deg", "cmd_az_deg", "az_cmd_deg"))
+        _finite_float(
+            _first_present(antenna, "command_lon_deg", "cmd_az_deg", "az_cmd_deg")
+        )
         if command_fields_valid
         else None
     )
     command_lat = (
-        _finite_float(_first_present(antenna, "command_lat_deg", "cmd_el_deg", "el_cmd_deg"))
+        _finite_float(
+            _first_present(antenna, "command_lat_deg", "cmd_el_deg", "el_cmd_deg")
+        )
         if command_fields_valid
         else None
     )
@@ -1196,19 +1274,27 @@ def build_operator_status(
         "progress": {
             "percent": _progress_percent(snap),
             "total": compact_plan_total,
-            "current": _first_present(snap_plan, "current", "current_index", "current_id"),
+            "current": _first_present(
+                snap_plan, "current", "current_index", "current_id"
+            ),
             "label": _first_present(snap_plan, "label", "mode", "role"),
         },
         "motion": {
             "active_task": active_task,
-            "stage": ("idle" if activity.get("live_motion_active") is False else _first_present(activity, "motion_stage", "phase")),
+            "stage": (
+                "idle"
+                if activity.get("live_motion_active") is False
+                else _first_present(activity, "motion_stage", "phase")
+            ),
             "tracking_ok": tracking_ok,
             "tracking_error_deg": tracking_error,
             "live_motion_active": activity.get("live_motion_active"),
             "live_motion_source": activity.get("live_motion_source"),
             "mount_target_reached": bool(activity.get("mount_target_reached")),
             "mount_hold_at_target": bool(activity.get("mount_hold_at_target")),
-            "mount_target_reached_tol_deg": activity.get("mount_target_reached_tol_deg"),
+            "mount_target_reached_tol_deg": activity.get(
+                "mount_target_reached_tol_deg"
+            ),
             "encoder_motion_deadband_deg": activity.get("encoder_motion_deadband_deg"),
             "encoder_motion_delta_az_deg": activity.get("encoder_motion_delta_az_deg"),
             "encoder_motion_delta_el_deg": activity.get("encoder_motion_delta_el_deg"),
@@ -1223,10 +1309,15 @@ def build_operator_status(
             "tracking_status_age_sec": _finite_float(
                 antenna.get("tracking_status_age_sec")
             ),
-            "az_unwrap": antenna.get("az_unwrap") if isinstance(antenna.get("az_unwrap"), Mapping) else None,
+            "az_unwrap": (
+                antenna.get("az_unwrap")
+                if isinstance(antenna.get("az_unwrap"), Mapping)
+                else None
+            ),
         },
         "chopper": {
-            "state": _first_present(chopper, "state", "position_state", "status") or "unknown",
+            "state": _first_present(chopper, "state", "position_state", "status")
+            or "unknown",
             "position": chopper_position,
             "age_sec": _age_sec(chopper_time, now_unix=now),
             "raw": dict(chopper) if chopper else {},
@@ -1279,7 +1370,9 @@ def build_progress_status_state(
     events = all_events[-events_limit:] if events_limit > 0 else []
     record_name_for_paths = None
     if isinstance(snapshot, Mapping):
-        record_name_for_paths = (_as_mapping(snapshot.get("observation"))).get("record_name")
+        record_name_for_paths = (_as_mapping(snapshot.get("observation"))).get(
+            "record_name"
+        )
     record_name_for_paths = record_name_for_paths or current_record_name(root)
     prog_record_dir = progress_record_dir(root, record_name_for_paths)
     data_record_dir = recording_data_dir(record_name_for_paths)
@@ -1291,7 +1384,9 @@ def build_progress_status_state(
         "plan": str(plan_path) if plan_path else None,
         "progress_record_dir": str(prog_record_dir) if prog_record_dir else None,
         "recording_dir": str(data_record_dir) if data_record_dir else None,
-        "local_recording_dir": str(local_data_record_dir) if local_data_record_dir else None,
+        "local_recording_dir": (
+            str(local_data_record_dir) if local_data_record_dir else None
+        ),
         "record_path_display_mode": record_path_display_mode(),
     }
     compact_status = build_operator_status(
@@ -1302,7 +1397,9 @@ def build_progress_status_state(
         server_time_unix=now,
     )
     return {
-        "ok": isinstance(snapshot, dict) and bool(snapshot) and not snapshot.get("_error"),
+        "ok": isinstance(snapshot, dict)
+        and bool(snapshot)
+        and not snapshot.get("_error"),
         "root": str(root),
         "paths": paths,
         "raw_snapshot": raw_snapshot or {},
