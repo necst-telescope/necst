@@ -3625,15 +3625,15 @@ _HTML_TEMPLATE = """<!doctype html>
 :root {
   color-scheme: light dark;
   --ok:#1a7f37; --warn:#b54708; --err:#c1121f;
-  --bg:#ffffff; --fg:#1f2328; --panel:#ffffff; --muted:#606975; --border:#8c959f55; --plot-text:#1f2328;
+  --bg:#ffffff; --fg:#1f2328; --panel:#ffffff; --muted:#4c5563; --border:#8c959f70; --plot-text:#1f2328;
   --grid-row-h: 12.8px; --grid-gap: .38rem;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg:#1b1b20; --fg:#eceff4; --panel:#202028; --muted:#aeb6c2; --border:#c8d0dc44; --plot-text:#eceff4; }
+  :root { --bg:#1b1b20; --fg:#eceff4; --panel:#202028; --muted:#bcc4d0; --border:#c8d0dc55; --plot-text:#eceff4; }
 }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .42rem; line-height: 1.15; font-size:12.2px; background:var(--bg); color:var(--fg); -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: .42rem; line-height: 1.28; font-size:12.2px; background:var(--bg); color:var(--fg); -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 header { display:flex; gap:1rem; align-items:baseline; justify-content:space-between; flex-wrap:wrap; }
-h1 { font-size:.98rem; margin:0 0 .18rem; }
+h1 { font-size:.98rem; margin:0 0 .18rem; font-weight:700; }
 .grid {
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -3642,10 +3642,10 @@ h1 { font-size:.98rem; margin:0 0 .18rem; }
   gap: var(--grid-gap);
   align-items:stretch;
 }
-.card { border:1px solid var(--border); border-radius:8px; padding:.42rem .46rem; box-shadow:0 1px 4px #0001; background:var(--panel); min-height:0; height:100%; box-sizing:border-box; position:relative; overflow:auto; overscroll-behavior:contain; font-size:var(--card-font-size, 12.2px); }
+.card { border:1px solid var(--border); border-radius:8px; padding:.42rem .46rem; box-shadow:0 1px 5px #0002; background:var(--panel); min-height:0; height:100%; box-sizing:border-box; position:relative; overflow:auto; overscroll-behavior:contain; font-size:var(--card-font-size, 12.2px); }
 .card-content { --card-visual-scale:1; transform-origin:top left; }
-.card h2 { font-size:1.10em; margin:.01rem 0 .22rem; letter-spacing:.01em; padding-right:3.9rem; }
-.kv { display:grid; grid-template-columns: 5.9rem minmax(0,1fr); gap:.06rem .28rem; align-items:baseline; }
+.card h2 { font-size:1.10em; margin:.01rem 0 .30rem; padding-bottom:.16rem; letter-spacing:.01em; padding-right:3.9rem; border-bottom:1px solid var(--border); font-weight:700; }
+.kv { display:grid; grid-template-columns: 5.9rem minmax(0,1fr); gap:.14rem .28rem; align-items:baseline; }
 .obsview .kv { grid-template-columns: 5.8rem minmax(0,1fr); }
 .planinfoview .kv, .activityview .kv { grid-template-columns: 4.7rem minmax(0,1fr); }
 .envview .kv { grid-template-columns: 4.9rem minmax(0,1fr); }
@@ -3667,9 +3667,11 @@ h1 { font-size:.98rem; margin:0 0 .18rem; }
 #paths .v { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .filesview .kv { grid-template-columns:4.2rem minmax(0,1fr); }
 #paths .k, #paths .v { font-size:.84em; line-height:1.05; }
-.status { font-weight:700; padding:.08rem .38rem; border-radius:999px; border:1px solid var(--border); }
-.status.running, .status.finished { color:var(--ok); } .status.error, .status.aborted { color:var(--err); } .status.cleanup { color:var(--warn); }
-.bar { width:100%; height:.86rem; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:#9992; margin-top:.35rem; }
+.status { font-weight:700; padding:.10rem .42rem; border-radius:999px; border:1px solid var(--border); }
+.status.running, .status.finished { color:var(--ok); border-color:#1a7f3755; background:#1a7f3718; }
+.status.error, .status.aborted { color:var(--err); border-color:#c1121f55; background:#c1121f18; }
+.status.cleanup { color:var(--warn); border-color:#b5470855; background:#b5470818; }
+.bar { width:100%; height:1.0rem; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:#9992; margin-top:.35rem; }
 .fill { height:100%; width:0%; background:currentColor; color:var(--ok); transition:width .2s; }
 pre { white-space:pre-wrap; overflow:auto; max-height:7.2rem; margin:.12rem 0 0; font-size:.91em; }
 table { border-collapse:collapse; width:100%; font-size:.91em; table-layout:fixed; }
