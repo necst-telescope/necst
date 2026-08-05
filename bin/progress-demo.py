@@ -179,6 +179,8 @@ def make_snapshot(
     duration_per_line = 14.1
     eta = max(0.0, total * duration_per_line - elapsed)
     record_dir = root / safe_name(record_name)
+    # Demo-only: alternate every 30 s so the UTC sync/nosync styling can be checked.
+    time_sync_ok = int(elapsed // 30) % 2 == 0
 
     return {
         "schema_version": "necst-progress-demo-v1",
@@ -339,6 +341,53 @@ def make_snapshot(
             "line_index": line,
             "recorder_path": str(record_dir),
             "warning": "" if not stale_demo else "demo stale mode",
+        },
+        "chopper": {
+            "insert": bool(is_line),
+            "state": "in" if is_line else "out",
+            "position": 4750 if is_line else 0,
+            "time_unix": now - 0.10,
+        },
+        "time_sync": {
+            "enabled": True,
+            "status": "ok" if time_sync_ok else "bad",
+            "label": "sync" if time_sync_ok else "nosync",
+            "summary": (
+                "time sync: demo sync, 3/3 OK, max offset 0.4 ms"
+                if time_sync_ok
+                else "time sync: demo nosync, 2/3 OK, worst xffts: timeout"
+            ),
+            "checked_at_unix": now - 1.0,
+            "ok_count": 3 if time_sync_ok else 2,
+            "host_count": 3,
+            "max_offset_ms": 0.4 if time_sync_ok else None,
+            "hosts": [
+                {
+                    "name": "localhost",
+                    "host": "localhost",
+                    "method": "chrony",
+                    "status": "ok",
+                    "synced": True,
+                    "offset_ms": 0.1,
+                },
+                {
+                    "name": "xffts",
+                    "host": "xffts",
+                    "method": "ntpq",
+                    "status": "ok" if time_sync_ok else "bad",
+                    "synced": time_sync_ok,
+                    "offset_ms": 0.4 if time_sync_ok else None,
+                    "reason": "synchronised" if time_sync_ok else "timeout",
+                },
+                {
+                    "name": "record",
+                    "host": "record",
+                    "method": "chrony",
+                    "status": "ok",
+                    "synced": True,
+                    "offset_ms": -0.2,
+                },
+            ],
         },
         "time": {
             "updated_at_unix": now,

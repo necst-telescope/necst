@@ -16,6 +16,19 @@ from necst.utils import spinning
 from ..conftest import TesterNode, destroy
 
 
+def _wait_for_antenna_stop(com):
+    timelimit = time.monotonic() + 3
+    while time.monotonic() < timelimit:
+        speed = com.get_message("speed")
+        if speed.az < 1e-5 and speed.el < 1e-5:
+            return
+        time.sleep(0.02)
+
+    speed = com.get_message("speed")
+    assert speed.az < 1e-5
+    assert speed.el < 1e-5
+
+
 class TestCommander(TesterNode):
     NodeName = "test_commander"
 
@@ -120,22 +133,23 @@ class TestCommander(TesterNode):
         pid = AntennaPIDController()
         dev = AntennaDeviceSimulator()
 
-        with spinning([auth_server, horizontal, pid, dev], n_thread=5):
-            com.get_privilege()
-            com.antenna(
-                "point", target=(340, 80, "altaz"), unit="deg", wait=False
-            )  # To accelerate to non-zero speed.
-            _ = com.get_message("speed")
-            time.sleep(5)  # Additional acceleration time
-            assert com.get_message("speed").az > 1e-4
-            assert com.get_message("speed").el > 1e-4
+        try:
+            with spinning([auth_server, horizontal, pid, dev], n_thread=5):
+                com.get_privilege()
+                com.antenna(
+                    "point", target=(340, 80, "altaz"), unit="deg", wait=False
+                )  # To accelerate to non-zero speed.
+                _ = com.get_message("speed")
+                time.sleep(5)  # Additional acceleration time
+                assert com.get_message("speed").az > 1e-4
+                assert com.get_message("speed").el > 1e-4
 
-            com.antenna("stop")
-            assert com.get_message("speed").az < 1e-5
-            assert com.get_message("speed").el < 1e-5
+                com.antenna("stop")
+                _wait_for_antenna_stop(com)
 
-            com.quit_privilege()
-        destroy([com, auth_server, horizontal, pid, dev])
+                com.quit_privilege()
+        finally:
+            destroy([com, auth_server, horizontal, pid, dev])
 
     def test_antenna_stop_even_though_command_is_supplied(self):
         com = Commander()
@@ -144,23 +158,24 @@ class TestCommander(TesterNode):
         pid = AntennaPIDController()
         dev = AntennaDeviceSimulator()
 
-        with spinning([auth_server, horizontal, pid, dev], n_thread=5):
-            com.get_privilege()
+        try:
+            with spinning([auth_server, horizontal, pid, dev], n_thread=5):
+                com.get_privilege()
 
-            com.antenna(
-                "point", target=(340, 80, "altaz"), unit="deg", wait=False
-            )  # To accelerate to non-zero speed.
-            _ = com.get_message("speed")
-            time.sleep(5)  # Additional acceleration time
-            assert com.get_message("speed").az > 1e-4
-            assert com.get_message("speed").el > 1e-4
+                com.antenna(
+                    "point", target=(340, 80, "altaz"), unit="deg", wait=False
+                )  # To accelerate to non-zero speed.
+                _ = com.get_message("speed")
+                time.sleep(5)  # Additional acceleration time
+                assert com.get_message("speed").az > 1e-4
+                assert com.get_message("speed").el > 1e-4
 
-            com.antenna("stop", target=(30, 45, "altaz"), unit="deg")
-            assert com.get_message("speed").az < 1e-5
-            assert com.get_message("speed").el < 1e-5
+                com.antenna("stop", target=(30, 45, "altaz"), unit="deg")
+                _wait_for_antenna_stop(com)
 
-            com.quit_privilege()
-        destroy([com, auth_server, horizontal, pid, dev])
+                com.quit_privilege()
+        finally:
+            destroy([com, auth_server, horizontal, pid, dev])
 
     def test_pid_parameter_change(self):
         com = Commander()

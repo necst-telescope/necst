@@ -11,6 +11,7 @@ from typing import Any, Dict, Literal, Optional, Tuple, Union
 from neclib.core import read
 from neclib.utils import ConditionChecker, ParameterList
 from std_msgs.msg import String
+from std_srvs.srv import Trigger
 
 from necst_msgs.msg import (
     AlertMsg,
@@ -50,6 +51,7 @@ from rclpy.subscription import Subscription
 from .. import NECSTTimeoutError, config, namespace, service, topic
 from ..utils import Topic
 from .auth import PrivilegedNode, require_privilege
+from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
 
 @dataclass
@@ -159,6 +161,9 @@ class Commander(PrivilegedNode):
             "clear_spectral_recording_setup": service.clear_spectral_recording_setup.client(
                 self
             ),
+            "chopper_alarm_reset": service.chopper_alarm_reset.client(self),
+            "chopper_home": service.chopper_home.client(self),
+            "chopper_recover": service.chopper_recover.client(self),
         }
 
         self.parameters: Dict[str, ParameterList] = {}
@@ -677,6 +682,11 @@ class Commander(PrivilegedNode):
                     direct_mode=direct_mode,
                 )
 
+            if effective_az_target_mode == "mount" and target is not None:
+                assert_mount_az_allowed_when_unwrap_disabled(
+                    float(target[0]), action_label="Commander mount Az target"
+                )
+
             # Propagate optional fields in a backward compatible way.
             try:
                 _tmp = CoordinateCommand.Request()
@@ -1095,6 +1105,29 @@ class Commander(PrivilegedNode):
             self.publisher["chopper"].publish(msg)
             if wait:
                 self.wait_oc(target="chopper", position=cmd)
+
+    @require_privilege
+    def chopper_maintenance(
+        self,
+        cmd: Literal["alarm-reset", "home", "recover"],
+        /,
+    ):
+        """Request a hardware-maintenance operation on the chopper controller.
+
+        The operation is executed by the chopper controller node, i.e. on the
+        computer that owns the chopper motor interface.  This Commander only
+        sends a ROS service request.
+        """
+        key_map = {
+            "alarm-reset": "chopper_alarm_reset",
+            "home": "chopper_home",
+            "recover": "chopper_recover",
+        }
+        try:
+            client_key = key_map[cmd]
+        except KeyError:
+            raise ValueError(f"Unknown chopper maintenance command: {cmd!r}")
+        return self._send_request(Trigger.Request(), self.client[client_key])
 
     @require_privilege(escape_cmd=["?"])
     def mirror(

@@ -15,13 +15,45 @@ import json
 import math
 import os
 import re
+import shutil
+import subprocess
 import sys
 import time
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 from urllib.parse import parse_qs, urlparse
+
+try:
+    from necst.web import status_model
+except ModuleNotFoundError:
+    # Allow direct source-tree execution as ``python3 bin/progress.py`` in an
+    # environment where ROS/neclib is not importable yet.  Importing ``necst``
+    # normally executes necst/__init__.py, so load this stdlib-only helper by
+    # file path as a fallback.
+    import importlib.util
+
+    _status_model_path = (
+        Path(__file__).resolve().parents[1] / "necst" / "web" / "status_model.py"
+    )
+    _status_model_spec = importlib.util.spec_from_file_location(
+        "necst_progress_status_model", _status_model_path
+    )
+    if _status_model_spec is None or _status_model_spec.loader is None:
+        raise
+    status_model = importlib.util.module_from_spec(_status_model_spec)
+    _status_model_spec.loader.exec_module(status_model)
+
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:  # pragma: no cover - old Python fallback
+    tomllib = None  # type: ignore[assignment]
+
+
+ENCODER_MOTION_DEADBAND_DEG = 5.0e-4
+ENCODER_MOTION_START_CUMULATIVE_DEG = 8.0e-4
+ENCODER_MOTION_HOLD_SEC = 0.8
 
 
 def safe_name(value: Any) -> str:
@@ -155,6 +187,918 @@ def _finite_float(value: Any) -> Optional[float]:
     except Exception:
         return None
     return out if math.isfinite(out) else None
+
+
+
+def _topic_age_sec(
+    live_payload: Mapping[str, Any],
+    key: str,
+    payload: Optional[Mapping[str, Any]] = None,
+    *,
+    now_unix: Optional[float] = None,
+) -> Optional[float]:
+    """Return the age of a live ROS topic sample, if known.
+
+    Console live telemetry records ``last_message_age_sec`` explicitly.  The
+    standalone progress monitor may also carry a payload timestamp.  Treat
+    missing age as unknown, not fresh.
+    """
+    ages = live_payload.get("last_message_age_sec")
+    if isinstance(ages, Mapping):
+        age = _finite_float(ages.get(key))
+        if age is not None:
+            return age
+    if payload is not None:
+        now = float(now_unix if now_unix is not None else time.time())
+        for ts_key in (
+            "publish_time_unix",
+            "time_unix",
+            "command_time_unix",
+            "encoder_time_unix",
+            "query_time_unix",
+        ):
+            ts = _finite_float(payload.get(ts_key))
+            if ts is not None:
+                return max(0.0, now - ts)
+    return None
+
+
+def _topic_receipt_age_sec(
+    live_payload: Mapping[str, Any],
+    key: str,
+) -> Optional[float]:
+    """Return age since the local subscriber actually received this topic.
+
+    This intentionally does *not* use timestamps carried inside the message.
+    For antenna command and control topics, message timestamps may describe the
+    planned command time rather than the wall-clock arrival time.  Using those
+    timestamps made old or interpolated command data look live after abort.
+    """
+    ages = live_payload.get("last_message_age_sec")
+    if isinstance(ages, Mapping):
+        age = _finite_float(ages.get(key))
+        if age is not None:
+            return age
+    return None
+
+
+def _topic_received_fresh(
+    live_payload: Mapping[str, Any],
+    key: str,
+) -> bool:
+    age = _topic_receipt_age_sec(live_payload, key)
+    return bool(age is not None and age <= live_status_max_age_sec())
+
+
+def _topic_is_fresh(
+    live_payload: Mapping[str, Any],
+    key: str,
+    payload: Optional[Mapping[str, Any]] = None,
+) -> bool:
+    age = _topic_age_sec(live_payload, key, payload)
+    return bool(age is not None and age <= live_status_max_age_sec())
+
+
+def _clear_command_fields(mapping: Dict[str, Any]) -> None:
+    for key in (
+        "command_lon_deg",
+        "command_lat_deg",
+        "cmd_az_deg",
+        "cmd_el_deg",
+        "az_cmd_deg",
+        "el_cmd_deg",
+        "command_frame",
+        "command_unit",
+        "command_time_unix",
+        "command_name",
+    ):
+        mapping.pop(key, None)
+
+
+def _clear_tracking_fields(mapping: Dict[str, Any]) -> None:
+    for key in (
+        "tracking_ok",
+        "tracking_error_deg",
+        "tracking_status_time_unix",
+        "tracking_status_age_sec",
+        "tracking_status_source",
+    ):
+        mapping.pop(key, None)
+
+
+def _live_truth_scrub_stale_motion(
+    out: Dict[str, Any],
+    live_payload: Mapping[str, Any],
+    *,
+    command_valid: bool,
+) -> None:
+    """Remove stale planned/sidecar motion fields when live ROS says idle.
+
+    Motion display is based on explicit fresh motion/status topics first
+    (section status, command queue, control status).  Encoder-delta motion is
+    only a fallback and uses a deadband, because the low-order encoder digits
+    can jitter while the antenna is physically stopped.
+    """
+    if not isinstance(out, dict) or not isinstance(live_payload, Mapping):
+        return
+
+    antenna = out.setdefault("antenna", {})
+    if isinstance(antenna, dict) and not command_valid:
+        _clear_command_fields(antenna)
+        _clear_tracking_fields(antenna)
+        antenna["command_valid"] = False
+        antenna["tracking_status_available"] = False
+        antenna.setdefault("command_source", "none")
+
+    queue = live_payload.get("queue_status") if isinstance(live_payload.get("queue_status"), Mapping) else {}
+    section = live_payload.get("section_status") if isinstance(live_payload.get("section_status"), Mapping) else {}
+    control = live_payload.get("control") if isinstance(live_payload.get("control"), Mapping) else {}
+    encoder_motion = live_payload.get("encoder_motion") if isinstance(live_payload.get("encoder_motion"), Mapping) else {}
+
+    section_fresh = _topic_received_fresh(live_payload, "section_status")
+    section_active = bool(section_fresh and section.get("active"))
+    section_stage = str(section.get("section_kind") or section.get("section_label") or "").strip()
+
+    queue_fresh = _topic_received_fresh(live_payload, "queue_status")
+    try:
+        queue_depth = int(queue.get("queue_depth", 0)) if isinstance(queue, Mapping) else 0
+    except Exception:
+        queue_depth = 0
+    queue_active = bool(queue_fresh and (queue.get("active") or queue_depth > 0))
+
+    control_fresh = _topic_received_fresh(live_payload, "control")
+    control_stage = str(control.get("section_kind") or control.get("section_label") or "").strip()
+    control_active = bool(
+        control_fresh
+        and (control.get("controlled") or control.get("tight") or control_stage)
+    )
+
+    encoder_motion_fresh = _topic_received_fresh(live_payload, "encoder")
+    encoder_moving = bool(encoder_motion_fresh and encoder_motion.get("moving"))
+
+    # command_valid keeps Tracking diagnostics meaningful, but by itself it is
+    # not physical movement.  Prefer explicit motion topics; use the encoder
+    # only as a deadbanded fallback for manual motion cases.
+    live_motion_active = bool(section_active or queue_active or control_active or encoder_moving)
+    if section_active:
+        motion_source = "section_status"
+    elif queue_active:
+        motion_source = "queue_status"
+    elif control_active:
+        motion_source = "control_status"
+    elif encoder_moving:
+        motion_source = "encoder_delta"
+    elif command_valid:
+        motion_source = "command"
+    else:
+        motion_source = "none"
+
+    activity = out.setdefault("activity", {})
+    if not isinstance(activity, dict):
+        return
+    activity["live_motion_active"] = live_motion_active
+    activity["live_motion_source"] = motion_source
+    activity["encoder_motion_deadband_deg"] = encoder_motion.get("deadband_deg")
+    activity["encoder_motion_delta_az_deg"] = encoder_motion.get("delta_az_deg")
+    activity["encoder_motion_delta_el_deg"] = encoder_motion.get("delta_el_deg")
+
+    if section_active:
+        if section_stage:
+            activity["motion_stage"] = section_stage
+            activity["control_section_kind"] = section_stage
+        activity["control_section_active"] = True
+        activity["control_section_fresh"] = True
+        activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+        return
+
+    if queue_active:
+        if not activity.get("motion_stage") or str(activity.get("motion_stage")).lower() in {"idle", "none", "unknown"}:
+            activity["motion_stage"] = "moving"
+        return
+
+    if control_active:
+        if control_stage:
+            activity["motion_stage"] = control_stage
+            activity["control_section_kind"] = control_stage
+        elif not activity.get("motion_stage") or str(activity.get("motion_stage")).lower() in {"idle", "none", "unknown"}:
+            activity["motion_stage"] = "moving"
+        return
+
+    if encoder_moving:
+        activity["motion_stage"] = "moving"
+        return
+
+    # Fresh command without explicit movement can still support tracking error
+    # display, but it must not preserve or invent a Moving state.
+
+    # If fresh live status does not support motion, old sidecar/planned values
+    # such as ON/line/moving must not remain visible as current state.
+    for key in (
+        "motion_stage",
+        "drive_kind",
+        "active_task",
+        "control_section_kind",
+        "control_section_label",
+        "control_id",
+        "control_section_uid",
+        "control_status_basis",
+        "control_section_start_unix",
+        "control_section_stop_unix",
+        "control_section_command_time_unix",
+        "control_section_publish_time_unix",
+        "control_section_query_time_unix",
+        "control_section_duration_sec",
+        "control_section_fraction",
+        "phase",
+    ):
+        activity.pop(key, None)
+    activity["active_task"] = "idle"
+    activity["phase"] = "IDLE"
+    activity["motion_stage"] = "idle"
+    activity["drive_kind"] = "idle"
+    activity["control_section_active"] = False
+    activity["control_section_fresh"] = False
+    activity["control_section_age_sec"] = _topic_age_sec(live_payload, "section_status", section)
+
+    geometry = out.get("geometry")
+    if isinstance(geometry, dict):
+        for key in (
+            "current_line_label",
+            "live_section_geometry",
+        ):
+            geometry.pop(key, None)
+def _first_present(mapping: Mapping[str, Any], *keys: str) -> Any:
+    for key in keys:
+        try:
+            value = mapping.get(key)
+        except Exception:
+            value = None
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def _finite_int(value: Any) -> Optional[int]:
+    try:
+        out = int(value)
+    except Exception:
+        return None
+    return out
+
+
+def _bool_config(value: Any, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    if isinstance(value, (int, float)):
+        return bool(value)
+    token = str(value).strip().lower()
+    if token in {"1", "true", "yes", "on", "enable", "enabled"}:
+        return True
+    if token in {"0", "false", "no", "off", "disable", "disabled"}:
+        return False
+    return default
+
+
+def _config_section_to_plain_dict(
+    section: Any, prefix: str
+) -> Optional[Dict[str, Any]]:
+    """Convert a neclib ConfigurationView or mapping to unprefixed keys."""
+    if isinstance(section, Mapping):
+        return dict(section)
+    if hasattr(section, "items"):
+        try:
+            return dict(section.items())
+        except Exception:
+            pass
+    if hasattr(section, "parameters"):
+        try:
+            raw = dict(section.parameters)
+        except Exception:
+            return None
+        prefix_norm = prefix.replace(".", "_") + "_"
+        out: Dict[str, Any] = {}
+        for key, value in raw.items():
+            key_s = str(key)
+            if key_s.startswith(prefix_norm):
+                key_s = key_s[len(prefix_norm) :]
+            out[key_s] = value
+        return out
+    return None
+
+
+def _progress_time_sync_from_necst_config() -> Optional[Dict[str, Any]]:
+    """Read [progress.time_sync] from the active NECST/neclib site config.
+
+    This intentionally fails closed.  Progress monitor must remain usable even
+    when it is run outside a fully configured NECST/ROS environment.
+    """
+    try:
+        from necst import config as necst_config  # type: ignore
+    except Exception:
+        return None
+    for key in ("progress.time_sync", "progress_time_sync"):
+        try:
+            section = necst_config.get(key)
+        except Exception:
+            continue
+        plain = _config_section_to_plain_dict(section, key)
+        if plain is not None:
+            return plain
+    return None
+
+
+def _progress_time_sync_from_toml_text(text: str) -> Optional[Dict[str, Any]]:
+    """Extract only [progress.time_sync] from TOML-like site config text.
+
+    Some existing NECST site config files contain constructs that the stdlib
+    TOML parser rejects even though neclib can read them.  The fallback reader
+    must therefore avoid parsing the entire site file.  It only parses the
+    requested section so that an unrelated legacy table elsewhere cannot disable
+    the optional progress time-sync indicator.
+    """
+    if tomllib is None:
+        return None
+    lines = text.splitlines()
+    section_lines: List[str] = []
+    in_section = False
+    header_pattern = re.compile(r"^\s*\[([^\[\]]+)\]\s*(?:#.*)?$")
+    array_header_pattern = re.compile(r"^\s*\[\[([^\[\]]+)\]\]\s*(?:#.*)?$")
+    for line in lines:
+        header = header_pattern.match(line)
+        array_header = array_header_pattern.match(line)
+        table_name = None
+        if header:
+            table_name = header.group(1).strip()
+        elif array_header:
+            table_name = array_header.group(1).strip()
+        if table_name is not None:
+            if table_name == "progress.time_sync" or table_name.startswith(
+                "progress.time_sync."
+            ):
+                in_section = True
+                section_lines.append(line)
+                continue
+            if in_section:
+                break
+        if in_section:
+            section_lines.append(line)
+    if not section_lines:
+        return None
+    snippet = "\n".join(section_lines) + "\n"
+    try:
+        data = tomllib.loads(snippet)
+    except Exception:
+        return None
+    progress = data.get("progress") if isinstance(data, Mapping) else None
+    if not isinstance(progress, Mapping):
+        return None
+    section = progress.get("time_sync")
+    return dict(section) if isinstance(section, Mapping) else None
+
+
+def _progress_time_sync_from_toml_file() -> Optional[Dict[str, Any]]:
+    """Fallback section reader used when necst/neclib import is unavailable."""
+    telescope = os.environ.get("TELESCOPE")
+    filename = f"{telescope}_config.toml" if telescope else "config.toml"
+    roots: List[Path] = []
+    necst_root = os.environ.get("NECST_ROOT")
+    if necst_root:
+        roots.append(Path(necst_root).expanduser())
+    roots.append(Path.home() / ".necst")
+    for root in roots:
+        path = root / filename
+        try:
+            section = _progress_time_sync_from_toml_text(
+                path.read_text(encoding="utf-8")
+            )
+        except Exception:
+            continue
+        if isinstance(section, Mapping):
+            return dict(section)
+    return None
+
+
+def _normalize_time_sync_hosts(raw_hosts: Any) -> List[Dict[str, Any]]:
+    hosts: List[Dict[str, Any]] = []
+    if raw_hosts is None:
+        return hosts
+    items: Iterable[Any]
+    if isinstance(raw_hosts, Mapping):
+        mapped: List[Any] = []
+        for name, value in raw_hosts.items():
+            if isinstance(value, Mapping):
+                entry = dict(value)
+                entry.setdefault("name", name)
+                mapped.append(entry)
+            else:
+                mapped.append({"name": name, "host": value})
+        items = mapped
+    elif isinstance(raw_hosts, (list, tuple)):
+        items = raw_hosts
+    else:
+        items = [raw_hosts]
+
+    for item in items:
+        if isinstance(item, str):
+            name = item.strip()
+            host = name
+            method = "auto"
+        elif isinstance(item, Mapping):
+            host_value = (
+                item.get("host")
+                if item.get("host") not in (None, "")
+                else item.get("address")
+            )
+            host = str(host_value or "").strip()
+            name = str(item.get("name") or host).strip()
+            method = str(item.get("method") or "auto").strip().lower()
+        else:
+            continue
+        if not host:
+            continue
+        hosts.append({"name": name or host, "host": host, "method": method or "auto"})
+    return hosts
+
+
+def load_progress_time_sync_config() -> Optional[Dict[str, Any]]:
+    """Return normalized progress time-sync config, or None when absent/disabled.
+
+    The only intended configuration location is the active site config, e.g.
+    OMU1p85m_config.toml or NANTEN2_config.toml.  No separate profile switch is
+    introduced; TELESCOPE/neclib already selects the site.
+    """
+    raw = _progress_time_sync_from_necst_config()
+    if raw is None:
+        raw = _progress_time_sync_from_toml_file()
+    if not isinstance(raw, Mapping):
+        return None
+    hosts = _normalize_time_sync_hosts(raw.get("hosts"))
+    enabled = _bool_config(raw.get("enabled"), default=bool(hosts))
+    if not enabled or not hosts:
+        return None
+    interval = _finite_float(raw.get("interval_sec"))
+    timeout = _finite_float(raw.get("timeout_sec"))
+    ok_offset = _finite_float(raw.get("ok_offset_ms"))
+    warn_offset = _finite_float(raw.get("warn_offset_ms"))
+    bad_after = _finite_int(raw.get("bad_after_failures"))
+    return {
+        "enabled": True,
+        "hosts": hosts,
+        "interval_sec": max(10.0, interval if interval is not None else 60.0),
+        "timeout_sec": max(0.2, timeout if timeout is not None else 2.0),
+        "ok_offset_ms": max(0.0, ok_offset if ok_offset is not None else 5.0),
+        "warn_offset_ms": max(0.0, warn_offset if warn_offset is not None else 20.0),
+        "bad_after_failures": max(1, bad_after if bad_after is not None else 3),
+    }
+
+
+def _compact_command(argv: Sequence[str]) -> str:
+    return " ".join(str(x) for x in argv)
+
+
+def _parse_float_token(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    match = re.search(r"[-+]?\d+(?:\.\d*)?(?:[eE][-+]?\d+)?", str(value))
+    return _finite_float(match.group(0)) if match else None
+
+
+def _split_ntp_assignments(text: str) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    for token in re.split(r",\s*|\s+", text.replace("\n", " ")):
+        if "=" not in token:
+            continue
+        key, value = token.split("=", 1)
+        key = key.strip().lower()
+        if key:
+            out[key] = value.strip().strip(',')
+    return out
+
+
+class TimeSyncPoller:
+    """Low-frequency best-effort NTP/chrony monitor for progress.py only."""
+
+    def __init__(self, config: Mapping[str, Any]) -> None:
+        self.hosts = list(config.get("hosts") or [])
+        self.interval_sec = float(config.get("interval_sec") or 60.0)
+        self.timeout_sec = float(config.get("timeout_sec") or 2.0)
+        self.ok_offset_ms = float(config.get("ok_offset_ms") or 5.0)
+        self.warn_offset_ms = float(config.get("warn_offset_ms") or 20.0)
+        if self.warn_offset_ms < self.ok_offset_ms:
+            self.warn_offset_ms = self.ok_offset_ms
+        self.bad_after_failures = int(config.get("bad_after_failures") or 3)
+        self._lock = threading.RLock()
+        self._stop = threading.Event()
+        self._failures: Dict[str, int] = {}
+        self._state: Dict[str, Any] = {
+            "enabled": True,
+            "status": "unknown",
+            "label": "unknown",
+            "summary": "time sync: not checked yet",
+            "checked_at_unix": None,
+            "hosts": [],
+        }
+        self._thread = threading.Thread(
+            target=self._loop, name="necst-progress-time-sync", daemon=True
+        )
+        self._thread.start()
+
+    @classmethod
+    def from_site_config(cls) -> Optional["TimeSyncPoller"]:
+        config = load_progress_time_sync_config()
+        if not config:
+            return None
+        return cls(config)
+
+    def snapshot(self) -> Dict[str, Any]:
+        with self._lock:
+            return copy.deepcopy(self._state)
+
+    def close(self) -> None:
+        self._stop.set()
+        try:
+            if self._thread.is_alive():
+                self._thread.join(timeout=1.0)
+        except Exception:
+            pass
+
+    def _loop(self) -> None:
+        while not self._stop.is_set():
+            try:
+                self.poll_once()
+            except Exception as exc:
+                with self._lock:
+                    self._state = {
+                        "enabled": True,
+                        "status": "unknown",
+                        "label": "unknown",
+                        "summary": (
+                            "time sync: monitor error "
+                            f"({exc.__class__.__name__})"
+                        ),
+                        "checked_at_unix": time.time(),
+                        "hosts": [],
+                    }
+            self._stop.wait(self.interval_sec)
+
+    def poll_once(self) -> None:
+        checked_at = time.time()
+        results: List[Dict[str, Any]] = []
+        for host_cfg in self.hosts:
+            if not isinstance(host_cfg, Mapping):
+                continue
+            result = self._check_host(host_cfg)
+            key = str(result.get("name") or result.get("host") or "host")
+            if result.get("status") in {"ok", "warn", "bad"} and not result.get(
+                "query_failed"
+            ):
+                self._failures[key] = 0
+            else:
+                self._failures[key] = self._failures.get(key, 0) + 1
+                result["failures"] = self._failures[key]
+                if self._failures[key] >= self.bad_after_failures:
+                    result["status"] = "bad"
+                    result["synced"] = False
+            results.append(result)
+
+        statuses = [str(r.get("status") or "unknown") for r in results]
+        ok_count = statuses.count("ok")
+        total = len(statuses)
+        offsets = [
+            abs(float(r["offset_ms"]))
+            for r in results
+            if _finite_float(r.get("offset_ms")) is not None
+        ]
+        max_offset = max(offsets) if offsets else None
+        if total <= 0:
+            status = "unknown"
+        elif ok_count == total:
+            status = "ok"
+        elif any(s in {"bad", "warn"} for s in statuses):
+            status = "bad"
+        else:
+            status = "unknown"
+        label = (
+            "sync"
+            if status == "ok"
+            else ("nosync" if status == "bad" else "unknown")
+        )
+        worst = next(
+            (r for r in results if str(r.get("status")) in {"bad", "warn"}),
+            next((r for r in results if str(r.get("status")) == "unknown"), None),
+        )
+        parts = [f"time sync: {label}", f"{ok_count}/{total} OK"]
+        if max_offset is not None:
+            parts.append(f"max offset {max_offset:.3g} ms")
+        if worst is not None and status != "ok":
+            reason = str(worst.get("reason") or worst.get("status") or "unknown")
+            parts.append(f"worst {worst.get('name')}: {reason}")
+        state = {
+            "enabled": True,
+            "status": status,
+            "label": label,
+            "summary": ", ".join(parts),
+            "checked_at_unix": checked_at,
+            "ok_count": ok_count,
+            "host_count": total,
+            "max_offset_ms": max_offset,
+            "hosts": results,
+        }
+        with self._lock:
+            self._state = state
+
+    def _run_command(self, argv: Sequence[str]) -> Dict[str, Any]:
+        exe = str(argv[0]) if argv else ""
+        if not exe or shutil.which(exe) is None:
+            return {
+                "ok": False,
+                "command_available": False,
+                "reason": f"{exe or 'command'} not found",
+                "command": _compact_command(argv),
+            }
+        try:
+            proc = subprocess.run(
+                list(argv),
+                text=True,
+                capture_output=True,
+                timeout=self.timeout_sec,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "ok": False,
+                "command_available": True,
+                "reason": "timeout",
+                "command": _compact_command(argv),
+            }
+        except Exception as exc:
+            return {
+                "ok": False,
+                "command_available": True,
+                "reason": exc.__class__.__name__,
+                "command": _compact_command(argv),
+            }
+        text = (proc.stdout or "") + ("\n" + proc.stderr if proc.stderr else "")
+        return {
+            "ok": proc.returncode == 0 and bool((proc.stdout or "").strip()),
+            "command_available": True,
+            "returncode": proc.returncode,
+            "stdout": proc.stdout or "",
+            "stderr": proc.stderr or "",
+            "text": text,
+            "reason": f"exit {proc.returncode}" if proc.returncode != 0 else "",
+            "command": _compact_command(argv),
+        }
+
+    def _check_host(self, host_cfg: Mapping[str, Any]) -> Dict[str, Any]:
+        name = str(host_cfg.get("name") or host_cfg.get("host") or "host")
+        host = str(host_cfg.get("host") or host_cfg.get("address") or name)
+        method = str(host_cfg.get("method") or "auto").strip().lower()
+        methods = (
+            ["chrony", "ntpq", "xntpdq", "ntpdc"]
+            if method == "auto"
+            else [method]
+        )
+        last: Optional[Dict[str, Any]] = None
+        for candidate in methods:
+            result = self._check_host_with_method(name, host, candidate)
+            last = result
+            # In auto mode, try the next tool only for command/query failures.
+            if method == "auto" and result.get("query_failed"):
+                continue
+            return result
+        return last or {
+            "name": name,
+            "host": host,
+            "method": method,
+            "status": "unknown",
+            "synced": None,
+            "reason": "no method usable",
+            "query_failed": True,
+        }
+
+    def _check_host_with_method(
+        self, name: str, host: str, method: str
+    ) -> Dict[str, Any]:
+        if method in {"chrony", "chronyc"}:
+            if host in {"localhost", "127.0.0.1", "::1"}:
+                argv = ["chronyc", "-n", "tracking"]
+            else:
+                argv = ["chronyc", "-n", "-h", host, "tracking"]
+            run = self._run_command(argv)
+            if not run.get("ok"):
+                return self._query_failed_result(name, host, "chrony", run)
+            return self._classify_host_result(
+                name,
+                host,
+                "chrony",
+                self._parse_chronyc_tracking(str(run.get("stdout") or "")),
+            )
+        if method == "ntpq":
+            argv = ["ntpq", "-n", "-c", "rv", "-c", "peers", host]
+            run = self._run_command(argv)
+            if not run.get("ok"):
+                return self._query_failed_result(name, host, "ntpq", run)
+            return self._classify_host_result(
+                name,
+                host,
+                "ntpq",
+                self._parse_ntpq_output(str(run.get("stdout") or "")),
+            )
+        if method == "xntpdq":
+            for argv in (
+                ["xntpdq", "-n", "-c", "rv", "-c", "peers", host],
+                ["xntpdq", "-n", "-p", host],
+            ):
+                run = self._run_command(argv)
+                if run.get("ok"):
+                    return self._classify_host_result(
+                        name,
+                        host,
+                        "xntpdq",
+                        self._parse_ntpq_output(str(run.get("stdout") or "")),
+                    )
+                last = run
+            return self._query_failed_result(name, host, "xntpdq", last)
+        if method == "ntpdc":
+            argv = ["ntpdc", "-n", "-c", "sysinfo", "-c", "peers", host]
+            run = self._run_command(argv)
+            if not run.get("ok"):
+                return self._query_failed_result(name, host, "ntpdc", run)
+            return self._classify_host_result(
+                name,
+                host,
+                "ntpdc",
+                self._parse_ntpdc_output(str(run.get("stdout") or "")),
+            )
+        return {
+            "name": name,
+            "host": host,
+            "method": method,
+            "status": "unknown",
+            "synced": None,
+            "reason": f"unsupported method {method!r}",
+            "query_failed": True,
+        }
+
+    def _query_failed_result(
+        self, name: str, host: str, method: str, run: Optional[Mapping[str, Any]]
+    ) -> Dict[str, Any]:
+        return {
+            "name": name,
+            "host": host,
+            "method": method,
+            "status": "unknown",
+            "synced": None,
+            "offset_ms": None,
+            "source": "",
+            "reason": str((run or {}).get("reason") or "query failed"),
+            "query_failed": True,
+            "command": str((run or {}).get("command") or ""),
+        }
+
+    def _classify_host_result(
+        self, name: str, host: str, method: str, parsed: Mapping[str, Any]
+    ) -> Dict[str, Any]:
+        synced = parsed.get("synced")
+        offset_ms = _finite_float(parsed.get("offset_ms"))
+        if synced is False:
+            status = "bad"
+            reason = str(parsed.get("reason") or "unsynchronised")
+        elif offset_ms is not None and abs(offset_ms) > self.warn_offset_ms:
+            status = "bad"
+            reason = f"offset {offset_ms:+.3g} ms"
+        elif offset_ms is not None and abs(offset_ms) > self.ok_offset_ms:
+            status = "warn"
+            reason = f"offset {offset_ms:+.3g} ms"
+        elif synced is True:
+            status = "ok"
+            reason = "synchronised"
+        else:
+            status = "unknown"
+            reason = str(parsed.get("reason") or "sync state unknown")
+        return {
+            "name": name,
+            "host": host,
+            "method": method,
+            "status": status,
+            "synced": synced,
+            "offset_ms": offset_ms,
+            "source": parsed.get("source") or "",
+            "stratum": parsed.get("stratum"),
+            "reach": parsed.get("reach"),
+            "reason": reason,
+            "query_failed": False,
+        }
+
+    def _parse_chronyc_tracking(self, text: str) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"synced": None, "offset_ms": None, "source": ""}
+        for line in text.splitlines():
+            if ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            key_l = key.strip().lower()
+            value_s = value.strip()
+            if key_l == "reference id":
+                out["source"] = value_s
+            elif key_l == "stratum":
+                out["stratum"] = _finite_int(value_s)
+            elif key_l == "system time":
+                seconds = _parse_float_token(value_s)
+                if seconds is not None:
+                    sign = -1.0 if "slow" in value_s.lower() else 1.0
+                    out["offset_ms"] = sign * seconds * 1000.0
+            elif key_l == "leap status":
+                token = value_s.lower()
+                if "normal" in token:
+                    out["synced"] = True
+                elif "not" in token or "unsynchron" in token:
+                    out["synced"] = False
+                    out["reason"] = value_s
+        stratum = _finite_int(out.get("stratum"))
+        if stratum is not None and stratum >= 16:
+            out["synced"] = False
+            out.setdefault("reason", f"stratum {stratum}")
+        return out
+
+    def _parse_ntpq_output(self, text: str) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"synced": None, "offset_ms": None, "source": ""}
+        assignments = _split_ntp_assignments(text)
+        if "offset" in assignments:
+            # ntpq rv reports offset in milliseconds.
+            out["offset_ms"] = _parse_float_token(assignments.get("offset"))
+        if "stratum" in assignments:
+            out["stratum"] = _finite_int(assignments.get("stratum"))
+        leap = str(assignments.get("leap") or "").lower()
+        if leap in {"00", "leap_none", "none"}:
+            out["synced"] = True
+        elif leap in {"11", "leap_alarm", "alarm"}:
+            out["synced"] = False
+            out["reason"] = f"leap {leap}"
+        for line in text.splitlines():
+            stripped = line.lstrip()
+            if not stripped or stripped[0] not in {"*", "o"}:
+                continue
+            fields = stripped[1:].split()
+            if fields:
+                out["source"] = fields[0]
+                out["synced"] = True
+            if len(fields) >= 9:
+                offset = _finite_float(fields[8])
+                if offset is not None:
+                    out["offset_ms"] = offset
+            if len(fields) >= 7:
+                out["reach"] = fields[6]
+            break
+        stratum = _finite_int(out.get("stratum"))
+        if stratum is not None and stratum >= 16:
+            out["synced"] = False
+            out.setdefault("reason", f"stratum {stratum}")
+        if out.get("synced") is None and "sync_unspec" in text.lower():
+            out["synced"] = False
+            out.setdefault("reason", "sync_unspec")
+        return out
+
+    def _parse_ntpdc_output(self, text: str) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"synced": None, "offset_ms": None, "source": ""}
+        for line in text.splitlines():
+            if ":" in line:
+                key, value = line.split(":", 1)
+                key_l = key.strip().lower()
+                value_s = value.strip()
+                if key_l == "system peer":
+                    out["source"] = value_s
+                    if value_s and value_s not in {"0.0.0.0", "none"}:
+                        out["synced"] = True
+                elif key_l == "stratum":
+                    out["stratum"] = _finite_int(value_s)
+                elif key_l == "leap indicator":
+                    token = value_s.lower()
+                    if token.startswith("00") or "none" in token:
+                        out["synced"] = True
+                    elif token.startswith("11") or "alarm" in token:
+                        out["synced"] = False
+                        out["reason"] = value_s
+            stripped = line.lstrip()
+            if stripped and stripped[0] in {"*", "o"}:
+                fields = stripped[1:].split()
+                if fields:
+                    out["source"] = fields[0]
+                    out["synced"] = True
+                # ntpdc peers usually ends with delay, offset, dispersion.
+                if len(fields) >= 3:
+                    offset = _finite_float(fields[-2])
+                    if offset is not None:
+                        out["offset_ms"] = (
+                            offset * 1000.0 if abs(offset) < 1.0 else offset
+                        )
+        stratum = _finite_int(out.get("stratum"))
+        if stratum is not None and stratum >= 16:
+            out["synced"] = False
+            out.setdefault("reason", f"stratum {stratum}")
+        return out
 
 
 def angular_delta_deg(measured: float, commanded: float) -> float:
@@ -458,28 +1402,19 @@ def _live_payload_has_position(live_payload: Mapping[str, Any]) -> bool:
     """
     if not isinstance(live_payload, Mapping):
         return False
-    pointing = (
-        live_payload.get("pointing_status")
-        if isinstance(live_payload.get("pointing_status"), Mapping)
-        else {}
-    )
     encoder = (
         live_payload.get("encoder")
         if isinstance(live_payload.get("encoder"), Mapping)
         else {}
     )
 
-    # An idle snapshot must represent the actual telescope position.  A live
-    # command-only sample may be stale or merely the last target, so it must not
-    # fabricate an "idle antenna position" when no encoder/pointing encoder value
-    # is available.
-    for payload, keys in (
-        (pointing, ("enc_az_deg", "enc_el_deg")),
-        (encoder, ("encoder_lon_deg", "encoder_lat_deg")),
-    ):
-        if any(_finite_float(payload.get(key)) is not None for key in keys):
-            return True
-    return False
+    # An idle snapshot must represent the actual telescope position.  Use only
+    # the real encoder topic here.  AntennaPointingStatus is a diagnostic topic
+    # and may be invalid or extrapolated when no command is active.
+    return (
+        _finite_float(encoder.get("encoder_lon_deg")) is not None
+        and _finite_float(encoder.get("encoder_lat_deg")) is not None
+    )
 
 
 def make_idle_live_snapshot(
@@ -573,56 +1508,45 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("encoder"), dict)
         else {}
     )
-    pointing = (
-        live_payload.get("pointing_status")
-        if isinstance(live_payload.get("pointing_status"), dict)
-        else {}
-    )
+    # AntennaPointingStatus is a diagnostic topic derived from altaz + encoder
+    # and may contain interpolated/extrapolated command values even after the
+    # real altaz command stream stops.  Do not use it for Current, Command,
+    # Tracking, or Moving state in operator-facing displays.
+    pointing: Dict[str, Any] = {}
     az_unwrap = (
         live_payload.get("az_unwrap_status")
         if isinstance(live_payload.get("az_unwrap_status"), dict)
         else {}
     )
-    if pointing:
-        antenna_update["pointing_status_available"] = True
-        antenna_update["pointing_status_valid"] = bool(pointing.get("valid", False))
-        if pointing.get("cmd_az_deg") is not None:
-            antenna_update["command_lon_deg"] = pointing.get("cmd_az_deg")
-            antenna_update["command_lat_deg"] = pointing.get("cmd_el_deg")
-            antenna_update["command_frame"] = "altaz"
-            antenna_update["command_unit"] = "deg"
-            antenna_update["command_time_unix"] = pointing.get("command_time_unix")
-        if pointing.get("enc_az_deg") is not None:
-            antenna_update["encoder_lon_deg"] = pointing.get("enc_az_deg")
-            antenna_update["encoder_lat_deg"] = pointing.get("enc_el_deg")
-            antenna_update["encoder_frame"] = "altaz"
-            antenna_update["encoder_unit"] = "deg"
-            antenna_update["encoder_time_unix"] = pointing.get("encoder_time_unix")
-        antenna_update["tracking_status_available"] = True
-        antenna_update["tracking_ok"] = bool(pointing.get("tracking_ok", False))
-        antenna_update["tracking_error_deg"] = pointing.get("tracking_error_deg")
-        antenna_update["tracking_status_time_unix"] = pointing.get("publish_time_unix")
-        antenna_update["tracking_status_age_sec"] = (
-            max(0.0, time.time() - pointing.get("publish_time_unix", time.time()))
-            if pointing.get("publish_time_unix") is not None
-            else None
-        )
-        antenna_update["tracking_threshold_deg"] = pointing.get(
-            "tracking_threshold_deg"
-        )
-        antenna_update["command_stale"] = bool(pointing.get("command_stale", False))
-        antenna_update["encoder_stale"] = bool(pointing.get("encoder_stale", False))
-        antenna_update["command_age_sec"] = pointing.get("cmd_age_sec")
-        antenna_update["encoder_age_sec"] = pointing.get("enc_age_sec")
-        antenna_update["delta_az_deg"] = pointing.get("delta_az_deg")
-        antenna_update["delta_el_deg"] = pointing.get("delta_el_deg")
-        antenna_update["delta_az_cos_el_deg"] = pointing.get("delta_az_cos_el_deg")
-        antenna_update["pointing_basis"] = pointing.get("basis")
-    else:
-        if cmd:
-            antenna_update.update(cmd)
-        if enc:
-            antenna_update.update(enc)
+    # Always start from direct encoder telemetry.  Command display is stricter:
+    # it must represent a real, fresh altaz command topic callback only, not an
+    # observation plan, old progress snapshot, AntennaPointingStatus, or
+    # interpolated section.  Otherwise Command Az/El can keep moving after abort
+    # even when no real command topic is being published.
+    command_valid = False
+    command_source = "none"
+    live_ages = (
+        live_payload.get("last_message_age_sec")
+        if isinstance(live_payload.get("last_message_age_sec"), dict)
+        else {}
+    )
+    command_topic_age = _topic_receipt_age_sec(live_payload, "command")
+    command_topic_fresh = _topic_received_fresh(live_payload, "command")
+    direct_cmd_az = _finite_float(
+        _first_present(cmd, "command_lon_deg", "cmd_az_deg", "az_cmd_deg")
+    )
+    direct_cmd_el = _finite_float(
+        _first_present(cmd, "command_lat_deg", "cmd_el_deg", "el_cmd_deg")
+    )
+    if direct_cmd_az is not None and direct_cmd_el is not None and command_topic_fresh:
+        antenna_update.update(cmd)
+        command_valid = True
+        command_source = "command_topic"
+    if enc:
+        antenna_update.update(enc)
+
+    # Intentionally ignore AntennaPointingStatus for normal display.
+    # Tracking error is taken only from topic.antenna_tracking below.
     if az_unwrap and az_unwrap.get("enabled"):
         antenna_update["az_unwrap"] = dict(az_unwrap)
         antenna_update["az_unwrap_enabled"] = True
@@ -636,24 +1560,44 @@ def merge_live_telemetry(
         if isinstance(live_payload.get("tracking"), dict)
         else {}
     )
-    if tracking:
-        terr = _finite_float(tracking.get("error_deg"))
+    tracking_fresh = bool(tracking and _topic_received_fresh(live_payload, "tracking"))
+    terr = _finite_float(tracking.get("error_deg")) if tracking else None
+    tracking_available = bool(command_valid and tracking_fresh and terr is not None)
+    if tracking_available:
         tstat = _finite_float(tracking.get("time_unix"))
         antenna_update["tracking_status_available"] = True
         antenna_update["tracking_ok"] = bool(tracking.get("ok", False))
-        if terr is not None:
-            antenna_update["tracking_error_deg"] = terr
+        antenna_update["tracking_error_deg"] = terr
         if tstat is not None:
             antenna_update["tracking_status_time_unix"] = tstat
-            antenna_update["tracking_status_age_sec"] = max(0.0, time.time() - tstat)
+        antenna_update["tracking_status_age_sec"] = _topic_receipt_age_sec(
+            live_payload, "tracking"
+        )
+        antenna_update["tracking_status_source"] = "antenna_tracking"
     else:
         # Do not compute a tracking error from the latest command and latest
         # encoder samples here.  altaz_cmd is a time-tagged command stream and
         # its newest sample is not necessarily the command at the encoder time.
-        # NECST's antenna_tracking topic already performs the correct comparison.
-        antenna_update.setdefault("tracking_status_available", False)
-    if antenna_update:
-        out.setdefault("antenna", {}).update(antenna_update)
+        # NECST's antenna_tracking topic already performs the correct comparison,
+        # but it is meaningful for the UI only while a fresh altaz command exists.
+        antenna_update["tracking_status_available"] = False
+        _clear_tracking_fields(antenna_update)
+    # Command Az/El must be backed by an actually received fresh command topic.
+    # The progress sidecar and observation plan may contain command-like values,
+    # but those are not the live command and must not survive after abort.
+    antenna_section = out.setdefault("antenna", {})
+    if not command_valid:
+        _clear_command_fields(antenna_section)
+        _clear_command_fields(antenna_update)
+    if not tracking_available:
+        _clear_tracking_fields(antenna_section)
+        _clear_tracking_fields(antenna_update)
+    if antenna_update or isinstance(antenna_section, dict):
+        antenna_update["command_valid"] = bool(command_valid)
+        antenna_update["command_source"] = command_source
+        if command_topic_age is not None:
+            antenna_update["command_topic_age_sec"] = command_topic_age
+        antenna_section.update(antenna_update)
     weather_payload = (
         live_payload.get("weather")
         if isinstance(live_payload.get("weather"), dict)
@@ -675,6 +1619,13 @@ def merge_live_telemetry(
     )
     if spec_payload:
         out.setdefault("spectrometer", {}).update(spec_payload)
+    chopper_payload = (
+        live_payload.get("chopper_status")
+        if isinstance(live_payload.get("chopper_status"), dict)
+        else {}
+    )
+    if chopper_payload:
+        out.setdefault("chopper", {}).update(chopper_payload)
 
     lifecycle = out.get("lifecycle") if isinstance(out.get("lifecycle"), dict) else {}
     final_state = str(lifecycle.get("state") or "").lower() in {
@@ -806,6 +1757,7 @@ def merge_live_telemetry(
             # present.
             if data.get("latest_control_line_index") is None:
                 data["latest_control_line_index"] = line_index
+    _live_truth_scrub_stale_motion(out, live_payload, command_valid=command_valid)
     return apply_dynamic_remaining(out)
 
 
@@ -826,15 +1778,99 @@ class LiveRosCache:
         self.control: Dict[str, Any] = {}
         self.command: Dict[str, Any] = {}
         self.encoder: Dict[str, Any] = {}
+        self.encoder_motion: Dict[str, Any] = {}
+        self._previous_encoder_sample: Optional[Dict[str, float]] = None
+        self._encoder_motion_anchor: Optional[Dict[str, float]] = None
+        self._last_significant_encoder_motion_unix: Optional[float] = None
         self.tracking: Dict[str, Any] = {}
         self.section_status: Dict[str, Any] = {}
         self.pointing_status: Dict[str, Any] = {}
         self.az_unwrap_status: Dict[str, Any] = {}
         self.queue_status: Dict[str, Any] = {}
         self.spectrometer_status: Dict[str, Any] = {}
+        self.chopper_status: Dict[str, Any] = {}
         self.weather: Dict[str, Dict[str, Any]] = {}
+        self._sample_counts: Dict[str, int] = {}
+        self._last_message_time_unix: Dict[str, float] = {}
         if self.requested:
             self._start()
+
+    def _record_sample_locked(self, key: str) -> None:
+        now = time.time()
+        self._sample_counts[key] = int(self._sample_counts.get(key, 0)) + 1
+        self._last_message_time_unix[key] = now
+
+    def _update_encoder_motion_locked(self, payload: Dict[str, Any]) -> None:
+        """Estimate actual antenna motion from encoder samples with deadband.
+
+        The encoder can jitter in the low-order digits while the antenna is
+        stopped.  Field tests showed sample-to-sample noise of about 2e-4 deg,
+        so this fallback uses a larger deadband plus a small hysteresis and is
+        used only when fresher explicit section/queue status is unavailable.
+        """
+
+        now = time.time()
+        lon = _finite_float(payload.get("encoder_lon_deg"))
+        lat = _finite_float(payload.get("encoder_lat_deg"))
+        if lon is None or lat is None:
+            self.encoder_motion = {
+                "moving": False,
+                "source": "encoder_unavailable",
+                "deadband_deg": ENCODER_MOTION_DEADBAND_DEG,
+                "time_unix": now,
+            }
+            return
+
+        previous = self._previous_encoder_sample
+        anchor = self._encoder_motion_anchor or previous
+        delta_az = None
+        delta_el = None
+        anchor_delta_az = None
+        anchor_delta_el = None
+        per_sample_significant = False
+        cumulative_start_significant = False
+        was_recently_moving = bool(
+            self._last_significant_encoder_motion_unix is not None
+            and now - self._last_significant_encoder_motion_unix <= ENCODER_MOTION_HOLD_SEC
+        )
+        if previous is not None:
+            delta_az = abs(lon - previous.get("lon", lon))
+            delta_el = abs(lat - previous.get("lat", lat))
+            per_sample_significant = bool(
+                delta_az > ENCODER_MOTION_DEADBAND_DEG
+                or delta_el > ENCODER_MOTION_DEADBAND_DEG
+            )
+        if anchor is not None and not was_recently_moving:
+            anchor_delta_az = abs(lon - anchor.get("lon", lon))
+            anchor_delta_el = abs(lat - anchor.get("lat", lat))
+            cumulative_start_significant = bool(
+                anchor_delta_az > ENCODER_MOTION_START_CUMULATIVE_DEG
+                or anchor_delta_el > ENCODER_MOTION_START_CUMULATIVE_DEG
+            )
+
+        significant = bool(per_sample_significant or cumulative_start_significant)
+        if significant:
+            self._last_significant_encoder_motion_unix = now
+        held = bool(
+            self._last_significant_encoder_motion_unix is not None
+            and now - self._last_significant_encoder_motion_unix <= ENCODER_MOTION_HOLD_SEC
+        )
+        moving = bool(significant or held)
+        if self._encoder_motion_anchor is None or (was_recently_moving and not moving):
+            self._encoder_motion_anchor = {"lon": lon, "lat": lat, "time_unix": now}
+        self.encoder_motion = {
+            "moving": moving,
+            "source": "encoder_delta" if moving else "encoder_delta_deadband",
+            "delta_az_deg": delta_az,
+            "delta_el_deg": delta_el,
+            "anchor_delta_az_deg": anchor_delta_az,
+            "anchor_delta_el_deg": anchor_delta_el,
+            "deadband_deg": ENCODER_MOTION_DEADBAND_DEG,
+            "start_cumulative_deg": ENCODER_MOTION_START_CUMULATIVE_DEG,
+            "hold_sec": ENCODER_MOTION_HOLD_SEC,
+            "time_unix": now,
+        }
+        self._previous_encoder_sample = {"lon": lon, "lat": lat, "time_unix": now}
 
     def _start(self) -> None:
         try:
@@ -842,6 +1878,7 @@ class LiveRosCache:
             if repo_root not in sys.path:
                 sys.path.insert(0, repo_root)
             import rclpy  # type: ignore
+            from necst import config as necst_config  # type: ignore
             from necst.definitions import topic  # type: ignore
 
             self._rclpy = rclpy
@@ -856,37 +1893,47 @@ class LiveRosCache:
                     line_index = int(line_index)
                 except Exception:
                     line_index = -1
-                self.control = {
-                    "controlled": bool(getattr(msg, "controlled", False)),
-                    "tight": bool(getattr(msg, "tight", False)),
-                    "remote": bool(getattr(msg, "remote", False)),
-                    "id": str(getattr(msg, "id", "")),
-                    "interrupt_ok": bool(getattr(msg, "interrupt_ok", False)),
-                    "time_unix": _finite_float(getattr(msg, "time", None)),
-                    "section_kind": str(getattr(msg, "section_kind", "")),
-                    "section_label": str(getattr(msg, "section_label", "")),
-                    "line_index": line_index,
-                }
+                with self._lock:
+                    self.control = {
+                        "controlled": bool(getattr(msg, "controlled", False)),
+                        "tight": bool(getattr(msg, "tight", False)),
+                        "remote": bool(getattr(msg, "remote", False)),
+                        "id": str(getattr(msg, "id", "")),
+                        "interrupt_ok": bool(getattr(msg, "interrupt_ok", False)),
+                        "time_unix": _finite_float(getattr(msg, "time", None)),
+                        "section_kind": str(getattr(msg, "section_kind", "")),
+                        "section_label": str(getattr(msg, "section_label", "")),
+                        "line_index": line_index,
+                    }
+                    self._record_sample_locked("control")
 
             def command_cb(msg: Any) -> None:
-                self.command = _msg_coord(msg, prefix="command")
+                with self._lock:
+                    self.command = _msg_coord(msg, prefix="command")
+                    self._record_sample_locked("command")
 
             def encoder_cb(msg: Any) -> None:
-                self.encoder = _msg_coord(msg, prefix="encoder")
+                with self._lock:
+                    self.encoder = _msg_coord(msg, prefix="encoder")
+                    self._update_encoder_motion_locked(self.encoder)
+                    self._record_sample_locked("encoder")
 
             def tracking_cb(msg: Any) -> None:
                 # TrackingStatus is produced by NECST's antenna tracking node.
                 # It compares the encoder position with the command value at the
                 # encoder timestamp, using the control-side interpolation/extrapolation.
                 # Progress should not recompute tracking error from two latest samples.
-                self.tracking = {
-                    "ok": bool(getattr(msg, "ok", False)),
-                    "error_deg": _finite_float(getattr(msg, "error", None)),
-                    "time_unix": _finite_float(getattr(msg, "time", None)),
-                }
+                with self._lock:
+                    self.tracking = {
+                        "ok": bool(getattr(msg, "ok", False)),
+                        "error_deg": _finite_float(getattr(msg, "error", None)),
+                        "time_unix": _finite_float(getattr(msg, "time", None)),
+                    }
+                    self._record_sample_locked("tracking")
 
             def section_status_cb(msg: Any) -> None:
-                self.section_status = {
+                with self._lock:
+                    self.section_status = {
                     "active": bool(getattr(msg, "active", False)),
                     "control_id": str(getattr(msg, "control_id", "")),
                     "section_uid": str(getattr(msg, "section_uid", "")),
@@ -941,10 +1988,12 @@ class LiveRosCache:
                         getattr(msg, "section_speed_deg_per_sec", None)
                     ),
                     "status_basis": str(getattr(msg, "status_basis", "")),
-                }
+                    }
+                    self._record_sample_locked("section_status")
 
             def pointing_status_cb(msg: Any) -> None:
-                self.pointing_status = {
+                with self._lock:
+                    self.pointing_status = {
                     "valid": bool(getattr(msg, "valid", False)),
                     "publish_time_unix": _finite_float(
                         getattr(msg, "publish_time_unix", None)
@@ -976,10 +2025,12 @@ class LiveRosCache:
                     "command_stale": bool(getattr(msg, "command_stale", False)),
                     "encoder_stale": bool(getattr(msg, "encoder_stale", False)),
                     "basis": str(getattr(msg, "basis", "")),
-                }
+                    }
+                    self._record_sample_locked("pointing_status")
 
             def az_unwrap_status_cb(msg: Any) -> None:
-                self.az_unwrap_status = {
+                with self._lock:
+                    self.az_unwrap_status = {
                     "enabled": bool(getattr(msg, "enabled", False)),
                     "valid": bool(getattr(msg, "valid", False)),
                     "mode": str(getattr(msg, "mode", "")),
@@ -1006,7 +2057,8 @@ class LiveRosCache:
                 }
 
             def queue_status_cb(msg: Any) -> None:
-                self.queue_status = {
+                with self._lock:
+                    self.queue_status = {
                     "active": bool(getattr(msg, "active", False)),
                     "control_id": str(getattr(msg, "control_id", "")),
                     "mode": str(getattr(msg, "mode", "")),
@@ -1084,6 +2136,63 @@ class LiveRosCache:
                     "warning": str(getattr(msg, "warning", "")),
                 }
 
+            def chopper_status_cb(msg: Any) -> None:
+                try:
+                    position = int(getattr(msg, "position"))
+                except Exception:
+                    position = None
+                try:
+                    insert = bool(getattr(msg, "insert"))
+                except Exception:
+                    insert = None
+                try:
+                    insert_position = int(necst_config.chopper_motor_position["insert"])
+                    remove_position = int(necst_config.chopper_motor_position["remove"])
+                except Exception:
+                    insert_position = None
+                    remove_position = None
+                try:
+                    simulator_boolean_only = bool(getattr(necst_config, "simulator", False))
+                except Exception:
+                    simulator_boolean_only = False
+                # ChopperSimulator publishes only the boolean insert flag; the
+                # int32 position field remains the ROS default 0.  In real
+                # hardware mode, position=0 must be treated as a real counter
+                # value.  In simulator mode, display position=0 + insert flag as
+                # the simulator state even for NANTEN2 OUT where remove=250.
+
+                if (
+                    position is not None
+                    and position == insert_position
+                    and insert is not False
+                ):
+                    state = "in"
+                elif (
+                    position is not None
+                    and position == remove_position
+                    and insert is not True
+                ):
+                    state = "out"
+                elif simulator_boolean_only and position == 0 and insert is True:
+                    state = "in"
+                elif simulator_boolean_only and position == 0 and insert is False:
+                    state = "out"
+                elif insert is True:
+                    state = "in?"
+                elif insert is False:
+                    state = "out?"
+                else:
+                    state = "unknown"
+
+                with self._lock:
+                    self.chopper_status = {
+                    "insert": insert,
+                    "state": state,
+                    "position": position,
+                    "time_unix": _finite_float(getattr(msg, "time", None)),
+                    }
+                    self._record_sample_locked("chopper_status")
+
             def weather_cb(key: str):
                 def _callback(msg: Any) -> None:
                     payload = {
@@ -1111,6 +2220,7 @@ class LiveRosCache:
                     }
                     with self._lock:
                         self.weather[key] = payload
+                    self._record_sample_locked(f"weather/{key}")
 
                 return _callback
 
@@ -1126,10 +2236,10 @@ class LiveRosCache:
                 pass
             for topic_obj, callback in (
                 (getattr(topic, "antenna_section_status", None), section_status_cb),
-                (getattr(topic, "antenna_pointing_status", None), pointing_status_cb),
                 (getattr(topic, "antenna_az_unwrap_status", None), az_unwrap_status_cb),
                 (getattr(topic, "antenna_command_queue_status", None), queue_status_cb),
                 (getattr(topic, "spectrometer_status", None), spectrometer_status_cb),
+                (getattr(topic, "chopper_status", None), chopper_status_cb),
             ):
                 try:
                     if topic_obj is not None:
@@ -1202,9 +2312,18 @@ class LiveRosCache:
 
     def snapshot(self) -> Dict[str, Any]:
         with self._lock:
+            now = time.time()
+            last_age_sec = {
+                key: max(0.0, now - float(ts))
+                for key, ts in self._last_message_time_unix.items()
+            }
             payload: Dict[str, Any] = {
                 "available": self.available,
                 "spin_mode": self._spin_mode,
+                "sample_counts": dict(self._sample_counts),
+                "last_message_time_unix": dict(self._last_message_time_unix),
+                "last_message_age_sec": last_age_sec,
+                "received_topics": sorted(self._sample_counts),
             }
             if self.error:
                 payload["error"] = self.error
@@ -1214,18 +2333,23 @@ class LiveRosCache:
                 payload["command"] = dict(self.command)
             if self.encoder:
                 payload["encoder"] = dict(self.encoder)
+            if self.encoder_motion:
+                payload["encoder_motion"] = dict(self.encoder_motion)
             if self.tracking:
                 payload["tracking"] = dict(self.tracking)
             if self.section_status:
                 payload["section_status"] = dict(self.section_status)
-            if self.pointing_status:
-                payload["pointing_status"] = dict(self.pointing_status)
+            # AntennaPointingStatus is intentionally not exposed to the status
+            # model.  It is diagnostic/extrapolated and must not drive
+            # Command Az/El, Tracking, or Moving display.
             if self.az_unwrap_status:
                 payload["az_unwrap_status"] = dict(self.az_unwrap_status)
             if self.queue_status:
                 payload["queue_status"] = dict(self.queue_status)
             if self.spectrometer_status:
                 payload["spectrometer_status"] = dict(self.spectrometer_status)
+            if self.chopper_status:
+                payload["chopper_status"] = dict(self.chopper_status)
             if self.weather:
                 payload["weather"] = {
                     key: dict(value) for key, value in self.weather.items()
@@ -1903,8 +3027,8 @@ def azel_text(lon: Any, lat: Any, frame: Any = "altaz") -> str:
         return "-"
     f = str(frame or "").lower()
     if f in {"altaz", "azel", "alt-az"}:
-        return f"Az={x:.3f} El={y:.3f} deg"
-    return f"lon={x:.3f} lat={y:.3f} {frame or ''}".strip()
+        return f"Az={x:.4f} El={y:.4f} deg"
+    return f"lon={x:.4f} lat={y:.4f} {frame or ''}".strip()
 
 
 def observer_target_name(obs: Mapping[str, Any], geom: Mapping[str, Any]) -> str:
@@ -2166,7 +3290,7 @@ def render(
         cmd_lat = antenna.get("command_lat_deg")
         enc_lon = antenna.get("encoder_lon_deg")
         enc_lat = antenna.get("encoder_lat_deg")
-        if cmd_lon is not None or cmd_lat is not None:
+        if antenna.get("command_valid") is True and (cmd_lon is not None or cmd_lat is not None):
             lines.append(
                 frame_line(
                     f"cmd  : {azel_text(cmd_lon, cmd_lat, antenna.get('command_frame'))}"
@@ -2441,55 +3565,54 @@ def _int_query(
 
 
 def build_state(
-    root: Path, *, events_limit: int = 12, live: Optional[LiveRosCache] = None
+    root: Path,
+    *,
+    events_limit: int = 12,
+    live: Optional[LiveRosCache] = None,
+    time_sync: Optional[TimeSyncPoller] = None,
 ) -> Dict[str, Any]:
-    snapshot_path = current_snapshot_path(root)
-    raw_snapshot = read_json(snapshot_path)
+    """Build the progress.py API state from the shared read-only status model."""
     if live is not None:
         live.spin_once(0.0)
-    server_time_unix = time.time()
+    time_sync_snapshot = (time_sync.snapshot() if time_sync is not None else None) or {}
+    state = status_model.build_progress_status_state(
+        root,
+        events_limit=events_limit,
+        live_payload=live.snapshot() if live is not None else None,
+        time_sync_payload=time_sync_snapshot,
+    )
+    server_time_unix = state["server_time_unix"]
     snapshot = apply_display_derivations(
         apply_dynamic_remaining(
-            merge_live_telemetry(
-                raw_snapshot, live.snapshot() if live is not None else None
-            )
+            state["snapshot"] if isinstance(state.get("snapshot"), dict) else None
         ),
         server_time_unix=server_time_unix,
     )
-    events_path = latest_events_path(
-        root, raw_snapshot if isinstance(raw_snapshot, dict) else None
+    all_events = state.get("status_events") or []
+    plan = state.get("plan") or {}
+    state.update(
+        {
+            "ok": isinstance(snapshot, dict)
+            and bool(snapshot)
+            and not snapshot.get("_error"),
+            "snapshot": snapshot or {},
+            "rendered": render(
+                snapshot if isinstance(snapshot, dict) else None,
+                all_events,
+                compact=True,
+                full_plan=plan if isinstance(plan, dict) else None,
+            ),
+            "time_sync": time_sync_snapshot,
+            "operator_status": status_model.build_operator_status(
+                snapshot if isinstance(snapshot, dict) else None,
+                plan=plan if isinstance(plan, dict) else None,
+                events=state.get("events") or [],
+                paths=state.get("paths") or {},
+                server_time_unix=server_time_unix,
+            ),
+        }
     )
-    plan_path = latest_plan_path(
-        root, raw_snapshot if isinstance(raw_snapshot, dict) else None
-    )
-    plan = read_json(plan_path) if plan_path else None
-    all_events = read_all_events(events_path)
-    events = all_events[-events_limit:] if events_limit > 0 else []
-    return {
-        "ok": isinstance(snapshot, dict)
-        and bool(snapshot)
-        and not snapshot.get("_error"),
-        "root": str(root),
-        "paths": {
-            "snapshot": str(snapshot_path) if snapshot_path else None,
-            "events": str(events_path) if events_path else None,
-            "plan": str(plan_path) if plan_path else None,
-        },
-        "snapshot": snapshot or {},
-        "events": events,
-        # Full observation event status is used only for plan-status
-        # classification.  The visible Recent Events table remains bounded by
-        # ``events`` so the dashboard stays readable.
-        "status_events": all_events,
-        "plan": plan or {},
-        "rendered": render(
-            snapshot if isinstance(snapshot, dict) else None,
-            all_events,
-            compact=True,
-            full_plan=plan if isinstance(plan, dict) else None,
-        ),
-        "server_time_unix": server_time_unix,
-    }
+    return state
 
 
 _HTML_TEMPLATE = """<!doctype html>
@@ -2556,17 +3679,24 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
 #events th:nth-child(1), #events td:nth-child(1) { width:4.2rem; white-space:nowrap; }
 #events th:nth-child(2), #events td:nth-child(2) { width:7.6rem; }
 #events th:nth-child(3), #events td:nth-child(3) { width:auto; }
-.plotbox { min-height: 210px; display:flex; align-items:center; justify-content:center; }
-.plotbox svg { width:100%; height:100%; max-height:none; color:var(--plot-text); }
+.plotbox { min-height: 210px; min-width:0; display:flex; align-items:center; justify-content:center; overflow:hidden; box-sizing:border-box; }
+.plotbox svg { display:block; width:var(--plan-plot-render-w, 100%); height:var(--plan-plot-render-h, 100%); max-width:none; max-height:none; color:var(--plot-text); flex:0 0 auto; }
 .plotbox svg text { fill: currentColor; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
-.legend { display:flex; gap:.45rem; flex-wrap:wrap; margin:.08rem 0 .14rem; font-size:.92em; color:var(--muted); }
+.legend { display:flex; gap:.45rem; flex-wrap:wrap; margin:.08rem 0 .14rem; font-size:.92em; color:var(--muted); align-items:center; }
 .legend-note { flex-basis:auto; font-size:.89em; }
+.plot-scale-tools { margin-left:auto; display:inline-flex; align-items:center; gap:.16rem; flex:0 0 auto; flex-wrap:nowrap; white-space:nowrap; }
+.plot-scale-btn, .plot-scale-reset { font:inherit; font-size:.70rem; line-height:1.05; padding:.10rem .28rem; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--fg); cursor:pointer; }
+.plot-scale-btn:hover, .plot-scale-reset:hover { background:#9992; }
+#plotScaleReadout { min-width:2.35rem; text-align:right; color:var(--muted); font-size:.84em; }
 .dot { display:inline-block; width:.62rem; height:.62rem; border-radius:999px; vertical-align:-.06rem; margin-right:.18rem; }
 .small { font-size:.70rem; color:var(--muted); }
 .card .small { font-size:.92em; }
 .queueview, .spectrometerview, .traceview, .envview, .terminalview, .filesview, .eventview { min-height: 0; }
-.planview { min-height:0; }
-.planview .plotbox { min-height: 0; height: calc(100% - 3.0rem); }
+.planview { min-height:0; overflow:hidden; }
+.planview .card-content { display:flex; flex-direction:column; height:100%; min-height:0; }
+.planview h2 { flex:0 0 auto; }
+.planview .legend { flex:0 0 auto; }
+.planview .plotbox { flex:1 1 auto; min-height:0; height:auto; width:100%; }
 .planview svg { max-height:none; }
 #terminal { max-height: none; }
 .axis-label { font-size:var(--card-plot-font-size, 11px); fill:currentColor; }
@@ -2593,6 +3723,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
   .grid { display:flex; flex-direction:column; gap:.45rem; grid-template-columns:none; grid-auto-rows:auto; }
   .card[data-card-id] { grid-column:auto !important; grid-row:auto !important; min-height:auto !important; height:auto !important; overflow:visible; }
   .plotbox { min-height: 260px; }
+  .planview .card-content { height:auto; }
   .planview .plotbox { height:min(72vw, 430px) !important; min-height:270px; }
   .planview svg { max-height:none; }
   .kv, .bigpos, .obsview .kv, .planinfoview .kv, .activityview .kv { grid-template-columns: 7.0rem minmax(0, 1fr); }
@@ -2600,6 +3731,7 @@ th, td { border-bottom:1px solid var(--border); text-align:left; padding:.10rem 
 body.narrow-layout .grid { display:flex; flex-direction:column; gap:.45rem; grid-template-columns:none; grid-auto-rows:auto; }
 body.narrow-layout .card[data-card-id] { grid-column:auto !important; grid-row:auto !important; min-height:auto !important; height:auto !important; overflow:visible; }
 body.narrow-layout .plotbox { min-height:260px; }
+body.narrow-layout .planview .card-content { height:auto; }
 body.narrow-layout .planview .plotbox { height:min(72vw, 430px) !important; min-height:270px; }
 body.narrow-layout .kv, body.narrow-layout .bigpos, body.narrow-layout .obsview .kv, body.narrow-layout .planinfoview .kv, body.narrow-layout .activityview .kv { grid-template-columns:7.0rem minmax(0, 1fr); }
 
@@ -2656,7 +3788,7 @@ body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse
 <section class="card planinfoview" data-card-id="plan"><h2>Plan</h2><div class=\"kv\" id=\"plan\"></div><div class=\"bar\"><div id=\"bar\" class=\"fill\"></div></div></section>
 <section class="card activityview" data-card-id="activity"><h2>Activity</h2><div class=\"kv\" id=\"activity\"></div></section>
 <section class="card geometryview" data-card-id="geometry"><h2>Geometry</h2><div class="kv" id="geometry"></div></section>
-<section class="card planview" data-card-id="planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>pending</span><span class="legend-note">OTF lines / ON visits</span></div><div id="plotview" class="plotbox small">-</div></section>
+<section class="card planview" data-card-id="planview"><h2>Plan View</h2><div class="legend"><span><i class="dot" style="background:#2ca02c"></i>done</span><span><i class="dot" style="background:#ff7f0e"></i>current</span><span><i class="dot" style="background:#bdbdbd"></i>pending</span><span class="legend-note">OTF lines / ON visits</span><span class="plot-scale-tools" title="Change the Plan View plot size inside this card"><button type="button" id="plotScaleMinus" class="plot-scale-btn" title="Make Plan View smaller">−</button><button type="button" id="plotScaleReset" class="plot-scale-reset" title="Fit Plan View to card">Fit</button><button type="button" id="plotScalePlus" class="plot-scale-btn" title="Make Plan View larger">+</button><span id="plotScaleReadout">100%</span></span></div><div id="plotview" class="plotbox small">-</div></section>
 <section class="card traceview" data-card-id="trace"><h2>System Trace</h2><div class="kv" id="trace"></div></section>
 <section class="card queueview" data-card-id="queue"><h2>Command Queue</h2><div class="kv" id="queue"></div></section>
 <section class="card spectrometerview" data-card-id="spectrometer"><h2>Spectrometer</h2><div class="kv" id="spectrometer"></div></section>
@@ -2667,18 +3799,23 @@ body.layout-unlocked .card.resizing { outline:2px solid var(--warn); cursor:nwse
 </div>
 <script>
 const refreshMs = __REFRESH_MS__;
-const layoutStorageKey = 'necst-progress-card-layout-v52';
-const oldLayoutStorageKeys = ['necst-progress-card-layout-v51', 'necst-progress-card-layout-v50', 'necst-progress-card-layout-v49', 'necst-progress-card-layout-v48', 'necst-progress-card-layout-v47', 'necst-progress-card-layout-v46', 'necst-progress-card-layout-v45', 'necst-progress-card-layout-v44', 'necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
+const PLOT = {w: 660, h: 460, left: 64, right: 612, top: 42, bottom: 362};
+const layoutStorageKey = 'necst-progress-card-layout-v54';
+const oldLayoutStorageKeys = ['necst-progress-card-layout-v53', 'necst-progress-card-layout-v52', 'necst-progress-card-layout-v51', 'necst-progress-card-layout-v50', 'necst-progress-card-layout-v49', 'necst-progress-card-layout-v48', 'necst-progress-card-layout-v47', 'necst-progress-card-layout-v46', 'necst-progress-card-layout-v45', 'necst-progress-card-layout-v44', 'necst-progress-card-layout-v43', 'necst-progress-card-layout-v42'];
 const defaultCardLayout = [
   {id:'position', col:3, row:12},
   {id:'observation', col:3, row:12},
   {id:'activity', col:2, row:12},
   {id:'geometry', col:2, row:12},
   {id:'environment', col:2, row:12},
-  {id:'planview', col:5, row:20},
-  {id:'plan', col:2, row:20},
-  {id:'queue', col:2, row:20},
-  {id:'spectrometer', col:3, row:20},
+  {id:'planview', col:5, row:24},
+  // Keep the three right-side middle cards as tall as Plan View.  If these
+  // are shorter, Reset layout leaves a four-row gap above System Trace/
+  // Terminal, and the Files/Recent Events cards are auto-placed at different
+  // vertical positions by CSS grid.
+  {id:'plan', col:2, row:24},
+  {id:'queue', col:2, row:24},
+  {id:'spectrometer', col:3, row:24},
   {id:'trace', col:3, row:7},
   {id:'terminal', col:3, row:7},
   {id:'files', col:3, row:7},
@@ -2696,6 +3833,11 @@ const defaultCardFontScale = 1.0;
 const minCardFontScale = 0.70;
 const maxCardFontScale = 1.40;
 const cardFontScaleStep = 0.05;
+const planPlotScaleStorageKey = 'necst-progress-plan-plot-scale-v2';
+const defaultPlanPlotScale = 1.0;
+const minPlanPlotScale = 0.65;
+const maxPlanPlotScale = 1.35;
+const planPlotScaleStep = 0.08;
 const supportsCssZoom = (() => { try { return !!(window.CSS && CSS.supports && CSS.supports('zoom', '1')); } catch (_) { return false; } })();
 const isSafariBrowser = (() => {
   const ua = String(navigator.userAgent || '');
@@ -2890,6 +4032,7 @@ function applyLayoutState(state) {
     el.style.minHeight = '';
     delete el.dataset.layoutMinHeight;
   });
+  schedulePlanPlotResize();
 }
 function currentLayoutState() {
   const def = defaultLayoutState();
@@ -3036,6 +4179,77 @@ function ensureCardFontControls(card) {
   tools.append(dec, reset, inc);
   card.appendChild(tools);
 }
+function readPlanPlotScale() {
+  try {
+    const text = localStorage.getItem(planPlotScaleStorageKey);
+    // localStorage.getItem() returns null when the key is absent.
+    // Number(null) is 0 in JavaScript, which was accidentally clamped to
+    // minPlanPlotScale (=65%) and made first-time Plan View too small.
+    if (text !== null && String(text).trim() !== '') {
+      const raw = Number(text);
+      if (Number.isFinite(raw)) return clampNumber(raw, minPlanPlotScale, maxPlanPlotScale);
+    }
+  } catch (_) {}
+  return defaultPlanPlotScale;
+}
+function resizePlanPlotToCard() {
+  const plot = document.getElementById('plotview');
+  const svg = plot ? plot.querySelector('svg') : null;
+  if (!plot || !svg) return;
+  const width = Math.max(1, plot.clientWidth || plot.getBoundingClientRect().width || 1);
+  const height = Math.max(1, plot.clientHeight || plot.getBoundingClientRect().height || 1);
+  const fit = Math.min(width / PLOT.w, height / PLOT.h);
+  if (!Number.isFinite(fit) || fit <= 0) return;
+  const scale = readPlanPlotScale();
+  const renderW = Math.max(1, PLOT.w * fit * scale);
+  const renderH = Math.max(1, PLOT.h * fit * scale);
+  plot.style.setProperty('--plan-plot-render-w', `${renderW.toFixed(1)}px`);
+  plot.style.setProperty('--plan-plot-render-h', `${renderH.toFixed(1)}px`);
+}
+function schedulePlanPlotResize() {
+  if (typeof window === 'undefined') return;
+  window.requestAnimationFrame(() => resizePlanPlotToCard());
+}
+function applyPlanPlotScale(scale) {
+  const value = clampNumber(scale, minPlanPlotScale, maxPlanPlotScale);
+  const readout = document.getElementById('plotScaleReadout');
+  if (readout) readout.textContent = `${Math.round(value * 100)}%`;
+  schedulePlanPlotResize();
+  return value;
+}
+function setPlanPlotScale(scale, persist=true) {
+  const value = applyPlanPlotScale(scale);
+  if (persist) {
+    try { localStorage.setItem(planPlotScaleStorageKey, String(value)); } catch (_) {}
+  }
+}
+function initPlanPlotControls() {
+  applyPlanPlotScale(readPlanPlotScale());
+  const minus = document.getElementById('plotScaleMinus');
+  const plus = document.getElementById('plotScalePlus');
+  const reset = document.getElementById('plotScaleReset');
+  const stopBubble = (event) => { event.stopPropagation(); };
+  const stopDrag = (event) => { event.preventDefault(); event.stopPropagation(); };
+  const handleClick = (event) => { event.preventDefault(); event.stopPropagation(); };
+  for (const el of [minus, plus, reset]) {
+    if (!el) continue;
+    el.draggable = false;
+    el.addEventListener('pointerdown', stopBubble);
+    el.addEventListener('mousedown', stopBubble);
+    el.addEventListener('touchstart', stopBubble, {passive:true});
+    el.addEventListener('dragstart', stopDrag);
+  }
+  if (minus) minus.addEventListener('click', (event) => { handleClick(event); setPlanPlotScale(readPlanPlotScale() - planPlotScaleStep); });
+  if (plus) plus.addEventListener('click', (event) => { handleClick(event); setPlanPlotScale(readPlanPlotScale() + planPlotScaleStep); });
+  if (reset) reset.addEventListener('click', (event) => { handleClick(event); setPlanPlotScale(defaultPlanPlotScale); });
+  const plot = document.getElementById('plotview');
+  if (plot && typeof ResizeObserver !== 'undefined') {
+    const observer = new ResizeObserver(() => schedulePlanPlotResize());
+    observer.observe(plot);
+    const card = document.querySelector('[data-card-id="planview"]');
+    if (card) observer.observe(card);
+  }
+}
 function initLayoutEditor() {
   document.body.classList.toggle('safari-browser', isSafariBrowser);
   applyLayoutState(readLayoutState());
@@ -3055,8 +4269,9 @@ function initLayoutEditor() {
     saveAndApplyLayout(st);
   });
   if (reset) reset.addEventListener('click', () => {
-    try { localStorage.removeItem(layoutStorageKey); for (const key of oldLayoutStorageKeys) localStorage.removeItem(key); } catch (_) {}
+    try { localStorage.removeItem(layoutStorageKey); for (const key of oldLayoutStorageKeys) localStorage.removeItem(key); localStorage.removeItem(planPlotScaleStorageKey); localStorage.removeItem('necst-progress-plan-plot-scale-v1'); } catch (_) {}
     applyLayoutState(defaultLayoutState());
+    setPlanPlotScale(defaultPlanPlotScale);
     setLayoutUnlocked(false);
   });
   for (const card of document.querySelectorAll('.card[data-card-id]')) {
@@ -3094,11 +4309,12 @@ function initLayoutEditor() {
       saveAndApplyLayout(state);
     });
   }
-  const onViewportResize = () => applyLayoutState(readLayoutState());
+  const onViewportResize = () => { applyLayoutState(readLayoutState()); schedulePlanPlotResize(); };
   window.addEventListener('resize', onViewportResize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', onViewportResize);
 }
 initLayoutEditor();
+initPlanPlotControls();
 
 function esc(v) { return String(v ?? '-').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
 function isTimeLike(label, key) {
@@ -3152,6 +4368,18 @@ function arcsecText(v, digits=1) {
 function utcText(unixSec) {
   const n = Number(unixSec);
   return Number.isFinite(n) ? new Date(n*1000).toISOString().replace('T',' ').replace(/\\.\\d+Z$/,' UTC') : '-';
+}
+function timeSyncUtcRow(snapshot, utcUnix, serverTimeUnix=null) {
+  const base = utcText(utcUnix);
+  const ts = snapshot?.time_sync;
+  if (!ts || ts.enabled !== true) return ['UTC', base, ''];
+  const status = String(ts.status || '').toLowerCase();
+  const label = status === 'ok' ? 'sync' : (status === 'bad' || status === 'warn' ? 'nosync' : 'unknown');
+  const role = label === 'sync' ? 'ok' : (label === 'nosync' ? 'critical' : 'warning');
+  const checkedAge = ageSinceUnix(ts.checked_at_unix, serverTimeUnix);
+  const ageTextValue = Number.isFinite(checkedAge) ? ` / checked ${secText(checkedAge)} ago` : '';
+  const summary = String(ts.summary || `time sync: ${label}`) + ageTextValue;
+  return ['UTC', `${base}  ${label}`, role, summary];
 }
 function lstDisplayText(snapshot) {
   const text = snapshot?.display?.lst_hms;
@@ -3288,8 +4516,8 @@ function offsetArcsecText(v, label='') {
 function azElText(lon, lat, frame='altaz') {
   const x=Number(lon), y=Number(lat); if (!Number.isFinite(x) || !Number.isFinite(y)) return '-';
   const f=String(frame || '').toLowerCase();
-  if (f === 'altaz' || f === 'alt-az' || f === 'azel') return `Az ${x.toFixed(3)}°, El ${y.toFixed(3)}°`;
-  return `${String(frame || 'coord')} lon ${x.toFixed(3)}°, lat ${y.toFixed(3)}°`;
+  if (f === 'altaz' || f === 'alt-az' || f === 'azel') return `Az ${x.toFixed(4)}°, El ${y.toFixed(4)}°`;
+  return `${String(frame || 'coord')} lon ${x.toFixed(4)}°, lat ${y.toFixed(4)}°`;
 }
 function azUnwrapBadgeHtml(a) {
   if (!a || !a.az_unwrap_enabled) return '';
@@ -3327,12 +4555,13 @@ function kvSmart(id, rows) {
     const label = Array.isArray(row) ? row[0] : '-';
     const raw = Array.isArray(row) ? row[1] : row;
     const role = Array.isArray(row) ? (row[2] || '') : '';
+    const title = Array.isArray(row) && row.length >= 4 ? row[3] : raw;
     if (role === 'html') {
-      el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v">${raw ?? '-'}</div>`);
+      el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v" title="${esc(title ?? raw ?? '-')}">${raw ?? '-'}</div>`);
       continue;
     }
     const cls = role ? ` ${role}-pos` : '';
-    el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v${cls}" title="${esc(raw ?? '-')}">${esc(raw ?? '-')}</div>`);
+    el.insertAdjacentHTML('beforeend', `<div class="k">${esc(label)}</div><div class="v${cls}" title="${esc(title ?? raw ?? '-')}">${esc(raw ?? '-')}</div>`);
   }
 }
 function geometryRows(snapshot) {
@@ -3524,6 +4753,7 @@ function isOtfScanBlock(snapshot) {
 }
 function trackingExpected(snapshot) {
   const act = snapshot?.activity || {};
+  if (act.live_motion_active === false) return false;
   const stage = String(act.motion_stage || act.control_section_kind || '').toLowerCase();
   const phase = String(act.phase || snapshot?.plan?.mode || '').toUpperCase();
   if (phase !== 'ON') return false;
@@ -3667,9 +4897,27 @@ function compactSpectrometerTime(v) {
   return s.length > 20 ? shortPathText(s, 24) : s;
 }
 
+function spectrometerIrigbRow(sp) {
+  const raw = String(sp?.latest_time_spectrometer ?? '').trim();
+  if (!raw) return ['IRIG-B', 'NO TIMESTAMP', 'critical'];
+  return raw.endsWith('GPS') ? ['IRIG-B', 'GPS OK', 'ok'] : ['IRIG-B', 'NO GPS', 'critical'];
+}
+function chopperRow(snapshot, serverTimeUnix=null) {
+  const ch = snapshot?.chopper || {};
+  if (!ch || !Object.keys(ch).length) return ['chopper', 'not reported', 'muted'];
+  const stateRaw = String(ch.state ?? '').trim().toLowerCase();
+  const state = stateRaw || (ch.insert === true ? 'in' : (ch.insert === false ? 'out' : 'unknown'));
+  const pos = Number(ch.position);
+  const age = ageSinceUnix(ch.time_unix, serverTimeUnix);
+  const text = `${state.toUpperCase()}${Number.isFinite(pos) ? ` / pos ${pos}` : ''}${Number.isFinite(age) ? ` / ${secText(age)}` : ''}`;
+  return ['chopper', text, state === 'unknown' ? 'warning' : 'important'];
+}
+
 function spectrometerRows(snapshot, serverTimeUnix=null) {
   const sp = snapshot?.spectrometer || {};
-  if (!sp || !Object.keys(sp).length) return [['status', 'not reported', 'muted'], ['source', 'SpectrometerStatus unavailable', 'muted']];
+  if (!sp || !Object.keys(sp).length) {
+    return [['status', 'not reported', 'muted'], ['source', 'SpectrometerStatus unavailable', 'muted']];
+  }
   const valid = !!sp.valid;
   const acquiring = !!sp.acquiring;
   const recording = !!sp.recorder_active;
@@ -3688,7 +4936,8 @@ function spectrometerRows(snapshot, serverTimeUnix=null) {
     ['ch', `TP ${val(sp.tp_range_start)}:${val(sp.tp_range_stop)}; q ${val(sp.qlook_ch_start)}:${val(sp.qlook_ch_stop)}`, ''],
     ['age', secText(pubAge), ageRole(pubAge, 3.0, 10.0)]
   ];
-  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(2, 0, ['clock', compactSpectrometerTime(sp.latest_time_spectrometer), 'muted']);
+  rows.splice(2, 0, spectrometerIrigbRow(sp));
+  if (!isBlank(sp.latest_time_spectrometer)) rows.splice(3, 0, ['clock', compactSpectrometerTime(sp.latest_time_spectrometer), 'muted']);
   if (!isBlank(sp.warning)) rows.push(['warning', sp.warning, 'warning']);
   return rows;
 }
@@ -3737,27 +4986,29 @@ function positionRows(snapshot, psummary=null, serverTimeUnix=null) {
   const rows = [
     ['Encoder Az/El', azElText(a.encoder_lon_deg, a.encoder_lat_deg, a.encoder_frame), 'important'],
     ...(a.az_unwrap_enabled ? [['Az unwrap', azUnwrapBadgeHtml(a), 'html']] : []),
-    ['Command Az/El', azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame), ''],
+    ['Command Az/El', a.command_valid === true ? azElText(a.command_lon_deg, a.command_lat_deg, a.command_frame) : '-', a.command_valid === true ? '' : 'muted'],
     ...officialTrackingRows(a, snapshot),
     [isCal ? 'calibration now' : (g.cos_correction ? 'map offset actual' : 'map offset'), isCal ? phase : (off ? coordPairText(off, frame, 'arcsec') : '-'), 'important'],
     ['progress item', psummary?.progress || '-', 'important'],
-    ['UTC', utcText(utcUnix), ''],
+    timeSyncUtcRow(snapshot, utcUnix, serverTimeUnix),
     ['LST', lstDisplayText(snapshot), ''],
     ['Target RA, Dec', radec ? radecText(radec, 'J2000') : '-', ''],
     ['Target L, B', gal ? galText(gal, 'galactic') : '-', '']
   ];
   return rows;
 }
-function activityRows(snapshot) {
+function activityRows(snapshot, serverTimeUnix=null) {
   const a = snapshot?.activity || {};
   const d = snapshot?.data || {};
   const g = snapshot?.geometry || {};
+  const liveIdle = a.live_motion_active === false;
   const rows = [
-    ['phase', a.phase],
-    ['drive', a.drive_kind],
-    ['motion', a.motion_stage || a.control_section_kind],
+    ['phase', liveIdle ? 'IDLE' : a.phase],
+    ['drive', liveIdle ? 'idle' : a.drive_kind],
+    ['motion', liveIdle ? 'idle' : (a.motion_stage || a.control_section_kind)],
     ['data', a.data_state]
   ];
+  if (snapshot?.chopper && Object.keys(snapshot.chopper).length) rows.push(chopperRow(snapshot, serverTimeUnix));
   if (!isBlank(a.control_id)) rows.push(['control id', a.control_id]);
   if (!isBlank(g.current_line_index0) && !isBlank(g.line_total)) rows.push(['control line', `${Number(g.current_line_index0)+1}/${g.line_total}`]);
   if (!isBlank(a.location_context)) rows.push(['location', a.location_context]);
@@ -3879,7 +5130,6 @@ function statusFor(item, snapshot, events) {
   if (!finalState && ((cur && (uid === cur || parent === cur)) || inRange(item, cr))) return 'current';
   return 'pending';
 }
-const PLOT = {w: 660, h: 460, left: 64, right: 612, top: 42, bottom: 362};
 function sx(x, bounds) { return PLOT.left + (x-bounds.xmin) * (PLOT.right-PLOT.left) / Math.max(1e-9, bounds.xmax-bounds.xmin); }
 function sy(y, bounds) { return PLOT.bottom - (y-bounds.ymin) * (PLOT.bottom-PLOT.top) / Math.max(1e-9, bounds.ymax-bounds.ymin); }
 function colorFor(status) { return status === 'done' ? '#2ca02c' : status === 'current' ? '#ff7f0e' : '#bdbdbd'; }
@@ -3888,9 +5138,20 @@ function renderPlanView(snapshot, plan, events, serverTimeUnix=null) {
   const kinds = new Set(items.map(it=>geomOf(it).kind));
   const obsType = String(snapshot?.observation?.type || '').toLowerCase();
   const plot = document.getElementById('plotview');
-  if (kinds.has('skydip_elevation') || obsType.includes('sky')) { plot.innerHTML = renderSkydipSvg(snapshot, items, events); return; }
-  if ([...kinds].some(k => ['scan_line','scan_block_line','point','grid_point'].includes(k))) { plot.innerHTML = renderMapSvg(snapshot, items, events, serverTimeUnix); return; }
+  if (!plot) return;
+  if (kinds.has('skydip_elevation') || obsType.includes('sky')) {
+    plot.innerHTML = renderSkydipSvg(snapshot, items, events);
+    schedulePlanPlotResize();
+    return;
+  }
+  if ([...kinds].some(k => ['scan_line','scan_block_line','point','grid_point'].includes(k))) {
+    plot.innerHTML = renderMapSvg(snapshot, items, events, serverTimeUnix);
+    schedulePlanPlotResize();
+    return;
+  }
   plot.innerHTML = '<div>No plottable geometry yet.</div>';
+  plot.style.removeProperty('--plan-plot-render-w');
+  plot.style.removeProperty('--plan-plot-render-h');
 }
 function itemMode(item) { return String(item?.mode || geomOf(item).mode || '').toUpperCase(); }
 function pointKind(item) {
@@ -3933,6 +5194,7 @@ function projectFraction(a, b, p) {
 }
 function antennaPoint(snapshot, prefix, requiredFrame) {
   const a = snapshot?.antenna || {};
+  if (prefix === 'command' && a.command_valid !== true) return null;
   const x = Number(a[`${prefix}_lon_deg`]);
   const y = Number(a[`${prefix}_lat_deg`]);
   const frame = String(a[`${prefix}_frame`] || '').toLowerCase();
@@ -4177,6 +5439,7 @@ function lineMotionKey(snapshot, row) {
   return `${rec}|${uid}|${line}|${id}|${ctrlId}|${sectionUid}`;
 }
 function isActualLineMotion(snapshot) {
+  if (snapshot?.activity?.live_motion_active !== true) return false;
   // Test/debug invariant: motion_stage=line means the line/scanning section is active.
   const drive = String(snapshot?.activity?.drive_kind || snapshot?.plan?.drive_kind || '').toLowerCase();
   const stage = String(snapshot?.activity?.motion_stage || '').toLowerCase();
@@ -4363,7 +5626,7 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
     countText = `Point ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}`;
     note = 'orange=current; HOT hidden';
   }
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.bottom+42}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">${esc(note)}</text></svg>`;
+  return `<svg width="${PLOT.w}" height="${PLOT.h}" viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff7f0e"/></marker></defs><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/><text class="axis-label" x="${(PLOT.left+PLOT.right)/2-55}" y="${PLOT.bottom+42}">${esc(axes.x)}</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">${esc(axes.y)}</text>${axisDecorations(b, axes)}${sequencePath}${lineEls}${liveEls}<text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">${esc(countText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">${esc(note)}</text></svg>`;
 }
 function skydipRowsFrom(snapshot, items, events) {
   const rows=[];
@@ -4403,7 +5666,7 @@ function renderSkydipSvg(snapshot, items, events) {
   const c = pointCounts(rows);
   const cur = rows.find(r=>r.status==='current');
   const curText = cur ? `Current elevation ${cur.y.toFixed(1)} deg at step ${cur.x}/${rows.length}` : `Elevation sequence ${rows.length} steps`;
-  return `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${grid}<polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.bottom+42}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">Skydip ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}: ${esc(curText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">elevation vs sequence; HOT/load labelled when present</text></svg>`;
+  return `<svg width="${PLOT.w}" height="${PLOT.h}" viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" preserveAspectRatio="xMidYMid meet"><rect x="1" y="1" width="${PLOT.w-2}" height="${PLOT.h-2}" fill="none" stroke="#9995"/><line x1="${PLOT.left}" y1="${PLOT.bottom}" x2="${PLOT.right}" y2="${PLOT.bottom}" stroke="#777"/><line x1="${PLOT.left}" y1="${PLOT.top}" x2="${PLOT.left}" y2="${PLOT.bottom}" stroke="#777"/>${grid}<polyline points="${poly}" fill="none" stroke="#9467bd" stroke-width="2"/>${pts}<text class="axis-label" x="${(PLOT.left+PLOT.right)/2-58}" y="${PLOT.bottom+42}">sequence step</text><text class="axis-label" transform="translate(17 ${(PLOT.top+PLOT.bottom)/2+35}) rotate(-90)">elevation (deg)</text><text x="${PLOT.left}" y="${PLOT.h-36}" font-size="10">Skydip ${c.done}/${c.total} done, cur ${c.current}, rem ${c.remaining}: ${esc(curText)}</text><text x="${PLOT.left}" y="${PLOT.h-18}" font-size="10">elevation vs sequence; HOT/load labelled when present</text></svg>`;
 }
 async function update() {
   try {
@@ -4436,7 +5699,7 @@ async function update() {
     kv('plan', psummary, [['progress','progress'], ['basis','basis'], ['current','current'], ['completed','completed'], ['remaining','remaining'], ['total','total'], ['mode','mode'], ['role (plan)','role'], ['target','target'], ['label','label']]);
     document.getElementById('bar').style.width = pct(plan).toFixed(1) + '%';
     renderPlanView(snap, s.plan || {}, statusEvents, s.server_time_unix);
-    kvSmart('activity', activityRows(snap));
+    kvSmart('activity', activityRows(snap, s.server_time_unix));
     kvSmart('position', positionRows(snap, psummary, s.server_time_unix));
     kvSmart('geometry', geometryRows(snap));
     kvSmart('queue', commandQueueRows(snap, s.server_time_unix));
@@ -4470,6 +5733,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     root = progress_root(args.root)
     refresh_ms = max(250, int(args.refresh_ms))
     live = LiveRosCache(enabled=not args.no_ros)
+    time_sync = TimeSyncPoller.from_site_config()
 
     class ProgressHandler(BaseHTTPRequestHandler):
         server_version = "NECSTProgressHTTP/1.0"
@@ -4486,7 +5750,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
                 return
             if parsed.path == "/api/state":
                 limit = _int_query(query, "events", args.events, minimum=0, maximum=200)
-                _json_response(self, build_state(root, events_limit=limit, live=live))
+                _json_response(
+                    self,
+                    build_state(
+                        root, events_limit=limit, live=live, time_sync=time_sync
+                    ),
+                )
                 return
             if parsed.path == "/api/progress":
                 _json_response(self, read_json(current_snapshot_path(root)) or {})
@@ -4525,10 +5794,15 @@ def cmd_serve(args: argparse.Namespace) -> int:
             f"Could not start progress server on {args.host}:{args.port}: {exc}",
             file=sys.stderr,
         )
+        live.close()
+        if time_sync is not None:
+            time_sync.close()
         return 1
     host, port = server.server_address[:2]
     print(f"Serving NECST progress dashboard at http://{host}:{port}/")
     print(f"Progress root: {root}")
+    if time_sync is not None:
+        print("Time sync monitor: enabled from [progress.time_sync]")
     try:
         server.serve_forever(poll_interval=0.5)
     except KeyboardInterrupt:
@@ -4537,6 +5811,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
     finally:
         server.server_close()
         live.close()
+        if time_sync is not None:
+            time_sync.close()
     return 0
 
 

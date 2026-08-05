@@ -47,6 +47,9 @@ setup(
     entry_points={
         "console_scripts": executor_entrypoints
         + [
+            "necst=necst.cli:main",
+            "necst-console=necst.web.console_entry:main",
+            "necst-console-log=necst.web.console_log_cli:main",
             "necst-spectral-resolve=necst.rx.spectral_recording_setup:main_resolve",
             "necst-spectral-validate=necst.rx.spectral_recording_setup:main_validate",
             "necst-lo-profile=necst.rx.spectral_recording_sg:main_lo_profile",

@@ -65,6 +65,7 @@ class Observation(ABC):
         self._abort_reason = ""
         self._abort_request_id = ""
         self._abort_subscription = None
+        self._legacy_binning_changed_specs = set()
         self.progress = NullProgressReporter()
 
     def _reset_abort_state(self) -> None:
@@ -178,6 +179,8 @@ class Observation(ABC):
                         )
                         for spec_name in specnames:
                             self.binning(ch, spec_name)
+                        if ch is not None:
+                            self._legacy_binning_changed_specs.update(specnames)
                     elif ch is not None:
                         raise ValueError(
                             "spectral recording setup cannot be combined with legacy "
@@ -276,10 +279,12 @@ class Observation(ABC):
                 _cleanup_step("antenna stop", lambda: self.com.antenna("stop"))
 
                 def _reset_binning():
+                    changed_specs = set(self._legacy_binning_changed_specs)
                     for _key, val in config.spectrometer.items():
                         spec_name, key = _key.split(".", 1)
-                        if key == "max_ch":
+                        if (key == "max_ch") and (spec_name in changed_specs):
                             self.binning(val, spec_name)  # set max channel number
+                    self._legacy_binning_changed_specs.difference_update(changed_specs)
 
                 if legacy_cleanup_allowed:
                     _cleanup_step("reset channel binning", _reset_binning)
