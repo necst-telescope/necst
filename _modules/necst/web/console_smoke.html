@@ -1,0 +1,726 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>necst.web.console_smoke &#8212; necst 4.0.20 documentation</title>
+    
+  <link href="../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    
+  <link rel="preload" as="script" href="../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../../../index.html">
+<p class="title">necst</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../index.html">
+  Home
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../_source/necst.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/necst-telescope/necst" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/necst/" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fas fa-cubes"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
+<!-- This will display the version of the docs -->
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for necst.web.console_smoke</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;HTTP smoke-test helpers for the NECST Operator Console.</span>
+
+<span class="sd">The smoke test is intentionally read-only by default.  It talks to an already</span>
+<span class="sd">running console server and verifies that the operator-facing status, process,</span>
+<span class="sd">and self-check endpoints are wired together.  It does not move the telescope,</span>
+<span class="sd">does not move the chopper, and does not start observation launchers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">urllib.error</span>
+<span class="kn">import</span> <span class="nn">urllib.parse</span>
+<span class="kn">import</span> <span class="nn">urllib.request</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="n">JsonDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">SmokeItem</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One smoke-test item.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">ok</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">severity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">JsonDict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;ok&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ok</span><span class="p">),</span>
+            <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span>
+            <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span>
+        <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_normalise_base_url</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;console URL is empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">&quot;http://&quot;</span><span class="p">,</span> <span class="s2">&quot;https://&quot;</span><span class="p">)):</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://&quot;</span> <span class="o">+</span> <span class="n">url</span>
+    <span class="k">return</span> <span class="n">url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_endpoint_url</span><span class="p">(</span><span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urljoin</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">path</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_json_request</span><span class="p">(</span>
+    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;GET&quot;</span><span class="p">,</span>
+    <span class="n">payload</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">_endpoint_url</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">payload</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;application/json; charset=utf-8&quot;</span>
+    <span class="n">request</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">timeout</span><span class="p">))</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">200</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">300</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> returned HTTP </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">body</span> <span class="ow">or</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> did not return JSON: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> returned non-object JSON&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parsed</span>
+
+
+<span class="k">def</span> <span class="nf">_item</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ok</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">severity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmokeItem</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">SmokeItem</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">ok</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">ok</span><span class="p">),</span>
+        <span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">),</span>
+        <span class="n">severity</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">severity</span><span class="p">),</span>
+        <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{}),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_mapping</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
+
+
+<span class="k">def</span> <span class="nf">_list</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[]</span>
+
+
+<span class="k">def</span> <span class="nf">_check_health</span><span class="p">(</span><span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SmokeItem</span><span class="p">,</span> <span class="n">JsonDict</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_json_request</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="s2">&quot;/health&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_item</span><span class="p">(</span><span class="s2">&quot;health&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;/health failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span> <span class="p">{}</span>
+    <span class="n">ok</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;health&quot;</span><span class="p">,</span> <span class="n">ok</span><span class="p">,</span> <span class="s2">&quot;/health OK&quot;</span> <span class="k">if</span> <span class="n">ok</span> <span class="k">else</span> <span class="s2">&quot;/health did not report ok&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span>
+        <span class="p">),</span>
+        <span class="n">data</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_check_status</span><span class="p">(</span><span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SmokeItem</span><span class="p">],</span> <span class="n">JsonDict</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_json_request</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="s2">&quot;/api/status&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_item</span><span class="p">(</span><span class="s2">&quot;api_status&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;/api/status failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)],</span> <span class="p">{}</span>
+
+    <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SmokeItem</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_item</span><span class="p">(</span><span class="s2">&quot;api_status&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;/api/status returned JSON&quot;</span><span class="p">,</span> <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">mount_limits</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mount_limits&quot;</span><span class="p">))</span>
+    <span class="n">missing_limits</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;az_min&quot;</span><span class="p">,</span> <span class="s2">&quot;az_max&quot;</span><span class="p">,</span> <span class="s2">&quot;el_min&quot;</span><span class="p">,</span> <span class="s2">&quot;el_max&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mount_limits</span>
+    <span class="p">]</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;status_mount_limits&quot;</span><span class="p">,</span>
+            <span class="ow">not</span> <span class="n">missing_limits</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;mount limits present&quot;</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">missing_limits</span>
+                <span class="k">else</span> <span class="s2">&quot;mount limits are incomplete&quot;</span>
+            <span class="p">),</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">missing_limits</span><span class="p">,</span> <span class="s2">&quot;mount_limits&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">capabilities</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;capabilities&quot;</span><span class="p">))</span>
+    <span class="n">required_caps</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;mount_move&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;target_tracking&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;observation_start&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rsky&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;skydip&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;chopper_status&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;chopper_move&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;chopper_maintenance&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">missing_caps</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">required_caps</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">capabilities</span><span class="p">]</span>
+    <span class="n">non_bool_caps</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">capabilities</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)]</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;status_capabilities&quot;</span><span class="p">,</span>
+            <span class="ow">not</span> <span class="n">missing_caps</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">non_bool_caps</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;capabilities present&quot;</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">missing_caps</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">non_bool_caps</span>
+                <span class="k">else</span> <span class="s2">&quot;capabilities are incomplete or non-boolean&quot;</span>
+            <span class="p">),</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">missing_caps</span><span class="p">,</span>
+                <span class="s2">&quot;non_bool&quot;</span><span class="p">:</span> <span class="n">non_bool_caps</span><span class="p">,</span>
+                <span class="s2">&quot;capabilities&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">capabilities</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">self_check_endpoint</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;self_check_endpoint&quot;</span><span class="p">)</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;status_self_check_endpoint&quot;</span><span class="p">,</span>
+            <span class="n">self_check_endpoint</span> <span class="o">==</span> <span class="s2">&quot;/api/self-check&quot;</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;self-check endpoint advertised&quot;</span>
+                <span class="k">if</span> <span class="n">self_check_endpoint</span> <span class="o">==</span> <span class="s2">&quot;/api/self-check&quot;</span>
+                <span class="k">else</span> <span class="s2">&quot;self-check endpoint is missing&quot;</span>
+            <span class="p">),</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;self_check_endpoint&quot;</span><span class="p">:</span> <span class="n">self_check_endpoint</span><span class="p">},</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">status_refresh_ms</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status_refresh_ms&quot;</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">status_refresh_ms</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;status_refresh_interval&quot;</span><span class="p">,</span>
+            <span class="n">status_refresh_ms</span> <span class="o">&gt;=</span> <span class="mi">200</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;console status refresh interval = </span><span class="si">{</span><span class="n">status_refresh_ms</span><span class="si">}</span><span class="s2"> ms&quot;</span>
+                <span class="k">if</span> <span class="n">status_refresh_ms</span>
+                <span class="k">else</span> <span class="s2">&quot;console status refresh interval is missing&quot;</span>
+            <span class="p">),</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="n">status_refresh_ms</span> <span class="o">&gt;=</span> <span class="mi">200</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status_refresh_ms&quot;</span><span class="p">:</span> <span class="n">status_refresh_ms</span><span class="p">},</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">live_actions</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;live_actions&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action_mode&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span> <span class="ow">and</span> <span class="n">live_actions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;guarded&quot;</span><span class="p">):</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_item</span><span class="p">(</span>
+                <span class="s2">&quot;status_live_write_guard&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;live write actions are guarded by --guard-live-actions&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;live_actions&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">live_actions</span><span class="p">)},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action_mode&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span> <span class="ow">and</span> <span class="n">live_actions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enabled&quot;</span><span class="p">):</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_item</span><span class="p">(</span>
+                <span class="s2">&quot;status_live_write_guard&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;live write actions are enabled by default in live mode&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;live_actions&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">live_actions</span><span class="p">)},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_item</span><span class="p">(</span>
+                <span class="s2">&quot;status_live_write_guard&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;dry-run mode or live writes enabled by default&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;live_actions&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">live_actions</span><span class="p">)},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">live_telemetry</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;live_telemetry&quot;</span><span class="p">))</span>
+    <span class="n">live_requested</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">live_telemetry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;requested&quot;</span><span class="p">))</span>
+    <span class="n">live_available</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">live_telemetry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;available&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">live_requested</span> <span class="ow">and</span> <span class="n">live_available</span><span class="p">:</span>
+        <span class="n">live_mode</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action_mode&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span>
+        <span class="n">has_position</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">live_telemetry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;has_position&quot;</span><span class="p">))</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_item</span><span class="p">(</span>
+                <span class="s2">&quot;status_live_telemetry&quot;</span><span class="p">,</span>
+                <span class="n">has_position</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">live_mode</span><span class="p">,</span>
+                <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;console live telemetry available (</span><span class="si">{</span><span class="n">live_telemetry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;spin_mode&#39;</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;unknown spin mode&#39;</span><span class="si">}</span><span class="s2">); &quot;</span>
+                    <span class="o">+</span> <span class="p">(</span>
+                        <span class="s2">&quot;position sample received&quot;</span>
+                        <span class="k">if</span> <span class="n">has_position</span>
+                        <span class="k">else</span> <span class="s2">&quot;waiting for encoder/pointing position sample&quot;</span>
+                    <span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">severity</span><span class="o">=</span><span class="p">(</span>
+                    <span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="n">has_position</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;error&quot;</span> <span class="k">if</span> <span class="n">live_mode</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;live_telemetry&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">live_telemetry</span><span class="p">)},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">live_requested</span><span class="p">:</span>
+        <span class="n">live_mode</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action_mode&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_item</span><span class="p">(</span>
+                <span class="s2">&quot;status_live_telemetry&quot;</span><span class="p">,</span>
+                <span class="ow">not</span> <span class="n">live_mode</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;console live telemetry unavailable: </span><span class="si">{</span><span class="n">live_telemetry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;unknown reason&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;error&quot;</span> <span class="k">if</span> <span class="n">live_mode</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;live_telemetry&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">live_telemetry</span><span class="p">)},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_item</span><span class="p">(</span>
+                <span class="s2">&quot;status_live_telemetry&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;console live telemetry disabled&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="p">(</span>
+                    <span class="s2">&quot;warning&quot;</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action_mode&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span> <span class="k">else</span> <span class="s2">&quot;info&quot;</span>
+                <span class="p">),</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;live_telemetry&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">live_telemetry</span><span class="p">)},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">process_counts</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;process_counts&quot;</span><span class="p">))</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;status_process_counts&quot;</span><span class="p">,</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">process_counts</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">),</span>
+            <span class="s2">&quot;process counts present&quot;</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;process_counts&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">process_counts</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">items</span><span class="p">,</span> <span class="n">data</span>
+
+
+<span class="k">def</span> <span class="nf">_check_self_check</span><span class="p">(</span>
+    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SmokeItem</span><span class="p">],</span> <span class="n">JsonDict</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_json_request</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="s2">&quot;/api/self-check&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">_item</span><span class="p">(</span><span class="s2">&quot;self_check_endpoint&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;/api/self-check failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="p">],</span> <span class="p">{}</span>
+
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary&quot;</span><span class="p">))</span>
+    <span class="n">error_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">warning_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warning_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;self_check_endpoint&quot;</span><span class="p">,</span>
+            <span class="n">error_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;self-check status=</span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">, errors=</span><span class="si">{</span><span class="n">error_count</span><span class="si">}</span><span class="s2">, warnings=</span><span class="si">{</span><span class="n">warning_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span> <span class="k">if</span> <span class="n">error_count</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">warning_count</span> <span class="k">else</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">summary</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">checks</span> <span class="o">=</span> <span class="n">_list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checks&quot;</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> <span class="n">checks</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">check</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">ok</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">check</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">))</span>
+        <span class="n">severity</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">check</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span> <span class="ow">or</span> <span class="n">severity</span> <span class="o">==</span> <span class="s2">&quot;warning&quot;</span><span class="p">:</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">_item</span><span class="p">(</span>
+                    <span class="s2">&quot;self_check.&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">check</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
+                    <span class="n">ok</span><span class="p">,</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">check</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="n">severity</span><span class="o">=</span><span class="n">severity</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;check&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">check</span><span class="p">)},</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">items</span><span class="p">,</span> <span class="n">data</span>
+
+
+<span class="k">def</span> <span class="nf">_check_processes</span><span class="p">(</span><span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SmokeItem</span><span class="p">],</span> <span class="n">JsonDict</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_json_request</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="s2">&quot;/api/processes&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_item</span><span class="p">(</span><span class="s2">&quot;processes_endpoint&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;/api/processes failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)],</span> <span class="p">{}</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;process_counts&quot;</span><span class="p">))</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;processes_endpoint&quot;</span><span class="p">,</span>
+            <span class="nb">bool</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;processes&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">,</span>
+            <span class="s2">&quot;/api/processes returned process state&quot;</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;process_counts&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">items</span><span class="p">,</span> <span class="n">data</span>
+
+
+<span class="k">def</span> <span class="nf">_check_operator_log</span><span class="p">(</span>
+    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SmokeItem</span><span class="p">],</span> <span class="n">JsonDict</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_json_request</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="s2">&quot;/api/operator-log?limit=5&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">_item</span><span class="p">(</span><span class="s2">&quot;operator_log_endpoint&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;/api/operator-log failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="p">],</span> <span class="p">{}</span>
+    <span class="n">ok</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;entries&quot;</span><span class="p">,</span> <span class="p">[]),</span> <span class="nb">list</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;operator_log_endpoint&quot;</span><span class="p">,</span>
+            <span class="n">ok</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;/api/operator-log returned JSONL tail&quot;</span>
+                <span class="k">if</span> <span class="n">ok</span>
+                <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;operator log endpoint returned not-ok&quot;</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="n">ok</span> <span class="k">else</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;returned_count&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;returned_count&quot;</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+    <span class="p">],</span> <span class="n">data</span>
+
+
+<span class="k">def</span> <span class="nf">_check_action_self_check</span><span class="p">(</span>
+    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SmokeItem</span><span class="p">],</span> <span class="n">JsonDict</span><span class="p">]:</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;self_check&quot;</span><span class="p">,</span> <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="s2">&quot;console-check&quot;</span><span class="p">}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_json_request</span><span class="p">(</span>
+            <span class="n">base_url</span><span class="p">,</span> <span class="s2">&quot;/api/action&quot;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">_item</span><span class="p">(</span><span class="s2">&quot;action_self_check&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;action=self_check failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="p">],</span> <span class="p">{}</span>
+    <span class="n">ok</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">))</span>
+    <span class="n">action_data</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">))</span>
+    <span class="n">self_data</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">action_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;self_check&quot;</span><span class="p">))</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">self_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary&quot;</span><span class="p">))</span>
+    <span class="n">error_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">summary</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">item_ok</span> <span class="o">=</span> <span class="n">ok</span> <span class="ow">and</span> <span class="n">error_count</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">_item</span><span class="p">(</span>
+            <span class="s2">&quot;action_self_check&quot;</span><span class="p">,</span>
+            <span class="n">item_ok</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;action=self_check OK&quot;</span>
+                <span class="k">if</span> <span class="n">item_ok</span>
+                <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;action=self_check reported errors&quot;</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span> <span class="k">if</span> <span class="n">ok</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">item_ok</span> <span class="k">else</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">},</span>
+        <span class="p">)</span>
+    <span class="p">],</span> <span class="n">data</span>
+
+
+<div class="viewcode-block" id="run_smoke_test"><a class="viewcode-back" href="../../../_source/necst.web.console_smoke.html#necst.web.console_smoke.run_smoke_test">[docs]</a><span class="k">def</span> <span class="nf">run_smoke_test</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;http://127.0.0.1:8092/&quot;</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
+    <span class="n">include_action_self_check</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">fail_on_warning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a read-only smoke test against an already running console server.&quot;&quot;&quot;</span>
+
+    <span class="n">base_url</span> <span class="o">=</span> <span class="n">_normalise_base_url</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">started_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SmokeItem</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">raw</span><span class="p">:</span> <span class="n">JsonDict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">health_item</span><span class="p">,</span> <span class="n">raw_health</span> <span class="o">=</span> <span class="n">_check_health</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">health_item</span><span class="p">)</span>
+    <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;health&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw_health</span>
+
+    <span class="n">status_items</span><span class="p">,</span> <span class="n">raw_status</span> <span class="o">=</span> <span class="n">_check_status</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">status_items</span><span class="p">)</span>
+    <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw_status</span>
+
+    <span class="n">self_items</span><span class="p">,</span> <span class="n">raw_self</span> <span class="o">=</span> <span class="n">_check_self_check</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">self_items</span><span class="p">)</span>
+    <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;self_check&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw_self</span>
+
+    <span class="n">process_items</span><span class="p">,</span> <span class="n">raw_processes</span> <span class="o">=</span> <span class="n">_check_processes</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">process_items</span><span class="p">)</span>
+    <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;processes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw_processes</span>
+
+    <span class="n">log_items</span><span class="p">,</span> <span class="n">raw_log</span> <span class="o">=</span> <span class="n">_check_operator_log</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">log_items</span><span class="p">)</span>
+    <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;operator_log&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw_log</span>
+
+    <span class="k">if</span> <span class="n">include_action_self_check</span><span class="p">:</span>
+        <span class="n">action_items</span><span class="p">,</span> <span class="n">raw_action</span> <span class="o">=</span> <span class="n">_check_action_self_check</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">action_items</span><span class="p">)</span>
+        <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;action_self_check&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw_action</span>
+
+    <span class="n">error_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">ok</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">severity</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+    <span class="n">warning_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span>
+        <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">severity</span> <span class="o">==</span> <span class="s2">&quot;warning&quot;</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">ok</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">severity</span> <span class="o">!=</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">ok</span> <span class="o">=</span> <span class="n">error_count</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">warning_count</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">fail_on_warning</span><span class="p">))</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;ok&quot;</span> <span class="k">if</span> <span class="n">ok</span> <span class="ow">and</span> <span class="n">warning_count</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;warning&quot;</span> <span class="k">if</span> <span class="n">ok</span> <span class="k">else</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+    <span class="n">finished_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;ok&quot;</span><span class="p">:</span> <span class="n">ok</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+        <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;ok&quot;</span><span class="p">:</span> <span class="n">ok</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+            <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">base_url</span><span class="p">,</span>
+            <span class="s2">&quot;error_count&quot;</span><span class="p">:</span> <span class="n">error_count</span><span class="p">,</span>
+            <span class="s2">&quot;warning_count&quot;</span><span class="p">:</span> <span class="n">warning_count</span><span class="p">,</span>
+            <span class="s2">&quot;check_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">),</span>
+            <span class="s2">&quot;duration_sec&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">finished_at</span> <span class="o">-</span> <span class="n">started_at</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s2">&quot;fail_on_warning&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">fail_on_warning</span><span class="p">),</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">],</span>
+        <span class="s2">&quot;raw&quot;</span><span class="p">:</span> <span class="n">raw</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="print_smoke_report"><a class="viewcode-back" href="../../../_source/necst.web.console_smoke.html#necst.web.console_smoke.print_smoke_report">[docs]</a><span class="k">def</span> <span class="nf">print_smoke_report</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">stream</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print a compact human-readable smoke-test report.&quot;&quot;&quot;</span>
+
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">_mapping</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary&quot;</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;NECST Operator Console smoke check: &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error_count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> error, </span><span class="si">{</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;warning_count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> warning, &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;duration_sec&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> s)&quot;</span><span class="p">,</span>
+        <span class="n">file</span><span class="o">=</span><span class="n">stream</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;URL: </span><span class="si">{</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;url&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">stream</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;items&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">ok</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">))</span>
+        <span class="n">severity</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+        <span class="n">marker</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;OK&quot;</span>
+            <span class="k">if</span> <span class="n">ok</span> <span class="ow">and</span> <span class="n">severity</span> <span class="o">!=</span> <span class="s2">&quot;warning&quot;</span>
+            <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;WARN&quot;</span> <span class="k">if</span> <span class="n">severity</span> <span class="o">==</span> <span class="s2">&quot;warning&quot;</span> <span class="k">else</span> <span class="s2">&quot;FAIL&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="n">marker</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">stream</span><span class="p">)</span></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;run_smoke_test&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;print_smoke_report&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, NECST Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

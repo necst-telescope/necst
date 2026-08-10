@@ -1,0 +1,7 @@
+necst.web.progress\_manager
+===========================
+
+.. automodule:: necst.web.progress_manager
+   :members:
+   :undoc-members:
+   :show-inheritance:

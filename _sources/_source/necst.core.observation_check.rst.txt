@@ -1,0 +1,7 @@
+necst.core.observation\_check
+=============================
+
+.. automodule:: necst.core.observation_check
+   :members:
+   :undoc-members:
+   :show-inheritance:

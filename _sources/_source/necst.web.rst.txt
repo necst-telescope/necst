@@ -1,0 +1,57 @@
+
+
+
+necst.web
+=========
+
+
+
+
+.. automodule:: necst.web
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+
+
+
+
+Submodules
+----------
+
+.. autosummary::
+
+   necst.web.console_entry
+   necst.web.console_log_cli
+   necst.web.console_smoke
+   necst.web.live_telemetry
+   necst.web.log_reader
+   necst.web.node_health
+   necst.web.observation_log
+   necst.web.operator_console
+   necst.web.process_manager
+   necst.web.progress_manager
+   necst.web.self_check
+   necst.web.site_config
+   necst.web.status_model
+
+.. toctree::
+   :maxdepth: 4
+   :titlesonly:
+   :hidden:
+
+   necst.web.console_entry
+   necst.web.console_log_cli
+   necst.web.console_smoke
+   necst.web.live_telemetry
+   necst.web.log_reader
+   necst.web.node_health
+   necst.web.observation_log
+   necst.web.operator_console
+   necst.web.process_manager
+   necst.web.progress_manager
+   necst.web.self_check
+   necst.web.site_config
+   necst.web.status_model

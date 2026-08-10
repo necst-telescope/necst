@@ -77,6 +77,30 @@
 </li>
 
 <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
  <a class="reference internal nav-link" href="../../../../_source/necst.html">
   API Reference
  </a>
@@ -177,6 +201,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">CoordMsg</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enc</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">CoordMsg</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">az_unwrap_status</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_cmd_receipt_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_enc_receipt_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_pointing_accuracy</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="s2">&quot;deg&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coord_ext</span> <span class="o">=</span> <span class="n">LinearExtrapolate</span><span class="p">(</span>
@@ -187,12 +213,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pointing_pub</span> <span class="o">=</span> <span class="n">topic</span><span class="o">.</span><span class="n">antenna_pointing_status</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pointing_status_period</span> <span class="o">=</span> <span class="mf">0.2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_last_pointing_status_publish</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="n">topic</span><span class="o">.</span><span class="n">antenna_encoder</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">msg</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+        <span class="n">topic</span><span class="o">.</span><span class="n">antenna_encoder</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_encoder</span><span class="p">)</span>
         <span class="n">topic</span><span class="o">.</span><span class="n">antenna_az_unwrap_status</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_az_unwrap_status</span><span class="p">)</span>
-        <span class="n">topic</span><span class="o">.</span><span class="n">altaz_cmd</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">msg</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+        <span class="n">topic</span><span class="o">.</span><span class="n">altaz_cmd</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_command</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span>
             <span class="mi">1</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna_command_frequency</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">antenna_tracking_status</span>
         <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_cmd_receipt_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_update_encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_enc_receipt_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_update_az_unwrap_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">AntennaAzUnwrapStatus</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">az_unwrap_status</span> <span class="o">=</span> <span class="n">msg</span>
@@ -212,8 +246,11 @@
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_nan</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_finite_float</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_rate_deg_per_sec</span><span class="p">(</span><span class="n">newer</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">,</span> <span class="n">older</span><span class="p">:</span> <span class="n">CoordMsg</span><span class="p">,</span> <span class="n">attr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -225,55 +262,69 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_publish_pointing_unavailable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">basis</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_fresh_age_sec</span><span class="p">(</span><span class="n">receipt_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">age</span> <span class="o">=</span> <span class="n">now</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">receipt_time</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">age</span> <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">age</span><span class="p">)</span> <span class="ow">and</span> <span class="n">age</span> <span class="o">&gt;=</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_tracking_freshness_limit_sec</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># Keep this consistent with the progress/operator display freshness.</span>
+        <span class="c1"># The check is based on local callback receipt time, not on CoordMsg.time,</span>
+        <span class="c1"># because CoordMsg.time may be a planned command time in the future.</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">antenna_command_frequency</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_samples_have_finite_times</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">time</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">time</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_tracking_input_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True only while live command and encoder samples are fresh.</span>
+
+<span class="sd">        When the antenna command stream stops after STOP/ABORT or observation end,</span>
+<span class="sd">        the two latest command samples remain in ``self.cmd``.  LinearExtrapolate</span>
+<span class="sd">        can then continue making diagnostic values, which made Progress/Console</span>
+<span class="sd">        show a continuing tracking error even though no command is active.  Use</span>
+<span class="sd">        callback receipt ages here so stale command history is not published as a</span>
+<span class="sd">        fresh tracking status.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_samples_have_finite_times</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tracking_freshness_limit_sec</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fresh_age_sec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_cmd_receipt_time</span><span class="p">,</span> <span class="n">now</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">limit</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fresh_age_sec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_enc_receipt_time</span><span class="p">,</span> <span class="n">now</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">limit</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_publish_pointing_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_pointing_status_publish</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pointing_status_period</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_last_pointing_status_publish</span> <span class="o">=</span> <span class="n">now</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pointing_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
-            <span class="n">AntennaPointingStatus</span><span class="p">(</span>
-                <span class="n">valid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="n">publish_time_unix</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
-                <span class="n">command_time_unix</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">encoder_time_unix</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">cmd_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">cmd_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">enc_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">enc_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">delta_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">delta_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">delta_az_cos_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">tracking_error_deg</span><span class="o">=</span><span class="mf">9999.0</span><span class="p">,</span>
-                <span class="n">tracking_threshold_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">),</span>
-                <span class="n">tracking_ok</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="n">cmd_age_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">enc_age_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">command_stale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">encoder_stale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">cmd_az_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">cmd_el_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">enc_az_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">enc_el_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">basis</span><span class="o">=</span><span class="n">basis</span><span class="p">[:</span><span class="mi">32</span><span class="p">],</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pointing_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">AntennaPointingStatus</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
 
 <div class="viewcode-block" id="AntennaTrackingStatus.antenna_tracking_status"><a class="viewcode-back" href="../../../../_source/necst.ctrl.antenna.tracking_status.html#necst.ctrl.antenna.tracking_status.AntennaTrackingStatus.antenna_tracking_status">[docs]</a>    <span class="k">def</span> <span class="nf">antenna_tracking_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tracking_input_ready</span><span class="p">(</span><span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">):</span>
+            <span class="c1"># No publish here by design.  A fresh /ctrl/antenna/tracking_status or</span>
+            <span class="c1"># /ctrl/antenna/pointing_status message means there is a fresh command</span>
+            <span class="c1"># basis.  After STOP/ABORT, displays should see the old samples become</span>
+            <span class="c1"># stale instead of receiving new extrapolated diagnostics.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tracking_checker</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="n">TrackingStatus</span><span class="p">(</span><span class="n">ok</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_publish_pointing_unavailable</span><span class="p">(</span><span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">basis</span><span class="o">=</span><span class="s2">&quot;missing-command&quot;</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tracking_checker</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="n">TrackingStatus</span><span class="p">(</span><span class="n">ok</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="mf">9999.0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_publish_pointing_unavailable</span><span class="p">(</span><span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">basis</span><span class="o">=</span><span class="s2">&quot;missing-encoder&quot;</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="n">enc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord_ext</span><span class="p">(</span><span class="n">CoordMsg</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">enc</span><span class="o">.</span><span class="n">time</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_finite_float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">lon</span><span class="p">,</span> <span class="n">cmd</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span> <span class="n">enc</span><span class="o">.</span><span class="n">lon</span><span class="p">,</span> <span class="n">enc</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span> <span class="n">cmd</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">enc</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tracking_checker</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">return</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_az_unwrap_active_for</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">now</span><span class="p">):</span>
             <span class="n">daz</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">lon</span> <span class="o">-</span> <span class="n">cmd</span><span class="o">.</span><span class="n">lon</span>
@@ -290,38 +341,34 @@
 
         <span class="n">cmd_rate_az</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate_deg_per_sec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;lon&quot;</span><span class="p">)</span>
         <span class="n">cmd_rate_el</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate_deg_per_sec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cmd</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;lat&quot;</span><span class="p">)</span>
-        <span class="n">cmd_age</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">now</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">time</span><span class="p">))</span>
-        <span class="n">enc_age</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">now</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">time</span><span class="p">))</span>
-        <span class="n">stale_sec</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">antenna_command_frequency</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">))</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_pointing_status_publish</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pointing_status_period</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_last_pointing_status_publish</span> <span class="o">=</span> <span class="n">now</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pointing_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
-            <span class="n">AntennaPointingStatus</span><span class="p">(</span>
-                <span class="n">valid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">publish_time_unix</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
-                <span class="n">command_time_unix</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">time</span><span class="p">),</span>
-                <span class="n">encoder_time_unix</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">time</span><span class="p">),</span>
-                <span class="n">cmd_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">lon</span><span class="p">),</span>
-                <span class="n">cmd_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">lat</span><span class="p">),</span>
-                <span class="n">enc_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">lon</span><span class="p">),</span>
-                <span class="n">enc_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">lat</span><span class="p">),</span>
-                <span class="n">delta_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">daz</span><span class="p">),</span>
-                <span class="n">delta_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">del_</span><span class="p">),</span>
-                <span class="n">delta_az_cos_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">daz_cos_el</span><span class="p">),</span>
-                <span class="n">tracking_error_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">error</span><span class="p">),</span>
-                <span class="n">tracking_threshold_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">),</span>
-                <span class="n">tracking_ok</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">ok</span><span class="p">),</span>
-                <span class="n">cmd_age_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd_age</span><span class="p">),</span>
-                <span class="n">enc_age_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">enc_age</span><span class="p">),</span>
-                <span class="n">command_stale</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">cmd_age</span> <span class="o">&gt;</span> <span class="n">stale_sec</span><span class="p">),</span>
-                <span class="n">encoder_stale</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">enc_age</span> <span class="o">&gt;</span> <span class="n">stale_sec</span><span class="p">),</span>
-                <span class="n">cmd_az_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd_rate_az</span><span class="p">),</span>
-                <span class="n">cmd_el_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd_rate_el</span><span class="p">),</span>
-                <span class="n">enc_az_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">enc_el_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
-                <span class="n">basis</span><span class="o">=</span><span class="s2">&quot;interpolated&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
+        <span class="n">cmd_age</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fresh_age_sec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_cmd_receipt_time</span><span class="p">,</span> <span class="n">now</span><span class="p">)</span>
+        <span class="n">enc_age</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fresh_age_sec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_enc_receipt_time</span><span class="p">,</span> <span class="n">now</span><span class="p">)</span>
+        <span class="n">stale_sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tracking_freshness_limit_sec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_publish_pointing_status</span><span class="p">(</span>
+            <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">valid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">publish_time_unix</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">command_time_unix</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">time</span><span class="p">),</span>
+            <span class="n">encoder_time_unix</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">time</span><span class="p">),</span>
+            <span class="n">cmd_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">lon</span><span class="p">),</span>
+            <span class="n">cmd_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">lat</span><span class="p">),</span>
+            <span class="n">enc_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">lon</span><span class="p">),</span>
+            <span class="n">enc_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">lat</span><span class="p">),</span>
+            <span class="n">delta_az_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">daz</span><span class="p">),</span>
+            <span class="n">delta_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">del_</span><span class="p">),</span>
+            <span class="n">delta_az_cos_el_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">daz_cos_el</span><span class="p">),</span>
+            <span class="n">tracking_error_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">error</span><span class="p">),</span>
+            <span class="n">tracking_threshold_deg</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">),</span>
+            <span class="n">tracking_ok</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">ok</span><span class="p">),</span>
+            <span class="n">cmd_age_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd_age</span><span class="p">),</span>
+            <span class="n">enc_age_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">enc_age</span><span class="p">),</span>
+            <span class="n">command_stale</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">cmd_age</span> <span class="o">&gt;</span> <span class="n">stale_sec</span><span class="p">),</span>
+            <span class="n">encoder_stale</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">enc_age</span> <span class="o">&gt;</span> <span class="n">stale_sec</span><span class="p">),</span>
+            <span class="n">cmd_az_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd_rate_az</span><span class="p">),</span>
+            <span class="n">cmd_el_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cmd_rate_el</span><span class="p">),</span>
+            <span class="n">enc_az_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
+            <span class="n">enc_el_rate_deg_per_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
+            <span class="n">basis</span><span class="o">=</span><span class="s2">&quot;interpolated&quot;</span><span class="p">,</span>
         <span class="p">)</span></div></div>
 </pre></div>
 

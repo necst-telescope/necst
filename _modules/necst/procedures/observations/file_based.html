@@ -77,6 +77,30 @@
 </li>
 
 <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
  <a class="reference internal nav-link" href="../../../../_source/necst.html">
   API Reference
  </a>
@@ -188,6 +212,76 @@
 <span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">_parameter_bool</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a boolean for `.obs` parameters while preserving explicit false.</span>
+
+<span class="sd">    TOML booleans normally arrive as Python bool, but accepting common string</span>
+<span class="sd">    spellings makes fallback/mock tests and hand-written parameter fragments safer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">,</span> <span class="s2">&quot;disable&quot;</span><span class="p">,</span> <span class="s2">&quot;disabled&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">}:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;enable&quot;</span><span class="p">,</span> <span class="s2">&quot;enabled&quot;</span><span class="p">}:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_obsspec_parameters</span><span class="p">(</span><span class="n">obsspec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a mutable parameter mapping for an ObservationSpec when possible.&quot;&quot;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obsspec</span><span class="p">,</span> <span class="s2">&quot;_parameters&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">params</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obsspec</span><span class="p">,</span> <span class="s2">&quot;parameters&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{}</span>
+
+
+<span class="k">def</span> <span class="nf">_apply_file_based_obs_defaults</span><span class="p">(</span><span class="n">obsspec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply NECST file-observation defaults above individual Spec classes.</span>
+
+<span class="sd">    The defaults are injected immediately after parsing the `.obs` file so that</span>
+<span class="sd">    all file-based observation types, including GridSpec which generates its own</span>
+<span class="sd">    waypoints from its parameters, see a consistent parameter set without</span>
+<span class="sd">    changing the individual neclib observation-spec implementations.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    frozenset</span>
+<span class="sd">        Parameter names that were present in the original `.obs` parameter set.</span>
+<span class="sd">        This is used to distinguish an explicit user request from an implicit</span>
+<span class="sd">        default, for example when deciding whether to warn about unsupported</span>
+<span class="sd">        scan-block operation for an observation type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">_obsspec_parameters</span><span class="p">(</span><span class="n">obsspec</span><span class="p">)</span>
+    <span class="n">explicit_keys</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="c1"># Defaulted and canonicalized booleans.  `cos_correction` is injected here,</span>
+    <span class="c1"># rather than in neclib.coordinates.observations.grid.GridSpec, so Grid, OTF,</span>
+    <span class="c1"># PSW, and RadioPointing share the same `.obs` default policy.</span>
+    <span class="k">if</span> <span class="s2">&quot;cos_correction&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;cos_correction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;cos_correction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parameter_bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cos_correction&quot;</span><span class="p">),</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;scan_cos_correction&quot;</span><span class="p">,</span> <span class="s2">&quot;point_cos_correction&quot;</span><span class="p">,</span> <span class="s2">&quot;use_scan_block&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parameter_bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># `use_scan_block` defaults to True at execution time.  Do not inject it</span>
+    <span class="c1"># into `params`: leaving it absent allows us to suppress warnings for</span>
+    <span class="c1"># unsupported observation types unless the user explicitly requested it.</span>
+
+    <span class="c1"># Spectral generator preflight defaults for file-based `.obs` observations.</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;sg_preflight_policy&quot;</span><span class="p">,</span> <span class="s2">&quot;verify_only&quot;</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;sg_preflight_scope&quot;</span><span class="p">,</span> <span class="s2">&quot;active_lo_chains&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">explicit_keys</span>
+
+
 <div class="viewcode-block" id="FileBasedObservation"><a class="viewcode-back" href="../../../../_source/necst.procedures.observations.file_based.html#necst.procedures.observations.file_based.FileBasedObservation">[docs]</a><span class="k">class</span> <span class="nc">FileBasedObservation</span><span class="p">(</span><span class="n">Observation</span><span class="p">):</span>
     <span class="n">SpecParser</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">ObservationSpec</span><span class="p">]</span>
 
@@ -195,6 +289,7 @@
         <span class="n">file</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;file&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obs_file</span> <span class="o">=</span> <span class="n">file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">obsspec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SpecParser</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_parameter_explicit_keys</span> <span class="o">=</span> <span class="n">_apply_file_based_obs_defaults</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obsspec</span><span class="p">)</span>
         <span class="c1"># Keep the user-facing target name in progress snapshots.</span>
         <span class="c1"># FileBasedObservation historically used obsspec.target only for the</span>
         <span class="c1"># default record name, so Web/terminal progress displays could show</span>
@@ -839,15 +934,18 @@
         <span class="n">margin</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">antenna</span><span class="o">.</span><span class="n">scan_margin</span><span class="o">.</span><span class="n">value</span>
 
         <span class="n">params</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obsspec</span><span class="p">,</span> <span class="s2">&quot;parameters&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="n">cos_global</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cos_correction&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
-        <span class="n">cos_scan</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scan_cos_correction&quot;</span><span class="p">,</span> <span class="n">cos_global</span><span class="p">))</span>
-        <span class="n">cos_point</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;point_cos_correction&quot;</span><span class="p">,</span> <span class="n">cos_global</span><span class="p">))</span>
-        <span class="n">requested_use_scan_block</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_scan_block&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="n">cos_global</span> <span class="o">=</span> <span class="n">_parameter_bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cos_correction&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        <span class="n">cos_scan</span> <span class="o">=</span> <span class="n">_parameter_bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scan_cos_correction&quot;</span><span class="p">,</span> <span class="n">cos_global</span><span class="p">))</span>
+        <span class="n">cos_point</span> <span class="o">=</span> <span class="n">_parameter_bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;point_cos_correction&quot;</span><span class="p">,</span> <span class="n">cos_global</span><span class="p">))</span>
+        <span class="n">use_scan_block_explicit</span> <span class="o">=</span> <span class="s2">&quot;use_scan_block&quot;</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_obs_parameter_explicit_keys&quot;</span><span class="p">,</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="n">requested_use_scan_block</span> <span class="o">=</span> <span class="n">_parameter_bool</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_scan_block&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
         <span class="n">scan_block_supported_obstypes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;OTF&quot;</span><span class="p">,</span> <span class="s2">&quot;RadioPointing&quot;</span><span class="p">}</span>
         <span class="n">use_scan_block</span> <span class="o">=</span> <span class="n">requested_use_scan_block</span> <span class="ow">and</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">observation_type</span> <span class="ow">in</span> <span class="n">scan_block_supported_obstypes</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="n">requested_use_scan_block</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_scan_block</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_scan_block_explicit</span> <span class="ow">and</span> <span class="n">requested_use_scan_block</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_scan_block</span><span class="p">:</span>
             <span class="n">supported</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">scan_block_supported_obstypes</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="s2">&quot;use_scan_block is currently supported only for &quot;</span>

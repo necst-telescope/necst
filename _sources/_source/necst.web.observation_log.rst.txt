@@ -1,0 +1,7 @@
+necst.web.observation\_log
+==========================
+
+.. automodule:: necst.web.observation_log
+   :members:
+   :undoc-members:
+   :show-inheritance:

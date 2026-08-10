@@ -77,6 +77,30 @@
 </li>
 
 <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
  <a class="reference internal nav-link" href="../../../_source/necst.html">
   API Reference
  </a>
@@ -160,6 +184,7 @@
 <span class="kn">from</span> <span class="nn">neclib.core</span> <span class="kn">import</span> <span class="n">read</span>
 <span class="kn">from</span> <span class="nn">neclib.utils</span> <span class="kn">import</span> <span class="n">ConditionChecker</span><span class="p">,</span> <span class="n">ParameterList</span>
 <span class="kn">from</span> <span class="nn">std_msgs.msg</span> <span class="kn">import</span> <span class="n">String</span>
+<span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="n">Trigger</span>
 
 <span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">AlertMsg</span><span class="p">,</span>
@@ -199,6 +224,7 @@
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">NECSTTimeoutError</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">topic</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">Topic</span>
 <span class="kn">from</span> <span class="nn">.auth</span> <span class="kn">import</span> <span class="n">PrivilegedNode</span><span class="p">,</span> <span class="n">require_privilege</span>
+<span class="kn">from</span> <span class="nn">..az_unwrap_limits</span> <span class="kn">import</span> <span class="n">assert_mount_az_allowed_when_unwrap_disabled</span>
 
 
 <span class="nd">@dataclass</span>
@@ -308,6 +334,9 @@
             <span class="s2">&quot;clear_spectral_recording_setup&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">clear_spectral_recording_setup</span><span class="o">.</span><span class="n">client</span><span class="p">(</span>
                 <span class="bp">self</span>
             <span class="p">),</span>
+            <span class="s2">&quot;chopper_alarm_reset&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">chopper_alarm_reset</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="s2">&quot;chopper_home&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">chopper_home</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="s2">&quot;chopper_recover&quot;</span><span class="p">:</span> <span class="n">service</span><span class="o">.</span><span class="n">chopper_recover</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParameterList</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -826,6 +855,11 @@
                     <span class="n">direct_mode</span><span class="o">=</span><span class="n">direct_mode</span><span class="p">,</span>
                 <span class="p">)</span>
 
+            <span class="k">if</span> <span class="n">effective_az_target_mode</span> <span class="o">==</span> <span class="s2">&quot;mount&quot;</span> <span class="ow">and</span> <span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">assert_mount_az_allowed_when_unwrap_disabled</span><span class="p">(</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">action_label</span><span class="o">=</span><span class="s2">&quot;Commander mount Az target&quot;</span>
+                <span class="p">)</span>
+
             <span class="c1"># Propagate optional fields in a backward compatible way.</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">_tmp</span> <span class="o">=</span> <span class="n">CoordinateCommand</span><span class="o">.</span><span class="n">Request</span><span class="p">()</span>
@@ -1244,6 +1278,29 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">publisher</span><span class="p">[</span><span class="s2">&quot;chopper&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">wait_oc</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;chopper&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">cmd</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commander.chopper_maintenance"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.chopper_maintenance">[docs]</a>    <span class="nd">@require_privilege</span>
+    <span class="k">def</span> <span class="nf">chopper_maintenance</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;alarm-reset&quot;</span><span class="p">,</span> <span class="s2">&quot;home&quot;</span><span class="p">,</span> <span class="s2">&quot;recover&quot;</span><span class="p">],</span>
+        <span class="o">/</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Request a hardware-maintenance operation on the chopper controller.</span>
+
+<span class="sd">        The operation is executed by the chopper controller node, i.e. on the</span>
+<span class="sd">        computer that owns the chopper motor interface.  This Commander only</span>
+<span class="sd">        sends a ROS service request.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;alarm-reset&quot;</span><span class="p">:</span> <span class="s2">&quot;chopper_alarm_reset&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;home&quot;</span><span class="p">:</span> <span class="s2">&quot;chopper_home&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;recover&quot;</span><span class="p">:</span> <span class="s2">&quot;chopper_recover&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">client_key</span> <span class="o">=</span> <span class="n">key_map</span><span class="p">[</span><span class="n">cmd</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown chopper maintenance command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="n">Trigger</span><span class="o">.</span><span class="n">Request</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">[</span><span class="n">client_key</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Commander.mirror"><a class="viewcode-back" href="../../../_source/necst.core.commander.html#necst.core.commander.Commander.mirror">[docs]</a>    <span class="nd">@require_privilege</span><span class="p">(</span><span class="n">escape_cmd</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;?&quot;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">mirror</span><span class="p">(</span>

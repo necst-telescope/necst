@@ -46,6 +46,8 @@ Submodules
    necst.core.commander
    necst.core.device_node
    necst.core.emergency
+   necst.core.observation_check
+   necst.core.operator_actions
    necst.core.recorder
    necst.core.server_node
 
@@ -60,5 +62,7 @@ Submodules
    necst.core.commander
    necst.core.device_node
    necst.core.emergency
+   necst.core.observation_check
+   necst.core.operator_actions
    necst.core.recorder
    necst.core.server_node

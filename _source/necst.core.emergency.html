@@ -37,7 +37,7 @@
     <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="necst.core.recorder" href="necst.core.recorder.html" />
+    <link rel="next" title="necst.core.observation_check" href="necst.core.observation_check.html" />
     <link rel="prev" title="necst.core.device_node" href="necst.core.device_node.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="en">
@@ -76,6 +76,30 @@
     <li class="toctree-l1 nav-item">
  <a class="reference internal nav-link" href="../index.html">
   Home
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
  </a>
 </li>
 
@@ -216,6 +240,16 @@
    <li class="toctree-l2 current active">
     <a class="current reference internal" href="#">
      necst.core.emergency
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.observation_check.html">
+     necst.core.observation_check
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.operator_actions.html">
+     necst.core.operator_actions
     </a>
    </li>
    <li class="toctree-l2">
@@ -629,8 +663,95 @@
    </li>
   </ul>
  </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="necst.web.html">
+   necst.web
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+  <label for="toctree-checkbox-16">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_entry.html">
+     necst.web.console_entry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_log_cli.html">
+     necst.web.console_log_cli
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_smoke.html">
+     necst.web.console_smoke
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.live_telemetry.html">
+     necst.web.live_telemetry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.log_reader.html">
+     necst.web.log_reader
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.node_health.html">
+     necst.web.node_health
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.observation_log.html">
+     necst.web.observation_log
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.operator_console.html">
+     necst.web.operator_console
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.process_manager.html">
+     necst.web.process_manager
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.progress_manager.html">
+     necst.web.progress_manager
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.self_check.html">
+     necst.web.self_check
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.site_config.html">
+     necst.web.site_config
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.status_model.html">
+     necst.web.status_model
+    </a>
+   </li>
+  </ul>
+ </li>
 </ul>
 <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.az_unwrap_limits.html">
+   necst.az_unwrap_limits
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.cli.html">
+   necst.cli
+  </a>
+ </li>
  <li class="toctree-l1">
   <a class="reference internal" href="necst.definitions.html">
    necst.definitions
@@ -674,7 +795,7 @@
                 
   <section id="module-necst.core.emergency">
 <span id="necst-core-emergency"></span><h1>necst.core.emergency<a class="headerlink" href="#module-necst.core.emergency" title="Permalink to this heading">¶</a></h1>
-<p>Small operator-facing emergency and manual mount command CLIs.</p>
+<p>Small operator-facing emergency and manual command CLIs.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="necst.core.emergency.main_stop">
 <span class="sig-name descname"><span class="pre">main_stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/emergency.html#main_stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.emergency.main_stop" title="Permalink to this definition">¶</a></dt>
@@ -714,6 +835,19 @@
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.core.emergency.main_chopper">
+<span class="sig-name descname"><span class="pre">main_chopper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/core/emergency.html#main_chopper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.core.emergency.main_chopper" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>argv</strong> (<em>Optional</em><em>[</em><em>list</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -729,10 +863,10 @@
             <p class="prev-next-title">necst.core.device_node</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="necst.core.recorder.html" title="next page">
+    <a class='right-next' id="next-link" href="necst.core.observation_check.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">necst.core.recorder</p>
+        <p class="prev-next-title">necst.core.observation_check</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

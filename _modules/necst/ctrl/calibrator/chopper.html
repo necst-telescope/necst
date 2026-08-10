@@ -77,6 +77,30 @@
 </li>
 
 <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
  <a class="reference internal nav-link" href="../../../../_source/necst.html">
   API Reference
  </a>
@@ -150,9 +174,10 @@
 <span></span><span class="kn">import</span> <span class="nn">time</span>
 
 <span class="kn">from</span> <span class="nn">neclib.devices</span> <span class="kn">import</span> <span class="n">ChopperMotor</span>
+<span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="n">Trigger</span>
 <span class="kn">from</span> <span class="nn">necst_msgs.msg</span> <span class="kn">import</span> <span class="n">ChopperMsg</span>
 
-<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">topic</span>
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">topic</span>
 <span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">DeviceNode</span>
 
 
@@ -167,8 +192,81 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">motor</span> <span class="o">=</span> <span class="n">ChopperMotor</span><span class="p">()</span>
 
         <span class="n">topic</span><span class="o">.</span><span class="n">chopper_cmd</span><span class="o">.</span><span class="n">subscription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">move</span><span class="p">)</span>
+        <span class="n">service</span><span class="o">.</span><span class="n">chopper_alarm_reset</span><span class="o">.</span><span class="n">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alarm_reset</span><span class="p">)</span>
+        <span class="n">service</span><span class="o">.</span><span class="n">chopper_home</span><span class="o">.</span><span class="n">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">home</span><span class="p">)</span>
+        <span class="n">service</span><span class="o">.</span><span class="n">chopper_recover</span><span class="o">.</span><span class="n">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">recover</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pub</span> <span class="o">=</span> <span class="n">topic</span><span class="o">.</span><span class="n">chopper_status</span><span class="o">.</span><span class="n">publisher</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_maintenance_unsupported_reason</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a reason string when maintenance I/O is unsupported here.&quot;&quot;&quot;</span>
+        <span class="n">observatory</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;observatory&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s2">&quot;NANTEN2&quot;</span> <span class="ow">in</span> <span class="n">observatory</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="s2">&quot;chopper maintenance is not supported for NANTEN2 &quot;</span>
+                <span class="s2">&quot;(サポートしていません)&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;OMU1P85M&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">observatory</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="s2">&quot;chopper maintenance is supported only for OMU1p85m in this &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;implementation (current observatory=</span><span class="si">{</span><span class="n">observatory</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_run_maintenance_operation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Response</span><span class="p">,</span>
+        <span class="n">operation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+        <span class="n">unsupported</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maintenance_unsupported_reason</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">unsupported</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">unsupported</span><span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">unsupported</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;alarm-reset&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">remove_alarm</span><span class="p">()</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;chopper alarm reset completed&quot;</span>
+            <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;home&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">chopper_zero_point</span><span class="p">()</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;chopper home completed; counter was reset to 0&quot;</span>
+            <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;recover&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">remove_alarm</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">motor</span><span class="o">.</span><span class="n">chopper_zero_point</span><span class="p">()</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;chopper recover completed; alarm reset and home finished&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown chopper maintenance operation: </span><span class="si">{</span><span class="n">operation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">()</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;chopper </span><span class="si">{</span><span class="n">operation</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span>
+
+<div class="viewcode-block" id="ChopperController.alarm_reset"><a class="viewcode-back" href="../../../../_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController.alarm_reset">[docs]</a>    <span class="k">def</span> <span class="nf">alarm_reset</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Response</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">request</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_maintenance_operation</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;alarm-reset&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ChopperController.home"><a class="viewcode-back" href="../../../../_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController.home">[docs]</a>    <span class="k">def</span> <span class="nf">home</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Response</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">request</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_maintenance_operation</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;home&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ChopperController.recover"><a class="viewcode-back" href="../../../../_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController.recover">[docs]</a>    <span class="k">def</span> <span class="nf">recover</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Response</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Trigger</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">request</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_maintenance_operation</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;recover&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ChopperController.move"><a class="viewcode-back" href="../../../../_source/necst.ctrl.calibrator.chopper.html#necst.ctrl.calibrator.chopper.ChopperController.move">[docs]</a>    <span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">ChopperMsg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">telemetry</span><span class="p">()</span>

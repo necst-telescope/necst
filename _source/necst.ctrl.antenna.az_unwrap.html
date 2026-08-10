@@ -79,6 +79,30 @@
  </a>
 </li>
 
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
 <li class="toctree-l1 current active nav-item">
  <a class="reference internal nav-link" href="necst.html">
   API Reference
@@ -216,6 +240,16 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.emergency.html">
      necst.core.emergency
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.observation_check.html">
+     necst.core.observation_check
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.operator_actions.html">
+     necst.core.operator_actions
     </a>
    </li>
    <li class="toctree-l2">
@@ -629,8 +663,95 @@
    </li>
   </ul>
  </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="necst.web.html">
+   necst.web
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+  <label for="toctree-checkbox-16">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_entry.html">
+     necst.web.console_entry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_log_cli.html">
+     necst.web.console_log_cli
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_smoke.html">
+     necst.web.console_smoke
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.live_telemetry.html">
+     necst.web.live_telemetry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.log_reader.html">
+     necst.web.log_reader
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.node_health.html">
+     necst.web.node_health
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.observation_log.html">
+     necst.web.observation_log
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.operator_console.html">
+     necst.web.operator_console
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.process_manager.html">
+     necst.web.process_manager
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.progress_manager.html">
+     necst.web.progress_manager
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.self_check.html">
+     necst.web.self_check
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.site_config.html">
+     necst.web.site_config
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.status_model.html">
+     necst.web.status_model
+    </a>
+   </li>
+  </ul>
+ </li>
 </ul>
 <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.az_unwrap_limits.html">
+   necst.az_unwrap_limits
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.cli.html">
+   necst.cli
+  </a>
+ </li>
  <li class="toctree-l1">
   <a class="reference internal" href="necst.definitions.html">
    necst.definitions
@@ -675,6 +796,43 @@
   <section id="module-necst.ctrl.antenna.az_unwrap">
 <span id="necst-ctrl-antenna-az-unwrap"></span><h1>necst.ctrl.antenna.az_unwrap<a class="headerlink" href="#module-necst.ctrl.antenna.az_unwrap" title="Permalink to this heading">¶</a></h1>
 <p>Runtime support for absolute-modulo azimuth encoder unwrapping.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.load_unwrap_disabled_mount_az_limit">
+<span class="sig-name descname"><span class="pre">load_unwrap_disabled_mount_az_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#load_unwrap_disabled_mount_az_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.load_unwrap_disabled_mount_az_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return raw-Az command limits when absolute unwrap is configured off.</p>
+<p>When an absolute-modulo Az encoder is configured but
+<code class="docutils literal notranslate"><span class="pre">antenna_encoder_unwrap.az.enabled</span></code> is false, the control system has no
+branch information.  In that state Az commands must be confined to the raw
+absolute encoder range (normally 0..360 deg).  If no unwrap section exists,
+return <code class="docutils literal notranslate"><span class="pre">None</span></code> so NANTEN2/incremental-encoder configurations are unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Optional</em>[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.assert_mount_az_allowed_when_unwrap_disabled">
+<span class="sig-name descname"><span class="pre">assert_mount_az_allowed_when_unwrap_disabled</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">az_deg</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Az</span> <span class="pre">target'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#assert_mount_az_allowed_when_unwrap_disabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.assert_mount_az_allowed_when_unwrap_disabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reject Az commands outside raw range when unwrap is configured off.</p>
+<p>This is a fail-closed guard for absolute-modulo encoders.  It intentionally
+uses the configured raw absolute encoder range, not the wider continuous
+drive range, because without unwrap the controller cannot distinguish e.g.
+10 deg from 370 deg.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>az_deg</strong> (<em>Any</em>) – </p></li>
+<li><p><strong>action_label</strong> (<em>str</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Optional</em>[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.load_az_unwrap_config">
 <span class="sig-name descname"><span class="pre">load_az_unwrap_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#load_az_unwrap_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.load_az_unwrap_config" title="Permalink to this definition">¶</a></dt>
@@ -750,6 +908,43 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime.get_state_report">
+<span class="sig-name descname"><span class="pre">get_state_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#AzUnwrapRuntime.get_state_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime.get_state_report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return runtime/state-file information for ROS service responses.</p>
+<p>The report is generated inside the encoder node process.  Therefore the
+reported state_path and state-file content refer to the path that
+encoder_readout actually uses, not to a caller’s local ~/.necst.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime.manual_initialize">
+<span class="sig-name descname"><span class="pre">manual_initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_az</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_az</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'manual</span> <span class="pre">state</span> <span class="pre">set</span> <span class="pre">via</span> <span class="pre">encoder</span> <span class="pre">service'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#AzUnwrapRuntime.manual_initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime.manual_initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate and persist a manual unwrap state inside encoder_readout.</p>
+<p>This is the service-side equivalent of the old local-file CLI.  The
+validation rules and JSON schema are shared with the local fallback, but
+the write happens in the encoder node process, so Docker/HOME differences
+cannot redirect the state file to the wrong computer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>raw_az</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>continuous_az</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p></li>
+<li><p><strong>branch</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – </p></li>
+<li><p><strong>reason</strong> (<em>str</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="necst.definitions.html#necst.definitions.topic.AntennaAzUnwrapStatus" title="necst_msgs.msg._antenna_az_unwrap_status.AntennaAzUnwrapStatus"><em>AntennaAzUnwrapStatus</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime.close">
 <span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#AzUnwrapRuntime.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime.close" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -762,9 +957,76 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.fill_get_response">
+<span class="sig-name descname"><span class="pre">fill_get_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#fill_get_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.fill_get_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill GetAzUnwrapState.Response-like objects from a runtime report.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>response</strong> (<em>Any</em>) – </p></li>
+<li><p><strong>report</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Any</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.fill_set_response">
+<span class="sig-name descname"><span class="pre">fill_set_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">success</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enabled</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_az_deg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modulo_az_deg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_az_deg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period_deg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drive_min_deg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drive_max_deg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#fill_set_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.fill_set_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill SetAzUnwrapState.Response-like objects without importing ROS types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>response</strong> (<em>Any</em>) – </p></li>
+<li><p><strong>success</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>state</strong> (<em>str</em>) – </p></li>
+<li><p><strong>reason</strong> (<em>str</em>) – </p></li>
+<li><p><strong>state_path</strong> (<em>str</em>) – </p></li>
+<li><p><strong>enabled</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>valid</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>raw_az_deg</strong> (<em>float</em>) – </p></li>
+<li><p><strong>modulo_az_deg</strong> (<em>float</em>) – </p></li>
+<li><p><strong>continuous_az_deg</strong> (<em>float</em>) – </p></li>
+<li><p><strong>branch</strong> (<em>int</em>) – </p></li>
+<li><p><strong>period_deg</strong> (<em>float</em>) – </p></li>
+<li><p><strong>drive_min_deg</strong> (<em>float</em>) – </p></li>
+<li><p><strong>drive_max_deg</strong> (<em>float</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Any</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.report_from_status">
+<span class="sig-name descname"><span class="pre">report_from_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">runtime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">status</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#report_from_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.report_from_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a status message to a response/report dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>runtime</strong> (<a class="reference internal" href="#necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime" title="necst.ctrl.antenna.az_unwrap.AzUnwrapRuntime"><em>AzUnwrapRuntime</em></a>) – </p></li>
+<li><p><strong>status</strong> (<a class="reference internal" href="necst.definitions.html#necst.definitions.topic.AntennaAzUnwrapStatus" title="necst_msgs.msg._antenna_az_unwrap_status.AntennaAzUnwrapStatus"><em>AntennaAzUnwrapStatus</em></a>) – </p></li>
+<li><p><strong>success</strong> (<em>bool</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="necst.ctrl.antenna.az_unwrap.main">
 <span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/antenna/az_unwrap.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.antenna.az_unwrap.main" title="Permalink to this definition">¶</a></dt>
-<dd><p>Small CLI for manual Az unwrap state inspection/initialization.</p>
+<dd><p>Inspect or initialize Az unwrap state.</p>
+<p>Default mode uses ROS services served by encoder_readout, so the state is
+written to the encoder node’s actual state_path.  Use –local only as a
+deliberate emergency fallback on the encoder PC/container.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>

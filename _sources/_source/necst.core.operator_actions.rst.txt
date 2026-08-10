@@ -1,0 +1,7 @@
+necst.core.operator\_actions
+============================
+
+.. automodule:: necst.core.operator_actions
+   :members:
+   :undoc-members:
+   :show-inheritance:

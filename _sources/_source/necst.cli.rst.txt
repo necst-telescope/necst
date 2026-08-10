@@ -1,0 +1,7 @@
+necst.cli
+=========
+
+.. automodule:: necst.cli
+   :members:
+   :undoc-members:
+   :show-inheritance:

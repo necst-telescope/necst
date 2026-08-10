@@ -1,0 +1,7 @@
+necst.web.console\_log\_cli
+===========================
+
+.. automodule:: necst.web.console_log_cli
+   :members:
+   :undoc-members:
+   :show-inheritance:

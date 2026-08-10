@@ -77,6 +77,30 @@
 </li>
 
 <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
  <a class="reference internal nav-link" href="../../../../_source/necst.html">
   API Reference
  </a>
@@ -214,6 +238,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_abort_reason</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_abort_request_id</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_abort_subscription</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_legacy_binning_changed_specs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">progress</span> <span class="o">=</span> <span class="n">NullProgressReporter</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_reset_abort_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -327,6 +352,8 @@
                         <span class="p">)</span>
                         <span class="k">for</span> <span class="n">spec_name</span> <span class="ow">in</span> <span class="n">specnames</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">binning</span><span class="p">(</span><span class="n">ch</span><span class="p">,</span> <span class="n">spec_name</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">ch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_legacy_binning_changed_specs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">specnames</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">ch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                             <span class="s2">&quot;spectral recording setup cannot be combined with legacy &quot;</span>
@@ -425,10 +452,12 @@
                 <span class="n">_cleanup_step</span><span class="p">(</span><span class="s2">&quot;antenna stop&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">antenna</span><span class="p">(</span><span class="s2">&quot;stop&quot;</span><span class="p">))</span>
 
                 <span class="k">def</span> <span class="nf">_reset_binning</span><span class="p">():</span>
+                    <span class="n">changed_specs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_legacy_binning_changed_specs</span><span class="p">)</span>
                     <span class="k">for</span> <span class="n">_key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">spectrometer</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                         <span class="n">spec_name</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">_key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;max_ch&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;max_ch&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">spec_name</span> <span class="ow">in</span> <span class="n">changed_specs</span><span class="p">):</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">binning</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">spec_name</span><span class="p">)</span>  <span class="c1"># set max channel number</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_legacy_binning_changed_specs</span><span class="o">.</span><span class="n">difference_update</span><span class="p">(</span><span class="n">changed_specs</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">legacy_cleanup_allowed</span><span class="p">:</span>
                     <span class="n">_cleanup_step</span><span class="p">(</span><span class="s2">&quot;reset channel binning&quot;</span><span class="p">,</span> <span class="n">_reset_binning</span><span class="p">)</span>

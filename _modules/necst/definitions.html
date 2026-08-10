@@ -77,6 +77,30 @@
 </li>
 
 <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
  <a class="reference internal nav-link" href="../../_source/necst.html">
   API Reference
  </a>
@@ -458,13 +482,15 @@
         <span class="n">CCDCommand</span><span class="p">,</span>
         <span class="n">ComDelaySrv</span><span class="p">,</span>
         <span class="n">CoordinateCommand</span><span class="p">,</span>
+        <span class="n">GetAzUnwrapState</span><span class="p">,</span>
+        <span class="n">SetAzUnwrapState</span><span class="p">,</span>
         <span class="n">DomeSync</span><span class="p">,</span>
         <span class="n">File</span><span class="p">,</span>
         <span class="n">ObservationMode</span><span class="p">,</span>
         <span class="n">ScanBlockCommand</span><span class="p">,</span>
         <span class="n">SetSpectralRecordingGate</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="n">Empty</span>
+    <span class="kn">from</span> <span class="nn">std_srvs.srv</span> <span class="kn">import</span> <span class="n">Empty</span><span class="p">,</span> <span class="n">Trigger</span>
 
     <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">Service</span>
 
@@ -473,12 +499,21 @@
     <span class="n">record_file</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">File</span><span class="p">,</span> <span class="s2">&quot;record_file&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">core</span><span class="p">)</span>
     <span class="n">com_delay</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">ComDelaySrv</span><span class="p">,</span> <span class="s2">&quot;com_delay&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">core</span><span class="p">)</span>
     <span class="n">raw_coord</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">CoordinateCommand</span><span class="p">,</span> <span class="s2">&quot;raw_coord&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">antenna</span><span class="p">)</span>
+    <span class="n">az_unwrap_state_get</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+        <span class="n">GetAzUnwrapState</span><span class="p">,</span> <span class="s2">&quot;az_unwrap_state/get&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">antenna</span>
+    <span class="p">)</span>
+    <span class="n">az_unwrap_state_set</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+        <span class="n">SetAzUnwrapState</span><span class="p">,</span> <span class="s2">&quot;az_unwrap_state/set&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">antenna</span>
+    <span class="p">)</span>
     <span class="n">scan_block</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">ScanBlockCommand</span><span class="p">,</span> <span class="s2">&quot;scan_block&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">antenna</span><span class="p">)</span>
     <span class="n">dome_coord</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">CoordinateCommand</span><span class="p">,</span> <span class="s2">&quot;dome_coord&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">dome</span><span class="p">)</span>
     <span class="n">obsmode</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">ObservationMode</span><span class="p">,</span> <span class="s2">&quot;obsmode&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">ctrl</span><span class="p">)</span>
     <span class="n">ccd_cmd</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">CCDCommand</span><span class="p">,</span> <span class="s2">&quot;ccd_cmd&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">rx</span><span class="p">)</span>
     <span class="n">dome_sync</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">DomeSync</span><span class="p">,</span> <span class="s2">&quot;dome_sync&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">dome</span><span class="p">)</span>
     <span class="n">dome_pid_sync</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">DomeSync</span><span class="p">,</span> <span class="s2">&quot;dome_pid_sync&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">dome</span><span class="p">)</span>
+    <span class="n">chopper_alarm_reset</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">Trigger</span><span class="p">,</span> <span class="s2">&quot;chopper/alarm_reset&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">calib</span><span class="p">)</span>
+    <span class="n">chopper_home</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">Trigger</span><span class="p">,</span> <span class="s2">&quot;chopper/home&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">calib</span><span class="p">)</span>
+    <span class="n">chopper_recover</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">Trigger</span><span class="p">,</span> <span class="s2">&quot;chopper/recover&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">calib</span><span class="p">)</span>
     <span class="n">apply_spectral_recording_setup</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
         <span class="n">ApplySpectralRecordingSetup</span><span class="p">,</span> <span class="s2">&quot;apply_spectral_recording_setup&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">.</span><span class="n">rx</span>
     <span class="p">)</span>

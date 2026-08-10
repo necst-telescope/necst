@@ -79,6 +79,30 @@
  </a>
 </li>
 
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
 <li class="toctree-l1 current active nav-item">
  <a class="reference internal nav-link" href="necst.html">
   API Reference
@@ -216,6 +240,16 @@
    <li class="toctree-l2">
     <a class="reference internal" href="necst.core.emergency.html">
      necst.core.emergency
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.observation_check.html">
+     necst.core.observation_check
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.core.operator_actions.html">
+     necst.core.operator_actions
     </a>
    </li>
    <li class="toctree-l2">
@@ -629,8 +663,95 @@
    </li>
   </ul>
  </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="necst.web.html">
+   necst.web
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+  <label for="toctree-checkbox-16">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_entry.html">
+     necst.web.console_entry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_log_cli.html">
+     necst.web.console_log_cli
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.console_smoke.html">
+     necst.web.console_smoke
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.live_telemetry.html">
+     necst.web.live_telemetry
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.log_reader.html">
+     necst.web.log_reader
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.node_health.html">
+     necst.web.node_health
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.observation_log.html">
+     necst.web.observation_log
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.operator_console.html">
+     necst.web.operator_console
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.process_manager.html">
+     necst.web.process_manager
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.progress_manager.html">
+     necst.web.progress_manager
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.self_check.html">
+     necst.web.self_check
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.site_config.html">
+     necst.web.site_config
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="necst.web.status_model.html">
+     necst.web.status_model
+    </a>
+   </li>
+  </ul>
+ </li>
 </ul>
 <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.az_unwrap_limits.html">
+   necst.az_unwrap_limits
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="necst.cli.html">
+   necst.cli
+  </a>
+ </li>
  <li class="toctree-l1">
   <a class="reference internal" href="necst.definitions.html">
    necst.definitions
@@ -689,6 +810,54 @@
 <dt class="sig sig-object py" id="necst.ctrl.calibrator.chopper.ChopperController.Namespace">
 <span class="sig-name descname"><span class="pre">Namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/necst/OMU1P85M/ctrl/calib'</span></em><a class="headerlink" href="#necst.ctrl.calibrator.chopper.ChopperController.Namespace" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.calibrator.chopper.ChopperController.alarm_reset">
+<span class="sig-name descname"><span class="pre">alarm_reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/calibrator/chopper.html#ChopperController.alarm_reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.calibrator.chopper.ChopperController.alarm_reset" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>Trigger_Request</em>) – </p></li>
+<li><p><strong>response</strong> (<em>Trigger_Response</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Trigger_Response</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.calibrator.chopper.ChopperController.home">
+<span class="sig-name descname"><span class="pre">home</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/calibrator/chopper.html#ChopperController.home"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.calibrator.chopper.ChopperController.home" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>Trigger_Request</em>) – </p></li>
+<li><p><strong>response</strong> (<em>Trigger_Response</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Trigger_Response</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="necst.ctrl.calibrator.chopper.ChopperController.recover">
+<span class="sig-name descname"><span class="pre">recover</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/necst/ctrl/calibrator/chopper.html#ChopperController.recover"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#necst.ctrl.calibrator.chopper.ChopperController.recover" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> (<em>Trigger_Request</em>) – </p></li>
+<li><p><strong>response</strong> (<em>Trigger_Response</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Trigger_Response</em></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="necst.ctrl.calibrator.chopper.ChopperController.move">

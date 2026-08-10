@@ -1,0 +1,7 @@
+necst.web.live\_telemetry
+=========================
+
+.. automodule:: necst.web.live_telemetry
+   :members:
+   :undoc-members:
+   :show-inheritance:

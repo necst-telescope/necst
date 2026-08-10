@@ -1,0 +1,7 @@
+necst.web.console\_entry
+========================
+
+.. automodule:: necst.web.console_entry
+   :members:
+   :undoc-members:
+   :show-inheritance:

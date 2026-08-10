@@ -1,0 +1,347 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Az unwrap state service 運用メモ &#8212; necst 4.0.20 documentation</title>
+    
+  <link href="_static/css/theme.css" rel="stylesheet">
+  <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    
+  <link rel="preload" as="script" href="_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="NECST Operator Console 起動コマンドとログ運用（basev24 ver29）" href="operator_console_entry_and_logs_ja.html" />
+    <link rel="prev" title="necst" href="index.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="index.html">
+<p class="title">necst</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="index.html">
+  Home
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="current reference internal nav-link" href="#">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="_source/necst.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/necst-telescope/necst" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/necst/" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fas fa-cubes"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
+<!-- This will display the version of the docs -->
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   結論
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   推奨設定
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id3">
+   通常操作
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#local-fallback">
+   local fallback
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#service">
+   service 名
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#unwrapaz">
+   unwrap無効時のAz指令制限
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="az-unwrap-state-service">
+<h1>Az unwrap state service 運用メモ<a class="headerlink" href="#az-unwrap-state-service" title="Permalink to this heading">¶</a></h1>
+<section id="id1">
+<h2>結論<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">antenna_az_unwrap_state.json</span></code> は、encoder_readout が読んでいる <code class="docutils literal notranslate"><span class="pre">state_path</span></code> に保存されなければ意味がない。
+Docker 内の <code class="docutils literal notranslate"><span class="pre">~/.necst</span></code> が永続化されていない場合、<code class="docutils literal notranslate"><span class="pre">state_path</span> <span class="pre">=</span> <span class="pre">&quot;~/.necst/antenna_az_unwrap_state.json&quot;</span></code> のまま運用すると、container 再作成で branch state が消える危険がある。</p>
+<p>本パッチでは、制御PCから直接 local file を書かず、encoder_readout node に ROS service call で依頼する経路を追加した。
+実際に JSON を書くのは encoder_readout process なので、実行端末の <code class="docutils literal notranslate"><span class="pre">~/.necst</span></code> ではなく、encoder node の <code class="docutils literal notranslate"><span class="pre">state_path</span></code> に書かれる。</p>
+</section>
+<section id="id2">
+<h2>推奨設定<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
+<p>Docker 内の <code class="docutils literal notranslate"><span class="pre">~</span></code> に依存しないように、観測所 TOML では永続 bind mount された絶対パスを使う。</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[antenna_encoder_unwrap.az]</span>
+<span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="n">state_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/necst_state/antenna_az_unwrap_state.json&quot;</span>
+</pre></div>
+</div>
+<p>Docker 起動時には host 側の永続 directory を bind mount する。</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-v<span class="w"> </span>/persistent/necst_state:/necst_state
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>通常操作<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h2>
+<p>encoder_readout が起動している状態で、制御PCから次を実行する。</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>necst<span class="w"> </span>az-unwrap-state<span class="w"> </span>status
+necst<span class="w"> </span>az-unwrap-state<span class="w"> </span><span class="nb">set</span><span class="w"> </span>--raw-az<span class="w"> </span><span class="m">8</span>.997253<span class="w"> </span>--continuous-az<span class="w"> </span><span class="m">368</span>.997253
+</pre></div>
+</div>
+<p>または ROS executable として直接呼ぶ。</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>necst<span class="w"> </span>necst-antenna-az-unwrap-state<span class="w"> </span>status
+ros2<span class="w"> </span>run<span class="w"> </span>necst<span class="w"> </span>necst-antenna-az-unwrap-state<span class="w"> </span><span class="nb">set</span><span class="w"> </span>--raw-az<span class="w"> </span><span class="m">8</span>.997253<span class="w"> </span>--continuous-az<span class="w"> </span><span class="m">368</span>.997253
+</pre></div>
+</div>
+<p>これらは default では encoder_readout の service を呼ぶ。</p>
+</section>
+<section id="local-fallback">
+<h2>local fallback<a class="headerlink" href="#local-fallback" title="Permalink to this heading">¶</a></h2>
+<p>encoder node が起動していない非常時だけ、encoder PC/container 内で明示的に <code class="docutils literal notranslate"><span class="pre">--local</span></code> を付けて使う。</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>necst.ctrl.antenna.az_unwrap<span class="w"> </span>--local<span class="w"> </span>status
+python3<span class="w"> </span>-m<span class="w"> </span>necst.ctrl.antenna.az_unwrap<span class="w"> </span>--local<span class="w"> </span><span class="nb">set</span><span class="w"> </span>--raw-az<span class="w"> </span><span class="m">8</span>.997253<span class="w"> </span>--continuous-az<span class="w"> </span><span class="m">368</span>.997253
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">--local</span></code> は実行した process の config/state_path を直接読むため、制御PCで使うと誤った <code class="docutils literal notranslate"><span class="pre">~/.necst</span></code> に書く可能性がある。
+通常運用では使わない。</p>
+</section>
+<section id="service">
+<h2>service 名<a class="headerlink" href="#service" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>/necst/&lt;OBSERVATORY&gt;/ctrl/antenna/az_unwrap_state/get
+/necst/&lt;OBSERVATORY&gt;/ctrl/antenna/az_unwrap_state/set
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">set</span></code> service は raw/continuous/branch の整合性、drive range、enabled/state_path を encoder node 側で検査し、拒否時は JSON を書かない。</p>
+</section>
+<section id="unwrapaz">
+<h2>unwrap無効時のAz指令制限<a class="headerlink" href="#unwrapaz" title="Permalink to this heading">¶</a></h2>
+<p>absolute-modulo Az encoder 用の <code class="docutils literal notranslate"><span class="pre">[antenna_encoder_unwrap.az]</span></code> が設定されているが、<code class="docutils literal notranslate"><span class="pre">enabled</span> <span class="pre">=</span> <span class="pre">false</span></code> の場合、controllerはbranchを持たない。この状態で <code class="docutils literal notranslate"><span class="pre">Az=370</span> <span class="pre">deg</span></code> のような連続Azを許すと、raw <code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">deg</span></code> と区別できず危険である。</p>
+<p>そのため、本パッチでは <code class="docutils literal notranslate"><span class="pre">enabled</span> <span class="pre">=</span> <span class="pre">false</span></code> の間、Az指令を次のraw absolute encoder範囲に制限する。</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[antenna_encoder_unwrap.az]</span>
+<span class="n">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<span class="s2">&quot;raw_min[deg]&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span>
+<span class="s2">&quot;raw_max[deg]&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">360.0</span>
+</pre></div>
+</div>
+<p>対象は次の共通経路である。</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>necst mount-move
+operator console mount move / dry-run
+Commander.antenna(... az_target_mode=&quot;mount&quot;)
+horizontal_coord node が生成する最終Az command
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">antenna_encoder_unwrap</span></code> 設定自体が存在しない望遠鏡では、この制限は入らず従来通りである。北またぎ・Az&gt;360運用を行う場合は、<code class="docutils literal notranslate"><span class="pre">enabled</span> <span class="pre">=</span> <span class="pre">true</span></code> とし、progress/consoleでbranchとraw Azを確認する。</p>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="index.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">necst</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="operator_console_entry_and_logs_ja.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">NECST Operator Console 起動コマンドとログ運用（basev24 ver29）</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, NECST Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

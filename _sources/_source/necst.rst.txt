@@ -25,6 +25,7 @@ Subpackages
    necst.procedures
    necst.rx
    necst.utils
+   necst.web
 
 .. toctree::
    :maxdepth: 4
@@ -36,6 +37,7 @@ Subpackages
    necst.procedures
    necst.rx
    necst.utils
+   necst.web
 
 
 
@@ -46,6 +48,8 @@ Submodules
 
 .. autosummary::
 
+   necst.az_unwrap_limits
+   necst.cli
    necst.definitions
 
 .. toctree::
@@ -53,4 +57,6 @@ Submodules
    :titlesonly:
    :hidden:
 
+   necst.az_unwrap_limits
+   necst.cli
    necst.definitions

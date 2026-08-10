@@ -1,0 +1,7 @@
+necst.web.console\_smoke
+========================
+
+.. automodule:: necst.web.console_smoke
+   :members:
+   :undoc-members:
+   :show-inheritance:

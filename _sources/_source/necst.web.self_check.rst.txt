@@ -1,0 +1,7 @@
+necst.web.self\_check
+=====================
+
+.. automodule:: necst.web.self_check
+   :members:
+   :undoc-members:
+   :show-inheritance:

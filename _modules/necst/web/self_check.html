@@ -1,0 +1,663 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>necst.web.self_check &#8212; necst 4.0.20 documentation</title>
+    
+  <link href="../../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/blank.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    
+  <link rel="preload" as="script" href="../../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/106944387?s=400&amp;u=ddc959411de05d65ed4a64cc8b871d20a05ce395&amp;v=4"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../../../index.html">
+<p class="title">necst</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../index.html">
+  Home
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../az_unwrap_state_service_ja.html">
+  Az unwrap state service
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_entry_and_logs_ja.html">
+  Operator Console entry and logs
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_runbook_ja.html">
+  Operator Console runbook
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../operator_console_server_obs_browser_ja.html">
+  Operator Console server and observation browser
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../_source/necst.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/necst-telescope/necst" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/necst/" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fas fa-cubes"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><!DOCTYPE html>
+<!-- This will display the version of the docs -->
+<p style="text-align: center; font-family: Verdana, sans-serif;">v4.0.20</p><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for necst.web.self_check</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Operator-console self-check helpers.</span>
+
+<span class="sd">The console needs a cheap, read-only preflight before observers trust it for</span>
+<span class="sd">live operation.  This module checks the console&#39;s own wiring and configuration;</span>
+<span class="sd">it does not send telescope commands, does not start launchers, and does not</span>
+<span class="sd">start or stop the progress monitor.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">status_model</span>
+
+<span class="n">JsonDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+<span class="n">_REQUIRED_MOUNT_LIMITS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;az_min&quot;</span><span class="p">,</span> <span class="s2">&quot;az_max&quot;</span><span class="p">,</span> <span class="s2">&quot;el_min&quot;</span><span class="p">,</span> <span class="s2">&quot;el_max&quot;</span><span class="p">)</span>
+<span class="n">_EXPECTED_CAPABILITIES</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;mount_move&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;target_tracking&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;observation_start&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rsky&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;skydip&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;chopper_status&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;chopper_move&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;chopper_maintenance&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_now_iso</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S%z&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">localtime</span><span class="p">())</span>
+
+
+<span class="k">def</span> <span class="nf">_check_item</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ok</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">severity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">),</span>
+        <span class="s2">&quot;ok&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">ok</span><span class="p">),</span>
+        <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">severity</span><span class="p">),</span>
+        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">),</span>
+        <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{}),</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_is_writable_dir</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether *path* is an existing writable directory.</span>
+
+<span class="sd">    This intentionally avoids creating files so /api/self-check remains a</span>
+<span class="sd">    read-only diagnostic endpoint.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">_mount_limit_check</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_REQUIRED_MOUNT_LIMITS</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mount_limits</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;mount_limits&quot;</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;site TOML mount limits are incomplete&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">missing</span><span class="p">,</span> <span class="s2">&quot;mount_limits&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">az_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">[</span><span class="s2">&quot;az_min&quot;</span><span class="p">])</span>
+        <span class="n">az_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">[</span><span class="s2">&quot;az_max&quot;</span><span class="p">])</span>
+        <span class="n">el_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">[</span><span class="s2">&quot;el_min&quot;</span><span class="p">])</span>
+        <span class="n">el_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">[</span><span class="s2">&quot;el_max&quot;</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;mount_limits&quot;</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;site TOML mount limits are not numeric: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mount_limits&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">az_min</span> <span class="o">&gt;=</span> <span class="n">az_max</span> <span class="ow">or</span> <span class="n">el_min</span> <span class="o">&gt;=</span> <span class="n">el_max</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;mount_limits&quot;</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;site TOML mount min/max order is invalid&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mount_limits&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+        <span class="s2">&quot;mount_limits&quot;</span><span class="p">,</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;mount limits OK: Az </span><span class="si">{</span><span class="n">az_min</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">..</span><span class="si">{</span><span class="n">az_max</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> deg, El </span><span class="si">{</span><span class="n">el_min</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">..</span><span class="si">{</span><span class="n">el_max</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> deg&quot;</span><span class="p">,</span>
+        <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mount_limits&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">)},</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_capability_check</span><span class="p">(</span><span class="n">capabilities</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_EXPECTED_CAPABILITIES</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">capabilities</span><span class="p">]</span>
+    <span class="n">non_bool</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">capabilities</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span> <span class="ow">or</span> <span class="n">non_bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;site_capabilities&quot;</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;site capabilities are incomplete or non-boolean&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">missing</span><span class="p">,</span>
+                <span class="s2">&quot;non_bool&quot;</span><span class="p">:</span> <span class="n">non_bool</span><span class="p">,</span>
+                <span class="s2">&quot;capabilities&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">capabilities</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+    <span class="n">disabled</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">capabilities</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">)</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;site capabilities OK&quot;</span>
+    <span class="n">severity</span> <span class="o">=</span> <span class="s2">&quot;info&quot;</span>
+    <span class="k">if</span> <span class="n">disabled</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s2">&quot;; disabled: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">disabled</span><span class="p">)</span>
+        <span class="n">severity</span> <span class="o">=</span> <span class="s2">&quot;warning&quot;</span>
+    <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+        <span class="s2">&quot;site_capabilities&quot;</span><span class="p">,</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="n">message</span><span class="p">,</span>
+        <span class="n">severity</span><span class="o">=</span><span class="n">severity</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="n">disabled</span><span class="p">,</span> <span class="s2">&quot;capabilities&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">capabilities</span><span class="p">)},</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_chopper_check</span><span class="p">(</span>
+    <span class="n">chopper</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">capabilities</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">capabilities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chopper_move&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;chopper_config&quot;</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;chopper move is disabled by site capability&quot;</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;chopper&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chopper</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">key</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;insert_position&quot;</span><span class="p">,</span> <span class="s2">&quot;remove_position&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chopper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;chopper_config&quot;</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;chopper move is enabled but IN/OUT positions are missing&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">missing</span><span class="p">,</span> <span class="s2">&quot;chopper&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chopper</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+        <span class="s2">&quot;chopper_config&quot;</span><span class="p">,</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;chopper endpoints OK: IN=</span><span class="si">{</span><span class="n">chopper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;insert_position&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">, OUT=</span><span class="si">{</span><span class="n">chopper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;remove_position&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;chopper&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chopper</span><span class="p">)},</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_log_path_check</span><span class="p">(</span>
+    <span class="n">path_value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expect_file</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">path_value</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is not configured&quot;</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path_value</span><span class="p">))</span>
+    <span class="n">directory</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">parent</span> <span class="k">if</span> <span class="n">expect_file</span> <span class="k">else</span> <span class="n">path</span>
+    <span class="n">ok</span> <span class="o">=</span> <span class="n">_is_writable_dir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2"> is not an existing writable directory&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s2">&quot;directory&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">directory</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_check_item</span><span class="p">(</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2"> is writable&quot;</span><span class="p">,</span>
+        <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s2">&quot;directory&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">directory</span><span class="p">)},</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="run_console_self_check"><a class="viewcode-back" href="../../../_source/necst.web.self_check.html#necst.web.self_check.run_console_self_check">[docs]</a><span class="k">def</span> <span class="nf">run_console_self_check</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">telescope</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">action_mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">live_actions_enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">progress_root</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">site_summary</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">mount_limits</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">capabilities</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">chopper_config</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">operator_log_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span>
+    <span class="n">launcher_log_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span>
+    <span class="n">process_registry</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">progress_monitor</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">events_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
+    <span class="n">include_progress_health</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">live_telemetry_snapshot</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a JSON-serialisable read-only console self-check result.&quot;&quot;&quot;</span>
+
+    <span class="n">checks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">JsonDict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;action_mode&quot;</span><span class="p">,</span>
+            <span class="n">action_mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;live&quot;</span><span class="p">,</span> <span class="s2">&quot;dry-run&quot;</span><span class="p">},</span>
+            <span class="sa">f</span><span class="s2">&quot;action_mode=</span><span class="si">{</span><span class="n">action_mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="n">action_mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;live&quot;</span><span class="p">,</span> <span class="s2">&quot;dry-run&quot;</span><span class="p">}</span> <span class="k">else</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">action_mode</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">live_actions_enabled</span><span class="p">:</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;live_write_guard&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;live write actions are guarded by --guard-live-actions; STOP/ABORT remain available&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;live_actions_enabled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;guard_option&quot;</span><span class="p">:</span> <span class="s2">&quot;--guard-live-actions&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">action_mode</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span> <span class="ow">and</span> <span class="n">live_actions_enabled</span><span class="p">:</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;live_write_guard&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;live write actions are enabled by default in live mode&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;live_actions_enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;live_write_guard&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;dry-run mode: no live command is sent&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;live_actions_enabled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">site_dict</span> <span class="o">=</span> <span class="n">site_summary</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">site_summary</span><span class="p">,</span> <span class="s2">&quot;to_dict&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="n">site_source</span> <span class="o">=</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;unknown&quot;</span>
+    <span class="n">site_warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">site_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warnings&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;site_config&quot;</span><span class="p">,</span>
+            <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">site_warnings</span><span class="p">)</span> <span class="ow">and</span> <span class="n">site_source</span> <span class="o">!=</span> <span class="s2">&quot;unresolved&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;site config source=</span><span class="si">{</span><span class="n">site_source</span><span class="si">}</span><span class="s2">, observatory=</span><span class="si">{</span><span class="n">site_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;observatory&#39;</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span> <span class="k">if</span> <span class="n">site_warnings</span> <span class="k">else</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;site&quot;</span><span class="p">:</span> <span class="n">site_dict</span><span class="p">,</span> <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="n">site_warnings</span><span class="p">},</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_mount_limit_check</span><span class="p">(</span><span class="n">mount_limits</span><span class="p">))</span>
+    <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_capability_check</span><span class="p">(</span><span class="n">capabilities</span><span class="p">))</span>
+    <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_chopper_check</span><span class="p">(</span><span class="n">chopper_config</span><span class="p">,</span> <span class="n">capabilities</span><span class="p">))</span>
+
+    <span class="n">live_snapshot</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">live_telemetry_snapshot</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">live_telemetry_snapshot</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="p">)</span>
+    <span class="n">live_requested</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">live_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;requested&quot;</span><span class="p">))</span>
+    <span class="n">live_available</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">live_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;available&quot;</span><span class="p">))</span>
+    <span class="n">live_error</span> <span class="o">=</span> <span class="n">live_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">live_requested</span> <span class="ow">and</span> <span class="n">live_available</span><span class="p">:</span>
+        <span class="n">has_position</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">live_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;has_position&quot;</span><span class="p">))</span>
+        <span class="n">sample_counts</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">live_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sample_counts&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">live_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sample_counts&quot;</span><span class="p">),</span> <span class="n">Mapping</span><span class="p">)</span>
+            <span class="k">else</span> <span class="p">{}</span>
+        <span class="p">)</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;live_telemetry&quot;</span><span class="p">,</span>
+                <span class="n">has_position</span> <span class="ow">or</span> <span class="n">action_mode</span> <span class="o">!=</span> <span class="s2">&quot;live&quot;</span><span class="p">,</span>
+                <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;console ROS live telemetry available (</span><span class="si">{</span><span class="n">live_snapshot</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;spin_mode&#39;</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;unknown spin mode&#39;</span><span class="si">}</span><span class="s2">); &quot;</span>
+                    <span class="o">+</span> <span class="p">(</span>
+                        <span class="s2">&quot;encoder/pointing position sample received&quot;</span>
+                        <span class="k">if</span> <span class="n">has_position</span>
+                        <span class="k">else</span> <span class="s2">&quot;waiting for encoder/pointing position sample&quot;</span>
+                    <span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">severity</span><span class="o">=</span><span class="p">(</span>
+                    <span class="s2">&quot;info&quot;</span>
+                    <span class="k">if</span> <span class="n">has_position</span>
+                    <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;error&quot;</span> <span class="k">if</span> <span class="n">action_mode</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">live_snapshot</span><span class="p">),</span> <span class="s2">&quot;sample_counts&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">sample_counts</span><span class="p">)},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">live_requested</span><span class="p">:</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;live_telemetry&quot;</span><span class="p">,</span>
+                <span class="n">action_mode</span> <span class="o">!=</span> <span class="s2">&quot;live&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;console ROS live telemetry unavailable: </span><span class="si">{</span><span class="n">live_error</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;unknown reason&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;error&quot;</span> <span class="k">if</span> <span class="n">action_mode</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">live_snapshot</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;live_telemetry&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;console ROS live telemetry disabled by --no-ros&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span> <span class="k">if</span> <span class="n">action_mode</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span> <span class="k">else</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">live_snapshot</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">progress_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">progress_root</span><span class="p">)</span>
+    <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_check_item</span><span class="p">(</span>
+            <span class="s2">&quot;progress_root&quot;</span><span class="p">,</span>
+            <span class="n">progress_root</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">progress_root</span><span class="o">.</span><span class="n">is_dir</span><span class="p">(),</span>
+            <span class="sa">f</span><span class="s2">&quot;progress root </span><span class="si">{</span><span class="s1">&#39;exists&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">progress_root</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;does not exist&#39;</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">progress_root</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="p">(</span>
+                <span class="s2">&quot;info&quot;</span>
+                <span class="k">if</span> <span class="n">progress_root</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">progress_root</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span>
+                <span class="k">else</span> <span class="s2">&quot;warning&quot;</span>
+            <span class="p">),</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">progress_root</span><span class="p">)},</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_log_path_check</span><span class="p">(</span><span class="n">operator_log_path</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;operator_log&quot;</span><span class="p">,</span> <span class="n">expect_file</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">_log_path_check</span><span class="p">(</span><span class="n">launcher_log_dir</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;launcher_log_dir&quot;</span><span class="p">,</span> <span class="n">expect_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">process_registry</span><span class="o">.</span><span class="n">counts</span><span class="p">()</span>
+        <span class="n">active_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;active&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;launcher_registry&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;launcher registry OK; active=</span><span class="si">{</span><span class="n">active_count</span><span class="si">}</span><span class="s2">, total=</span><span class="si">{</span><span class="n">counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span> <span class="k">if</span> <span class="n">active_count</span> <span class="k">else</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;process_counts&quot;</span><span class="p">:</span> <span class="n">counts</span><span class="p">},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span><span class="s2">&quot;launcher_registry&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;launcher registry failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">progress_data</span><span class="p">:</span> <span class="n">JsonDict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;running&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;owned_by_console&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">progress_monitor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;progress_monitor&quot;</span><span class="p">,</span>
+                <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;progress monitor manager is not configured&quot;</span><span class="p">,</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">progress_data</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">progress_monitor</span><span class="o">.</span><span class="n">status</span><span class="p">(</span>
+                <span class="n">check_external</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">include_progress_health</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">progress_data</span> <span class="o">=</span> <span class="n">status</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">_check_item</span><span class="p">(</span>
+                    <span class="s2">&quot;progress_monitor&quot;</span><span class="p">,</span>
+                    <span class="kc">True</span><span class="p">,</span>
+                    <span class="nb">str</span><span class="p">(</span>
+                        <span class="n">progress_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+                        <span class="ow">or</span> <span class="n">progress_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span>
+                        <span class="ow">or</span> <span class="s2">&quot;progress monitor status OK&quot;</span>
+                    <span class="p">),</span>
+                    <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="n">progress_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;running&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">progress_data</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">_check_item</span><span class="p">(</span>
+                    <span class="s2">&quot;progress_monitor&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;progress monitor status failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">status_state</span> <span class="o">=</span> <span class="n">status_model</span><span class="o">.</span><span class="n">build_progress_status_state</span><span class="p">(</span>
+            <span class="n">progress_root</span><span class="p">,</span>
+            <span class="n">events_limit</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">events_limit</span><span class="p">),</span>
+            <span class="n">live_payload</span><span class="o">=</span><span class="n">live_snapshot</span> <span class="k">if</span> <span class="n">live_available</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="n">status_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operator_status&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">_check_item</span><span class="p">(</span>
+                <span class="s2">&quot;status_model&quot;</span><span class="p">,</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;status_model.build_progress_status_state returned operator_status&quot;</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="s2">&quot;status_model did not return operator_status mapping&quot;</span>
+                <span class="p">),</span>
+                <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;operator_status_schema&quot;</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="n">op</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;schema&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="p">)</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_check_item</span><span class="p">(</span><span class="s2">&quot;status_model&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;status model failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+
+    <span class="n">error_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="mi">1</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">checks</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span>
+    <span class="p">)</span>
+    <span class="n">warning_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">checks</span>
+        <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;warning&quot;</span>
+        <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">ok</span> <span class="o">=</span> <span class="n">error_count</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;ok&quot;</span> <span class="k">if</span> <span class="n">ok</span> <span class="ow">and</span> <span class="n">warning_count</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;warning&quot;</span> <span class="k">if</span> <span class="n">ok</span> <span class="k">else</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;ok&quot;</span><span class="p">:</span> <span class="n">ok</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+        <span class="s2">&quot;error_count&quot;</span><span class="p">:</span> <span class="n">error_count</span><span class="p">,</span>
+        <span class="s2">&quot;warning_count&quot;</span><span class="p">:</span> <span class="n">warning_count</span><span class="p">,</span>
+        <span class="s2">&quot;check_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">checks</span><span class="p">),</span>
+        <span class="s2">&quot;telescope&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">telescope</span><span class="p">),</span>
+        <span class="s2">&quot;action_mode&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">action_mode</span><span class="p">),</span>
+        <span class="s2">&quot;live_actions_enabled&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">live_actions_enabled</span><span class="p">),</span>
+        <span class="s2">&quot;site_source&quot;</span><span class="p">:</span> <span class="n">site_source</span><span class="p">,</span>
+        <span class="s2">&quot;observatory&quot;</span><span class="p">:</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;observatory&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;checked_at_iso&quot;</span><span class="p">:</span> <span class="n">_now_iso</span><span class="p">(),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;ok&quot;</span><span class="p">:</span> <span class="n">ok</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+        <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">summary</span><span class="p">,</span>
+        <span class="s2">&quot;checks&quot;</span><span class="p">:</span> <span class="n">checks</span><span class="p">,</span>
+    <span class="p">}</span></div>
+</pre></div>
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, NECST Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>
