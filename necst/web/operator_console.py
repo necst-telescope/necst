@@ -123,6 +123,20 @@ LAUNCHER_FAILURE_SUMMARY_MAX_CHARS = int(
     os.environ.get("NECST_CONSOLE_LAUNCHER_FAILURE_SUMMARY_MAX_CHARS", "600")
 )
 
+DEV_RELOAD_CONSOLE_ACTION = "dev_reload_console"
+DEV_RESTART_PROGRESS_ACTION = "dev_restart_progress"
+
+
+def simulator_mode_enabled() -> bool:
+    """Return the active NECST simulator flag without enabling it implicitly."""
+
+    try:
+        from necst import config as necst_config  # type: ignore
+
+        return bool(getattr(necst_config, "simulator", False))
+    except Exception:
+        return False
+
 LIVE_ACTION_GUARD_MESSAGE = (
     "live write actions are guarded by --guard-live-actions; "
     "use --action-mode dry-run for normal no-hardware validation"
@@ -169,6 +183,7 @@ class OperatorConsoleState:
     progress_url: str
     progress_monitor: Optional[progress_manager.ProgressMonitorManager] = None
     action_mode: str = "live"
+    simulator: bool = False
     live_actions_enabled: bool = True
     status_refresh_ms: int = 1000
     status_no_ros: bool = False
@@ -2391,6 +2406,36 @@ def dispatch_action(
     _refresh_processes_and_log(state)
     _sync_authority_state(state)
 
+    if action in {DEV_RELOAD_CONSOLE_ACTION, DEV_RESTART_PROGRESS_ACTION}:
+        if not state.simulator:
+            return (
+                False,
+                "development reload actions are available only when simulator=true",
+                {"action": action},
+            )
+        if action == DEV_RELOAD_CONSOLE_ACTION:
+            return (
+                True,
+                "console UI reload requested",
+                {"action": action, "reload_browser": True},
+            )
+        monitor = state.progress_monitor
+        if monitor is None:
+            return False, "progress monitor is not configured", {"action": action}
+        stop_ok, stop_message, stop_data = monitor.stop_if_owned()
+        if not stop_ok:
+            return False, stop_message, {"action": action, "stop": stop_data}
+        launch_ok, launch_message, launch_data = monitor.launch()
+        return (
+            launch_ok,
+            f"progress monitor development restart: {launch_message}",
+            {
+                "action": action,
+                "stop": stop_data,
+                "progress": launch_data,
+            },
+        )
+
     if action == "clear_log":
         state.log.clear()
         return True, "operation log cleared", {"action": action}
@@ -2423,14 +2468,31 @@ def dispatch_action(
                 "comment is empty; no observation-log row was written",
                 {"action": action},
             )
-        written = manager.write_event(
-            _observation_log_context(state),
-            comment=comment,
-            mode="Comment",
-            event="comment",
-            action_or_obsfile="manual comment",
-            result="success",
-        )
+        try:
+            target_row_id = observation_log.normalize_target_row_id(
+                params.get("target_row_id")
+            )
+        except ValueError as exc:
+            return False, str(exc), {"action": action}
+        if target_row_id is not None and not manager.has_row_id(target_row_id):
+            return (
+                False,
+                f"target observation-log row_id does not exist: {target_row_id}",
+                {"action": action, "target_row_id": target_row_id},
+            )
+        if target_row_id is not None:
+            written = manager.update_comment(target_row_id, comment)
+            success_message = "comment saved to existing observation CSV row"
+        else:
+            written = manager.write_event(
+                _observation_log_context(state),
+                comment=comment,
+                mode="Comment",
+                event="comment",
+                action_or_obsfile="manual comment",
+                result="success",
+            )
+            success_message = "comment appended to observation CSV log"
         if not written:
             return (
                 False,
@@ -2442,8 +2504,12 @@ def dispatch_action(
             )
         return (
             True,
-            "comment appended to observation CSV log",
-            {"action": action, "observation_log": manager.status()},
+            success_message,
+            {
+                "action": action,
+                "target_row_id": target_row_id,
+                "observation_log": manager.status(),
+            },
         )
 
     if action == "obslog_new":
@@ -3824,7 +3890,7 @@ def build_console_status(state: OperatorConsoleState) -> JsonDict:
         return build_minimal_rescue_status(state, exc)
 
 
-def load_demo_html(status_refresh_ms: int = 1000) -> str:
+def load_demo_html(status_refresh_ms: int = 1000, *, simulator: bool = False) -> str:
     """Load the v7 demo HTML so the real console keeps the approved layout."""
 
     demo_path = Path(__file__).resolve().parents[2] / "bin" / "console-demo.py"
@@ -3847,7 +3913,12 @@ def load_demo_html(status_refresh_ms: int = 1000) -> str:
     )
     config_script = (
         "<script>window.NECST_CONSOLE_CONFIG = "
-        + json.dumps({"statusRefreshMs": int(status_refresh_ms)})
+        + json.dumps(
+            {
+                "statusRefreshMs": int(status_refresh_ms),
+                "simulator": bool(simulator),
+            }
+        )
         + ";</script>\n"
     )
     return html.replace("</head>", config_script + "</head>")
@@ -3868,7 +3939,9 @@ class OperatorConsoleHTTPServer(ThreadingHTTPServer):
         super().__init__(server_address, handler_class)
         self.state = state
         self.html = (
-            html if html is not None else load_demo_html(state.status_refresh_ms)
+            html
+            if html is not None
+            else load_demo_html(state.status_refresh_ms, simulator=state.simulator)
         )
 
 
@@ -3925,6 +3998,48 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
             return
         parsed = urllib.parse.urlparse(self.path)
         query = urllib.parse.parse_qs(parsed.query)
+        if parsed.path == "/api/observation-log-rows":
+            state = self.server.state
+            try:
+                limit = int((query.get("limit") or [500])[0])
+            except (TypeError, ValueError):
+                limit = 500
+            with state.lock:
+                manager = state.observation_log
+                if manager is None:
+                    self._send_json(
+                        {
+                            "ok": False,
+                            "reason": "observation CSV log is not configured",
+                            "rows": [],
+                        }
+                    )
+                else:
+                    self._send_json(
+                        {"ok": True, "rows": manager.read_rows(limit=limit)}
+                    )
+            return
+        if parsed.path == "/api/observation-log-files":
+            state = self.server.state
+            try:
+                limit = int((query.get("limit") or [100])[0])
+            except (TypeError, ValueError):
+                limit = 100
+            with state.lock:
+                manager = state.observation_log
+                if manager is None:
+                    self._send_json(
+                        {
+                            "ok": False,
+                            "reason": "observation CSV log is not configured",
+                            "files": [],
+                        }
+                    )
+                else:
+                    self._send_json(
+                        {"ok": True, "files": manager.list_csv_files(limit=limit)}
+                    )
+            return
         if parsed.path == "/api/obs-roots":
             self._send_json(obs_roots_payload(self.server.state.obs_roots))
             return
@@ -4075,6 +4190,11 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
                     params,
                     session_id,
                 )
+                if ok and action == DEV_RELOAD_CONSOLE_ACTION:
+                    self.server.html = load_demo_html(
+                        self.server.state.status_refresh_ms,
+                        simulator=self.server.state.simulator,
+                    )
             except Exception as exc:
                 ok, reason, data = (
                     False,
@@ -4227,6 +4347,7 @@ def run_server(
         el_min=el_min,
         el_max=el_max,
     )
+    simulator = simulator_mode_enabled()
     limits = dict(site_summary.mount_limits)
     resolved_operator_log_dir = (
         Path(operator_log_dir).expanduser()
@@ -4308,6 +4429,7 @@ def run_server(
         progress_url=progress_url,
         progress_monitor=progress_monitor,
         action_mode=action_mode,
+        simulator=simulator,
         live_actions_enabled=bool(live_actions_enabled),
         status_refresh_ms=max(200, int(status_refresh_ms)),
         status_no_ros=bool(status_no_ros),
