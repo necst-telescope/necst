@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from necst.analysis.node import SkyDipAnalysisCoordinator
+from necst.notification import discord as discord_module
 from necst.notification.discord import DiscordNotifier
 
 
@@ -139,6 +140,24 @@ def test_discord_notifier_reads_channel_id_from_environment(monkeypatch):
 
     notifier = DiscordNotifier.from_environment()
 
+    assert notifier.channel_id == "987"
+
+
+def test_discord_notifier_reads_configured_env_file(tmp_path, monkeypatch):
+    env_file = tmp_path / "discord.env"
+    env_file.write_text(
+        "# shared service secrets\n"
+        "DISCORD_BOT_TOKEN='file-secret'\n"
+        "export DISCORD_CHANNEL_ID=987\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("DISCORD_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("DISCORD_CHANNEL_ID", raising=False)
+    monkeypatch.setattr(discord_module, "_configured_env_file", lambda: env_file)
+
+    notifier = DiscordNotifier.from_environment()
+
+    assert notifier._token == "file-secret"
     assert notifier.channel_id == "987"
 
 
