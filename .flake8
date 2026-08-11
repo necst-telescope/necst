@@ -4,5 +4,4 @@ extend-ignore = E203,Q,D,I,A,C
 exclude =
     .venv,
     *.pyi,
-    docs,
-    necst/analysis/scripts/skydip_step_jupyter_necstdb_v10.py
+    docs
