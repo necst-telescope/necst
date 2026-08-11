@@ -9,10 +9,70 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import shlex
 import uuid
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 from urllib import request
+
+_ENV_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _configured_env_file() -> Optional[Path]:
+    """Return the Discord env file configured by the active site config.
+
+    ``DISCORD_ENV_FILE`` is kept as a process-environment override for reduced
+    environments and tests.  In a normal NECST process the preferred setting
+    is ``[notification.discord] env_file`` in the active site TOML.
+    """
+
+    raw_path = os.environ.get("DISCORD_ENV_FILE", "").strip()
+    if not raw_path:
+        try:
+            from necst import config as necst_config
+
+            for key in (
+                "notification.discord.env_file",
+                "notification.discord.env_path",
+            ):
+                try:
+                    raw_path = str(necst_config.get(key) or "").strip()
+                except (AttributeError, KeyError):
+                    continue
+                if raw_path:
+                    break
+        except Exception:
+            # Direct environment variables remain usable in reduced/test
+            # environments where the full NECST config is unavailable.
+            raw_path = ""
+    return Path(raw_path).expanduser() if raw_path else None
+
+
+def _read_env_file(path: Path) -> Dict[str, str]:
+    """Read simple ``KEY=VALUE`` entries without adding a dotenv dependency."""
+
+    values: Dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        key, separator, raw_value = line.partition("=")
+        key = key.strip()
+        if not separator or not _ENV_KEY.fullmatch(key):
+            continue
+        value = raw_value.strip()
+        if value[:1] in {"'", '"'} and value[-1:] == value[:1]:
+            try:
+                parsed = shlex.split(value, comments=False, posix=True)
+                value = parsed[0] if parsed else ""
+            except ValueError as exc:
+                raise ValueError(f"Invalid quoted value for {key}") from exc
+        values[key] = value
+    return values
 
 
 class DiscordNotifier:
@@ -39,10 +99,21 @@ class DiscordNotifier:
 
     @classmethod
     def from_environment(cls) -> "DiscordNotifier":
-        """Create a notifier from the two required environment variables."""
+        """Create a notifier from site-configured env file or environment."""
 
-        token = os.environ.get("DISCORD_BOT_TOKEN", "")
-        channel_id = os.environ.get("DISCORD_CHANNEL_ID", "")
+        file_values: Dict[str, str] = {}
+        env_file = _configured_env_file()
+        if env_file is not None:
+            if not env_file.is_file():
+                raise FileNotFoundError(f"Discord env file does not exist: {env_file}")
+            file_values = _read_env_file(env_file)
+
+        token = file_values.get("DISCORD_BOT_TOKEN") or os.environ.get(
+            "DISCORD_BOT_TOKEN", ""
+        )
+        channel_id = file_values.get("DISCORD_CHANNEL_ID") or os.environ.get(
+            "DISCORD_CHANNEL_ID", ""
+        )
         if not token or not channel_id:
             raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID are required")
         return cls(token, channel_id)

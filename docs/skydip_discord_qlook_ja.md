@@ -18,40 +18,45 @@ Analysis Nodeが使う `skydip_step_jupyter_necstdb_v10.py` を同じNECSTパッ
 ```bash
 docker run --network=host \\
   -v /home/necst/data:/data \\
-  -v /etc/necst/secrets/discord.env:/run/secrets/discord.env:ro \\
-  --env-file /etc/necst/secrets/discord.env \\
   -e NECST_RECORD_ROOT=/data \\
   necst:latest
 ```
 
-`/etc/necst/secrets/discord.env` はGit管理外で、例えば次の2項目だけを置く。
+以下は、既存のNECST configディレクトリがコンテナ内から見える構成を前提とする。
+
+既存のNECST site configにenvファイルのパスだけを指定する。
+
+```toml
+[notification.discord]
+env_file = "/root/.necst/discord.env"
+```
+
+`/root/.necst/discord.env` はGit管理外で、例えば次の項目を置く。
 
 ```dotenv
 DISCORD_BOT_TOKEN=...
 DISCORD_CHANNEL_ID=...
 ```
 
-`--env-file` はDocker起動時に読むホスト側ファイルのパス指定であり、
+Analysis Nodeはsite configの`env_file`を起動時に読み込む。
 `DISCORD_BOT_TOKEN`の値をtelescope configやリポジトリへ書く必要はない。
 env-fileはGit管理外に置き、所有者だけが読めるようにする。
 
 ```bash
-chmod 600 /etc/necst/secrets/discord.env
+chmod 600 /root/.necst/discord.env
 ```
 
-既存コンテナでAnalysis Nodeだけを再起動する場合は、secretファイルをread-onlyで
-mountしておき、コンテナ内で次のように読み込む。Recorderやコンテナ全体の再起動は
-不要である。
+secretファイルが既存のNECST configディレクトリからコンテナ内にも見えていれば、
+Channel ID変更後はAnalysis Nodeだけを再起動すればよい。Recorderやコンテナ全体の
+再起動は不要である。
 
 ```bash
-set -a
-. /run/secrets/discord.env
-set +a
 ros2 run necst analysis
 ```
 
 環境変数はAnalysis Nodeの起動時に読み込まれるため、ファイル変更後はAnalysis Nodeの
-再起動が必要になる。
+再起動が必要になる。configディレクトリ自体がコンテナから見えない構成では、そこだけ
+一度bind mountする必要がある。
 
 ## Nodeの起動
 
@@ -72,8 +77,9 @@ ros2 run necst analysis
 | 変数 | 必須 | 用途 |
 | --- | --- | --- |
 | `NECST_RECORD_ROOT` | 推奨 | コンテナ内の共通データルート。例 `/data` |
-| `DISCORD_BOT_TOKEN` | Analysis起動時 | Discord Bot Token |
-| `DISCORD_CHANNEL_ID` | Analysis起動時 | 投稿先チャンネルID |
+| `DISCORD_BOT_TOKEN` | env-file内 | Discord Bot Token |
+| `DISCORD_CHANNEL_ID` | env-file内 | 投稿先チャンネルID |
+| `notification.discord.env_file` | 推奨 | site configからenv-fileを指定 |
 | `NECST_SKYDIP_SCRIPT` | 任意 | 外部スクリプトを使う場合のパス。通常は同梱v10を使用 |
 | `NECST_SKYDIP_BOARDS` | 任意 | 解析対象boardのカンマ区切り。未指定時はnecstdbから自動検出 |
 | `NECST_SKYDIP_TELESCOPE` | 任意 | スクリプトへ渡す望遠鏡名。既定値 `OMU1P85M` |
