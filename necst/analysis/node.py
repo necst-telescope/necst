@@ -67,31 +67,36 @@ class SkyDipAnalysisCoordinator:
         self._owns_executor = executor is None
         self._lock = Lock()
         self._pending: Optional[FinishedObservation] = None
-        self._recording_seen = False
+        self._recording = False
+        self._recording_state_seen = False
         self._scheduled_records = set()
 
-    def on_progress(self, payload: Mapping[str, Any]) -> None:
+    def on_progress(self, payload: Mapping[str, Any]) -> Optional[Future]:
         candidate = _finished_observation(payload, self.record_root)
         if candidate is None:
             return
         with self._lock:
             self._pending = candidate
+            return self._schedule_pending_locked()
+
+    def _schedule_pending_locked(self) -> Optional[Future]:
+        """Schedule once both final progress and recorder-stop are known."""
+
+        if not self._recording_state_seen or self._recording or self._pending is None:
+            return None
+        candidate = self._pending
+        self._pending = None
+        if candidate.record_name in self._scheduled_records:
+            return None
+        self._scheduled_records.add(candidate.record_name)
+        self.logger.info(f"Scheduling SkyDip analysis: {candidate.record_name}")
+        return self._executor.submit(self._analyze_and_notify, candidate)
 
     def on_recorder_status(self, recording: bool) -> Optional[Future]:
         with self._lock:
-            if recording:
-                self._recording_seen = True
-                return None
-            if not self._recording_seen or self._pending is None:
-                return None
-            candidate = self._pending
-            self._pending = None
-            self._recording_seen = False
-            if candidate.record_name in self._scheduled_records:
-                return None
-            self._scheduled_records.add(candidate.record_name)
-
-        return self._executor.submit(self._analyze_and_notify, candidate)
+            self._recording_state_seen = True
+            self._recording = bool(recording)
+            return self._schedule_pending_locked()
 
     def _analyze_and_notify(self, observation: FinishedObservation) -> None:
         figure = None

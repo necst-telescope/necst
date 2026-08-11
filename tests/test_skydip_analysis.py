@@ -56,17 +56,34 @@ def test_coordinator_waits_for_recorder_stop(tmp_path):
         analyzer, notifier, tmp_path, executor=executor
     )
 
-    coordinator.on_progress(progress(record_name))
-    assert coordinator.on_recorder_status(False) is None
-    assert analyzer.paths == []
-
     coordinator.on_recorder_status(True)
+    assert coordinator.on_progress(progress(record_name)) is None
     future = coordinator.on_recorder_status(False)
     assert future is not None
     future.result(timeout=2)
 
     assert analyzer.paths == [tmp_path / record_name]
     assert notifier.posts[0][1] == record_name
+    executor.shutdown()
+
+
+def test_coordinator_accepts_recorder_stop_before_finished_progress(tmp_path):
+    record_name = "necst_skydip_20260811_153000"
+    (tmp_path / record_name).mkdir()
+    analyzer = FakeAnalyzer()
+    notifier = FakeNotifier()
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = SkyDipAnalysisCoordinator(
+        analyzer, notifier, tmp_path, executor=executor
+    )
+
+    coordinator.on_recorder_status(True)
+    assert coordinator.on_recorder_status(False) is None
+    future = coordinator.on_progress(progress(record_name))
+    assert future is not None
+    future.result(timeout=2)
+
+    assert analyzer.paths == [tmp_path / record_name]
     executor.shutdown()
 
 
