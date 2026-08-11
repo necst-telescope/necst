@@ -132,5 +132,15 @@ def test_discord_multipart_contains_png_and_message():
     assert timeout == 30.0
 
 
+def test_discord_notifier_reads_channel_id_from_environment(monkeypatch):
+    monkeypatch.setenv("DISCORD_BOT_TOKEN", "secret")
+    monkeypatch.setenv("DISCORD_CHANNEL_ID", "987")
+    monkeypatch.delenv("DISCORD_QLOOK_CHANNEL_ID", raising=False)
+
+    notifier = DiscordNotifier.from_environment()
+
+    assert notifier.channel_id == "987"
+
+
 def test_progress_payload_is_json_serializable():
     assert json.loads(json.dumps(progress()))["lifecycle"]["state"] == "finished"

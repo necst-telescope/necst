@@ -42,11 +42,9 @@ class DiscordNotifier:
         """Create a notifier from the two required environment variables."""
 
         token = os.environ.get("DISCORD_BOT_TOKEN", "")
-        channel_id = os.environ.get("DISCORD_QLOOK_CHANNEL_ID", "")
+        channel_id = os.environ.get("DISCORD_CHANNEL_ID", "")
         if not token or not channel_id:
-            raise RuntimeError(
-                "DISCORD_BOT_TOKEN and DISCORD_QLOOK_CHANNEL_ID are required"
-            )
+            raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID are required")
         return cls(token, channel_id)
 
     def send_figure(self, figure: Any, observation_name: str) -> Dict[str, Any]:
