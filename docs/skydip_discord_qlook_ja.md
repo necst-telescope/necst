@@ -18,6 +18,7 @@ Analysis Nodeが使う `skydip_step_jupyter_necstdb_v10.py` を同じNECSTパッ
 ```bash
 docker run --network=host \\
   -v /home/necst/data:/data \\
+  -v /etc/necst/secrets/discord.env:/run/secrets/discord.env:ro \\
   --env-file /etc/necst/secrets/discord.env \\
   -e NECST_RECORD_ROOT=/data \\
   necst:latest
@@ -38,9 +39,19 @@ env-fileはGit管理外に置き、所有者だけが読めるようにする。
 chmod 600 /etc/necst/secrets/discord.env
 ```
 
-env-fileをread-onlyでmountし、Analysis Nodeだけを再起動する運用にすれば、
-Channel ID変更のたびにRecorderやコンテナ全体を再起動する必要はない。環境変数は
-Analysis Nodeの起動時に読み込まれるため、変更後はAnalysis Nodeの再起動が必要になる。
+既存コンテナでAnalysis Nodeだけを再起動する場合は、secretファイルをread-onlyで
+mountしておき、コンテナ内で次のように読み込む。Recorderやコンテナ全体の再起動は
+不要である。
+
+```bash
+set -a
+. /run/secrets/discord.env
+set +a
+ros2 run necst analysis
+```
+
+環境変数はAnalysis Nodeの起動時に読み込まれるため、ファイル変更後はAnalysis Nodeの
+再起動が必要になる。
 
 ## Nodeの起動
 
