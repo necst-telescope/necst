@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -76,7 +77,16 @@ class SkyDipAnalysisCoordinator:
         if candidate is None:
             return
         with self._lock:
+            should_log = (
+                self._pending is None
+                or self._pending.record_name != candidate.record_name
+            )
             self._pending = candidate
+            if should_log:
+                self.logger.info(
+                    "Finished observation progress received: "
+                    f"record={candidate.record_name}, path={candidate.record_path}"
+                )
             return self._schedule_pending_locked()
 
     def _schedule_pending_locked(self) -> Optional[Future]:
@@ -94,26 +104,42 @@ class SkyDipAnalysisCoordinator:
 
     def on_recorder_status(self, recording: bool) -> Optional[Future]:
         with self._lock:
+            previous = self._recording if self._recording_state_seen else None
             self._recording_state_seen = True
             self._recording = bool(recording)
+            if previous is None or previous != self._recording:
+                self.logger.info(
+                    f"Recorder status received: recording={self._recording}"
+                )
             return self._schedule_pending_locked()
 
     def _analyze_and_notify(self, observation: FinishedObservation) -> None:
         figure = None
+        started_at = time.monotonic()
+        self.logger.info(
+            f"Analysis started: record={observation.record_name}, "
+            f"path={observation.record_path}"
+        )
         try:
             if not observation.record_path.is_dir():
                 raise FileNotFoundError(
                     f"SkyDip record directory does not exist: {observation.record_path}"
                 )
             figure = self.analyzer.analyze(observation.record_path)
+            self.logger.info(
+                f"Analysis figure generated: record={observation.record_name}; "
+                "posting to Discord"
+            )
             self.notifier.send_figure(figure, observation.record_name)
             self.logger.info(
-                "SkyDip analysis posted to Discord: %s", observation.record_name
+                f"Discord post completed: record={observation.record_name}, "
+                f"elapsed_sec={time.monotonic() - started_at:.2f}"
             )
         except Exception:
             self.logger.exception(
-                "SkyDip analysis/Discord notification failed: %s",
-                observation.record_name,
+                f"SkyDip analysis/Discord notification failed: "
+                f"record={observation.record_name}, "
+                f"elapsed_sec={time.monotonic() - started_at:.2f}"
             )
         finally:
             if figure is not None:

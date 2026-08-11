@@ -22,15 +22,26 @@ class AnalysisNode(Node):
 
     def __init__(self) -> None:
         super().__init__("analysis", namespace=namespace.core)
+        analyzer = analyzer_from_environment()
+        notifier = DiscordNotifier.from_environment()
+        record_root = Path(os.environ.get("NECST_RECORD_ROOT", Path.home() / "data"))
         self.coordinator = SkyDipAnalysisCoordinator(
-            analyzer_from_environment(),
-            DiscordNotifier.from_environment(),
-            Path(os.environ.get("NECST_RECORD_ROOT", Path.home() / "data")),
+            analyzer,
+            notifier,
+            record_root,
             logger=self.get_logger(),
         )
         topic.observation_progress.subscription(self, self._on_progress)
         topic.record_status.subscription(self, self._on_record_status)
-        self.get_logger().info("SkyDip Analysis Node started")
+        script_path = getattr(analyzer, "script_path", None) or "bundled script"
+        telescope = getattr(analyzer, "telescope", "unknown")
+        boards = getattr(analyzer, "boards", ()) or "auto"
+        self.get_logger().info(
+            "Analysis Node started: "
+            f"record_root={record_root}, telescope={telescope}, "
+            f"boards={boards}, script={script_path}, "
+            f"discord_channel_id={notifier.channel_id}"
+        )
 
     def _on_progress(self, msg: String) -> None:
         try:
