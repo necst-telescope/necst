@@ -39,8 +39,7 @@ class AnalysisNode(Node):
         self.get_logger().info(
             "Analysis Node started: "
             f"record_root={record_root}, telescope={telescope}, "
-            f"boards={boards}, script={script_path}, "
-            f"discord_channel_id={notifier.channel_id}"
+            f"boards={boards}, script={script_path}"
         )
 
     def _on_progress(self, msg: String) -> None:
