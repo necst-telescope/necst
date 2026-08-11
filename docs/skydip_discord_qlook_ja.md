@@ -27,11 +27,20 @@ docker run --network=host \\
 
 ```dotenv
 DISCORD_BOT_TOKEN=...
-DISCORD_QLOOK_CHANNEL_ID=...
+DISCORD_CHANNEL_ID=...
 ```
 
-Tokenはtelescope configやリポジトリへ書かない。Channel IDは通常設定だが、
-Tokenと同じenv-fileで管理してよい。
+`--env-file` はDocker起動時に読むホスト側ファイルのパス指定であり、
+`DISCORD_BOT_TOKEN`の値をtelescope configやリポジトリへ書く必要はない。
+env-fileはGit管理外に置き、所有者だけが読めるようにする。
+
+```bash
+chmod 600 /etc/necst/secrets/discord.env
+```
+
+env-fileをread-onlyでmountし、Analysis Nodeだけを再起動する運用にすれば、
+Channel ID変更のたびにRecorderやコンテナ全体を再起動する必要はない。環境変数は
+Analysis Nodeの起動時に読み込まれるため、変更後はAnalysis Nodeの再起動が必要になる。
 
 ## Nodeの起動
 
@@ -53,7 +62,7 @@ ros2 run necst analysis
 | --- | --- | --- |
 | `NECST_RECORD_ROOT` | 推奨 | コンテナ内の共通データルート。例 `/data` |
 | `DISCORD_BOT_TOKEN` | Analysis起動時 | Discord Bot Token |
-| `DISCORD_QLOOK_CHANNEL_ID` | Analysis起動時 | 投稿先チャンネルID |
+| `DISCORD_CHANNEL_ID` | Analysis起動時 | 投稿先チャンネルID |
 | `NECST_SKYDIP_SCRIPT` | 任意 | 外部スクリプトを使う場合のパス。通常は同梱v10を使用 |
 | `NECST_SKYDIP_BOARDS` | 任意 | 解析対象boardのカンマ区切り。未指定時はnecstdbから自動検出 |
 | `NECST_SKYDIP_TELESCOPE` | 任意 | スクリプトへ渡す望遠鏡名。既定値 `OMU1P85M` |
