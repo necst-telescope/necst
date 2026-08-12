@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from necst.analysis.node import FinishedObservation, SkyDipAnalysisCoordinator
+from necst.analysis.skydip import ScriptSkyDipAnalyzer
 from necst.notification import discord as discord_module
 from necst.notification.discord import DiscordAttachmentTooLarge, DiscordNotifier
 
@@ -17,6 +18,25 @@ def test_bundled_script_keeps_analysis_and_plot_api():
     assert "# fmt: off" in source
     assert "def analyze_skydip_boards(" in source
     assert "def plot_skydip_results(" in source
+
+
+def test_analysis_board_labels_are_passed_as_script_mapping():
+    analyzer = ScriptSkyDipAnalyzer(
+        board_labels={
+            "xffts-board1": "Band 6 USB",
+            "xffts-board2": "Band 6 LSB",
+            "xffts-board3": "Band 3 USB",
+            "xffts-board4": "Band 3 LSB",
+        }
+    )
+
+    assert analyzer._board_selection(
+        ["xffts-board1", "xffts-board3", "xffts-board9"]
+    ) == {
+        "xffts-board1": "Band 6 USB",
+        "xffts-board3": "Band 3 USB",
+        "xffts-board9": "xffts-board9",
+    }
 
 
 class FakeFigure:

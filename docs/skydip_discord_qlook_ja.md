@@ -48,6 +48,22 @@ env-fileはGit管理外に置き、所有者だけが読めるようにする。
 chmod 600 /root/.necst/discord.env
 ```
 
+Board番号とIF表示名は、NECST site configの1項目で対応付ける。
+以下の設定は現在の4 board構成に対応する。
+
+```toml
+[analysis]
+board_labels = {
+    "xffts-board1" = "Band 6 USB",
+    "xffts-board2" = "Band 6 LSB",
+    "xffts-board3" = "Band 3 USB",
+    "xffts-board4" = "Band 3 LSB",
+}
+```
+
+この設定は解析スクリプトへ`{board: label}`形式で渡され、グラフのタイトルや
+Discordの数値サマリーに使用できる。未設定のboardはtable名をそのまま表示する。
+
 secretファイルが既存のNECST configディレクトリからコンテナ内にも見えていれば、
 Channel ID変更後はAnalysis Nodeだけを再起動すればよい。Recorderやコンテナ全体の
 再起動は不要である。
@@ -84,6 +100,7 @@ Discordには容量超過で画像を送信できなかった旨をテキスト�
 | `DISCORD_BOT_TOKEN` | env-file内 | Discord Bot Token |
 | `DISCORD_CHANNEL_ID` | env-file内 | 投稿先チャンネルID |
 | `DISCORD_ATTACHMENT_LIMIT_MIB` | 任意 | 添付上限。未指定時は `10` MiB |
+| `[analysis].board_labels` | 任意 | board名とIF表示名の対応表 |
 | `notification.discord.env_file` | 推奨 | site configからenv-fileを指定 |
 | `NECST_SKYDIP_SCRIPT` | 任意 | 外部スクリプトを使う場合のパス。通常は同梱v10を使用 |
 | `NECST_SKYDIP_BOARDS` | 任意 | 解析対象boardのカンマ区切り。未指定時はnecstdbから自動検出 |

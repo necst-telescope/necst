@@ -6,7 +6,7 @@ import importlib.util
 import os
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 
 class ScriptSkyDipAnalyzer:
@@ -22,10 +22,16 @@ class ScriptSkyDipAnalyzer:
         self,
         telescope: str = "OMU1P85M",
         boards: Optional[Sequence[str]] = None,
+        board_labels: Optional[Mapping[str, str]] = None,
         script_path: Optional[Path] = None,
     ) -> None:
         self.telescope = telescope
         self.boards = tuple(boards or ())
+        self.board_labels = {
+            str(board): str(label)
+            for board, label in (board_labels or {}).items()
+            if str(board).strip() and str(label).strip()
+        }
         self.script_path = Path(script_path).expanduser() if script_path else None
         self._script_module: Optional[ModuleType] = None
 
@@ -35,10 +41,11 @@ class ScriptSkyDipAnalyzer:
         board_names = list(self.boards) or self._discover_boards(record_path)
         if not board_names:
             raise ValueError(f"No spectral boards found in {record_path}")
+        board_selection = self._board_selection(board_names)
         try:
             _, figure, _ = module.analyze_skydip_boards(
                 record_path,
-                board_names,
+                board_selection,
                 telescope=self.telescope,
                 save_prefix=None,
             )
@@ -47,6 +54,13 @@ class ScriptSkyDipAnalyzer:
                 "SkyDip script must define analyze_skydip_boards"
             ) from exc
         return figure
+
+    def _board_selection(self, board_names: Sequence[str]) -> Any:
+        """Return script input with configured display labels when available."""
+
+        if not self.board_labels:
+            return list(board_names)
+        return {board: self.board_labels.get(board, board) for board in board_names}
 
     def _load_script(self) -> ModuleType:
         if self._script_module is not None:
@@ -108,8 +122,28 @@ def analyzer_from_environment() -> ScriptSkyDipAnalyzer:
         if value.strip()
     )
     script_path = os.environ.get("NECST_SKYDIP_SCRIPT", "").strip()
+    board_labels = _board_labels_from_config()
     return ScriptSkyDipAnalyzer(
         telescope=os.environ.get("NECST_SKYDIP_TELESCOPE", "OMU1P85M"),
         boards=boards,
+        board_labels=board_labels,
         script_path=Path(script_path) if script_path else None,
     )
+
+
+def _board_labels_from_config() -> Mapping[str, str]:
+    """Read optional display labels from ``[analysis].board_labels``."""
+
+    try:
+        from necst import config as necst_config
+
+        raw_labels = necst_config.get("analysis.board_labels")
+    except (AttributeError, ImportError, KeyError):
+        return {}
+    if not isinstance(raw_labels, Mapping):
+        return {}
+    return {
+        str(board): str(label)
+        for board, label in raw_labels.items()
+        if str(board).strip() and str(label).strip()
+    }
