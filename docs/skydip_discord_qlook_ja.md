@@ -96,6 +96,11 @@ board別の数値サマリーをMarkdown形式で生成して本文へ付ける�
 PNGが添付上限を超えた場合は画像を送信せず、Analysis Nodeへ`WARNING`を出し、
 Discordには容量超過で画像を送信できなかった旨をテキストで投稿する。
 
+解析中は、スクリプト読み込み、Board自動検出、同梱スクリプト実行の開始・完了もログに
+出る。`Analysis script execution started`の後で止まる場合は、同梱スクリプトのデータ
+読み込みまたはBoard解析中であり、`Analysis script execution completed`が出てから
+`Analysis completed`が出るまでが結果整形中である。
+
 ```text
 Board          IF             Q     tau              Tsys0[K]   Trx[K]    chi2red  Nfit  Flags
 xffts-board1   Band 6 USB     WARN  0.308 +/- 0.327  29466.300  21578.300 8.750    5     ...

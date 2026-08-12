@@ -120,6 +120,47 @@ def test_analyzer_returns_figure_and_discord_summary(tmp_path):
     assert output.results["xffts-board4"].tau == 0.546
 
 
+def test_analyzer_logs_script_stages(tmp_path):
+    class Result:
+        label = "Band 6 USB"
+        quality = "GOOD"
+        quality_flags = []
+        tau = 0.1
+        tau_sigma = 0.01
+        Tsys_sensitivity_zenith_K = 100.0
+        Trx_K = 80.0
+        reduced_chi2 = 1.0
+        n_fit = 4
+
+    class FakeScript:
+        @staticmethod
+        def analyze_skydip_boards(*args, **kwargs):
+            return {"xffts-board1": Result()}, FakeFigure(), None
+
+    class Logger:
+        def __init__(self):
+            self.messages = []
+
+        def info(self, message):
+            self.messages.append(message)
+
+    logger = Logger()
+    analyzer = ScriptSkyDipAnalyzer(
+        boards=["xffts-board1"],
+        logger=logger,
+    )
+    analyzer._load_script = lambda: FakeScript
+
+    analyzer.analyze(tmp_path / "necst_skydip_test")
+
+    messages = "\n".join(logger.messages)
+    assert "Analysis script load started" in messages
+    assert "Analysis script loaded" in messages
+    assert "Analysis boards configured" in messages
+    assert "Analysis script execution started" in messages
+    assert "Analysis script execution completed" in messages
+
+
 class FakeAnalyzer:
     def __init__(self):
         self.paths = []

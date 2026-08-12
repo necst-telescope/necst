@@ -35,6 +35,7 @@ class ScriptSkyDipAnalyzer:
         boards: Optional[Sequence[str]] = None,
         board_labels: Optional[Mapping[str, str]] = None,
         script_path: Optional[Path] = None,
+        logger: Optional[Any] = None,
     ) -> None:
         self.telescope = telescope
         self.boards = tuple(boards or ())
@@ -44,15 +45,38 @@ class ScriptSkyDipAnalyzer:
             if str(board).strip() and str(label).strip()
         }
         self.script_path = Path(script_path).expanduser() if script_path else None
+        self.logger = logger
         self._script_module: Optional[ModuleType] = None
 
     def analyze(self, record_path: Path) -> AnalysisOutput:
         record_path = Path(record_path)
+        self._log_info(f"Analysis script load started: record={record_path.name}")
         module = self._load_script()
+        self._log_info(
+            f"Analysis script loaded: record={record_path.name}, "
+            f"script={self.script_path or 'bundled script'}"
+        )
+        if self.boards:
+            self._log_info(
+                f"Analysis boards configured: record={record_path.name}, "
+                f"boards={','.join(self.boards)}"
+            )
+        else:
+            self._log_info(
+                f"Analysis board discovery started: record={record_path.name}"
+            )
         board_names = list(self.boards) or self._discover_boards(record_path)
         if not board_names:
             raise ValueError(f"No spectral boards found in {record_path}")
+        self._log_info(
+            f"Analysis board discovery completed: record={record_path.name}, "
+            f"boards={','.join(board_names)}"
+        )
         board_selection = self._board_selection(board_names)
+        self._log_info(
+            f"Analysis script execution started: record={record_path.name}, "
+            f"boards={len(board_names)}"
+        )
         try:
             results, figure, _ = module.analyze_skydip_boards(
                 record_path,
@@ -64,6 +88,10 @@ class ScriptSkyDipAnalyzer:
             raise RuntimeError(
                 "SkyDip script must define analyze_skydip_boards"
             ) from exc
+        self._log_info(
+            f"Analysis script execution completed: record={record_path.name}, "
+            f"boards={len(results)}"
+        )
         return AnalysisOutput(
             figure=figure,
             results=results,
@@ -71,6 +99,10 @@ class ScriptSkyDipAnalyzer:
                 record_path.name, results, self.board_labels
             ),
         )
+
+    def _log_info(self, message: str) -> None:
+        if self.logger is not None:
+            self.logger.info(message)
 
     def _board_selection(self, board_names: Sequence[str]) -> Any:
         """Return script input with configured display labels when available."""
@@ -130,7 +162,7 @@ class ScriptSkyDipAnalyzer:
         )
 
 
-def analyzer_from_environment() -> ScriptSkyDipAnalyzer:
+def analyzer_from_environment(*, logger: Optional[Any] = None) -> ScriptSkyDipAnalyzer:
     """Build the script adapter using the telescope environment."""
 
     boards = tuple(
@@ -145,6 +177,7 @@ def analyzer_from_environment() -> ScriptSkyDipAnalyzer:
         boards=boards,
         board_labels=board_labels,
         script_path=Path(script_path) if script_path else None,
+        logger=logger,
     )
 
 

@@ -22,7 +22,7 @@ class AnalysisNode(Node):
 
     def __init__(self) -> None:
         super().__init__("analysis", namespace=namespace.core)
-        analyzer = analyzer_from_environment()
+        analyzer = analyzer_from_environment(logger=self.get_logger())
         notifier = DiscordNotifier.from_environment()
         record_root = Path(os.environ.get("NECST_RECORD_ROOT", Path.home() / "data"))
         self.coordinator = SkyDipAnalysisCoordinator(
