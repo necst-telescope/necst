@@ -2,7 +2,9 @@ from datetime import datetime
 from typing import Optional, Tuple
 import time
 
+from astropy import units as u
 from neclib import config
+from neclib.coordinates import DriveLimitChecker
 from neclib.coordinates.observations import OpticalPointingSpec
 
 from .observation_base import Observation
@@ -10,6 +12,52 @@ from .observation_base import Observation
 
 class OpticalPointing(Observation):
     observation_type = "OpticalPointing"
+
+    @staticmethod
+    def _make_plan(file, magnitude, obsdatetime, *, show_graph):
+        spec = OpticalPointingSpec(obsdatetime.timestamp(), "unix")
+        sorted_list = spec.sort(
+            catalog_file=file,
+            magnitude=(float(magnitude[0]), float(magnitude[1])),
+            show_graph=show_graph,
+        )
+        if sorted_list.empty:
+            raise RuntimeError("No optical-pointing stars are available for this time")
+        return spec, spec.resolve_mount_targets(sorted_list)
+
+    def _validate_live_tracking_slew(self, sorted_list, index: int) -> None:
+        """Reject a live RA/Dec command that would select a large Az unwrap."""
+        current = self.com.antenna("?")
+        live_spec = OpticalPointingSpec(time.time(), "unix")
+        live_altaz = live_spec.to_altaz(
+            target=(
+                float(sorted_list["ra"][index]) * u.deg,
+                float(sorted_list["dec"][index]) * u.deg,
+            ),
+            frame="fk5",
+        )
+        checker = DriveLimitChecker(
+            config.antenna_drive_critical_limit_az,
+            config.antenna_drive_warning_limit_az,
+        )
+        selected = checker.optimize(
+            current=float(current.lon) * u.deg,
+            target=live_altaz.az,
+        )
+        if selected is None:
+            raise RuntimeError(f"Star {index + 1} has no safe live mount-Az solution")
+        selected_az = float(selected.to_value(u.deg))
+        slew = abs(selected_az - float(current.lon))
+        if slew > 180.0:
+            raise RuntimeError(
+                "Unsafe optical-pointing Az unwrap rejected: "
+                f"star={index + 1}, current={float(current.lon):.3f}deg, "
+                f"selected={selected_az:.3f}deg, slew={slew:.3f}deg"
+            )
+        self.logger.debug(
+            f"Live Az unwrap check: star={index + 1}, "
+            f"selected={selected_az:.3f}deg, slew={slew:.3f}deg"
+        )
 
     def _pin_unwrap_branch(self, sorted_list) -> None:
         """Put the antenna on the 360deg unwrap branch this plan intends.
@@ -58,12 +106,9 @@ class OpticalPointing(Observation):
             obsdatetime = datetime.now()
         else:
             obsdatetime = obstime
-        obsfloattime = obsdatetime.timestamp()
-        opt_pointing = OpticalPointingSpec(obsfloattime, "unix")
-        sorted_list = opt_pointing.sort(
-            catalog_file=file, magnitude=(float(magnitude[0]), float(magnitude[1]))
+        opt_pointing, sorted_list = self._make_plan(
+            file, magnitude, obsdatetime, show_graph=True
         )
-        sorted_list = opt_pointing.resolve_mount_targets(sorted_list)
         t_tot = opt_pointing.estimate_time(sorted_list)
         if obstime is None:
             self.logger.info(f"{len(sorted_list)} stars will be captured. ")
@@ -73,6 +118,18 @@ class OpticalPointing(Observation):
             if _input != "y":
                 self.logger.info("System ended.")
                 return None
+            # Plot review and operator input can leave the original AltAz plan
+            # stale. Rebuild immediately before execution without opening a
+            # second plot, then validate each live command at dispatch time.
+            preview_count = len(sorted_list)
+            obsdatetime = datetime.now()
+            opt_pointing, sorted_list = self._make_plan(
+                file, magnitude, obsdatetime, show_graph=False
+            )
+            self.logger.info(
+                "Optical-pointing plan refreshed at execution time: "
+                f"{preview_count} -> {len(sorted_list)} stars"
+            )
         else:
             self.logger.info(f"{len(sorted_list)} stars will be captured.")
             return None
@@ -122,6 +179,7 @@ class OpticalPointing(Observation):
                     ):
                         if i == 0:
                             self._pin_unwrap_branch(sorted_list)
+                        self._validate_live_tracking_slew(sorted_list, i)
                         self.com.antenna(
                             "point",
                             target=(
@@ -146,7 +204,11 @@ class OpticalPointing(Observation):
                         with self.progress.drive(
                             kind="hold", stage="capturing", geometry=geometry
                         ):
-                            self.com.ccd("capture", name=save_path)
+                            captured = self.com.ccd("capture", name=save_path)
+                            if not captured:
+                                raise RuntimeError(
+                                    f"CCD capture failed for star {i + 1}: {save_path}"
+                                )
 
                     coord_after = self.com.antenna("?")
                     az_after, el_after, time_after = (

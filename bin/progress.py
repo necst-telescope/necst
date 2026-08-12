@@ -5610,7 +5610,9 @@ function renderMapSvg(snapshot, items, events, serverTimeUnix=null) {
   const drawRows = rowsForDrawing(rows).sort((a,b)=>({pending:0,done:1,current:2}[a.status]-{pending:0,done:1,current:2}[b.status]));
   const sequencePath = obsType.includes('grid')
     ? gridSequencePath(onRows, b)
-    : (!ls.total && pointRows.length >= 2 ? pointSequencePath(pointRows, b) : '');
+    : (obsType.includes('opticalpointing') && !ls.total && pointRows.length >= 2
+      ? pointSequencePath(pointRows, b)
+      : '');
   const lineEls = drawRows.map(r => {
     if (!r.b) return renderPoint(r,b);
     const x1=sx(r.a[0],b), y1=sy(r.a[1],b), x2=sx(r.b[0],b), y2=sy(r.b[1],b);

@@ -1210,14 +1210,12 @@ class HorizontalCoord(AlertHandlerNode):
         if (self.last_status is not None) and (self.last_status.tight):
             return
 
-        if self.direct_mode:
-            self.finder.temperature = 0
-            self.finder.pressure = 0
-            self.finder.relative_humidity = 0
-        else:
-            self.finder.temperature = msg.temperature
-            self.finder.pressure = msg.pressure
-            self.finder.relative_humidity = msg.humidity
+        # ``direct_mode`` disables corrections while coordinates are built; it
+        # must not erase the latest measured weather state. Keeping these values
+        # current prevents stale zeros in the first sky command after a mount move.
+        self.finder.temperature = msg.temperature
+        self.finder.pressure = msg.pressure
+        self.finder.relative_humidity = msg.humidity
 
     def telemetry(self, status: Optional[ControlContext]) -> None:
         if status is None:

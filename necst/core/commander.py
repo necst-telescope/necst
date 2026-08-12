@@ -54,6 +54,10 @@ from .auth import PrivilegedNode, require_privilege
 from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
 
+class MountPointingInterruptedError(RuntimeError):
+    """Raised when a direct mount move stops before reaching its target."""
+
+
 @dataclass
 class _SubscriptionCfg:
     topic: Topic
@@ -299,12 +303,9 @@ class Commander(PrivilegedNode):
         Az=360 deg must not be considered complete at Az=0 deg, so this helper
         compares the encoder directly against the requested mechanical Az.
 
-        If another terminal issues ``necst stop`` while this wait is active, the
-        antenna intentionally stops before reaching the target.  In that case the
-        old implementation waited forever because the geometric convergence
-        condition could never become true.  We therefore also watch the control
-        status and the manual_stop alert and return as soon as the command is
-        externally interrupted or the controller leaves the requested command id.
+        A manual stop, command replacement, or controller transition to idle is
+        reported as ``MountPointingInterruptedError``. Callers must never interpret
+        those states as successful convergence and continue to the next command.
         """
         start = pytime.monotonic()
         checker = ConditionChecker(10, reset_on_failure=True)
@@ -318,15 +319,13 @@ class Commander(PrivilegedNode):
             self._raise_if_abort_requested()
 
             if self._manual_antenna_stop_seen:
-                self.logger.warning(
-                    "Mount point wait interrupted by manual antenna stop"
-                    + (
-                        f" at {self._manual_antenna_stop_time:.6f}"
-                        if self._manual_antenna_stop_time is not None
-                        else ""
-                    )
+                message = "Mount point wait interrupted by manual antenna stop" + (
+                    f" at {self._manual_antenna_stop_time:.6f}"
+                    if self._manual_antenna_stop_time is not None
+                    else ""
                 )
-                return
+                self.logger.warning(message)
+                raise MountPointingInterruptedError(message)
 
             try:
                 ctrl = self.get_message("antenna_control", timeout_sec=0.01)
@@ -335,18 +334,18 @@ class Commander(PrivilegedNode):
                     if ctrl_id == str(command_id):
                         experienced_control_id = True
                     elif experienced_control_id:
-                        self.logger.warning(
+                        message = (
                             "Mount point wait interrupted: control id changed "
                             f"from {command_id!r} to {ctrl_id!r}"
                         )
-                        return
+                        self.logger.warning(message)
+                        raise MountPointingInterruptedError(message)
                 if experienced_control_id and (
                     not bool(getattr(ctrl, "controlled", True))
                 ):
-                    self.logger.warning(
-                        "Mount point wait interrupted: antenna controller is idle"
-                    )
-                    return
+                    message = "Mount point wait interrupted: antenna controller is idle"
+                    self.logger.warning(message)
+                    raise MountPointingInterruptedError(message)
             except NECSTTimeoutError:
                 pass
 
@@ -697,12 +696,20 @@ class Commander(PrivilegedNode):
             except Exception:
                 pass
             req = CoordinateCommand.Request(**kwargs)
+            # Treat manual stop as an edge belonging to the current command.
+            # A stop observed before this request must not poison later waits;
+            # a stop received after the request remains visible.
+            self._manual_antenna_stop_seen = False
+            self._manual_antenna_stop_time = None
             res = self._send_request(req, self.client["raw_coord"])
             self.logger.warning(f"POINT raw_coord id={res.id}, now={pytime.time():.6f}")
             if wait:
                 if effective_az_target_mode == "mount" and target is not None:
                     self.wait_mount_point(
-                        float(target[0]), float(target[1]), timeout_sec=timeout_sec
+                        float(target[0]),
+                        float(target[1]),
+                        command_id=res.id,
+                        timeout_sec=timeout_sec,
                     )
                 else:
                     self.wait("antenna", timeout_sec=timeout_sec)
