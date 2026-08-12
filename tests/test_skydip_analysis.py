@@ -94,7 +94,7 @@ def test_discord_summary_uses_backticks_labels_and_markdown_matrix():
         "21578.300 | 123.400 | 8.750 | 5 |" in summary
     )
     assert "e_Tsys" not in summary
-    assert "```md" in summary
+    assert "```markdown" in summary
     assert "```text" not in summary
     assert "e_large_reduced_chi2" not in summary
 

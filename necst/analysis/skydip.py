@@ -392,7 +392,7 @@ def format_discord_summary(
         "**📡 Skydip Analysis Result**\n\n"
         f"Observation: `{safe_name}`\n"
         f"Overall: `{overall}`\n\n"
-        + "```md\n"
+        + "```markdown\n"
         + "\n".join(lines)
         + "\n```"
         + ("\n\nAnalysis errors:\n" + "\n".join(error_lines) if error_lines else "")
