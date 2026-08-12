@@ -157,13 +157,33 @@ def _board_labels_from_config() -> Mapping[str, str]:
         raw_labels = necst_config.get("analysis.board_labels")
     except (AttributeError, ImportError, KeyError):
         return {}
-    if not isinstance(raw_labels, Mapping):
+    return _normalize_board_labels(raw_labels)
+
+
+def _normalize_board_labels(raw_labels: Any) -> Mapping[str, str]:
+    """Normalize mapping or ``[{name, label}, ...]`` config forms."""
+
+    if isinstance(raw_labels, Mapping):
+        pairs = raw_labels.items()
+    elif isinstance(raw_labels, Sequence) and not isinstance(
+        raw_labels, (str, bytes, bytearray)
+    ):
+        pairs = (
+            (item.get("name") or item.get("board"), item.get("label"))
+            for item in raw_labels
+            if isinstance(item, Mapping)
+        )
+    else:
         return {}
-    return {
-        str(board): str(label)
-        for board, label in raw_labels.items()
-        if str(board).strip() and str(label).strip()
-    }
+    normalized = {}
+    for board, label in pairs:
+        if board is None or label is None:
+            continue
+        board_name = str(board).strip()
+        display_label = str(label).strip()
+        if board_name and display_label:
+            normalized[board_name] = display_label
+    return normalized
 
 
 def format_discord_summary(

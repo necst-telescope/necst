@@ -5,7 +5,11 @@ from pathlib import Path
 import pytest
 
 from necst.analysis.node import FinishedObservation, SkyDipAnalysisCoordinator
-from necst.analysis.skydip import ScriptSkyDipAnalyzer, format_discord_summary
+from necst.analysis.skydip import (
+    ScriptSkyDipAnalyzer,
+    _normalize_board_labels,
+    format_discord_summary,
+)
 from necst.notification import discord as discord_module
 from necst.notification.discord import DiscordAttachmentTooLarge, DiscordNotifier
 
@@ -36,6 +40,22 @@ def test_analysis_board_labels_are_passed_as_script_mapping():
         "xffts-board1": "Band 6 USB",
         "xffts-board3": "Band 3 USB",
         "xffts-board9": "xffts-board9",
+    }
+
+
+def test_board_labels_accept_inline_table_array():
+    assert _normalize_board_labels(
+        [
+            {"name": "xffts-board1", "label": "Band 6 USB"},
+            {"name": "xffts-board2", "label": "Band 6 LSB"},
+            {"name": "xffts-board3", "label": "Band 3 USB"},
+            {"name": "xffts-board4", "label": "Band 3 LSB"},
+        ]
+    ) == {
+        "xffts-board1": "Band 6 USB",
+        "xffts-board2": "Band 6 LSB",
+        "xffts-board3": "Band 3 USB",
+        "xffts-board4": "Band 3 LSB",
     }
 
 
