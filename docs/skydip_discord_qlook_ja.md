@@ -100,6 +100,9 @@ Discordには容量超過で画像を送信できなかった旨をテキスト�
 出る。`Analysis script execution started`の後で止まる場合は、同梱スクリプトのデータ
 読み込みまたはBoard解析中であり、`Analysis script execution completed`が出てから
 `Analysis completed`が出るまでが結果整形中である。
+Board解析に失敗した場合は、`ERROR`ログにBoard名、例外種別、エラーメッセージ、tracebackを
+出す。現状は1つのBoardで例外が発生すると解析全体を中断するため、後続Boardの解析と
+Discord投稿は行わない。
 
 ```text
 Board          IF             Q     tau              Tsys0[K]   Trx[K]    chi2red  Nfit  Flags

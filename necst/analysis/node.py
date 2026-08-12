@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+import traceback
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -172,11 +173,12 @@ class SkyDipAnalysisCoordinator:
                 f"elapsed_sec={time.monotonic() - started_at:.2f}"
             )
         except Exception:
-            self.logger.exception(
+            self.logger.error(
                 f"Analysis/Discord notification failed: "
                 f"record={observation.record_name}, "
                 f"stage={stage}, "
-                f"elapsed_sec={time.monotonic() - started_at:.2f}"
+                f"elapsed_sec={time.monotonic() - started_at:.2f}\n"
+                f"{traceback.format_exc()}"
             )
         finally:
             if figure is not None:

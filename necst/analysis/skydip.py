@@ -130,10 +130,11 @@ class ScriptSkyDipAnalyzer:
             )
             try:
                 result = analyze_board(*args, **kwargs)
-            except Exception:
-                self._log_info(
+            except Exception as exc:
+                self._log_error(
                     f"Board analysis failed: record={record_path.name}, "
-                    f"board={board_name}"
+                    f"board={board_name}, error_type={type(exc).__name__}, "
+                    f"error={exc}"
                 )
                 raise
             self._log_info(
@@ -156,6 +157,10 @@ class ScriptSkyDipAnalyzer:
     def _log_info(self, message: str) -> None:
         if self.logger is not None:
             self.logger.info(message)
+
+    def _log_error(self, message: str) -> None:
+        if self.logger is not None:
+            self.logger.error(message)
 
     def _board_selection(self, board_names: Sequence[str]) -> Any:
         """Return script input with configured display labels when available."""

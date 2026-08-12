@@ -231,11 +231,15 @@ class FakeNotifier:
 class FakeLogger:
     def __init__(self):
         self.infos = []
+        self.errors = []
         self.warnings = []
         self.exceptions = []
 
     def info(self, message):
         self.infos.append(message)
+
+    def error(self, message):
+        self.errors.append(message)
 
     def warning(self, message):
         self.warnings.append(message)
@@ -469,6 +473,26 @@ def test_coordinator_logs_attachment_limit_as_warning(tmp_path):
     assert "size limit exceeded" in logger.warnings[0]
     assert "failure notice sent" in logger.warnings[0]
     assert logger.exceptions == []
+    coordinator.shutdown()
+
+
+def test_coordinator_logs_analysis_exception_with_traceback(tmp_path):
+    record_name = "necst_skydip_20260811_153000"
+    (tmp_path / record_name).mkdir()
+    logger = FakeLogger()
+
+    class FailingAnalyzer:
+        def analyze(self, path):
+            raise ValueError("synthetic board failure")
+
+    coordinator = SkyDipAnalysisCoordinator(
+        FailingAnalyzer(), FakeNotifier(), tmp_path, logger=logger
+    )
+    coordinator._analyze_and_notify(FinishedObservation(record_name, tmp_path))
+
+    assert len(logger.errors) == 1
+    assert "stage=analysis" in logger.errors[0]
+    assert "ValueError: synthetic board failure" in logger.errors[0]
     coordinator.shutdown()
 
 
