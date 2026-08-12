@@ -204,6 +204,11 @@ class DiscordNotifier:
         finally:
             buffer.close()
 
+    def send_text(self, content: str) -> Dict[str, Any]:
+        """Post a text-only analysis result or diagnostic message."""
+
+        return self._send_text(content)
+
     def _send_text(self, content: str) -> Dict[str, Any]:
         body = json.dumps({"content": content}, ensure_ascii=False).encode("utf-8")
         req = request.Request(

@@ -6,6 +6,7 @@ import pytest
 
 from necst.analysis.node import FinishedObservation, SkyDipAnalysisCoordinator
 from necst.analysis.skydip import (
+    AnalysisOutput,
     ScriptSkyDipAnalyzer,
     _normalize_board_labels,
     format_discord_summary,
@@ -211,6 +212,61 @@ def test_analyzer_logs_each_board_without_changing_script_result(tmp_path):
     )
 
 
+def test_analyzer_sends_partial_results_when_one_board_fails(tmp_path):
+    class Result:
+        label = "Band 6 LSB"
+        quality = "GOOD"
+        quality_flags = []
+        tau = 0.2
+        tau_sigma = 0.02
+        Tsys_sensitivity_zenith_K = 110.0
+        Trx_K = 90.0
+        reduced_chi2 = 1.0
+        n_fit = 5
+
+    class FakeScript:
+        @staticmethod
+        def analyze_skydip_board(path, board, *, label, telescope):
+            if board == "xffts-board1":
+                raise RuntimeError("not enough fit points after filtering; n=1")
+            return Result()
+
+        @staticmethod
+        def plot_skydip_results(results, **kwargs):
+            return FakeFigure(), None
+
+    analyzer = ScriptSkyDipAnalyzer(boards=["xffts-board1", "xffts-board2"])
+    analyzer._load_script = lambda: FakeScript
+
+    output = analyzer.analyze(tmp_path / "necst_skydip_test")
+
+    assert output.figure.__class__ is FakeFigure
+    assert output.results.keys() == {"xffts-board2"}.keys()
+    assert "xffts-board1" in output.board_failures
+    assert "not enough fit points" in output.board_failures["xffts-board1"]
+    assert "Overall: `PARTIAL`" in output.discord_content
+    assert "xffts-board1" in output.discord_content
+    assert "ERROR" in output.discord_content
+
+
+def test_analyzer_returns_text_only_result_when_all_boards_fail(tmp_path):
+    class FakeScript:
+        @staticmethod
+        def analyze_skydip_board(path, board, *, label, telescope):
+            raise RuntimeError("no valid signal")
+
+    analyzer = ScriptSkyDipAnalyzer(boards=["xffts-board1"])
+    analyzer._load_script = lambda: FakeScript
+
+    output = analyzer.analyze(tmp_path / "necst_skydip_test")
+
+    assert output.figure is None
+    assert output.results == {}
+    assert output.board_failures == {"xffts-board1": "RuntimeError: no valid signal"}
+    assert "Overall: `ERROR`" in output.discord_content
+    assert "no valid signal" in output.discord_content
+
+
 class FakeAnalyzer:
     def __init__(self):
         self.paths = []
@@ -223,9 +279,13 @@ class FakeAnalyzer:
 class FakeNotifier:
     def __init__(self):
         self.posts = []
+        self.text_posts = []
 
     def send_figure(self, figure, observation_name, *, content=None):
         self.posts.append((figure, observation_name, content))
+
+    def send_text(self, content):
+        self.text_posts.append(content)
 
 
 class FakeLogger:
@@ -351,6 +411,28 @@ def test_coordinator_logs_analysis_and_discord_phases(tmp_path):
     coordinator.shutdown()
 
 
+def test_coordinator_sends_text_when_analysis_has_no_figure(tmp_path):
+    record_name = "necst_skydip_20260811_153000"
+    (tmp_path / record_name).mkdir()
+    notifier = FakeNotifier()
+
+    class TextOnlyAnalyzer:
+        def analyze(self, path):
+            return AnalysisOutput(
+                figure=None,
+                results={},
+                discord_content="Overall: `ERROR`\nxffts-board1: no valid signal",
+                board_failures={"xffts-board1": "RuntimeError: no valid signal"},
+            )
+
+    coordinator = SkyDipAnalysisCoordinator(TextOnlyAnalyzer(), notifier, tmp_path)
+    coordinator._analyze_and_notify(FinishedObservation(record_name, tmp_path))
+
+    assert notifier.posts == []
+    assert notifier.text_posts == ["Overall: `ERROR`\nxffts-board1: no valid signal"]
+    coordinator.shutdown()
+
+
 def test_coordinator_ignores_non_skydip_and_non_finished(tmp_path):
     analyzer = FakeAnalyzer()
     notifier = FakeNotifier()
@@ -416,6 +498,34 @@ def test_discord_multipart_contains_png_and_message():
     assert b"Observation: `necst_skydip_test`" in req.data
     assert b"image/png" in req.data
     assert b"png" in req.data
+    assert timeout == 30.0
+
+
+def test_discord_text_message():
+    requests = []
+
+    class Response:
+        def read(self):
+            return b'{"id":"456"}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    def opener(req, timeout):
+        requests.append((req, timeout))
+        return Response()
+
+    notifier = DiscordNotifier("secret", "987", opener=opener)
+    response = notifier.send_text("Overall: `ERROR`\nxffts-board1: no valid signal")
+
+    assert response == {"id": "456"}
+    req, timeout = requests[0]
+    assert req.get_header("Content-type") == "application/json"
+    payload = json.loads(req.data.decode("utf-8"))
+    assert payload["content"] == "Overall: `ERROR`\nxffts-board1: no valid signal"
     assert timeout == 30.0
 
 

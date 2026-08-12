@@ -134,15 +134,23 @@ class SkyDipAnalysisCoordinator:
             analysis_output = self.analyzer.analyze(observation.record_path)
             figure = getattr(analysis_output, "figure", analysis_output)
             discord_content = getattr(analysis_output, "discord_content", None)
+            board_failures = getattr(analysis_output, "board_failures", {}) or {}
             self.logger.info(
                 f"Analysis completed: record={observation.record_name}, "
+                f"successful_boards={len(getattr(analysis_output, 'results', {}))}, "
+                f"failed_boards={len(board_failures)}, "
+                f"figure={'generated' if figure is not None else 'not_generated'}, "
                 f"elapsed_sec={time.monotonic() - started_at:.2f}"
             )
             stage = "discord"
             self.logger.info(
                 f"Discord upload started: record={observation.record_name}"
             )
-            if discord_content is None:
+            if figure is None:
+                self.notifier.send_text(
+                    discord_content or "Analysis completed without a figure"
+                )
+            elif discord_content is None:
                 self.notifier.send_figure(figure, observation.record_name)
             else:
                 self.notifier.send_figure(

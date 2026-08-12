@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib.util
 import math
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Mapping, Optional, Sequence
@@ -18,15 +18,16 @@ class AnalysisOutput:
     figure: Any
     results: Mapping[str, Any]
     discord_content: str
+    board_failures: Mapping[str, str] = field(default_factory=dict)
 
 
 class ScriptSkyDipAnalyzer:
-    """Run the supplied SkyDip script without changing its analysis pipeline.
+    """Run the supplied SkyDip script without changing its analysis algorithms.
 
-    The script is imported lazily and its public ``analyze_skydip_boards`` API
-    is called as-is. This adapter only discovers board names and disables the
-    script's optional persistent output so the returned Figure can be sent to
-    Discord by the notification layer.
+    The script is imported lazily and its existing per-board analysis and plot
+    APIs are called. This adapter only discovers board names, isolates a
+    failed board for notification, and disables persistent output so the
+    returned Figure can be sent to Discord by the notification layer.
     """
 
     def __init__(
@@ -78,7 +79,7 @@ class ScriptSkyDipAnalyzer:
             f"boards={len(board_names)}"
         )
         try:
-            results, figure, _ = self._run_analysis_script(
+            results, figure, board_failures = self._run_analysis_script(
                 module, record_path, board_selection
             )
         except AttributeError as exc:
@@ -93,8 +94,12 @@ class ScriptSkyDipAnalyzer:
             figure=figure,
             results=results,
             discord_content=format_discord_summary(
-                record_path.name, results, self.board_labels
+                record_path.name,
+                results,
+                self.board_labels,
+                board_failures=board_failures,
             ),
+            board_failures=board_failures,
         )
 
     def _run_analysis_script(
@@ -103,56 +108,70 @@ class ScriptSkyDipAnalyzer:
         record_path: Path,
         board_selection: Any,
     ) -> Any:
-        """Run the script API while logging each board boundary.
+        """Run the existing script APIs while isolating board failures.
 
-        The bundled script remains the source of the analysis behavior.  The
-        temporary wrapper only records entry/exit around its existing public
-        per-board function so a slow or stuck board can be identified.
+        The bundled script remains the source of the analysis behavior. The
+        adapter calls its existing ``analyze_skydip_board`` function for each
+        board and its existing ``plot_skydip_results`` function for successful
+        results. It does not reimplement the analysis or plotting algorithms.
         """
 
         analyze_board = getattr(module, "analyze_skydip_board", None)
         if not callable(analyze_board):
-            return module.analyze_skydip_boards(
+            results, figure, _ = module.analyze_skydip_boards(
                 record_path,
                 board_selection,
                 telescope=self.telescope,
                 save_prefix=None,
             )
+            return results, figure, {}
 
-        def logged_analyze_board(*args: Any, **kwargs: Any) -> Any:
-            board = kwargs.get("board")
-            if board is None and len(args) >= 2:
-                board = args[1]
-            board_name = str(board or "unknown")
+        if isinstance(board_selection, Mapping):
+            board_items = list(board_selection.items())
+        else:
+            board_items = [(board, board) for board in board_selection]
+
+        results = {}
+        board_failures = {}
+        for board, label in board_items:
+            board_name = str(board)
             self._log_info(
                 f"Board analysis started: record={record_path.name}, "
                 f"board={board_name}"
             )
             try:
-                result = analyze_board(*args, **kwargs)
+                result = analyze_board(
+                    record_path,
+                    board,
+                    label=label,
+                    telescope=self.telescope,
+                )
             except Exception as exc:
                 self._log_error(
                     f"Board analysis failed: record={record_path.name}, "
                     f"board={board_name}, error_type={type(exc).__name__}, "
                     f"error={exc}"
                 )
-                raise
+                board_failures[board_name] = (
+                    f"{type(exc).__name__}: {str(exc).replace(chr(10), ' ')}"
+                )
+                continue
+            results[board_name] = result
             self._log_info(
                 f"Board analysis completed: record={record_path.name}, "
                 f"board={board_name}"
             )
-            return result
 
-        module.analyze_skydip_board = logged_analyze_board
-        try:
-            return module.analyze_skydip_boards(
-                record_path,
-                board_selection,
-                telescope=self.telescope,
-                save_prefix=None,
+        figure = None
+        plot_results = getattr(module, "plot_skydip_results", None)
+        if results and callable(plot_results):
+            figure, _ = plot_results(
+                results,
+                suptitle=record_path.name,
+                save_png=None,
+                save_pdf=None,
             )
-        finally:
-            module.analyze_skydip_board = analyze_board
+        return results, figure, board_failures
 
     def _log_info(self, message: str) -> None:
         if self.logger is not None:
@@ -281,6 +300,8 @@ def format_discord_summary(
     observation_name: str,
     results: Mapping[str, Any],
     board_labels: Optional[Mapping[str, str]] = None,
+    *,
+    board_failures: Optional[Mapping[str, str]] = None,
 ) -> str:
     """Format the compact Markdown summary sent with the analysis image."""
 
@@ -288,7 +309,15 @@ def format_discord_summary(
     qualities = [
         str(getattr(result, "quality", "")).upper() for result in results.values()
     ]
-    overall = "BAD" if "BAD" in qualities else "WARN" if "WARN" in qualities else "GOOD"
+    failures = board_failures or {}
+    if failures and results:
+        overall = "PARTIAL"
+    elif failures:
+        overall = "ERROR"
+    else:
+        overall = (
+            "BAD" if "BAD" in qualities else "WARN" if "WARN" in qualities else "GOOD"
+        )
     rows = []
     for board, result in results.items():
         label = str(getattr(result, "label", "") or labels.get(board, board))
@@ -309,6 +338,23 @@ def format_discord_summary(
                 _format_value(getattr(result, "reduced_chi2", float("nan"))),
                 str(getattr(result, "n_fit", "n/a")),
                 flags,
+            ]
+        )
+
+    for board, error in failures.items():
+        label = str(labels.get(board, board))
+        short_error = str(error).replace("`", "'").replace("\n", " ")[:180]
+        rows.append(
+            [
+                str(board),
+                label,
+                "ERROR",
+                "n/a",
+                "n/a",
+                "n/a",
+                "n/a",
+                "n/a",
+                short_error,
             ]
         )
 
