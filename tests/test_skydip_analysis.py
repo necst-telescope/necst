@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from necst.analysis.node import FinishedObservation, SkyDipAnalysisCoordinator
-from necst.analysis.skydip import ScriptSkyDipAnalyzer
+from necst.analysis.skydip import ScriptSkyDipAnalyzer, format_discord_summary
 from necst.notification import discord as discord_module
 from necst.notification.discord import DiscordAttachmentTooLarge, DiscordNotifier
 
@@ -39,9 +39,65 @@ def test_analysis_board_labels_are_passed_as_script_mapping():
     }
 
 
+def test_discord_summary_uses_backticks_labels_and_numeric_matrix():
+    class Result:
+        label = "Band 6 USB"
+        quality = "WARN"
+        quality_flags = ["large_reduced_chi2"]
+        tau = 0.308
+        tau_sigma = 0.327
+        Tsys_sensitivity_zenith_K = 29466.3
+        Trx_K = 21578.3
+        reduced_chi2 = 8.75
+        n_fit = 5
+
+    summary = format_discord_summary(
+        "necst_skydip_test",
+        {"xffts-board1": Result()},
+    )
+
+    assert "Observation: `necst_skydip_test`" in summary
+    assert "Band 6 USB" in summary
+    assert "0.308 +/- 0.327" in summary
+    assert "29466.300" in summary
+    assert "large_reduced_chi2" in summary
+    assert "```text" in summary
+
+
 class FakeFigure:
     def savefig(self, buffer, **kwargs):
         buffer.write(b"png")
+
+
+def test_analyzer_returns_figure_and_discord_summary(tmp_path):
+    class Result:
+        label = "Band 3 LSB"
+        quality = "GOOD"
+        quality_flags = []
+        tau = 0.546
+        tau_sigma = 0.138
+        Tsys_sensitivity_zenith_K = 42301.1
+        Trx_K = 24382.3
+        reduced_chi2 = 2.44
+        n_fit = 5
+
+    class FakeScript:
+        @staticmethod
+        def analyze_skydip_boards(*args, **kwargs):
+            return {"xffts-board4": Result()}, FakeFigure(), None
+
+    analyzer = ScriptSkyDipAnalyzer(
+        boards=["xffts-board4"],
+        board_labels={"xffts-board4": "Band 3 LSB"},
+    )
+    analyzer._load_script = lambda: FakeScript
+
+    output = analyzer.analyze(tmp_path / "necst_skydip_test")
+
+    assert output.figure.__class__ is FakeFigure
+    assert "Observation: `necst_skydip_test`" in output.discord_content
+    assert "Band 3 LSB" in output.discord_content
+    assert output.results["xffts-board4"].tau == 0.546
 
 
 class FakeAnalyzer:
@@ -57,8 +113,8 @@ class FakeNotifier:
     def __init__(self):
         self.posts = []
 
-    def send_figure(self, figure, observation_name):
-        self.posts.append((figure, observation_name))
+    def send_figure(self, figure, observation_name, *, content=None):
+        self.posts.append((figure, observation_name, content))
 
 
 class FakeLogger:
@@ -178,13 +234,18 @@ def test_discord_multipart_contains_png_and_message():
         return Response()
 
     notifier = DiscordNotifier("secret", "987", opener=opener)
-    response = notifier.send_figure(FakeFigure(), "necst_skydip_test")
+    response = notifier.send_figure(
+        FakeFigure(),
+        "necst_skydip_test",
+        content="**📡 Analysis Result**\nObservation: `necst_skydip_test`",
+    )
 
     assert response == {"id": "123"}
     req, timeout = requests[0]
     assert req.full_url.endswith("/channels/987/messages")
     assert req.get_header("Authorization") == "Bot secret"
-    assert b"SkyDip Analysis" in req.data
+    assert b"Analysis Result" in req.data
+    assert b"Observation: `necst_skydip_test`" in req.data
     assert b"image/png" in req.data
     assert b"png" in req.data
     assert timeout == 30.0

@@ -157,7 +157,13 @@ class DiscordNotifier:
             attachment_limit_bytes=int(limit_mib * 1024 * 1024),
         )
 
-    def send_figure(self, figure: Any, observation_name: str) -> Dict[str, Any]:
+    def send_figure(
+        self,
+        figure: Any,
+        observation_name: str,
+        *,
+        content: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Encode ``figure`` in memory and upload it to Discord.
 
         The caller owns the figure lifecycle and should close it after this
@@ -172,14 +178,20 @@ class DiscordNotifier:
             if size_bytes > self.attachment_limit_bytes:
                 notification_error = None
                 try:
-                    self._send_text(
+                    safe_name = observation_name.replace("`", "'")
+                    notice = (
                         "⚠️ Analysis image could not be uploaded\n\n"
-                        f"Observation:\n{observation_name}\n\n"
+                        f"Observation: `{safe_name}`\n\n"
+                    )
+                    if content:
+                        notice = f"{content}\n\n{notice}"
+                    notice += (
                         "Reason:\n"
                         f"PNG size {size_bytes / 1024 / 1024:.2f} MiB exceeds "
                         "the configured attachment limit "
                         f"({self.attachment_limit_bytes / 1024 / 1024:.2f} MiB)."
                     )
+                    self._send_text(notice)
                 except Exception as exc:
                     notification_error = exc
                 raise DiscordAttachmentTooLarge(
@@ -188,7 +200,7 @@ class DiscordNotifier:
                     notification_sent=notification_error is None,
                     notification_error=notification_error,
                 )
-            return self._send_png(buffer, observation_name)
+            return self._send_png(buffer, observation_name, content=content)
         finally:
             buffer.close()
 
@@ -206,9 +218,18 @@ class DiscordNotifier:
         )
         return self._open_json(req)
 
-    def _send_png(self, image: BytesIO, observation_name: str) -> Dict[str, Any]:
+    def _send_png(
+        self,
+        image: BytesIO,
+        observation_name: str,
+        *,
+        content: Optional[str] = None,
+    ) -> Dict[str, Any]:
         boundary = "----necst-discord-" + uuid.uuid4().hex
-        payload = {"content": f"📡 SkyDip Analysis\n\nObservation:\n{observation_name}"}
+        safe_name = observation_name.replace("`", "'")
+        payload = {
+            "content": content or f"📡 Analysis Result\n\nObservation: `{safe_name}`"
+        }
         body = b"".join(
             (
                 self._part(

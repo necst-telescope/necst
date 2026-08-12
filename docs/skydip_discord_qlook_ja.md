@@ -87,10 +87,17 @@ ros2 run necst analysis
 
 `analysis` NodeはSkyDipだけを対象にし、SkyDip以外の観測終了は無視する。
 同梱したv10スクリプトの `analyze_skydip_boards()` が解析とグラフ生成を行い、
-返されたFigureを`BytesIO`へPNG化してDiscordへ直接添付する。解析失敗やDiscord
-通信失敗はAnalysis Node側で記録し、Recorderのデータ保存処理へ例外を返さない。
+返されたFigureを`BytesIO`へPNG化してDiscordへ直接添付する。同時に、同じ解析結果から
+board別の数値サマリーをMarkdown形式で生成して本文へ付ける。観測データ名はインライン
+コードで表示し、数値マトリクスはDiscordで崩れにくい`text`コードブロックを使用する。
+解析失敗やDiscord通信失敗はAnalysis Node側で記録し、Recorderのデータ保存処理へ例外を返さない。
 PNGが添付上限を超えた場合は画像を送信せず、Analysis Nodeへ`WARNING`を出し、
 Discordには容量超過で画像を送信できなかった旨をテキストで投稿する。
+
+```text
+Board          IF             Q     tau              Tsys0[K]   Trx[K]    chi2red  Nfit  Flags
+xffts-board1   Band 6 USB     WARN  0.308 +/- 0.327  29466.300  21578.300 8.750    5     ...
+```
 
 ## 環境変数
 

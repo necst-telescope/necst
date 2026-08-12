@@ -3,10 +3,21 @@
 from __future__ import annotations
 
 import importlib.util
+import math
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Mapping, Optional, Sequence
+
+
+@dataclass(frozen=True)
+class AnalysisOutput:
+    """Analysis products passed from the script adapter to notifications."""
+
+    figure: Any
+    results: Mapping[str, Any]
+    discord_content: str
 
 
 class ScriptSkyDipAnalyzer:
@@ -35,7 +46,7 @@ class ScriptSkyDipAnalyzer:
         self.script_path = Path(script_path).expanduser() if script_path else None
         self._script_module: Optional[ModuleType] = None
 
-    def analyze(self, record_path: Path) -> Any:
+    def analyze(self, record_path: Path) -> AnalysisOutput:
         record_path = Path(record_path)
         module = self._load_script()
         board_names = list(self.boards) or self._discover_boards(record_path)
@@ -43,7 +54,7 @@ class ScriptSkyDipAnalyzer:
             raise ValueError(f"No spectral boards found in {record_path}")
         board_selection = self._board_selection(board_names)
         try:
-            _, figure, _ = module.analyze_skydip_boards(
+            results, figure, _ = module.analyze_skydip_boards(
                 record_path,
                 board_selection,
                 telescope=self.telescope,
@@ -53,7 +64,13 @@ class ScriptSkyDipAnalyzer:
             raise RuntimeError(
                 "SkyDip script must define analyze_skydip_boards"
             ) from exc
-        return figure
+        return AnalysisOutput(
+            figure=figure,
+            results=results,
+            discord_content=format_discord_summary(
+                record_path.name, results, self.board_labels
+            ),
+        )
 
     def _board_selection(self, board_names: Sequence[str]) -> Any:
         """Return script input with configured display labels when available."""
@@ -147,3 +164,86 @@ def _board_labels_from_config() -> Mapping[str, str]:
         for board, label in raw_labels.items()
         if str(board).strip() and str(label).strip()
     }
+
+
+def format_discord_summary(
+    observation_name: str,
+    results: Mapping[str, Any],
+    board_labels: Optional[Mapping[str, str]] = None,
+) -> str:
+    """Format the compact Markdown summary sent with the analysis image."""
+
+    labels = board_labels or {}
+    qualities = [
+        str(getattr(result, "quality", "")).upper() for result in results.values()
+    ]
+    overall = "BAD" if "BAD" in qualities else "WARN" if "WARN" in qualities else "GOOD"
+    rows = []
+    for board, result in results.items():
+        label = str(getattr(result, "label", "") or labels.get(board, board))
+        flags = (
+            ",".join(str(flag) for flag in getattr(result, "quality_flags", []) or [])
+            or "-"
+        )
+        rows.append(
+            [
+                str(board),
+                label,
+                str(getattr(result, "quality", "n/a")),
+                _format_tau(result),
+                _format_value(
+                    getattr(result, "Tsys_sensitivity_zenith_K", float("nan"))
+                ),
+                _format_value(getattr(result, "Trx_K", float("nan"))),
+                _format_value(getattr(result, "reduced_chi2", float("nan"))),
+                str(getattr(result, "n_fit", "n/a")),
+                flags,
+            ]
+        )
+
+    headers = [
+        "Board",
+        "IF",
+        "Q",
+        "tau",
+        "Tsys0[K]",
+        "Trx[K]",
+        "chi2red",
+        "Nfit",
+        "Flags",
+    ]
+    widths = [len(header) for header in headers]
+    for row in rows:
+        widths = [max(width, len(value)) for width, value in zip(widths, row)]
+
+    lines = [
+        "  ".join(value.ljust(width) for value, width in zip(headers, widths)),
+        "  ".join("-" * width for width in widths),
+    ]
+    lines.extend(
+        "  ".join(value.ljust(width) for value, width in zip(row, widths))
+        for row in rows
+    )
+    safe_name = str(observation_name).replace("`", "'")
+    return (
+        "**📡 Analysis Result**\n\n"
+        f"Observation: `{safe_name}`\n"
+        f"Overall: `{overall}`\n\n"
+        "```text\n" + "\n".join(lines) + "\n```"
+    )
+
+
+def _format_tau(result: Any) -> str:
+    tau = _format_value(getattr(result, "tau", float("nan")))
+    sigma = _format_value(getattr(result, "tau_sigma", float("nan")))
+    if tau == "n/a" or sigma == "n/a":
+        return "n/a"
+    return f"{tau} +/- {sigma}"
+
+
+def _format_value(value: Any) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "n/a"
+    return "n/a" if not math.isfinite(number) else f"{number:.3f}"

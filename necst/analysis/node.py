@@ -127,12 +127,19 @@ class SkyDipAnalysisCoordinator:
                 raise FileNotFoundError(
                     f"SkyDip record directory does not exist: {observation.record_path}"
                 )
-            figure = self.analyzer.analyze(observation.record_path)
+            analysis_output = self.analyzer.analyze(observation.record_path)
+            figure = getattr(analysis_output, "figure", analysis_output)
+            discord_content = getattr(analysis_output, "discord_content", None)
             self.logger.info(
                 f"Analysis figure generated: record={observation.record_name}; "
                 "posting to Discord"
             )
-            self.notifier.send_figure(figure, observation.record_name)
+            if discord_content is None:
+                self.notifier.send_figure(figure, observation.record_name)
+            else:
+                self.notifier.send_figure(
+                    figure, observation.record_name, content=discord_content
+                )
             self.logger.info(
                 f"Discord post completed: record={observation.record_name}, "
                 f"elapsed_sec={time.monotonic() - started_at:.2f}"
