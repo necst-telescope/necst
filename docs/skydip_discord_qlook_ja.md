@@ -91,7 +91,8 @@ ros2 run necst analysis
 同梱したv10スクリプトの `analyze_skydip_boards()` が解析とグラフ生成を行い、
 返されたFigureを`BytesIO`へPNG化してDiscordへ直接添付する。同時に、同じ解析結果から
 board別の数値サマリーをMarkdown形式で生成して本文へ付ける。観測データ名はインライン
-コードで表示し、数値マトリクスは`markdown`コードブロック内に置く。`tau`と`Trx`は値と誤差を
+コードで表示し、数値マトリクスは`text`コードブロック内に置く。Markdown表の記法は保持しつつ、
+DiscordのMarkdownシンタックスハイライトによる斜体化を避ける。`tau`と`Trx`は値と誤差を
 別列（`tau`/`e_tau`、`Trx`/`e_Trx`）で表示し、Tsys0は値だけを表示する。
 解析失敗やDiscord通信失敗はAnalysis Node側で記録し、Recorderのデータ保存処理へ例外を返さない。
 PNGが添付上限を超えた場合は画像を送信せず、Analysis Nodeへ`WARNING`を出し、
@@ -106,7 +107,7 @@ Board解析に失敗した場合は、`ERROR`ログにBoard名、例外種別、
 `ERROR`行を同じDiscord投稿へ付ける。全Boardが失敗した場合も、グラフなしのテキスト
 投稿として失敗内容をDiscordへ送信する。
 
-```markdown
+```text
 | Board | IF | Q | tau | e_tau | Tsys0 | Trx | e_Trx | chi2red | Nfit |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | xffts-board1 | Band 6 USB | WARN | 0.308 | 0.327 | 29466.300 | 21578.300 | 123.400 | 8.750 | 5 |
