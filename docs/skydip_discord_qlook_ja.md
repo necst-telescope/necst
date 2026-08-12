@@ -53,13 +53,10 @@ Board番号とIF表示名は、NECST site configの1項目で対応付ける。
 
 ```toml
 [analysis]
-board_labels = {
-    "xffts-board1" = "Band 6 USB",
-    "xffts-board2" = "Band 6 LSB",
-    "xffts-board3" = "Band 3 USB",
-    "xffts-board4" = "Band 3 LSB",
-}
+board_labels = { "xffts-board1" = "Band 6 USB", "xffts-board2" = "Band 6 LSB", "xffts-board3" = "Band 3 USB", "xffts-board4" = "Band 3 LSB" }
 ```
+
+`board_labels`はTOMLのinline tableなので、改行や末尾カンマを入れない。
 
 この設定は解析スクリプトへ`{board: label}`形式で渡され、グラフのタイトルや
 Discordの数値サマリーに使用できる。未設定のboardはtable名をそのまま表示する。
