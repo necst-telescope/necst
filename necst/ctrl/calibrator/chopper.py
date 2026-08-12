@@ -96,15 +96,54 @@ class ChopperController(DeviceNode):
         return self._run_maintenance_operation(response, "recover")
 
     def move(self, msg: ChopperMsg) -> None:
-        self.telemetry()
+        received_time = time.time()
         if msg.position is not None:
             position = msg.position
         else:
             position = "insert" if msg.insert else "remove"
-        self.motor.set_step(position, "chopper")
-        self.telemetry()
+        command = "insert" if msg.insert else "remove"
+        command_time = getattr(msg, "time", None)
+        command_time_text = (
+            f"{command_time:.6f}" if command_time is not None else "unknown"
+        )
+        self.logger.info(
+            "Chopper command received: "
+            f"command={command}, requested_position={position}, "
+            f"command_time={command_time_text}, receive_time={received_time:.6f}"
+        )
 
-    def telemetry(self) -> None:
+        before_position = self.telemetry(source="before_move")
+        started = time.monotonic()
+        try:
+            self.motor.set_step(position, "chopper")
+        except Exception as exc:
+            self.logger.error(
+                "Chopper move failed: "
+                f"command={command}, requested_position={position}, "
+                f"command_time={command_time_text}, "
+                f"observed_position_before={before_position}, "
+                f"elapsed_sec={time.monotonic() - started:.3f}, "
+                f"error={type(exc).__name__}: {exc}"
+            )
+            raise
+
+        self.logger.info(
+            "Chopper motor command returned: "
+            f"command={command}, requested_position={position}, "
+            f"command_time={command_time_text}, "
+            f"elapsed_sec={time.monotonic() - started:.3f}"
+        )
+        after_position = self.telemetry(source="after_move")
+        self.logger.info(
+            "Chopper move completed: "
+            f"command={command}, requested_position={position}, "
+            f"command_time={command_time_text}, "
+            f"observed_position_before={before_position}, "
+            f"observed_position_after={after_position}, "
+            f"elapsed_sec={time.monotonic() - started:.3f}"
+        )
+
+    def telemetry(self, *, source: str = "timer") -> int:
         position = self.motor.get_step("chopper")
         if position == config.chopper_motor_position["insert"]:
             msg = ChopperMsg(insert=True, position=position, time=time.time())
@@ -117,3 +156,10 @@ class ChopperController(DeviceNode):
             )
             msg = ChopperMsg(insert=True, position=position, time=time.time())
         self.pub.publish(msg)
+        if source != "timer":
+            self.logger.info(
+                "Chopper status published: "
+                f"source={source}, insert={msg.insert}, "
+                f"position={msg.position}, status_time={msg.time:.6f}"
+            )
+        return position

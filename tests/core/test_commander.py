@@ -1,9 +1,10 @@
 import time
+from unittest.mock import Mock
 
 from necst_msgs.msg import ChopperMsg, CoordMsg
 from necst_msgs.srv import CoordinateCommand
 
-from necst import service, topic
+from necst import NECSTTimeoutError, service, topic
 from necst.core import Authorizer, Commander
 from necst.ctrl import (
     AntennaDeviceSimulator,
@@ -263,6 +264,67 @@ class TestCommander(TesterNode):
 
         destroy([com, auth])
         destroy([sub, pub], node=self.node)
+
+    def test_chopper_wait_logs_mismatched_and_matching_status(self):
+        com = Commander()
+        logger = Mock()
+        com.logger = logger
+        command_time = time.time()
+        com.get_message = Mock(
+            side_effect=[
+                ChopperMsg(
+                    insert=True,
+                    position=4750,
+                    time=command_time - 1,
+                ),
+                ChopperMsg(
+                    insert=False,
+                    position=19700,
+                    time=command_time + 1,
+                ),
+            ]
+        )
+
+        com.wait_oc(
+            target="chopper",
+            position="remove",
+            request_time=command_time,
+        )
+
+        warning_messages = [call.args[0] for call in logger.warning.call_args_list]
+        info_messages = [call.args[0] for call in logger.info.call_args_list]
+        assert any("status mismatch" in message for message in warning_messages)
+        assert any(
+            "status_precedes_command=True" in message for message in warning_messages
+        )
+        assert any("Chopper wait completed" in message for message in info_messages)
+        destroy(com)
+
+    def test_chopper_wait_logs_missing_status(self):
+        com = Commander()
+        logger = Mock()
+        com.logger = logger
+        command_time = time.time()
+        com.get_message = Mock(
+            side_effect=[
+                NECSTTimeoutError("missing chopper status"),
+                ChopperMsg(
+                    insert=False,
+                    position=19700,
+                    time=command_time + 1,
+                ),
+            ]
+        )
+
+        com.wait_oc(
+            target="chopper",
+            position="remove",
+            request_time=command_time,
+        )
+
+        warning_messages = [call.args[0] for call in logger.warning.call_args_list]
+        assert any("no status received" in message for message in warning_messages)
+        destroy(com)
 
     def test_chopper_status_query(self):
         com = Commander()

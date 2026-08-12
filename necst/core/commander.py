@@ -1098,13 +1098,24 @@ class Commander(PrivilegedNode):
                 self.publisher["chopper"].publish(msg)
             else:
                 raise ValueError(f"Unknown command: {cmd!r}")
-            if wait:
-                self.wait_oc(target="chopper", position=CMD.lower())
         else:
             msg = ChopperMsg(insert=True, position=cmd, time=pytime.time())
             self.publisher["chopper"].publish(msg)
-            if wait:
-                self.wait_oc(target="chopper", position=cmd)
+            CMD = str(cmd)
+
+        self.logger.info(
+            "Chopper command published: "
+            f"command={CMD.lower()}, target_insert={msg.insert}, "
+            f"target_position={msg.position}, command_time={msg.time:.6f}, "
+            f"wait={wait}"
+        )
+        if wait:
+            wait_position = CMD.lower() if isinstance(cmd, str) else cmd
+            self.wait_oc(
+                target="chopper",
+                position=wait_position,
+                request_time=msg.time,
+            )
 
     @require_privilege
     def chopper_maintenance(
@@ -1270,15 +1281,90 @@ class Commander(PrivilegedNode):
         self,
         target: Literal["dome", "membrane", "chopper"],
         position: Union[Literal["insert", "remove"], int] = None,
+        *,
+        request_time: Optional[float] = None,
     ):
         if target == "chopper":
-            if isinstance(position, int):
-                while not self.get_message(target).position == position:
-                    pytime.sleep(0.1)
-            else:
-                target_status = position == "insert"
-                while self.get_message(target).insert is not target_status:
-                    pytime.sleep(0.1)
+            target_position = position if isinstance(position, int) else None
+            target_insert = position == "insert" if target_position is None else None
+            started = pytime.monotonic()
+            next_report = started
+            request_time_text = (
+                f"{request_time:.6f}" if request_time is not None else "unknown"
+            )
+            self.logger.info(
+                "Chopper wait started: "
+                f"target_insert={target_insert}, target_position={target_position}, "
+                f"command_time={request_time_text}"
+            )
+
+            while True:
+                try:
+                    status = self.get_message(target, timeout_sec=1.0)
+                except NECSTTimeoutError:
+                    elapsed = pytime.monotonic() - started
+                    if pytime.monotonic() >= next_report:
+                        self.logger.warning(
+                            "Chopper wait pending: no status received, "
+                            f"target_insert={target_insert}, "
+                            f"target_position={target_position}, "
+                            f"elapsed_sec={elapsed:.1f}, "
+                            f"command_time={request_time_text}"
+                        )
+                        next_report = pytime.monotonic() + 5.0
+                    continue
+
+                matches = (
+                    status.position == target_position
+                    if target_position is not None
+                    else status.insert is target_insert
+                )
+                elapsed = pytime.monotonic() - started
+                status_time = getattr(status, "time", None)
+                status_time_text = (
+                    f"{status_time:.6f}" if status_time is not None else "unknown"
+                )
+                try:
+                    status_age = max(0.0, pytime.time() - float(status_time))
+                    status_age_text = f"{status_age:.1f}"
+                except (TypeError, ValueError):
+                    status_age_text = "unknown"
+                status_precedes_command = (
+                    request_time is not None
+                    and status_time is not None
+                    and status_time < request_time
+                )
+
+                if matches:
+                    self.logger.info(
+                        "Chopper wait completed: "
+                        f"target_insert={target_insert}, "
+                        f"target_position={target_position}, "
+                        f"status_insert={status.insert}, "
+                        f"status_position={status.position}, "
+                        f"status_time={status_time_text}, "
+                        f"status_age_sec={status_age_text}, "
+                        f"status_precedes_command={status_precedes_command}, "
+                        f"elapsed_sec={elapsed:.1f}, "
+                        f"command_time={request_time_text}"
+                    )
+                    return
+
+                if pytime.monotonic() >= next_report:
+                    self.logger.warning(
+                        "Chopper wait pending: status mismatch, "
+                        f"target_insert={target_insert}, "
+                        f"target_position={target_position}, "
+                        f"status_insert={status.insert}, "
+                        f"status_position={status.position}, "
+                        f"status_time={status_time_text}, "
+                        f"status_age_sec={status_age_text}, "
+                        f"status_precedes_command={status_precedes_command}, "
+                        f"elapsed_sec={elapsed:.1f}, "
+                        f"command_time={request_time_text}"
+                    )
+                    next_report = pytime.monotonic() + 5.0
+                pytime.sleep(0.1)
         else:
             pytime.sleep(1.1)
             while self.get_message(target).move:
