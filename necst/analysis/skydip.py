@@ -347,8 +347,6 @@ def format_discord_summary(
     for board, error in failures.items():
         label = str(labels.get(board, board))
         short_error = str(error).replace("`", "'").replace("\n", " ")[:180]
-        if not short_error.startswith("e_"):
-            short_error = f"e_{short_error}"
         error_lines.append(f"{board}: {short_error}")
         rows.append(
             [

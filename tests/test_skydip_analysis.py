@@ -262,7 +262,7 @@ def test_analyzer_sends_partial_results_when_one_board_fails(tmp_path):
     assert "xffts-board1" in output.discord_content
     assert "ERROR" in output.discord_content
     assert (
-        "e_RuntimeError: not enough fit points after filtering; n=1"
+        "RuntimeError: not enough fit points after filtering; n=1"
         in output.discord_content
     )
 
@@ -283,7 +283,7 @@ def test_analyzer_returns_text_only_result_when_all_boards_fail(tmp_path):
     assert output.board_failures == {"xffts-board1": "RuntimeError: no valid signal"}
     assert "Overall: `ERROR`" in output.discord_content
     assert "no valid signal" in output.discord_content
-    assert "e_RuntimeError: no valid signal" in output.discord_content
+    assert "RuntimeError: no valid signal" in output.discord_content
 
 
 class FakeAnalyzer:

@@ -113,7 +113,7 @@ Board解析に失敗した場合は、`ERROR`ログにBoard名、例外種別、
 | xffts-board1 | Band 6 USB | WARN | 0.308 | 0.327 | 29466.300 | 21578.300 | 123.400 | 8.750 | 5 |
 ```
 
-Board解析自体の例外は表の後に`Analysis errors:`として`e_` prefix付きで表示する。
+Board解析自体の例外は表の後に`Analysis errors:`として、例外種別とメッセージをそのまま表示する。
 
 ## 環境変数
 
