@@ -85,16 +85,15 @@ def test_discord_summary_uses_backticks_labels_and_markdown_matrix():
     assert "0.327" in summary
     assert "29466.300" in summary
     assert (
-        "| Board | IF | Q | tau | e_tau | Tsys0 | e_Tsys | Trx | e_Trx | chi2red | Nfit |"
+        "| Board | IF | Q | tau | e_tau | Tsys0 | Trx | e_Trx | chi2red | Nfit |"
         in summary
     )
+    assert "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |" in summary
     assert (
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |" in summary
-    )
-    assert (
-        "| xffts-board1 | Band 6 USB | WARN | 0.308 | 0.327 | 29466.300 | n/a | "
+        "| xffts-board1 | Band 6 USB | WARN | 0.308 | 0.327 | 29466.300 | "
         "21578.300 | 123.400 | 8.750 | 5 |" in summary
     )
+    assert "e_Tsys" not in summary
     assert "```md" in summary
     assert "```text" not in summary
     assert "e_large_reduced_chi2" not in summary

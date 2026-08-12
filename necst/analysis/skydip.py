@@ -331,13 +331,6 @@ def format_discord_summary(
                 _format_value(
                     getattr(result, "Tsys_sensitivity_zenith_K", float("nan"))
                 ),
-                _format_result_error(
-                    result,
-                    "Tsys_sensitivity_zenith_sigma_K",
-                    "Tsys_sensitivity_zenith_err_K",
-                    "Tsys_sigma_K",
-                    "Tsys_err_K",
-                ),
                 _format_value(getattr(result, "Trx_K", float("nan"))),
                 _format_result_error(
                     result,
@@ -369,7 +362,6 @@ def format_discord_summary(
                 "n/a",
                 "n/a",
                 "n/a",
-                "n/a",
             ]
         )
 
@@ -380,7 +372,6 @@ def format_discord_summary(
         "tau",
         "e_tau",
         "Tsys0",
-        "e_Tsys",
         "Trx",
         "e_Trx",
         "chi2red",
