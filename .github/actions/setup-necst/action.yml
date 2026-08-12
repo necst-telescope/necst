@@ -14,8 +14,7 @@ runs:
       run: |
         . /opt/ros/$ROS_DISTRO/setup.bash
         cd ros2_ws/src/
-        # PR #474 uses the Az unwrap services from this dependency branch.
-        git clone --depth 1 --branch '#159-feat/az-unwrap-state-service' \
+        git clone --depth 1 \
           https://github.com/necst-telescope/necst-msgs.git
         cd ../
         colcon build --symlink-install
