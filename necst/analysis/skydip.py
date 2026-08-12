@@ -322,7 +322,9 @@ def format_discord_summary(
     for board, result in results.items():
         label = str(getattr(result, "label", "") or labels.get(board, board))
         flags = (
-            ",".join(str(flag) for flag in getattr(result, "quality_flags", []) or [])
+            ",".join(
+                f"e_{str(flag)}" for flag in getattr(result, "quality_flags", []) or []
+            )
             or "-"
         )
         rows.append(
@@ -344,6 +346,8 @@ def format_discord_summary(
     for board, error in failures.items():
         label = str(labels.get(board, board))
         short_error = str(error).replace("`", "'").replace("\n", " ")[:180]
+        if not short_error.startswith("e_"):
+            short_error = f"e_{short_error}"
         rows.append(
             [
                 str(board),
@@ -367,35 +371,28 @@ def format_discord_summary(
         "Trx[K]",
         "chi2red",
         "Nfit",
-        "Flags",
+        "Error",
     ]
-    widths = [len(header) for header in headers]
-    for row in rows:
-        widths = [max(width, len(value)) for width, value in zip(widths, row)]
+
+    def markdown_row(values):
+        cells = [str(value).replace("|", "\\|").replace("\n", " ") for value in values]
+        return "| " + " | ".join(cells) + " |"
 
     lines = [
-        "  ".join(value.ljust(width) for value, width in zip(headers, widths)),
-        "  ".join("-" * width for width in widths),
+        markdown_row(headers),
+        markdown_row(["---"] * len(headers)),
     ]
-    lines.extend(
-        "  ".join(value.ljust(width) for value, width in zip(row, widths))
-        for row in rows
-    )
+    lines.extend(markdown_row(row) for row in rows)
     safe_name = str(observation_name).replace("`", "'")
     return (
-        "**📡 Analysis Result**\n\n"
+        "**📡 Skydip Analysis Result**\n\n"
         f"Observation: `{safe_name}`\n"
-        f"Overall: `{overall}`\n\n"
-        "```text\n" + "\n".join(lines) + "\n```"
+        f"Overall: `{overall}`\n\n" + "\n".join(lines)
     )
 
 
 def _format_tau(result: Any) -> str:
-    tau = _format_value(getattr(result, "tau", float("nan")))
-    sigma = _format_value(getattr(result, "tau_sigma", float("nan")))
-    if tau == "n/a" or sigma == "n/a":
-        return "n/a"
-    return f"{tau} +/- {sigma}"
+    return _format_value(getattr(result, "tau", float("nan")))
 
 
 def _format_value(value: Any) -> str:

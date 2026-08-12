@@ -60,7 +60,7 @@ def test_board_labels_accept_inline_table_array():
     }
 
 
-def test_discord_summary_uses_backticks_labels_and_numeric_matrix():
+def test_discord_summary_uses_backticks_labels_and_markdown_matrix():
     class Result:
         label = "Band 6 USB"
         quality = "WARN"
@@ -78,11 +78,18 @@ def test_discord_summary_uses_backticks_labels_and_numeric_matrix():
     )
 
     assert "Observation: `necst_skydip_test`" in summary
+    assert "**📡 Skydip Analysis Result**" in summary
     assert "Band 6 USB" in summary
-    assert "0.308 +/- 0.327" in summary
+    assert "0.308" in summary
+    assert "+/-" not in summary
     assert "29466.300" in summary
-    assert "large_reduced_chi2" in summary
-    assert "```text" in summary
+    assert "e_large_reduced_chi2" in summary
+    assert (
+        "| Board | IF | Q | tau | Tsys0[K] | Trx[K] | chi2red | Nfit | Error |"
+        in summary
+    )
+    assert "| --- | --- | --- | --- | --- | --- | --- | --- | --- |" in summary
+    assert "```text" not in summary
 
 
 class FakeFigure:
@@ -247,6 +254,10 @@ def test_analyzer_sends_partial_results_when_one_board_fails(tmp_path):
     assert "Overall: `PARTIAL`" in output.discord_content
     assert "xffts-board1" in output.discord_content
     assert "ERROR" in output.discord_content
+    assert (
+        "e_RuntimeError: not enough fit points after filtering; n=1"
+        in output.discord_content
+    )
 
 
 def test_analyzer_returns_text_only_result_when_all_boards_fail(tmp_path):
@@ -265,6 +276,7 @@ def test_analyzer_returns_text_only_result_when_all_boards_fail(tmp_path):
     assert output.board_failures == {"xffts-board1": "RuntimeError: no valid signal"}
     assert "Overall: `ERROR`" in output.discord_content
     assert "no valid signal" in output.discord_content
+    assert "e_RuntimeError: no valid signal" in output.discord_content
 
 
 class FakeAnalyzer:
