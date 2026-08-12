@@ -78,11 +78,8 @@ class ScriptSkyDipAnalyzer:
             f"boards={len(board_names)}"
         )
         try:
-            results, figure, _ = module.analyze_skydip_boards(
-                record_path,
-                board_selection,
-                telescope=self.telescope,
-                save_prefix=None,
+            results, figure, _ = self._run_analysis_script(
+                module, record_path, board_selection
             )
         except AttributeError as exc:
             raise RuntimeError(
@@ -99,6 +96,62 @@ class ScriptSkyDipAnalyzer:
                 record_path.name, results, self.board_labels
             ),
         )
+
+    def _run_analysis_script(
+        self,
+        module: ModuleType,
+        record_path: Path,
+        board_selection: Any,
+    ) -> Any:
+        """Run the script API while logging each board boundary.
+
+        The bundled script remains the source of the analysis behavior.  The
+        temporary wrapper only records entry/exit around its existing public
+        per-board function so a slow or stuck board can be identified.
+        """
+
+        analyze_board = getattr(module, "analyze_skydip_board", None)
+        if not callable(analyze_board):
+            return module.analyze_skydip_boards(
+                record_path,
+                board_selection,
+                telescope=self.telescope,
+                save_prefix=None,
+            )
+
+        def logged_analyze_board(*args: Any, **kwargs: Any) -> Any:
+            board = kwargs.get("board")
+            if board is None and len(args) >= 2:
+                board = args[1]
+            board_name = str(board or "unknown")
+            self._log_info(
+                f"Board analysis started: record={record_path.name}, "
+                f"board={board_name}"
+            )
+            try:
+                result = analyze_board(*args, **kwargs)
+            except Exception:
+                self._log_info(
+                    f"Board analysis failed: record={record_path.name}, "
+                    f"board={board_name}"
+                )
+                raise
+            self._log_info(
+                f"Board analysis completed: record={record_path.name}, "
+                f"board={board_name}"
+            )
+            return result
+
+        module.analyze_skydip_board = logged_analyze_board
+        try:
+            return module.analyze_skydip_boards(
+                record_path,
+                board_selection,
+                telescope=self.telescope,
+                save_prefix=None,
+            )
+        finally:
+            module.analyze_skydip_board = analyze_board
 
     def _log_info(self, message: str) -> None:
         if self.logger is not None:

@@ -161,6 +161,56 @@ def test_analyzer_logs_script_stages(tmp_path):
     assert "Analysis script execution completed" in messages
 
 
+def test_analyzer_logs_each_board_without_changing_script_result(tmp_path):
+    class Result:
+        label = "Band 6 USB"
+        quality = "GOOD"
+        quality_flags = []
+        tau = 0.1
+        tau_sigma = 0.01
+        Tsys_sensitivity_zenith_K = 100.0
+        Trx_K = 80.0
+        reduced_chi2 = 1.0
+        n_fit = 4
+
+    class FakeScript:
+        @staticmethod
+        def analyze_skydip_board(*args, **kwargs):
+            return Result()
+
+        @staticmethod
+        def analyze_skydip_boards(*args, **kwargs):
+            board = args[1][0]
+            result = FakeScript.analyze_skydip_board(args[0], board)
+            return {board: result}, FakeFigure(), None
+
+    class Logger:
+        def __init__(self):
+            self.messages = []
+
+        def info(self, message):
+            self.messages.append(message)
+
+    logger = Logger()
+    analyzer = ScriptSkyDipAnalyzer(
+        boards=["xffts-board1"],
+        logger=logger,
+    )
+    analyzer._load_script = lambda: FakeScript
+
+    analyzer.analyze(tmp_path / "necst_skydip_test")
+
+    messages = "\n".join(logger.messages)
+    assert (
+        "Board analysis started: record=necst_skydip_test, board=xffts-board1"
+        in messages
+    )
+    assert (
+        "Board analysis completed: record=necst_skydip_test, board=xffts-board1"
+        in messages
+    )
+
+
 class FakeAnalyzer:
     def __init__(self):
         self.paths = []
