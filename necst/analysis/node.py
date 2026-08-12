@@ -10,6 +10,8 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, Mapping, Optional
 
+from ..notification.discord import DiscordAttachmentTooLarge
+
 
 @dataclass(frozen=True)
 class FinishedObservation:
@@ -133,6 +135,26 @@ class SkyDipAnalysisCoordinator:
             self.notifier.send_figure(figure, observation.record_name)
             self.logger.info(
                 f"Discord post completed: record={observation.record_name}, "
+                f"elapsed_sec={time.monotonic() - started_at:.2f}"
+            )
+        except DiscordAttachmentTooLarge as exc:
+            notification_result = (
+                "failure notice sent"
+                if exc.notification_sent
+                else "failure notice could not be sent"
+            )
+            detail = ""
+            if exc.notification_error is not None:
+                detail = (
+                    ", notification_error_type="
+                    f"{type(exc.notification_error).__name__}"
+                )
+            self.logger.warning(
+                "Discord attachment size limit exceeded: "
+                f"record={observation.record_name}, "
+                f"size_mib={exc.size_bytes / 1024 / 1024:.2f}, "
+                f"limit_mib={exc.limit_bytes / 1024 / 1024:.2f}, "
+                f"{notification_result}{detail}, "
                 f"elapsed_sec={time.monotonic() - started_at:.2f}"
             )
         except Exception:

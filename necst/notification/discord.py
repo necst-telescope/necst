@@ -18,6 +18,28 @@ from typing import Any, Callable, Dict, Optional
 from urllib import request
 
 _ENV_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+DEFAULT_ATTACHMENT_LIMIT_BYTES = 10 * 1024 * 1024
+
+
+class DiscordAttachmentTooLarge(RuntimeError):
+    """Report an attachment rejected locally before a Discord upload."""
+
+    def __init__(
+        self,
+        size_bytes: int,
+        limit_bytes: int,
+        *,
+        notification_sent: bool,
+        notification_error: Optional[Exception] = None,
+    ) -> None:
+        self.size_bytes = size_bytes
+        self.limit_bytes = limit_bytes
+        self.notification_sent = notification_sent
+        self.notification_error = notification_error
+        super().__init__(
+            f"PNG size {size_bytes} bytes exceeds Discord attachment limit "
+            f"{limit_bytes} bytes"
+        )
 
 
 def _configured_env_file() -> Optional[Path]:
@@ -87,15 +109,19 @@ class DiscordNotifier:
         *,
         opener: Optional[Callable[..., Any]] = None,
         timeout_sec: float = 30.0,
+        attachment_limit_bytes: int = DEFAULT_ATTACHMENT_LIMIT_BYTES,
     ) -> None:
         if not token.strip():
             raise ValueError("Discord bot token must not be empty")
         if not channel_id.strip():
             raise ValueError("Discord channel ID must not be empty")
+        if attachment_limit_bytes <= 0:
+            raise ValueError("Discord attachment limit must be positive")
         self._token = token
         self.channel_id = channel_id
         self._opener = opener or request.urlopen
         self.timeout_sec = timeout_sec
+        self.attachment_limit_bytes = attachment_limit_bytes
 
     @classmethod
     def from_environment(cls) -> "DiscordNotifier":
@@ -116,7 +142,20 @@ class DiscordNotifier:
         )
         if not token or not channel_id:
             raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID are required")
-        return cls(token, channel_id)
+        raw_limit_mib = file_values.get(
+            "DISCORD_ATTACHMENT_LIMIT_MIB"
+        ) or os.environ.get("DISCORD_ATTACHMENT_LIMIT_MIB", "10")
+        try:
+            limit_mib = float(raw_limit_mib)
+        except ValueError as exc:
+            raise ValueError("DISCORD_ATTACHMENT_LIMIT_MIB must be a number") from exc
+        if limit_mib <= 0:
+            raise ValueError("DISCORD_ATTACHMENT_LIMIT_MIB must be positive")
+        return cls(
+            token,
+            channel_id,
+            attachment_limit_bytes=int(limit_mib * 1024 * 1024),
+        )
 
     def send_figure(self, figure: Any, observation_name: str) -> Dict[str, Any]:
         """Encode ``figure`` in memory and upload it to Discord.
@@ -129,9 +168,43 @@ class DiscordNotifier:
         figure.savefig(buffer, format="png", dpi=150, bbox_inches="tight")
         buffer.seek(0)
         try:
+            size_bytes = buffer.getbuffer().nbytes
+            if size_bytes > self.attachment_limit_bytes:
+                notification_error = None
+                try:
+                    self._send_text(
+                        "⚠️ Analysis image could not be uploaded\n\n"
+                        f"Observation:\n{observation_name}\n\n"
+                        "Reason:\n"
+                        f"PNG size {size_bytes / 1024 / 1024:.2f} MiB exceeds "
+                        "the configured attachment limit "
+                        f"({self.attachment_limit_bytes / 1024 / 1024:.2f} MiB)."
+                    )
+                except Exception as exc:
+                    notification_error = exc
+                raise DiscordAttachmentTooLarge(
+                    size_bytes,
+                    self.attachment_limit_bytes,
+                    notification_sent=notification_error is None,
+                    notification_error=notification_error,
+                )
             return self._send_png(buffer, observation_name)
         finally:
             buffer.close()
+
+    def _send_text(self, content: str) -> Dict[str, Any]:
+        body = json.dumps({"content": content}, ensure_ascii=False).encode("utf-8")
+        req = request.Request(
+            self._message_url,
+            data=body,
+            method="POST",
+            headers={
+                "Authorization": f"Bot {self._token}",
+                "Content-Type": "application/json",
+                "User-Agent": "NECST-Analysis-Qlook/1.0",
+            },
+        )
+        return self._open_json(req)
 
     def _send_png(self, image: BytesIO, observation_name: str) -> Dict[str, Any]:
         boundary = "----necst-discord-" + uuid.uuid4().hex
@@ -154,17 +227,23 @@ class DiscordNotifier:
                 f"--{boundary}--\r\n".encode("ascii"),
             )
         )
-        url = f"{self.api_base}/channels/{self.channel_id}/messages"
         req = request.Request(
-            url,
+            self._message_url,
             data=body,
             method="POST",
             headers={
                 "Authorization": f"Bot {self._token}",
                 "Content-Type": f"multipart/form-data; boundary={boundary}",
-                "User-Agent": "NECST-SkyDip-Qlook/1.0",
+                "User-Agent": "NECST-Analysis-Qlook/1.0",
             },
         )
+        return self._open_json(req)
+
+    @property
+    def _message_url(self) -> str:
+        return f"{self.api_base}/channels/{self.channel_id}/messages"
+
+    def _open_json(self, req: request.Request) -> Dict[str, Any]:
         with self._opener(req, timeout=self.timeout_sec) as response:
             raw = response.read()
         if not raw:

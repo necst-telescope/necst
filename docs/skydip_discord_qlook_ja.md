@@ -36,6 +36,8 @@ env_file = "/root/.necst/discord.env"
 ```dotenv
 DISCORD_BOT_TOKEN=...
 DISCORD_CHANNEL_ID=...
+# 任意。未指定時は10 MiB
+DISCORD_ATTACHMENT_LIMIT_MIB=10
 ```
 
 Analysis Nodeはsite configの`env_file`を起動時に読み込む。
@@ -71,6 +73,8 @@ ros2 run necst analysis
 同梱したv10スクリプトの `analyze_skydip_boards()` が解析とグラフ生成を行い、
 返されたFigureを`BytesIO`へPNG化してDiscordへ直接添付する。解析失敗やDiscord
 通信失敗はAnalysis Node側で記録し、Recorderのデータ保存処理へ例外を返さない。
+PNGが添付上限を超えた場合は画像を送信せず、Analysis Nodeへ`WARNING`を出し、
+Discordには容量超過で画像を送信できなかった旨をテキストで投稿する。
 
 ## 環境変数
 
@@ -79,6 +83,7 @@ ros2 run necst analysis
 | `NECST_RECORD_ROOT` | 推奨 | コンテナ内の共通データルート。例 `/data` |
 | `DISCORD_BOT_TOKEN` | env-file内 | Discord Bot Token |
 | `DISCORD_CHANNEL_ID` | env-file内 | 投稿先チャンネルID |
+| `DISCORD_ATTACHMENT_LIMIT_MIB` | 任意 | 添付上限。未指定時は `10` MiB |
 | `notification.discord.env_file` | 推奨 | site configからenv-fileを指定 |
 | `NECST_SKYDIP_SCRIPT` | 任意 | 外部スクリプトを使う場合のパス。通常は同梱v10を使用 |
 | `NECST_SKYDIP_BOARDS` | 任意 | 解析対象boardのカンマ区切り。未指定時はnecstdbから自動検出 |

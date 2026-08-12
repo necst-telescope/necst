@@ -2,9 +2,11 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from necst.analysis.node import SkyDipAnalysisCoordinator
+import pytest
+
+from necst.analysis.node import FinishedObservation, SkyDipAnalysisCoordinator
 from necst.notification import discord as discord_module
-from necst.notification.discord import DiscordNotifier
+from necst.notification.discord import DiscordAttachmentTooLarge, DiscordNotifier
 
 
 def test_bundled_script_keeps_analysis_and_plot_api():
@@ -37,6 +39,24 @@ class FakeNotifier:
 
     def send_figure(self, figure, observation_name):
         self.posts.append((figure, observation_name))
+
+
+class FakeLogger:
+    def __init__(self):
+        self.warnings = []
+        self.exceptions = []
+
+    def info(self, message):
+        pass
+
+    def warning(self, message):
+        self.warnings.append(message)
+
+    def exception(self, message):
+        self.exceptions.append(message)
+
+    def debug(self, message, **kwargs):
+        pass
 
 
 def progress(record_name="necst_skydip_20260811_153000", state="finished"):
@@ -150,6 +170,63 @@ def test_discord_multipart_contains_png_and_message():
     assert timeout == 30.0
 
 
+def test_discord_oversize_png_sends_text_notice_without_attachment():
+    requests = []
+
+    class Response:
+        def read(self):
+            return b'{"id":"123"}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    def opener(req, timeout):
+        requests.append((req, timeout))
+        return Response()
+
+    notifier = DiscordNotifier("secret", "987", opener=opener, attachment_limit_bytes=2)
+
+    with pytest.raises(DiscordAttachmentTooLarge) as exc_info:
+        notifier.send_figure(FakeFigure(), "necst_skydip_test")
+
+    assert exc_info.value.notification_sent is True
+    assert exc_info.value.size_bytes == 3
+    assert len(requests) == 1
+    req, _ = requests[0]
+    assert req.get_header("Content-type") == "application/json"
+    payload = json.loads(req.data.decode("utf-8"))
+    assert "could not be uploaded" in payload["content"]
+    assert "image/png" not in payload["content"]
+
+
+def test_coordinator_logs_attachment_limit_as_warning(tmp_path):
+    record_name = "necst_skydip_20260811_153000"
+    (tmp_path / record_name).mkdir()
+    logger = FakeLogger()
+
+    class OversizeNotifier:
+        def send_figure(self, figure, observation_name):
+            raise DiscordAttachmentTooLarge(
+                11 * 1024 * 1024,
+                10 * 1024 * 1024,
+                notification_sent=True,
+            )
+
+    coordinator = SkyDipAnalysisCoordinator(
+        FakeAnalyzer(), OversizeNotifier(), tmp_path, logger=logger
+    )
+    coordinator._analyze_and_notify(FinishedObservation(record_name, tmp_path))
+
+    assert len(logger.warnings) == 1
+    assert "size limit exceeded" in logger.warnings[0]
+    assert "failure notice sent" in logger.warnings[0]
+    assert logger.exceptions == []
+    coordinator.shutdown()
+
+
 def test_discord_notifier_reads_channel_id_from_environment(monkeypatch):
     monkeypatch.setenv("DISCORD_BOT_TOKEN", "secret")
     monkeypatch.setenv("DISCORD_CHANNEL_ID", "987")
@@ -165,7 +242,8 @@ def test_discord_notifier_reads_configured_env_file(tmp_path, monkeypatch):
     env_file.write_text(
         "# shared service secrets\n"
         "DISCORD_BOT_TOKEN='file-secret'\n"
-        "export DISCORD_CHANNEL_ID=987\n",
+        "export DISCORD_CHANNEL_ID=987\n"
+        "DISCORD_ATTACHMENT_LIMIT_MIB=12.5\n",
         encoding="utf-8",
     )
     monkeypatch.delenv("DISCORD_BOT_TOKEN", raising=False)
@@ -176,6 +254,7 @@ def test_discord_notifier_reads_configured_env_file(tmp_path, monkeypatch):
 
     assert notifier._token == "file-secret"
     assert notifier.channel_id == "987"
+    assert notifier.attachment_limit_bytes == int(12.5 * 1024 * 1024)
 
 
 def test_progress_payload_is_json_serializable():
