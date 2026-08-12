@@ -139,11 +139,12 @@ class FakeNotifier:
 
 class FakeLogger:
     def __init__(self):
+        self.infos = []
         self.warnings = []
         self.exceptions = []
 
     def info(self, message):
-        pass
+        self.infos.append(message)
 
     def warning(self, message):
         self.warnings.append(message)
@@ -201,6 +202,58 @@ def test_coordinator_accepts_recorder_stop_before_finished_progress(tmp_path):
 
     assert analyzer.paths == [tmp_path / record_name]
     executor.shutdown()
+
+
+def test_coordinator_ignores_duplicate_finished_progress_after_scheduling(tmp_path):
+    record_name = "necst_skydip_20260811_153000"
+    (tmp_path / record_name).mkdir()
+    analyzer = FakeAnalyzer()
+    notifier = FakeNotifier()
+    logger = FakeLogger()
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = SkyDipAnalysisCoordinator(
+        analyzer, notifier, tmp_path, executor=executor, logger=logger
+    )
+
+    coordinator.on_recorder_status(False)
+    future = coordinator.on_progress(progress(record_name))
+    assert future is not None
+    future.result(timeout=2)
+
+    assert coordinator.on_progress(progress(record_name)) is None
+    assert analyzer.paths == [tmp_path / record_name]
+    assert (
+        sum(
+            "Finished observation progress received" in message
+            for message in logger.infos
+        )
+        == 1
+    )
+    executor.shutdown()
+
+
+def test_coordinator_logs_analysis_and_discord_phases(tmp_path):
+    record_name = "necst_skydip_20260811_153000"
+    (tmp_path / record_name).mkdir()
+    logger = FakeLogger()
+    coordinator = SkyDipAnalysisCoordinator(
+        FakeAnalyzer(), FakeNotifier(), tmp_path, logger=logger
+    )
+
+    coordinator._analyze_and_notify(FinishedObservation(record_name, tmp_path))
+
+    messages = "\n".join(logger.infos)
+    assert "Analysis started" in messages
+    assert "Analysis completed" in messages
+    assert "Discord upload started" in messages
+    assert "Discord post completed" in messages
+    assert messages.index("Analysis completed") < messages.index(
+        "Discord upload started"
+    )
+    assert messages.index("Discord upload started") < messages.index(
+        "Discord post completed"
+    )
+    coordinator.shutdown()
 
 
 def test_coordinator_ignores_non_skydip_and_non_finished(tmp_path):

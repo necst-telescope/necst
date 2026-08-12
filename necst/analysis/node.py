@@ -79,6 +79,8 @@ class SkyDipAnalysisCoordinator:
         if candidate is None:
             return
         with self._lock:
+            if candidate.record_name in self._scheduled_records:
+                return None
             should_log = (
                 self._pending is None
                 or self._pending.record_name != candidate.record_name
@@ -118,6 +120,7 @@ class SkyDipAnalysisCoordinator:
     def _analyze_and_notify(self, observation: FinishedObservation) -> None:
         figure = None
         started_at = time.monotonic()
+        stage = "analysis"
         self.logger.info(
             f"Analysis started: record={observation.record_name}, "
             f"path={observation.record_path}"
@@ -131,8 +134,12 @@ class SkyDipAnalysisCoordinator:
             figure = getattr(analysis_output, "figure", analysis_output)
             discord_content = getattr(analysis_output, "discord_content", None)
             self.logger.info(
-                f"Analysis figure generated: record={observation.record_name}; "
-                "posting to Discord"
+                f"Analysis completed: record={observation.record_name}, "
+                f"elapsed_sec={time.monotonic() - started_at:.2f}"
+            )
+            stage = "discord"
+            self.logger.info(
+                f"Discord upload started: record={observation.record_name}"
             )
             if discord_content is None:
                 self.notifier.send_figure(figure, observation.record_name)
@@ -166,8 +173,9 @@ class SkyDipAnalysisCoordinator:
             )
         except Exception:
             self.logger.exception(
-                f"SkyDip analysis/Discord notification failed: "
+                f"Analysis/Discord notification failed: "
                 f"record={observation.record_name}, "
+                f"stage={stage}, "
                 f"elapsed_sec={time.monotonic() - started_at:.2f}"
             )
         finally:
