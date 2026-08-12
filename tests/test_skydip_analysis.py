@@ -69,6 +69,7 @@ def test_discord_summary_uses_backticks_labels_and_markdown_matrix():
         tau_sigma = 0.327
         Tsys_sensitivity_zenith_K = 29466.3
         Trx_K = 21578.3
+        Trx_robust_scatter_K = 123.4
         reduced_chi2 = 8.75
         n_fit = 5
 
@@ -81,15 +82,22 @@ def test_discord_summary_uses_backticks_labels_and_markdown_matrix():
     assert "**📡 Skydip Analysis Result**" in summary
     assert "Band 6 USB" in summary
     assert "0.308" in summary
-    assert "+/-" not in summary
+    assert "0.327" in summary
     assert "29466.300" in summary
-    assert "e_large_reduced_chi2" in summary
     assert (
-        "| Board | IF | Q | tau | Tsys0[K] | Trx[K] | chi2red | Nfit | Error |"
+        "| Board | IF | Q | tau | e_tau | Tsys0 | e_Tsys | Trx | e_Trx | chi2red | Nfit |"
         in summary
     )
-    assert "| --- | --- | --- | --- | --- | --- | --- | --- | --- |" in summary
+    assert (
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |" in summary
+    )
+    assert (
+        "| xffts-board1 | Band 6 USB | WARN | 0.308 | 0.327 | 29466.300 | n/a | "
+        "21578.300 | 123.400 | 8.750 | 5 |" in summary
+    )
+    assert "```md" in summary
     assert "```text" not in summary
+    assert "e_large_reduced_chi2" not in summary
 
 
 class FakeFigure:

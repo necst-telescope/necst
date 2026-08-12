@@ -321,33 +321,42 @@ def format_discord_summary(
     rows = []
     for board, result in results.items():
         label = str(getattr(result, "label", "") or labels.get(board, board))
-        flags = (
-            ",".join(
-                f"e_{str(flag)}" for flag in getattr(result, "quality_flags", []) or []
-            )
-            or "-"
-        )
         rows.append(
             [
                 str(board),
                 label,
                 str(getattr(result, "quality", "n/a")),
-                _format_tau(result),
+                _format_value(getattr(result, "tau", float("nan"))),
+                _format_value(getattr(result, "tau_sigma", float("nan"))),
                 _format_value(
                     getattr(result, "Tsys_sensitivity_zenith_K", float("nan"))
                 ),
+                _format_result_error(
+                    result,
+                    "Tsys_sensitivity_zenith_sigma_K",
+                    "Tsys_sensitivity_zenith_err_K",
+                    "Tsys_sigma_K",
+                    "Tsys_err_K",
+                ),
                 _format_value(getattr(result, "Trx_K", float("nan"))),
+                _format_result_error(
+                    result,
+                    "Trx_sigma_K",
+                    "Trx_err_K",
+                    "Trx_robust_scatter_K",
+                ),
                 _format_value(getattr(result, "reduced_chi2", float("nan"))),
                 str(getattr(result, "n_fit", "n/a")),
-                flags,
             ]
         )
 
+    error_lines = []
     for board, error in failures.items():
         label = str(labels.get(board, board))
         short_error = str(error).replace("`", "'").replace("\n", " ")[:180]
         if not short_error.startswith("e_"):
             short_error = f"e_{short_error}"
+        error_lines.append(f"{board}: {short_error}")
         rows.append(
             [
                 str(board),
@@ -358,7 +367,9 @@ def format_discord_summary(
                 "n/a",
                 "n/a",
                 "n/a",
-                short_error,
+                "n/a",
+                "n/a",
+                "n/a",
             ]
         )
 
@@ -367,11 +378,13 @@ def format_discord_summary(
         "IF",
         "Q",
         "tau",
-        "Tsys0[K]",
-        "Trx[K]",
+        "e_tau",
+        "Tsys0",
+        "e_Tsys",
+        "Trx",
+        "e_Trx",
         "chi2red",
         "Nfit",
-        "Error",
     ]
 
     def markdown_row(values):
@@ -387,12 +400,20 @@ def format_discord_summary(
     return (
         "**📡 Skydip Analysis Result**\n\n"
         f"Observation: `{safe_name}`\n"
-        f"Overall: `{overall}`\n\n" + "\n".join(lines)
+        f"Overall: `{overall}`\n\n"
+        + "```md\n"
+        + "\n".join(lines)
+        + "\n```"
+        + ("\n\nAnalysis errors:\n" + "\n".join(error_lines) if error_lines else "")
     )
 
 
-def _format_tau(result: Any) -> str:
-    return _format_value(getattr(result, "tau", float("nan")))
+def _format_result_error(result: Any, *attribute_names: str) -> str:
+    for attribute_name in attribute_names:
+        value = _format_value(getattr(result, attribute_name, float("nan")))
+        if value != "n/a":
+            return value
+    return "n/a"
 
 
 def _format_value(value: Any) -> str:
