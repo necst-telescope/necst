@@ -1272,6 +1272,10 @@ class Commander(PrivilegedNode):
         position: Union[Literal["insert", "remove"], int] = None,
     ):
         if target == "chopper":
+            # ``position`` is authoritative for chopper completion.  The
+            # ``insert`` field is retained only as a legacy compatibility
+            # field because intermediate telemetry may not represent a
+            # settled IN/OUT state.
             if isinstance(position, int):
                 target_position = position
             else:

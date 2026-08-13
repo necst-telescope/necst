@@ -106,6 +106,9 @@ class ChopperController(DeviceNode):
 
     def telemetry(self) -> None:
         position = self.motor.get_step("chopper")
+        # ``position`` is the canonical telemetry for the chopper state.  Keep
+        # ``insert`` as a legacy compatibility field for existing consumers;
+        # it must not be used to determine whether a move has completed.
         if position == config.chopper_motor_position["insert"]:
             msg = ChopperMsg(insert=True, position=position, time=time.time())
         elif position == config.chopper_motor_position["remove"]:
