@@ -4,8 +4,8 @@ This module is intentionally ROS-free.  ``necst.rx.spectrometer.SpectralData``
 uses these helpers for PR4/PR5, while the unit tests exercise them with simple
 Python objects.
 
-Implemented PR scope
---------------------
+Notes
+-----
 PR4:
   * active snapshot setup state;
   * setup hash validation;
