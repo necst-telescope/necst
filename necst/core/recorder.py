@@ -39,23 +39,23 @@ class RecorderController(ServerNode):
         if msg.stop and self.recorder.is_recording:
             self.recorder.stop_recording()
             self.logger.info("Recording has been stopped.")
-            re_msg = RecordMsg(recording=False)
+            re_msg = RecordMsg(recording=False, time=msg.time)
         elif msg.stop:
             self.logger.info("Recording has already been stopped.")
-            re_msg = RecordMsg(recording=False)
+            re_msg = RecordMsg(recording=False, time=msg.time)
         elif not self.recorder.is_recording:
             self.recorder.start_recording(msg.name or None)
             self.logger.info(f"Recorder started: {self.recorder.recording_path!s}")
-            re_msg = RecordMsg(recording=True)
+            re_msg = RecordMsg(recording=True, time=msg.time)
         elif self.recorder.recording_path != self.recorder.record_root / msg.name:
             self.logger.info(f"Stopped recording: {self.recorder.recording_path!s}")
             self.recorder.stop_recording()
             self.recorder.start_recording(msg.name)
             self.logger.info(f"Recorder started: {self.recorder.recording_path!s}")
-            re_msg = RecordMsg(recording=True)
+            re_msg = RecordMsg(recording=True, time=msg.time)
         else:
             self.logger.info(f"Continue recording: {self.recorder.recording_path!s}")
-            re_msg = RecordMsg(recording=True)
+            re_msg = RecordMsg(recording=True, time=msg.time)
         self.pub.publish(re_msg)
         return
 

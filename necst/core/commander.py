@@ -83,6 +83,8 @@ class Commander(PrivilegedNode):
 
     NodeName = "commander"
     Namespace = namespace.core
+    record_status_timeout_sec = 10.0
+    record_status_retry_interval_sec = 0.5
 
     def __init__(self) -> None:
         super().__init__(self.NodeName, namespace=self.Namespace)
@@ -134,7 +136,7 @@ class Commander(PrivilegedNode):
             "lo_signal": _SubscriptionCfg(topic.lo_signal, 1),
             "thermometer": _SubscriptionCfg(topic.thermometer, 1),
             "attenuator": _SubscriptionCfg(topic.attenuator, 1),
-            "recorder": _SubscriptionCfg(topic.record_status, 1),
+            "recorder": _SubscriptionCfg(topic.record_status, 8),
             "dome_track": _SubscriptionCfg(topic.dome_tracking, 1),
             "dome_encoder": _SubscriptionCfg(topic.dome_encoder, 1),
             "dome_speed": _SubscriptionCfg(topic.dome_speed_cmd, 1),
@@ -1455,6 +1457,8 @@ class Commander(PrivilegedNode):
         savespec: Optional[bool] = None,
         tp_mode: Optional[bool] = None,
         tp_range: Optional[list[int, int]] = None,
+        timeout_sec: Optional[float] = None,
+        retry_interval_sec: Optional[float] = None,
     ) -> None:
         """Control the recording.
 
@@ -1471,6 +1475,10 @@ class Commander(PrivilegedNode):
             Every $n$th spectral data will be recorded.
         ch
             Number of spectral channels
+        timeout_sec
+            Maximum time to wait for a correlated recorder status response.
+        retry_interval_sec
+            Minimum interval between recorder command retries.
 
         Examples
         --------
@@ -1516,7 +1524,6 @@ class Commander(PrivilegedNode):
         if CMD == "START":
             if not self.savespec:
                 self.logger.warning("Spectral data will NOT be saved")
-            recording = False
             if self.tp_mode:
                 if self.tp_range:
                     self.logger.info(
@@ -1528,18 +1535,21 @@ class Commander(PrivilegedNode):
                     )
             else:
                 self.logger.info("Spectral data will be saved")
-            while not recording:
-                msg = RecordMsg(name=name.lstrip("/"), stop=False)
-                self.publisher["recorder"].publish(msg)
-                recording = self.get_message("recorder").recording
+            self._record_until_status(
+                name=name.lstrip("/"),
+                stop=False,
+                timeout_sec=timeout_sec,
+                retry_interval_sec=retry_interval_sec,
+            )
             self.logger.info(f"Recording at {name!r}")
             return
         elif CMD == "STOP":
-            recording = True
-            while recording:
-                msg = RecordMsg(name=name, stop=True)
-                self.publisher["recorder"].publish(msg)
-                recording = self.get_message("recorder").recording
+            self._record_until_status(
+                name=name,
+                stop=True,
+                timeout_sec=timeout_sec,
+                retry_interval_sec=retry_interval_sec,
+            )
             return
         elif CMD == "FILE":
             if content is None:
@@ -1578,6 +1588,78 @@ class Commander(PrivilegedNode):
             raise NotImplementedError(f"Command {cmd!r} is not implemented yet.")
         else:
             raise ValueError(f"Unknown command: {cmd!r}")
+
+    def _record_until_status(
+        self,
+        *,
+        name: str,
+        stop: bool,
+        timeout_sec: Optional[float],
+        retry_interval_sec: Optional[float],
+    ) -> None:
+        """Send a recorder command until its correlated status is received.
+
+        ``record_status`` is a state topic, so an already cached status cannot be
+        used to acknowledge a new command.  The command timestamp is used as a
+        lightweight request token because ``RecordMsg`` already carries a ``time``
+        field and the recorder echoes it in its response.
+        """
+        timeout = (
+            self.record_status_timeout_sec
+            if timeout_sec is None
+            else float(timeout_sec)
+        )
+        retry_interval = (
+            self.record_status_retry_interval_sec
+            if retry_interval_sec is None
+            else float(retry_interval_sec)
+        )
+        if timeout <= 0:
+            raise NECSTTimeoutError(
+                f"Recorder did not confirm {'STOP' if stop else 'START'} before timeout"
+            )
+        if retry_interval <= 0:
+            raise ValueError("retry_interval_sec must be greater than zero")
+
+        request_time = pytime.time()
+        expected_recording = not stop
+        deadline = pytime.monotonic() + timeout
+
+        while True:
+            remaining = deadline - pytime.monotonic()
+            if remaining <= 0:
+                break
+
+            self.publisher["recorder"].publish(
+                RecordMsg(name=name, stop=stop, time=request_time)
+            )
+
+            wait_deadline = min(
+                deadline,
+                pytime.monotonic() + retry_interval,
+            )
+            while pytime.monotonic() < wait_deadline:
+                poll_timeout = min(0.02, wait_deadline - pytime.monotonic())
+                try:
+                    status = self.get_message(
+                        "recorder",
+                        time=request_time,
+                        timeout_sec=poll_timeout,
+                    )
+                except NECSTTimeoutError:
+                    continue
+
+                if (
+                    status.time == request_time
+                    and bool(status.recording) == expected_recording
+                ):
+                    return
+                pytime.sleep(min(0.02, wait_deadline - pytime.monotonic()))
+
+        action = "STOP" if stop else "START"
+        raise NECSTTimeoutError(
+            f"Timed out waiting for Recorder to confirm {action} after {timeout:.3f} s"
+        )
 
     def apply_spectral_recording_setup(
         self,
