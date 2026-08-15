@@ -83,7 +83,7 @@ class Commander(PrivilegedNode):
 
     NodeName = "commander"
     Namespace = namespace.core
-    record_status_timeout_sec = 10.0
+    record_status_timeout_sec = 5.0
     record_status_retry_interval_sec = 0.5
 
     def __init__(self) -> None:
