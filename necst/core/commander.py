@@ -1600,9 +1600,9 @@ class Commander(PrivilegedNode):
         """Send a recorder command until its correlated status is received.
 
         ``record_status`` is a state topic, so an already cached status cannot be
-        used to acknowledge a new command.  The command timestamp is used as a
-        lightweight request token because ``RecordMsg`` already carries a ``time``
-        field and the recorder echoes it in its response.
+        used to acknowledge a new command.  A request ID is echoed by the recorder
+        so that the response can be correlated without changing the meaning of the
+        message timestamp.
         """
         timeout = (
             self.record_status_timeout_sec
@@ -1621,7 +1621,7 @@ class Commander(PrivilegedNode):
         if retry_interval <= 0:
             raise ValueError("retry_interval_sec must be greater than zero")
 
-        request_time = pytime.time()
+        request_id = f"record-{uuid.uuid4()}"
         expected_recording = not stop
         deadline = pytime.monotonic() + timeout
 
@@ -1631,7 +1631,12 @@ class Commander(PrivilegedNode):
                 break
 
             self.publisher["recorder"].publish(
-                RecordMsg(name=name, stop=stop, time=request_time)
+                RecordMsg(
+                    name=name,
+                    stop=stop,
+                    time=pytime.time(),
+                    request_id=request_id,
+                )
             )
 
             wait_deadline = min(
@@ -1643,14 +1648,13 @@ class Commander(PrivilegedNode):
                 try:
                     status = self.get_message(
                         "recorder",
-                        time=request_time,
                         timeout_sec=poll_timeout,
                     )
                 except NECSTTimeoutError:
                     continue
 
                 if (
-                    status.time == request_time
+                    status.request_id == request_id
                     and bool(status.recording) == expected_recording
                 ):
                     return

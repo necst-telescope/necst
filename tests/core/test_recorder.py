@@ -25,22 +25,26 @@ def mock_record_root(tmp_path_factory):
 class TestRecorder(TesterNode):
     NodeName = "test_recorder"
 
-    def test_record_status_echoes_command_time(self):
+    def test_record_status_echoes_request_id_and_sets_response_time(self):
         recorder = RecorderController()
         command = topic.record_cmd.publisher(self.node)
         statuses = []
         status_sub = topic.record_status.subscription(self.node, statuses.append)
         request_time = 123.456
+        request_id = "record-test-request"
 
         try:
             with spinning(self.node):
-                command.publish(RecordMsg(stop=True, time=request_time))
+                command.publish(
+                    RecordMsg(stop=True, time=request_time, request_id=request_id)
+                )
                 deadline = time.monotonic() + 2
                 while not statuses and time.monotonic() < deadline:
                     time.sleep(0.02)
 
             assert statuses
-            assert statuses[-1].time == request_time
+            assert statuses[-1].request_id == request_id
+            assert statuses[-1].time != request_time
         finally:
             destroy(recorder)
             destroy([command, status_sub], node=self.node)

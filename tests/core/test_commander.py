@@ -59,13 +59,22 @@ class TestCommander(TesterNode):
         com.record_status_retry_interval_sec = 0.1
         calls = []
 
-        def get_message(key, *, time, timeout_sec):
-            calls.append((key, time, timeout_sec))
+        def get_message(key, *, timeout_sec):
+            calls.append((key, timeout_sec))
             if len(calls) == 1:
                 return type(
-                    "Status", (), {"time": 0.0, "recording": cached_recording}
+                    "Status",
+                    (),
+                    {"request_id": "old-request", "recording": cached_recording},
                 )()
-            return type("Status", (), {"time": time, "recording": expected_recording})()
+            return type(
+                "Status",
+                (),
+                {
+                    "request_id": published[0].request_id,
+                    "recording": expected_recording,
+                },
+            )()
 
         com.get_message = get_message
         com._record_until_status(
@@ -78,6 +87,7 @@ class TestCommander(TesterNode):
         assert len(published) == 1
         assert published[0].stop is stop
         assert published[0].time != 0.0
+        assert published[0].request_id.startswith("record-")
 
     def test_record_status_timeout_limits_retries(self):
         published = []
@@ -89,8 +99,10 @@ class TestCommander(TesterNode):
         com = object.__new__(Commander)
         com.publisher = {"recorder": Publisher()}
 
-        def get_message(key, *, time, timeout_sec):
-            return type("Status", (), {"time": 0.0, "recording": True})()
+        def get_message(key, *, timeout_sec):
+            return type(
+                "Status", (), {"request_id": "old-request", "recording": True}
+            )()
 
         com.get_message = get_message
         with pytest.raises(NECSTTimeoutError):
@@ -102,6 +114,7 @@ class TestCommander(TesterNode):
             )
 
         assert 1 <= len(published) <= 5
+        assert len({msg.request_id for msg in published}) == 1
 
     def test_tracking_check(self):
         com = Commander()
