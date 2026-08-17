@@ -51,6 +51,8 @@ def test_detail_page_has_sticky_scrollable_table_and_markdown_copy():
     assert "else if(state.selectedCols.has(col))" in html
     assert "else if(state.selectedCells.has(key))" in html
     assert "td.querySelector('input')===event.target" in html
+    assert "else if(state.selectedRows.has(String(rid)))" in html
+    assert "ids.every(rid => state.selectedRows.has(rid))" in html
     assert "function clearSelection()" in html
     assert "closest('.table-box,.controls,.editor')" in html
     assert "},true);" in html

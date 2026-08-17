@@ -167,14 +167,19 @@ td input.cell-editor { min-width:0; max-width:100%; width:100%; padding:4px 6px;
   }
   function selectRow(rid, index, event) {
     const rows=visibleRows(); const ids=rows.map(rowId); const anchor=state.rowAnchor === null ? -1 : ids.indexOf(String(state.rowAnchor));
+    let deselected=false;
     if(event.shiftKey && anchor >= 0) {
       state.selectedRows=new Set(ids.slice(Math.min(anchor,index),Math.max(anchor,index)+1));
     } else if(event.metaKey || event.ctrlKey) {
       const next=new Set(state.selectedRows); next.has(String(rid))?next.delete(String(rid)):next.add(String(rid)); state.selectedRows=next; state.rowAnchor=String(rid);
+    } else if(state.selectedRows.has(String(rid))) {
+      const next=new Set(state.selectedRows); next.delete(String(rid)); state.selectedRows=next;
+      state.rowAnchor=next.size ? String(rid) : null;
+      deselected=true; syncEditor(null);
     } else {
       state.selectedRows=new Set([String(rid)]); state.rowAnchor=String(rid);
     }
-    state.selectedCells.clear(); syncEditor(rid); render();
+    state.selectedCells.clear(); if(!deselected) syncEditor(rid); render();
   }
   function selectColumn(col,index,event) {
     const anchor=state.colAnchor === null ? -1 : state.columns.indexOf(state.colAnchor);
@@ -255,6 +260,9 @@ td input.cell-editor { min-width:0; max-width:100%; width:100%; padding:4px 6px;
         } else if(event.metaKey || event.ctrlKey) {
           const allSelected=ids.length > 0 && ids.every(rid => state.selectedRows.has(rid));
           const next=new Set(state.selectedRows); ids.forEach(rid=>allSelected?next.delete(rid):next.add(rid)); state.selectedRows=next;
+        } else if(ids.length > 0 && ids.every(rid => state.selectedRows.has(rid))) {
+          const next=new Set(state.selectedRows); ids.forEach(rid=>next.delete(rid)); state.selectedRows=next;
+          state.rowAnchor=null; syncEditor(null);
         } else {
           state.selectedRows=new Set(ids);
         }
