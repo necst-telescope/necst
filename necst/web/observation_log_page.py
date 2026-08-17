@@ -55,7 +55,10 @@ th[data-col="__row"] { cursor:pointer; }
 th[data-col="comment"],td[data-col="comment"] { width:220px; min-width:220px; max-width:220px; }
 tr.selected td { background:var(--selection-soft); }
 tr.selected td:first-child { background:var(--selection-strong); color:#fff; }
-th.selected { background:var(--selection-strong); color:#fff; box-shadow:inset 0 -3px 0 var(--selection-active); }
+th.selected { background:var(--selection-strong); color:#fff; border-right-color:var(--selection-active);
+  box-shadow:inset 0 3px 0 var(--selection-ring),inset 0 -3px 0 var(--selection-active);
+  text-shadow:0 1px 2px rgba(0,0,0,.35); }
+th[data-col]:not([data-col="__row"]).selected { background:var(--selection-strong); }
 td.selected-column { background:var(--selection-soft); }
 tr.selected td.selected-column { background:var(--selection-soft); }
 td.selected-cell { background:var(--selection-soft); box-shadow:inset 0 0 0 2px var(--selection-ring); }
