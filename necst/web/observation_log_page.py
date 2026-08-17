@@ -47,13 +47,16 @@ th:first-child { left:0; z-index:5; }
 th[data-col="__row"],td[data-row-select] { min-width:58px; width:58px; text-align:center; user-select:none; }
 td:first-child { position:sticky; left:0; z-index:2; background:#111a31; color:#b8c5e2; font-variant-numeric:tabular-nums; cursor:pointer; }
 th[data-col="__row"] { cursor:pointer; }
+th[data-col="comment"],td[data-col="comment"] { width:220px; min-width:220px; max-width:220px; }
 tr.selected td { background:#1b376c; }
 tr.selected td:first-child { background:#234687; }
-th.selected { background:#2a4d91; }
+th.selected { background:#3b64b3; color:#fff; box-shadow:inset 0 -3px 0 var(--accent); }
+td.selected-column { background:#1b376c; }
+tr.selected td.selected-column { background:#2d589b; }
 td.selected-cell { background:#213d75; outline:2px solid var(--accent); outline-offset:-2px; }
 td.editable { cursor:text; }
 td.editable:hover { background:#1b2d52; }
-td input.cell-editor { min-width:160px; width:100%; padding:4px 6px; border-radius:5px; }
+td input.cell-editor { min-width:0; max-width:100%; width:100%; padding:4px 6px; border-radius:5px; }
 .empty { padding:30px; color:var(--muted); }
 .help { color:var(--muted); margin:10px 0 0; }
 @media (max-width:900px) {
@@ -166,7 +169,7 @@ td input.cell-editor { min-width:160px; width:100%; padding:4px 6px; border-radi
     const rows=visibleRows(); const head=q('grid').querySelector('thead'); const body=q('grid').querySelector('tbody');
     const allRowsSelected=rows.length > 0 && rows.every(row => state.selectedRows.has(rowId(row)));
     head.innerHTML='<tr><th data-col="__row" class="'+(allRowsSelected?'selected':'')+'" title="Select all visible rows">#</th>'+state.columns.map((col,index)=>`<th data-col="${esc(col)}" class="${state.selectedCols.has(col)?'selected':''}" title="Click to select column">${esc(col)}</th>`).join('')+'</tr>';
-    body.innerHTML=rows.map((row,index)=>{ const rid=rowId(row); const selected=state.selectedRows.has(rid); const cells=state.columns.map(col=>{const key=cellKey(rid,col); const value=show(row[col]); const editing=col==='comment'; return `<td data-rid="${esc(rid)}" data-col="${esc(col)}" class="${editing?'editable ':''}${state.selectedCells.has(key)?'selected-cell':''}" title="${esc(text(row[col]))}">${esc(value)}</td>`;}).join(''); return `<tr class="${selected?'selected':''}"><td data-row-select="${esc(rid)}" data-index="${index}" title="Select row">${esc(rid)}</td>${cells}</tr>`;}).join('');
+    body.innerHTML=rows.map((row,index)=>{ const rid=rowId(row); const selected=state.selectedRows.has(rid); const cells=state.columns.map(col=>{const key=cellKey(rid,col); const value=show(row[col]); const editing=col==='comment'; const selectedColumn=state.selectedCols.has(col); return `<td data-rid="${esc(rid)}" data-col="${esc(col)}" class="${editing?'editable ':''}${selectedColumn?'selected-column ':''}${state.selectedCells.has(key)?'selected-cell':''}" title="${esc(text(row[col]))}">${esc(value)}</td>`;}).join(''); return `<tr class="${selected?'selected':''}"><td data-row-select="${esc(rid)}" data-index="${index}" title="Select row">${esc(rid)}</td>${cells}</tr>`;}).join('');
     q('empty').hidden=rows.length!==0; q('grid').hidden=rows.length===0;
     head.querySelectorAll('th[data-col]').forEach(th=>th.addEventListener('click',event=>{
       const col=th.dataset.col;

@@ -37,3 +37,6 @@ def test_detail_page_has_sticky_scrollable_table_and_markdown_copy():
     assert 'data-row-select="${esc(rid)}"' in html
     assert "function selectColumn(col,index,event)" in html
     assert "state.selectedRows" in html and "state.selectedCols" in html
+    assert "selected-column" in html
+    assert 'td[data-col="comment"]' in html
+    assert "min-width:0; max-width:100%; width:100%" in html
