@@ -1,4 +1,5 @@
 import time
+from unittest.mock import Mock
 
 from necst_msgs.msg import ChopperMsg, CoordMsg
 from necst_msgs.srv import CoordinateCommand
@@ -251,7 +252,11 @@ class TestCommander(TesterNode):
         pub = topic.chopper_status.publisher(self.node)
 
         def update(msg: ChopperMsg):
-            response = ChopperMsg(insert=msg.insert, time=time.time())
+            response = ChopperMsg(
+                insert=msg.insert,
+                position=msg.position,
+                time=time.time(),
+            )
             pub.publish(response)
 
         sub = topic.chopper_cmd.subscription(self.node, update)
@@ -263,6 +268,20 @@ class TestCommander(TesterNode):
 
         destroy([com, auth])
         destroy([sub, pub], node=self.node)
+
+    def test_chopper_wait_uses_endpoint_position(self):
+        com = Commander()
+        com.get_message = Mock(
+            side_effect=[
+                ChopperMsg(insert=True, position=10000, time=time.time()),
+                ChopperMsg(insert=True, position=4750, time=time.time()),
+            ]
+        )
+
+        com.wait_oc(target="chopper", position="insert")
+
+        assert com.get_message.call_count == 2
+        destroy(com)
 
     def test_chopper_status_query(self):
         com = Commander()

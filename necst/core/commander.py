@@ -1272,13 +1272,16 @@ class Commander(PrivilegedNode):
         position: Union[Literal["insert", "remove"], int] = None,
     ):
         if target == "chopper":
+            # ``position`` is authoritative for chopper completion.  The
+            # ``insert`` field is retained only as a legacy compatibility
+            # field because intermediate telemetry may not represent a
+            # settled IN/OUT state.
             if isinstance(position, int):
-                while not self.get_message(target).position == position:
-                    pytime.sleep(0.1)
+                target_position = position
             else:
-                target_status = position == "insert"
-                while self.get_message(target).insert is not target_status:
-                    pytime.sleep(0.1)
+                target_position = config.chopper_motor_position[position]
+            while self.get_message(target).position != target_position:
+                pytime.sleep(0.1)
         else:
             pytime.sleep(1.1)
             while self.get_message(target).move:
