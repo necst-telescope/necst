@@ -182,19 +182,23 @@ td input.cell-editor { min-width:0; max-width:100%; width:100%; padding:4px 6px;
       state.selectedCols=new Set(state.columns.slice(Math.min(anchor,index),Math.max(anchor,index)+1));
     } else if(event.metaKey || event.ctrlKey) {
       const next=new Set(state.selectedCols); next.has(col)?next.delete(col):next.add(col); state.selectedCols=next; state.colAnchor=col;
+    } else if(state.selectedCols.has(col)) {
+      const next=new Set(state.selectedCols); next.delete(col); state.selectedCols=next; state.colAnchor=next.size ? col : null;
     } else {
       state.selectedCols=new Set([col]); state.colAnchor=col;
     }
     state.selectedCells.clear(); render();
   }
   function selectCell(rid,col,event) {
+    const key=cellKey(rid,col);
     if(event.metaKey || event.ctrlKey) {
-      const key=cellKey(rid,col);
       state.selectedCells.has(key)?state.selectedCells.delete(key):state.selectedCells.add(key);
+    } else if(state.selectedCells.has(key)) {
+      state.selectedCells.delete(key); syncEditor(null);
     } else {
-      state.selectedCells=new Set([cellKey(rid,col)]); state.selectedRows.clear(); state.selectedCols.clear();
+      state.selectedCells=new Set([key]); state.selectedRows.clear(); state.selectedCols.clear(); syncEditor(rid);
     }
-    syncEditor(rid); render();
+    render();
   }
   function clearSelection() {
     state.selectedRows.clear(); state.selectedCols.clear(); state.selectedCells.clear();
@@ -225,7 +229,7 @@ td input.cell-editor { min-width:0; max-width:100%; width:100%; padding:4px 6px;
     const allRowsSelected=rows.length > 0 && rows.every(row => state.selectedRows.has(rowId(row)));
     head.innerHTML='<tr><th data-col="__row" class="'+(allRowsSelected?'selected':'')+'" title="Select all visible rows">#</th>'+
       state.columns.map((col,index)=>{
-        const selected=state.selectedCols.has(col)||allRowsSelected?'selected':'';
+        const selected=state.selectedCols.has(col)||(allRowsSelected && !state.selectedCols.size)?'selected':'';
         return `<th data-col="${esc(col)}" class="${selected}" `+
           `title="Click to select column">${esc(col)}</th>`;
       }).join('')+'</tr>';
@@ -259,6 +263,7 @@ td input.cell-editor { min-width:0; max-width:100%; width:100%; padding:4px 6px;
     }));
     body.querySelectorAll('td[data-row-select]').forEach(td=>td.addEventListener('click',event=>selectRow(td.dataset.rowSelect,Number(td.dataset.index),event)));
     body.querySelectorAll('td[data-col]').forEach(td=>td.addEventListener('click',event=>{
+      if(td.querySelector('input')===event.target)return;
       const row=rowById(td.dataset.rid); if(!row)return;
       const rid=td.dataset.rid; const col=td.dataset.col; selectCell(rid,col,event);
       if(col==='comment'){

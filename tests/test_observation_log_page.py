@@ -44,7 +44,13 @@ def test_detail_page_has_sticky_scrollable_table_and_markdown_copy():
     assert "--selection-soft" in html
     assert "--selection-strong" in html
     assert 'th[data-col]:not([data-col="__row"]).selected' in html
-    assert "state.selectedCols.has(col)||allRowsSelected" in html
+    assert (
+        "state.selectedCols.has(col)||(allRowsSelected && !state.selectedCols.size)"
+        in html
+    )
+    assert "else if(state.selectedCols.has(col))" in html
+    assert "else if(state.selectedCells.has(key))" in html
+    assert "td.querySelector('input')===event.target" in html
     assert "function clearSelection()" in html
     assert "closest('.table-box,.controls,.editor')" in html
     assert "},true);" in html
