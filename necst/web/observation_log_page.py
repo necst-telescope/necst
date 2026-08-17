@@ -21,8 +21,8 @@ def render_observation_log_page() -> str:
 :root {
   --bg:#090f20; --panel:#111a31; --panel2:#17233f; --line:#2b3858;
   --text:#eaf0ff; --muted:#aab7d6; --accent:#79a5ff; --ok:#57d364;
-  --bad:#ff7373; --selection-soft:#213f78; --selection-strong:#3968ba;
-  --selection-active:#5b8ff0; --selection-ring:#a8c7ff;
+  --bad:#ff7373; --selection-soft:#1a315f; --selection-strong:#294a82;
+  --selection-active:#3d66a5; --selection-ring:#5279b7;
 }
 * { box-sizing:border-box; }
 body { margin:0; min-height:100vh; color:var(--text); background:radial-gradient(circle at top left,#1d315f 0,var(--bg) 34rem); font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
@@ -56,7 +56,7 @@ th[data-col="comment"],td[data-col="comment"] { width:220px; min-width:220px; ma
 tr.selected td { background:var(--selection-soft); }
 tr.selected td:first-child { background:var(--selection-strong); color:#fff; }
 th.selected { background:var(--selection-strong); color:#fff; border-right-color:var(--selection-active);
-  box-shadow:inset 0 3px 0 var(--selection-ring),inset 0 -3px 0 var(--selection-active);
+  box-shadow:inset 0 -2px 0 var(--selection-active);
   text-shadow:0 1px 2px rgba(0,0,0,.35); }
 th[data-col]:not([data-col="__row"]).selected { background:var(--selection-strong); }
 td.selected-column { background:var(--selection-soft); }

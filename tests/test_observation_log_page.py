@@ -44,6 +44,8 @@ def test_detail_page_has_sticky_scrollable_table_and_markdown_copy():
     assert "--selection-soft" in html
     assert "--selection-strong" in html
     assert 'th[data-col]:not([data-col="__row"]).selected' in html
+    assert "box-shadow:inset 0 -2px 0 var(--selection-active)" in html
+    assert "inset 0 3px 0 var(--selection-ring)" not in html
     assert (
         "state.selectedCols.has(col)||(allRowsSelected && !state.selectedCols.size)"
         in html
