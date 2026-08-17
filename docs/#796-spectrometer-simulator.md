@@ -54,6 +54,8 @@ SpectrometerSimulator
   -> Recorder / NECSTDB
 ```
 
+legacy channel binningが要求された場合は、実機XFFTSと同じ `change_spec_ch()` の呼び出しをSimulatorでも受け付け、指定channel数に切り詰めた疑似スペクトルを返す。
+
 Simulatorのスペクトルは実際のXFFTS通信をエミュレートするものではない。XFFTSのUDP/TCP通信やfirmware動作を検証する場合は実機または別のprotocol simulatorが必要になる。
 
 ## 確認
