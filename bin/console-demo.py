@@ -599,10 +599,11 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .obslog-card .obslog-current-row {
   display: grid;
-  grid-template-columns: auto minmax(280px, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   gap: 7px;
   align-items: center;
   min-width: 0;
+  white-space: nowrap;
   margin-bottom: 3px;
 }
 .obslog-card .obslog-current-row code {
@@ -752,7 +753,7 @@ summary { cursor: pointer; color: var(--muted); }
   white-space: pre-line;
 }
 @media (max-width: 1050px) {
-  .obslog-card .obslog-current-row,
+  .obslog-card .obslog-current-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; }
   .obslog-card .obslog-file-meta-row,
   .obslog-card .obslog-settings-row,
   .obslog-card .obslog-custom-row,
