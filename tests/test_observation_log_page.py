@@ -45,3 +45,4 @@ def test_detail_page_has_sticky_scrollable_table_and_markdown_copy():
     assert "--selection-strong" in html
     assert "function clearSelection()" in html
     assert "closest('.table-box,.controls,.editor')" in html
+    assert "},true);" in html

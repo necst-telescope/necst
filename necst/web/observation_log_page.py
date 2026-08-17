@@ -293,9 +293,10 @@ td input.cell-editor { min-width:0; max-width:100%; width:100%; padding:4px 6px;
   });
   q('comment').addEventListener('keydown',event=>{if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();q('save').click();}});
   document.addEventListener('click',event=>{
-    if(event.target.closest('.table-box,.controls,.editor'))return;
+    const target=event.target;
+    if(!target || typeof target.closest!=='function' || target.closest('.table-box,.controls,.editor'))return;
     clearSelection();
-  });
+  },true);
   load();
 })();
 </script>
