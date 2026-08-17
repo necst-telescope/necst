@@ -44,7 +44,9 @@ table { border-collapse:separate; border-spacing:0; min-width:max-content; width
 th,td { border-right:1px solid #25314d; border-bottom:1px solid #25314d; padding:8px 10px; height:40px; max-width:520px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
 th { position:sticky; top:0; z-index:3; color:#b8c5e2; background:#16213a; font-weight:700; cursor:pointer; }
 th:first-child { left:0; z-index:5; }
+th[data-col="__row"],td[data-row-select] { min-width:58px; width:58px; text-align:center; user-select:none; }
 td:first-child { position:sticky; left:0; z-index:2; background:#111a31; color:#b8c5e2; font-variant-numeric:tabular-nums; cursor:pointer; }
+th[data-col="__row"] { cursor:pointer; }
 tr.selected td { background:#1b376c; }
 tr.selected td:first-child { background:#234687; }
 th.selected { background:#2a4d91; }
@@ -82,7 +84,7 @@ td input.cell-editor { min-width:160px; width:100%; padding:4px 6px; border-radi
   <div id="message" class="message"></div>
 </div></header>
 <main class="main">
-  <div class="help">Click a row or cell to select it. Shift selects a range; Cmd/Ctrl adds rows or columns. Click a comment cell to edit it directly.</div>
+  <div class="help">Click a row-number or column header to select it. Shift selects a range; Cmd/Ctrl adds rows or columns. Copy selection copies the selected row × column matrix. Click a comment cell to edit it directly.</div>
   <div class="table-box"><table id="grid"><thead></thead><tbody></tbody></table><div id="empty" class="empty" hidden>No observation-log rows.</div></div>
 </main>
 <script>
@@ -136,18 +138,51 @@ td input.cell-editor { min-width:160px; width:100%; padding:4px 6px; border-radi
   }
   function syncEditor(rid) { state.targetRow=rid ? String(rid) : null; const row=rid ? rowById(rid) : null; q('target').textContent='Target row: '+(rid || 'none'); q('comment').value=row ? text(row.comment) : ''; }
   function selectRow(rid, index, event) {
-    const rows=visibleRows(); const ids=rows.map(rowId); if(event.shiftKey && state.rowAnchor !== null) { const a=ids.indexOf(String(state.rowAnchor)), b=index; state.selectedRows=new Set(ids.slice(Math.min(a,b),Math.max(a,b)+1)); } else if(event.metaKey || event.ctrlKey) { const next=new Set(state.selectedRows); next.has(String(rid))?next.delete(String(rid)):next.add(String(rid)); state.selectedRows=next; state.rowAnchor=String(rid); } else { state.selectedRows=new Set([String(rid)]); state.selectedCells.clear(); state.rowAnchor=String(rid); } syncEditor(rid); render(); }
+    const rows=visibleRows(); const ids=rows.map(rowId); const anchor=state.rowAnchor === null ? -1 : ids.indexOf(String(state.rowAnchor));
+    if(event.shiftKey && anchor >= 0) {
+      state.selectedRows=new Set(ids.slice(Math.min(anchor,index),Math.max(anchor,index)+1));
+    } else if(event.metaKey || event.ctrlKey) {
+      const next=new Set(state.selectedRows); next.has(String(rid))?next.delete(String(rid)):next.add(String(rid)); state.selectedRows=next; state.rowAnchor=String(rid);
+    } else {
+      state.selectedRows=new Set([String(rid)]); state.rowAnchor=String(rid);
+    }
+    state.selectedCells.clear(); syncEditor(rid); render();
+  }
   function selectColumn(col,index,event) {
-    if(event.shiftKey && state.colAnchor !== null) { const a=state.columns.indexOf(state.colAnchor), b=index; state.selectedCols=new Set(state.columns.slice(Math.min(a,b),Math.max(a,b)+1)); } else if(event.metaKey || event.ctrlKey) { const next=new Set(state.selectedCols); next.has(col)?next.delete(col):next.add(col); state.selectedCols=next; state.colAnchor=col; } else { state.selectedCols=new Set([col]); state.selectedCells.clear(); state.colAnchor=col; } render(); }
+    const anchor=state.colAnchor === null ? -1 : state.columns.indexOf(state.colAnchor);
+    if(event.shiftKey && anchor >= 0) {
+      state.selectedCols=new Set(state.columns.slice(Math.min(anchor,index),Math.max(anchor,index)+1));
+    } else if(event.metaKey || event.ctrlKey) {
+      const next=new Set(state.selectedCols); next.has(col)?next.delete(col):next.add(col); state.selectedCols=next; state.colAnchor=col;
+    } else {
+      state.selectedCols=new Set([col]); state.colAnchor=col;
+    }
+    state.selectedCells.clear(); render();
+  }
   function selectCell(rid,col,event) { if(event.metaKey || event.ctrlKey) { const key=cellKey(rid,col); state.selectedCells.has(key)?state.selectedCells.delete(key):state.selectedCells.add(key); } else { state.selectedCells=new Set([cellKey(rid,col)]); state.selectedRows.clear(); state.selectedCols.clear(); } syncEditor(rid); render(); }
   function commitCell(cell,input,original) { const value=input.value; cell.textContent=show(value); cell.classList.remove('editing'); if(value===original) return; action('obslog_comment',{target_row_id:cell.dataset.rid,comment:value}).then(()=>load()).catch(err=>{cell.textContent=show(original);setMessage(String(err),'bad');}); }
   function editComment(cell,row) { if(cell.querySelector('input')) return; const original=text(row.comment); const input=document.createElement('input'); input.className='cell-editor'; input.value=original; cell.textContent=''; cell.appendChild(input); input.focus(); input.select(); const finish=()=>{ if(input.dataset.done) return; input.dataset.done='1'; commitCell(cell,input,original); }; input.addEventListener('blur',finish); input.addEventListener('keydown',event=>{if(event.key==='Escape'){input.dataset.done='1';cell.textContent=show(original);}else if(event.key==='Enter' || (event.key==='Enter' && (event.metaKey||event.ctrlKey))){event.preventDefault();finish();}}); }
   function render() {
     const rows=visibleRows(); const head=q('grid').querySelector('thead'); const body=q('grid').querySelector('tbody');
-    head.innerHTML='<tr><th data-col="__row">#</th>'+state.columns.map((col,index)=>`<th data-col="${esc(col)}" class="${state.selectedCols.has(col)?'selected':''}" title="Click to select column">${esc(col)}</th>`).join('')+'</tr>';
+    const allRowsSelected=rows.length > 0 && rows.every(row => state.selectedRows.has(rowId(row)));
+    head.innerHTML='<tr><th data-col="__row" class="'+(allRowsSelected?'selected':'')+'" title="Select all visible rows">#</th>'+state.columns.map((col,index)=>`<th data-col="${esc(col)}" class="${state.selectedCols.has(col)?'selected':''}" title="Click to select column">${esc(col)}</th>`).join('')+'</tr>';
     body.innerHTML=rows.map((row,index)=>{ const rid=rowId(row); const selected=state.selectedRows.has(rid); const cells=state.columns.map(col=>{const key=cellKey(rid,col); const value=show(row[col]); const editing=col==='comment'; return `<td data-rid="${esc(rid)}" data-col="${esc(col)}" class="${editing?'editable ':''}${state.selectedCells.has(key)?'selected-cell':''}" title="${esc(text(row[col]))}">${esc(value)}</td>`;}).join(''); return `<tr class="${selected?'selected':''}"><td data-row-select="${esc(rid)}" data-index="${index}" title="Select row">${esc(rid)}</td>${cells}</tr>`;}).join('');
     q('empty').hidden=rows.length!==0; q('grid').hidden=rows.length===0;
-    head.querySelectorAll('th[data-col]').forEach(th=>th.addEventListener('click',event=>{const col=th.dataset.col;if(col==='__row'){const ids=rows.map(rowId);state.selectedRows=new Set(ids);render();}else selectColumn(col,state.columns.indexOf(col),event);}));
+    head.querySelectorAll('th[data-col]').forEach(th=>th.addEventListener('click',event=>{
+      const col=th.dataset.col;
+      if(col==='__row') {
+        const ids=rows.map(rowId); const anchor=state.rowAnchor === null ? -1 : ids.indexOf(String(state.rowAnchor));
+        if(event.shiftKey && anchor >= 0) {
+          state.selectedRows=new Set(ids.slice(Math.min(anchor,ids.length-1),Math.max(anchor,ids.length-1)+1));
+        } else if(event.metaKey || event.ctrlKey) {
+          const allSelected=ids.length > 0 && ids.every(rid => state.selectedRows.has(rid));
+          const next=new Set(state.selectedRows); ids.forEach(rid=>allSelected?next.delete(rid):next.add(rid)); state.selectedRows=next;
+        } else {
+          state.selectedRows=new Set(ids);
+        }
+        state.rowAnchor=ids.length ? ids[ids.length-1] : null; state.selectedCells.clear(); render();
+      } else selectColumn(col,state.columns.indexOf(col),event);
+    }));
     body.querySelectorAll('td[data-row-select]').forEach(td=>td.addEventListener('click',event=>selectRow(td.dataset.rowSelect,Number(td.dataset.index),event)));
     body.querySelectorAll('td[data-col]').forEach(td=>td.addEventListener('click',event=>{const row=rowById(td.dataset.rid); if(!row)return; const rid=td.dataset.rid; const col=td.dataset.col; selectCell(rid,col,event); if(col==='comment'){const fresh=[...body.querySelectorAll('td[data-col]')].find(cell=>cell.dataset.rid===rid && cell.dataset.col===col); if(fresh) editComment(fresh,row);}}));
   }

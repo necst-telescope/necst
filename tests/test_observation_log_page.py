@@ -21,6 +21,8 @@ def test_detail_page_contains_observation_log_workflow():
     assert "UTC: newest first" in html
     assert "Event: all" in html
     assert "Copy selection" in html
+    assert "row-number or column header" in html
+    assert "selected row × column matrix" in html
     assert "comment cell to edit it directly" in html
 
 
@@ -32,3 +34,6 @@ def test_detail_page_has_sticky_scrollable_table_and_markdown_copy():
     assert "position:sticky" in html
     assert "| '+picked.cols.map(markdown).join(' | ')+' |'" in html
     assert re.search(r"replace\(/\\\|/g,'\\\\\\|'", html)
+    assert 'data-row-select="${esc(rid)}"' in html
+    assert "function selectColumn(col,index,event)" in html
+    assert "state.selectedRows" in html and "state.selectedCols" in html
