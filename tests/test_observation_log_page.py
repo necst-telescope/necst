@@ -2,9 +2,10 @@ import importlib.util
 from pathlib import Path
 import re
 
-
 _MODULE_PATH = Path(__file__).parents[1] / "necst" / "web" / "observation_log_page.py"
-_SPEC = importlib.util.spec_from_file_location("necst_test_observation_log_page", _MODULE_PATH)
+_SPEC = importlib.util.spec_from_file_location(
+    "necst_test_observation_log_page", _MODULE_PATH
+)
 assert _SPEC is not None and _SPEC.loader is not None
 _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
@@ -40,3 +41,7 @@ def test_detail_page_has_sticky_scrollable_table_and_markdown_copy():
     assert "selected-column" in html
     assert 'td[data-col="comment"]' in html
     assert "min-width:0; max-width:100%; width:100%" in html
+    assert "--selection-soft" in html
+    assert "--selection-strong" in html
+    assert "function clearSelection()" in html
+    assert "closest('.table-box,.controls,.editor')" in html
