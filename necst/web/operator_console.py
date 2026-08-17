@@ -40,6 +40,7 @@ from . import (
     status_model,
     live_telemetry,
     node_health,
+    observation_log_page,
 )
 from ..az_unwrap_limits import assert_mount_az_allowed_when_unwrap_disabled
 
@@ -3970,9 +3971,21 @@ class OperatorConsoleHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _send_page(self, text: str) -> None:
+        body = text.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self) -> None:  # noqa: N802 - stdlib method name
         if self.path in {"/", "/index.html"}:
             self._send_text(self.server.html)
+            return
+        if urllib.parse.urlparse(self.path).path == "/observation-log":
+            self._send_page(observation_log_page.render_observation_log_page())
             return
         if self.path == "/health":
             self._send_json(

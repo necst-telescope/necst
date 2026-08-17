@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 import json
 import math
 import os
@@ -1132,6 +1133,7 @@ summary { cursor: pointer; color: var(--muted); }
           <span class="mini-label">Current CSV</span>
           <code id="obsLogFile" title="Current observation CSV log file. This display is read-only. Use 'New timestamped CSV' or 'Use / Append CSV' to change the write target.">loading</code>
           <button id="copyObsLogPath" class="secondary compact" type="button" title="Copy the full container path of the active CSV log.">Copy path</button>
+          <button id="openObservationLog" class="secondary compact" type="button" title="Open the detailed Observation Log in a new tab.">Detailed ↗</button>
           <button id="obsLogDirHelp" class="secondary compact obslog-help-button" type="button" aria-expanded="false" title="Log directory selection:\n1. NECST_OBSLOG_DIR, if set.\n2. <record root>/obslogs, if available.\n3. ~/.necst/observation_logs as fallback.\nThis path is inside the console container. Use a bind-mounted path if you need the log on the host.">?</button>
         </div>
         <div class="obslog-file-meta-row">
@@ -3254,6 +3256,9 @@ qs('copyObsLogPath').addEventListener('click', async () => {
   if (!text || text === 'loading' || text === 'not configured' || text === 'initializing...') return;
   try { await navigator.clipboard.writeText(text); qs('copyObsLogPath').textContent = 'Copied'; setTimeout(() => qs('copyObsLogPath').textContent = 'Copy path', 900); } catch (_) {}
 });
+qs('openObservationLog').addEventListener('click', () => {
+  window.open('/observation-log', '_blank', 'noopener');
+});
 qs('obsLogDirHelp').addEventListener('click', () => {
   const box = qs('obsLogHelpText');
   const btn = qs('obsLogDirHelp');
@@ -3446,6 +3451,18 @@ def _load_console_html_from_source() -> str:
 
 def _load_progress_html_from_source() -> str:
     return _load_embedded_html_from_source('PROGRESS_HTML = r"""')
+
+
+def _load_observation_log_page_html() -> str:
+    """Load the shared detail page without importing the ROS-backed package."""
+
+    module_path = Path(__file__).resolve().parents[1] / "necst" / "web" / "observation_log_page.py"
+    spec = importlib.util.spec_from_file_location("necst_observation_log_page", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"failed to load observation log page: {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.render_observation_log_page()
 
 
 class DemoObservationLog:
@@ -4229,6 +4246,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 - stdlib API name
         if self.path in {"/", "/index.html"}:
             self._send_html()
+            return
+        if urllib.parse.urlparse(self.path).path == "/observation-log":
+            data = _load_observation_log_page_html().encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(data)
             return
         if self.path == "/api/status":
             with self.server.lock:
