@@ -224,7 +224,11 @@ td input.cell-editor { min-width:0; max-width:100%; width:100%; padding:4px 6px;
     const rows=visibleRows(); const head=q('grid').querySelector('thead'); const body=q('grid').querySelector('tbody');
     const allRowsSelected=rows.length > 0 && rows.every(row => state.selectedRows.has(rowId(row)));
     head.innerHTML='<tr><th data-col="__row" class="'+(allRowsSelected?'selected':'')+'" title="Select all visible rows">#</th>'+
-      state.columns.map((col,index)=>`<th data-col="${esc(col)}" class="${state.selectedCols.has(col)?'selected':''}" title="Click to select column">${esc(col)}</th>`).join('')+'</tr>';
+      state.columns.map((col,index)=>{
+        const selected=state.selectedCols.has(col)||allRowsSelected?'selected':'';
+        return `<th data-col="${esc(col)}" class="${selected}" `+
+          `title="Click to select column">${esc(col)}</th>`;
+      }).join('')+'</tr>';
     body.innerHTML=rows.map((row,index)=>{
       const rid=rowId(row); const selected=state.selectedRows.has(rid);
       const cells=state.columns.map(col=>{
