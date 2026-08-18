@@ -794,7 +794,6 @@ summary { cursor: pointer; color: var(--muted); }
     <div id="devTools" class="dev-tools" hidden>
       <span>Development / simulator only</span>
       <button id="devReloadConsole" class="secondary compact" type="button" title="Reload the latest console HTML/CSS/JavaScript from the source tree, then reload this browser page. No ROS node is started.">Reload console UI</button>
-      <button id="devRestartProgress" class="secondary compact" type="button" title="Restart only the progress monitor process managed by this console. No ROS telescope node is started.">Restart progress UI</button>
       <span id="devToolsMessage" class="dev-tools-message"></span>
     </div>
     <details class="node-health" id="nodeHealthBox" hidden>
@@ -3316,11 +3315,6 @@ function setupDevelopmentTools() {
     if (data.ok) window.location.reload();
     else setMessage(data.reason || 'Console UI reload failed');
   });
-  qs('devRestartProgress')?.addEventListener('click', async () => {
-    setMessage('Restarting progress UI...');
-    const data = await api('dev_restart_progress');
-    setMessage(data.ok ? 'Progress UI restarted.' : (data.reason || 'Progress UI restart failed'));
-  });
 }
 function getStatusRefreshMs() {
   const cfg = window.NECST_CONSOLE_CONFIG || {};
@@ -4775,12 +4769,6 @@ def handle_action(
             return False, str(exc)
         server.add_log(True, "development console UI reloaded from source")
         return True, "console UI reload requested"
-
-    if action == "dev_restart_progress":
-        server.stop_progress()
-        ok, reason, _url = server.launch_progress()
-        server.add_log(ok, f"development progress UI restart: {reason}")
-        return ok, reason
 
     active_reason = _demo_active_operation_reason(state, action)
     if active_reason is not None:
