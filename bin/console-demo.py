@@ -791,11 +791,6 @@ summary { cursor: pointer; color: var(--muted); }
       <button id="authorityButton" class="secondary">Acquire authority</button>
       <button id="stopButton" class="stop-button">STOP</button>
     </div>
-    <div id="devTools" class="dev-tools" hidden>
-      <span>Development / simulator only</span>
-      <button id="devReloadConsole" class="secondary compact" type="button" title="Reload the latest console HTML/CSS/JavaScript from the source tree, then reload this browser page. No ROS node is started.">Reload console UI</button>
-      <span id="devToolsMessage" class="dev-tools-message"></span>
-    </div>
     <details class="node-health" id="nodeHealthBox" hidden>
       <summary id="nodeHealthSummary">ROS node health</summary>
       <div class="node-health-details" id="nodeHealthDetails"></div>
@@ -3300,22 +3295,7 @@ qs('runtimeProcesses').addEventListener('click', async (ev) => {
   const pid = btn.dataset.pid;
   if (confirm(`Force-kill local launcher pid=${pid}?\n\nUse only when this local launcher is stuck and hardware is already confirmed safe.\n\nThis does NOT send telescope STOP, recorder STOP, or XFFTS STOP.`)) await api('terminate_process', {pid});
 });
-qs('openProgress').addEventListener('click', launchOrOpenProgress);
-function setupDevelopmentTools() {
-  const cfg = window.NECST_CONSOLE_CONFIG || {};
-  const simulator = cfg.simulator === undefined ? true : cfg.simulator === true;
-  const box = qs('devTools');
-  if (!simulator || !box) return;
-  box.hidden = false;
-  const message = qs('devToolsMessage');
-  const setMessage = (text) => { if (message) message.textContent = text; };
-  qs('devReloadConsole')?.addEventListener('click', async () => {
-    setMessage('Reloading console UI...');
-    const data = await api('dev_reload_console');
-    if (data.ok) window.location.reload();
-    else setMessage(data.reason || 'Console UI reload failed');
-  });
-}
+  qs('openProgress').addEventListener('click', launchOrOpenProgress);
 function getStatusRefreshMs() {
   const cfg = window.NECST_CONSOLE_CONFIG || {};
   const raw = Number(cfg.statusRefreshMs ?? cfg.status_refresh_ms ?? 1000);
@@ -3323,7 +3303,7 @@ function getStatusRefreshMs() {
   return Math.max(200, Math.round(raw));
 }
 const statusRefreshMs = getStatusRefreshMs();
-setupDevelopmentTools(); setupFormPersistence(); loadServerObsRoots(); validateObs(); updatePreviewInfo(); validateMount(); updateTargetFields(); refresh(); setInterval(refresh, statusRefreshMs);
+setupFormPersistence(); loadServerObsRoots(); validateObs(); updatePreviewInfo(); validateMount(); updateTargetFields(); refresh(); setInterval(refresh, statusRefreshMs);
 </script>
 </body>
 </html>
@@ -4760,15 +4740,6 @@ def handle_action(
     server: ConsoleDemoServer, action: str, params: Dict[str, Any], session_id: str
 ) -> Tuple[bool, str]:
     state = server.state
-
-    if action == "dev_reload_console":
-        try:
-            server.html = _load_console_html_from_source()
-        except Exception as exc:
-            server.add_log(False, f"development console UI reload failed: {exc}")
-            return False, str(exc)
-        server.add_log(True, "development console UI reloaded from source")
-        return True, "console UI reload requested"
 
     active_reason = _demo_active_operation_reason(state, action)
     if active_reason is not None:
