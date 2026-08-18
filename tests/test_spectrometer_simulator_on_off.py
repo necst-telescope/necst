@@ -27,6 +27,8 @@ def _node_with_fake_simulator():
     node = SimulatedSpectralData.__new__(SimulatedSpectralData)
     simulator = _FakeSpectrometerSimulator()
     node._simulated_spectrometers = (simulator,)
+    node._source_state_schedule = []
+    node._current_on_source = None
     return node, simulator
 
 
@@ -211,10 +213,34 @@ def test_on_metadata_enables_line_and_off_disables_it():
     assert simulator.on_states == [True, False]
 
 
+def test_future_metadata_does_not_change_signal_before_effective_time():
+    node, simulator = _node_with_fake_simulator()
+    future = 1.0e20
+
+    node._schedule_source_state(future, "ON")
+
+    assert simulator.on_states == []
+    node._apply_due_source_state(now=future)
+    assert simulator.on_states == [True]
+
+
+def test_scheduled_on_off_changes_follow_effective_time_order():
+    node, simulator = _node_with_fake_simulator()
+    future = 1.0e20
+
+    node._schedule_source_state(future + 1.0, "OFF")
+    node._schedule_source_state(future, "ON")
+
+    node._apply_due_source_state(now=future)
+    assert simulator.on_states == [True]
+    node._apply_due_source_state(now=future + 1.0)
+    assert simulator.on_states == [True, False]
+
+
 def test_skydip_sky_and_hot_positions_never_enable_gaussian():
     node, simulator = _node_with_fake_simulator()
 
     for position in ("SKY", "HOT", ""):
         node._set_on_source_from_position(position)
 
-    assert simulator.on_states == [False, False, False]
+    assert simulator.on_states == [False]
