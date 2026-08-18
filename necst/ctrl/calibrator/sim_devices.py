@@ -77,14 +77,28 @@ class ChopperSimulator(Node):
         self.motor.set_step(position, "chopper")
         self.telemetry()
 
+    @staticmethod
+    def _telemetry_message(position: str, timestamp: float) -> ChopperMsg | None:
+        """Build simulator telemetry with the same position contract as hardware."""
+        if position == "insert":
+            return ChopperMsg(
+                insert=True,
+                position=config.chopper_motor_position["insert"],
+                time=timestamp,
+            )
+        if position == "remove":
+            return ChopperMsg(
+                insert=False,
+                position=config.chopper_motor_position["remove"],
+                time=timestamp,
+            )
+        return None
+
     def telemetry(self) -> None:
         position = self.motor.get_step("chopper")
-        if position == "insert":
-            msg = ChopperMsg(insert=True, time=time.time())
-        elif position == "remove":
-            msg = ChopperMsg(insert=False, time=time.time())
-        else:
-            self.logger.warning(
+        msg = self._telemetry_message(position, time.time())
+        if msg is None:
+            self.get_logger().warning(
                 f"Chopper wheel is off the expected position (={position})",
                 throttle_duration_sec=5,
             )
