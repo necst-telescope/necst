@@ -1,4 +1,5 @@
 import math
+import time as pytime
 from typing import Any, Dict, Mapping, Sequence, Tuple
 
 import numpy as np
@@ -204,20 +205,50 @@ class SimulatedSpectralData(SpectralData):
             simulated.append(io)
 
         self._simulated_spectrometers = tuple(simulated)
+        self._source_state_schedule = []
+        self._current_on_source = None
         topic.chopper_status.subscription(self, self.update_chopper_status)
+        self.create_timer(0.02, self._apply_due_source_state)
 
-    def _set_on_source_from_position(self, position: str) -> None:
+    @staticmethod
+    def _position_is_on_source(position: str) -> bool:
         # Observation.sky() uses SKY and Observation.off() uses OFF.  In
         # particular, Skydip integrations are SKY/HOT and must never acquire an
         # astronomical Gaussian merely because they are source-like integrations.
-        enabled = str(position or "").strip().upper() == "ON"
+        return str(position or "").strip().upper() == "ON"
+
+    def _set_on_source(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if getattr(self, "_current_on_source", None) == enabled:
+            return
         for io in self._simulated_spectrometers:
             io.set_on_source(enabled)
+        self._current_on_source = enabled
+
+    def _set_on_source_from_position(self, position: str) -> None:
+        """Apply one already-due metadata position to simulator source state."""
+        self._set_on_source(self._position_is_on_source(position))
+
+    def _schedule_source_state(self, effective_time: float, position: str) -> None:
+        state = (float(effective_time), self._position_is_on_source(position))
+        self._source_state_schedule.append(state)
+        self._source_state_schedule.sort(key=lambda item: item[0])
+        self._apply_due_source_state()
+
+    def _apply_due_source_state(self, now: float = None) -> None:
+        """Apply the latest ON/OFF metadata whose effective time has arrived."""
+        now = pytime.time() if now is None else float(now)
+        schedule = getattr(self, "_source_state_schedule", [])
+        due = [entry for entry in schedule if entry[0] <= now]
+        if not due:
+            return
+        self._set_on_source(due[-1][1])
+        self._source_state_schedule = [entry for entry in schedule if entry[0] > now]
 
     def update_metadata(self, msg: Spectral) -> None:
-        """Mirror regular metadata handling, then apply simulator ON/OFF state."""
+        """Mirror regular metadata handling and schedule simulator ON/OFF state."""
         super().update_metadata(msg)
-        self._set_on_source_from_position(msg.position)
+        self._schedule_source_state(msg.time, msg.position)
 
     def update_chopper_status(self, msg: ChopperMsg) -> None:
         """Apply HOT only after the chopper reaches the configured insert position."""
@@ -238,7 +269,8 @@ class SimulatedSpectralData(SpectralData):
         )
         for key, io in self.io.items():
             io.set_on_line_components(by_spectrometer.get(str(key), {}))
-            io.set_on_source(False)
+        self._source_state_schedule = []
+        self._set_on_source(False)
         if unmatched:
             self.logger.warning(
                 "Simulator ON-line config window_id(s) are not present in the active "
@@ -264,7 +296,8 @@ class SimulatedSpectralData(SpectralData):
     def clear_spectral_recording_setup(self, request, response):
         response = super().clear_spectral_recording_setup(request, response)
         if response.success:
+            self._source_state_schedule = []
+            self._set_on_source(False)
             for io in self._simulated_spectrometers:
-                io.set_on_source(False)
                 io.set_on_line_components({})
         return response
