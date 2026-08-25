@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from neclib.devices import CcdController as CCD_Device
 
 from necst_msgs.srv import CCDCommand
@@ -26,7 +28,13 @@ class CCDController(DeviceNode):
         self, request: CCDCommand.Request, response: CCDCommand.Response
     ) -> CCDCommand.Response:
         if request.capture:
-            self.ccd.capture(request.savepath)
-            self.logger.info("Capturing the target is completed.")
-            response.captured = True
-            return response
+            try:
+                Path(request.savepath).parent.mkdir(parents=True, exist_ok=True)
+                self.ccd.capture(request.savepath)
+            except Exception as exc:
+                self.logger.error(f"CCD capture failed: {exc}")
+                response.captured = False
+            else:
+                self.logger.info("Capturing the target is completed.")
+                response.captured = True
+        return response

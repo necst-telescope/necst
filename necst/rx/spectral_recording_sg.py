@@ -5,8 +5,8 @@ time.  The pure functions are unit-testable with fake readback objects; the CLI
 imports ``necst.core.Commander`` only when an actual apply/verify command is
 requested.
 
-Frequency convention
---------------------
+Notes
+-----
 ``sg_set_frequency_hz`` in ``lo_profile.toml`` is the frequency sent to the
 physical signal generator.  Commander currently publishes ``LocalSignal.freq``
 in GHz, so readback objects with a ``freq`` attribute are interpreted as GHz
