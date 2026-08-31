@@ -1,10 +1,11 @@
 import time
 from unittest.mock import Mock
 
+import pytest
 from necst_msgs.msg import ChopperMsg, CoordMsg
 from necst_msgs.srv import CoordinateCommand
 
-from necst import service, topic
+from necst import NECSTTimeoutError, service, topic
 from necst.core import Authorizer, Commander
 from necst.ctrl import (
     AntennaDeviceSimulator,
@@ -39,6 +40,82 @@ class TestCommander(TesterNode):
         assert "commander" in com.get_name()
 
         destroy(com)
+
+    @pytest.mark.parametrize(
+        ("stop", "cached_recording", "expected_recording"),
+        [(True, True, False), (False, False, True)],
+    )
+    def test_record_waits_for_correlated_status_without_command_storm(
+        self, stop, cached_recording, expected_recording
+    ):
+        published = []
+
+        class Publisher:
+            def publish(self, msg):
+                published.append(msg)
+
+        com = object.__new__(Commander)
+        com.publisher = {"recorder": Publisher()}
+        com.record_status_timeout_sec = 1.0
+        com.record_status_retry_interval_sec = 0.1
+        calls = []
+
+        def get_message(key, *, timeout_sec):
+            calls.append((key, timeout_sec))
+            if len(calls) == 1:
+                return type(
+                    "Status",
+                    (),
+                    {"request_id": "old-request", "recording": cached_recording},
+                )()
+            return type(
+                "Status",
+                (),
+                {
+                    "request_id": published[0].request_id,
+                    "recording": expected_recording,
+                },
+            )()
+
+        com.get_message = get_message
+        com._record_until_status(
+            name="test",
+            stop=stop,
+            timeout_sec=1.0,
+            retry_interval_sec=0.1,
+        )
+
+        assert len(published) == 1
+        assert published[0].stop is stop
+        assert published[0].time != 0.0
+        assert published[0].request_id.startswith("record-")
+
+    def test_record_status_timeout_limits_retries(self):
+        published = []
+
+        class Publisher:
+            def publish(self, msg):
+                published.append(msg)
+
+        com = object.__new__(Commander)
+        com.publisher = {"recorder": Publisher()}
+
+        def get_message(key, *, timeout_sec):
+            return type(
+                "Status", (), {"request_id": "old-request", "recording": True}
+            )()
+
+        com.get_message = get_message
+        with pytest.raises(NECSTTimeoutError):
+            com._record_until_status(
+                name="test",
+                stop=True,
+                timeout_sec=0.08,
+                retry_interval_sec=0.02,
+            )
+
+        assert 1 <= len(published) <= 5
+        assert len({msg.request_id for msg in published}) == 1
 
     def test_tracking_check(self):
         com = Commander()

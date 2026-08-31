@@ -1,4 +1,5 @@
 import os
+import time as pytime
 from functools import partial
 from pathlib import Path
 
@@ -39,23 +40,33 @@ class RecorderController(ServerNode):
         if msg.stop and self.recorder.is_recording:
             self.recorder.stop_recording()
             self.logger.info("Recording has been stopped.")
-            re_msg = RecordMsg(recording=False)
+            re_msg = RecordMsg(
+                recording=False, time=pytime.time(), request_id=msg.request_id
+            )
         elif msg.stop:
             self.logger.info("Recording has already been stopped.")
-            re_msg = RecordMsg(recording=False)
+            re_msg = RecordMsg(
+                recording=False, time=pytime.time(), request_id=msg.request_id
+            )
         elif not self.recorder.is_recording:
             self.recorder.start_recording(msg.name or None)
             self.logger.info(f"Recorder started: {self.recorder.recording_path!s}")
-            re_msg = RecordMsg(recording=True)
+            re_msg = RecordMsg(
+                recording=True, time=pytime.time(), request_id=msg.request_id
+            )
         elif self.recorder.recording_path != self.recorder.record_root / msg.name:
             self.logger.info(f"Stopped recording: {self.recorder.recording_path!s}")
             self.recorder.stop_recording()
             self.recorder.start_recording(msg.name)
             self.logger.info(f"Recorder started: {self.recorder.recording_path!s}")
-            re_msg = RecordMsg(recording=True)
+            re_msg = RecordMsg(
+                recording=True, time=pytime.time(), request_id=msg.request_id
+            )
         else:
             self.logger.info(f"Continue recording: {self.recorder.recording_path!s}")
-            re_msg = RecordMsg(recording=True)
+            re_msg = RecordMsg(
+                recording=True, time=pytime.time(), request_id=msg.request_id
+            )
         self.pub.publish(re_msg)
         return
 
