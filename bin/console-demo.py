@@ -13,11 +13,13 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 import json
 import math
 import os
 import signal
 import sys
+import tempfile
 import threading
 import time
 import uuid
@@ -156,6 +158,21 @@ small { color: var(--faint); }
 .node-health-row .name { overflow-wrap: anywhere; word-break: break-word; color: var(--faint); }
 .node-health-note { color: var(--faint); overflow-wrap: anywhere; word-break: break-word; }
 .header-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.dev-tools {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px dashed rgba(242,204,96,0.45);
+  border-radius: 9px;
+  color: var(--warn);
+  font-size: 11px;
+}
+.dev-tools[hidden] { display: none; }
+.dev-tools button { padding: 5px 8px; font-size: 11px; }
+.dev-tools-message { color: var(--muted); }
 .badge {
   display: inline-flex;
   align-items: center;
@@ -582,10 +599,11 @@ summary { cursor: pointer; color: var(--muted); }
 }
 .obslog-card .obslog-current-row {
   display: grid;
-  grid-template-columns: auto minmax(280px, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   gap: 7px;
   align-items: center;
   min-width: 0;
+  white-space: nowrap;
   margin-bottom: 3px;
 }
 .obslog-card .obslog-current-row code {
@@ -627,22 +645,68 @@ summary { cursor: pointer; color: var(--muted); }
   grid-template-columns: 130px 180px minmax(190px, auto);
   justify-content: start;
 }
+.obslog-card .obslog-file-management {
+  margin: 4px 0 8px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.018);
+}
+.obslog-card .obslog-file-management > summary,
+.obslog-card .obslog-advanced-path > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 11px;
+  user-select: none;
+}
+.obslog-card .obslog-file-management > summary {
+  min-height: 34px;
+  padding: 7px 9px;
+  line-height: 18px;
+}
+.obslog-card .obslog-file-management:not([open]) { height: 36px; overflow: hidden; }
+.obslog-card .obslog-file-management[open] > summary { border-bottom: 1px solid var(--line); }
+.obslog-card .obslog-file-management-body { padding: 8px 9px 2px; }
+.obslog-card .obslog-file-browser-row {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto auto;
+  gap: 7px;
+  align-items: end;
+  margin-bottom: 7px;
+}
+.obslog-card .obslog-file-browser-row label { align-self: center; margin: 0; }
+.obslog-card .obslog-file-browser-row select { min-width: 0; }
+.obslog-card .obslog-file-browser-row button { white-space: nowrap; }
+.obslog-card .obslog-file-browser-help { margin: -2px 0 7px; color: var(--faint); font-size: 11px; }
+.obslog-card .obslog-advanced-path { margin: 0 0 7px; }
+.obslog-card .obslog-advanced-path > summary { padding: 2px 0; }
+.obslog-card .obslog-advanced-path-body {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+  margin-top: 6px;
+}
 .obslog-card .obslog-custom-row {
   grid-template-columns: auto minmax(220px, 1fr) auto;
   align-items: center;
 }
 .obslog-card .obslog-comment-row {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: 190px minmax(0, 1fr) auto;
+  align-items: end;
 }
 .obslog-card .mini-field {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   color: var(--muted);
   font-size: 11px;
 }
+.obslog-card .obslog-comment-row .mini-field { transform: translateY(4px); }
 .obslog-card label { color: var(--muted); font-size: 11px; }
-.obslog-card input { padding: 6px 8px; font-size: 12px; }
+.obslog-card input, .obslog-card select { padding: 7px 8px; font-size: 12px; }
+.obslog-card .obslog-comment-row > input,
+.obslog-card .obslog-comment-row > button,
+.obslog-card .obslog-comment-row select { min-height: 36px; }
 .obslog-card .obslog-last {
   margin-top: 5px;
   color: var(--muted);
@@ -667,6 +731,7 @@ summary { cursor: pointer; color: var(--muted); }
 .obslog-card table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 12px; }
 .obslog-card th, .obslog-card td { padding: 5px 7px; border-bottom: 1px solid rgba(40,50,74,0.6); text-align: left; vertical-align: top; white-space: nowrap; }
 .obslog-card th { color: var(--muted); font-weight: 600; background: rgba(255,255,255,0.025); position: sticky; top: 0; }
+.obslog-card .obslog-select-button { min-width: 0; padding: 3px 6px; border-radius: 6px; font-size: 11px; }
 .obslog-card td:nth-child(4), .obslog-card td:nth-child(7) { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 .obslog-card .obslog-warning { color: var(--warn); font-size: 11px; margin-top: 5px; }
 .obslog-card .obslog-help-button {
@@ -688,11 +753,13 @@ summary { cursor: pointer; color: var(--muted); }
   white-space: pre-line;
 }
 @media (max-width: 1050px) {
-  .obslog-card .obslog-current-row,
+  .obslog-card .obslog-current-row { grid-template-columns: auto minmax(0, 1fr) auto auto auto; }
   .obslog-card .obslog-file-meta-row,
   .obslog-card .obslog-settings-row,
   .obslog-card .obslog-custom-row,
-  .obslog-card .obslog-comment-row { grid-template-columns: 1fr; }
+  .obslog-card .obslog-comment-row,
+  .obslog-card .obslog-file-browser-row,
+  .obslog-card .obslog-advanced-path-body { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 1050px) {
@@ -1061,6 +1128,7 @@ summary { cursor: pointer; color: var(--muted); }
           <span class="mini-label">Current CSV</span>
           <code id="obsLogFile" title="Current observation CSV log file. This display is read-only. Use 'New timestamped CSV' or 'Use / Append CSV' to change the write target.">loading</code>
           <button id="copyObsLogPath" class="secondary compact" type="button" title="Copy the full container path of the active CSV log.">Copy path</button>
+          <button id="openObservationLog" class="secondary compact" type="button" title="Open the detailed Observation Log in a new tab.">Detailed ↗</button>
           <button id="obsLogDirHelp" class="secondary compact obslog-help-button" type="button" aria-expanded="false" title="Log directory selection:\n1. NECST_OBSLOG_DIR, if set.\n2. <record root>/obslogs, if available.\n3. ~/.necst/observation_logs as fallback.\nThis path is inside the console container. Use a bind-mounted path if you need the log on the host.">?</button>
         </div>
         <div class="obslog-file-meta-row">
@@ -1069,20 +1137,35 @@ summary { cursor: pointer; color: var(--muted); }
         </div>
         <div id="obsLogHelpText" class="obslog-help-text" hidden></div>
 
-        <div class="obslog-settings-row">
-          <label class="mini-field" for="obsLogUser"><span>User</span><input id="obsLogUser" value="User" maxlength="128" title="Observer name written to subsequent CSV rows."></label>
-          <label class="mini-field" for="obsLogPrefix"><span>Prefix</span><input id="obsLogPrefix" value="obslog" maxlength="64" title="Filename prefix used by 'New timestamped CSV'."></label>
-          <button id="newObsLog" class="secondary compact" type="button" title="Create a new CSV using the prefix and current UTC time, e.g. obslog_20260609T134032Z.csv. This does not rename the old file.">New timestamped CSV</button>
-        </div>
-
-        <div class="obslog-custom-row">
-          <label for="obsLogOpenPath">Use specific CSV</label>
-          <input id="obsLogOpenPath" placeholder="night1 or night1.csv, or /container/path/night1.csv" title="Switch writing to this CSV. If it exists, append to it. If it does not exist, create it. Relative names are resolved inside the current log directory; .csv is added automatically when omitted.">
-          <button id="openObsLog" class="secondary compact" type="button" title="Switch writing to the specified CSV. Existing files are appended; missing files are created.">Use / Append CSV</button>
-        </div>
+        <details class="obslog-file-management">
+          <summary>CSV management</summary>
+          <div class="obslog-file-management-body">
+            <div class="obslog-settings-row">
+              <label class="mini-field" for="obsLogUser"><span>User</span><input id="obsLogUser" value="User" maxlength="128" title="Observer name written to subsequent CSV rows."></label>
+              <label class="mini-field" for="obsLogPrefix"><span>Prefix</span><input id="obsLogPrefix" value="obslog" maxlength="64" title="Filename prefix used by 'New timestamped CSV'."></label>
+              <button id="newObsLog" class="secondary compact" type="button" title="Create a new CSV using the prefix and current UTC time. The old file is kept.">New CSV</button>
+            </div>
+            <div class="obslog-file-browser-row">
+              <label for="obsLogFileSelect">Existing CSV</label>
+              <select id="obsLogFileSelect" title="Select a CSV from the configured observation-log directory."><option value="">Open CSV list...</option></select>
+              <button id="refreshObsLogFiles" class="secondary compact" type="button" title="Refresh the CSV list from the configured observation-log directory.">Refresh</button>
+              <button id="useSelectedObsLog" class="secondary compact" type="button" disabled title="Switch writing to the selected CSV. Existing rows are preserved and new events are appended.">Use selected</button>
+            </div>
+            <div class="obslog-file-browser-help">Files are limited to the configured observation-log directory. Existing rows are preserved; new events are appended.</div>
+            <details class="obslog-advanced-path">
+              <summary>Advanced: enter CSV path</summary>
+              <div class="obslog-advanced-path-body">
+                <label for="obsLogOpenPath">Path</label>
+                <input id="obsLogOpenPath" placeholder="night1.csv or /container/path/night1.csv" title="Advanced path input. Relative names are resolved inside the current log directory.">
+                <button id="openObsLog" class="secondary compact" type="button" title="Switch writing to the specified CSV. Existing files are appended; missing files are created.">Use path</button>
+              </div>
+            </details>
+          </div>
+        </details>
 
         <div class="obslog-comment-row">
-          <input id="obsLogComment" placeholder="Add a manual observation comment" title="Append a comment row to the active observation CSV log.">
+          <label class="mini-field" for="obsLogTargetRow"><span>Target row</span><select id="obsLogTargetRow" title="Select an existing row to append a linked comment. Leave this as standalone to add an independent comment."><option value="">Standalone comment</option></select></label>
+          <input id="obsLogComment" placeholder="Add a manual observation comment" title="Append a standalone or row-linked comment to the active observation CSV log.">
           <button id="addObsLogComment" class="primary compact" type="button">Add comment</button>
         </div>
         <div id="obsLogLast" class="obslog-last">No observation-log row yet.</div>
@@ -1238,6 +1321,7 @@ const state = {
   pendingOperation: null,
   currentOperation: {phase: 'ready', kind: 'idle', label: 'READY'},
   lastActionResponse: null,
+  observationLogRows: null,
   demoObsBrowser: false,
   selectedObsPath: "",
   progressLaunch: {active: false, openedUrl: "", message: ""}
@@ -2333,6 +2417,7 @@ async function api(action, params={}, pendingKind=null) {
     data = {ok: false, action, reason: String(err && err.message ? err.message : err)};
   }
   state.lastActionResponse = data;
+  if (String(action).startsWith('obslog_')) state.observationLogRows = null;
   if (!data.ok || data.dry_run) {
     clearPendingOperation();
   }
@@ -2352,6 +2437,46 @@ function renderStatusRefreshError(err) {
   const badges = qs('statusBadges');
   if (badges) badges.innerHTML = `<span class="badge bad">Status refresh failed</span> <span class="badge warn">display may be stale</span>`;
 }
+async function refreshObservationLogRows() {
+  try {
+    const resp = await fetch('/api/observation-log-rows?limit=500');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.ok === false) throw new Error(data.reason || 'observation-log rows unavailable');
+    state.observationLogRows = Array.isArray(data.rows) ? data.rows : [];
+    if (state.lastStatus) renderObservationLog(state.lastStatus.observation_log || {});
+  } catch (err) {
+    // The compact status payload remains usable when an older console server
+    // does not expose the optional full-row endpoint.
+    state.observationLogRows = false;
+  }
+}
+async function refreshObservationLogFiles() {
+  const select = qs('obsLogFileSelect');
+  const useButton = qs('useSelectedObsLog');
+  if (!select) return;
+  const currentPath = String((((state.lastStatus || {}).observation_log || {}).csv_path) || '');
+  try {
+    const resp = await fetch('/api/observation-log-files?limit=100');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.ok === false) throw new Error(data.reason || 'observation-log files unavailable');
+    const files = Array.isArray(data.files) ? data.files : [];
+    select.innerHTML = '<option value="">Select a CSV...</option>' + files.map(file => {
+      const active = file.active || String(file.path) === currentPath;
+      const modified = compactUtc(file.modified_utc || '');
+      const suffix = active ? ' (current)' : (modified ? ` — ${modified}` : '');
+      return `<option value="${escapeHtml(file.path)}"${active ? ' selected' : ''}>${escapeHtml(file.name || file.path)}${escapeHtml(suffix)}</option>`;
+    }).join('');
+    select.disabled = files.length === 0;
+    if (useButton) useButton.disabled = !select.value;
+    if (!files.length) select.innerHTML = '<option value="">No CSV files found</option>';
+  } catch (err) {
+    select.innerHTML = `<option value="">CSV list unavailable: ${escapeHtml(String(err && err.message ? err.message : err))}</option>`;
+    select.disabled = true;
+    if (useButton) useButton.disabled = true;
+  }
+}
 async function refresh() {
   try {
     const resp = await fetch('/api/status');
@@ -2361,6 +2486,7 @@ async function refresh() {
     renderStatus(data);
     renderObservationLog(data.observation_log || {});
     renderLog(data.log || []);
+    if (state.observationLogRows === null) await refreshObservationLogRows();
   } catch (err) {
     renderStatusRefreshError(err);
   }
@@ -2669,6 +2795,17 @@ function compactUtc(value) {
   const m = text.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})/);
   return m ? `${m[1]} ${m[2]}Z` : text;
 }
+function selectObsLogRow(rowId) {
+  const target = qs('obsLogTargetRow');
+  const rows = Array.isArray(state.observationLogRows)
+    ? state.observationLogRows
+    : (((state.lastStatus || {}).observation_log || {}).last_rows || []);
+  const row = rows.find(item => String(item.row_id) === String(rowId));
+  if (target) target.value = String(rowId || '');
+  if (qs('obsLogComment')) qs('obsLogComment').value = row ? String(row.comment || '') : '';
+  if (qs('addObsLogComment')) qs('addObsLogComment').textContent = rowId ? 'Save comment' : 'Add comment';
+  if (qs('obsLogComment')) qs('obsLogComment').focus();
+}
 function renderObservationLog(log) {
   if (log && log.observation_log && !log.csv_path) log = log.observation_log;
   const badge = qs('obsLogBadge');
@@ -2703,7 +2840,19 @@ function renderObservationLog(log) {
   const tooltip = log.tooltips || {};
   if (qs('obsLogDirHelp') && tooltip.directory) qs('obsLogDirHelp').title = tooltip.directory;
   if (qs('obsLogHelpText') && tooltip.directory) qs('obsLogHelpText').textContent = tooltip.directory;
-  const rows = Array.isArray(log.last_rows) ? log.last_rows : [];
+  const rows = Array.isArray(state.observationLogRows)
+    ? state.observationLogRows
+    : (Array.isArray(log.last_rows) ? log.last_rows : []);
+  const targetSelect = qs('obsLogTargetRow');
+  if (targetSelect) {
+    const selected = targetSelect.value;
+    const options = rows.filter(r => String(r.row_id || '').trim()).map(r => {
+      const label = `#${r.row_id} ${r.mode || ''}/${r.event || ''} ${r.comment || r.action_or_obsfile || ''}`.trim();
+      return `<option value="${escapeHtml(r.row_id)}">${escapeHtml(label)}</option>`;
+    });
+    targetSelect.innerHTML = '<option value="">Standalone comment</option>' + options.join('');
+    if (rows.some(r => String(r.row_id) === selected)) targetSelect.value = selected;
+  }
   const last = rows[0];
   if (qs('obsLogLast')) {
     if (last) {
@@ -2722,8 +2871,8 @@ function renderObservationLog(log) {
     if (!rows.length) {
       qs('obsLogRecent').innerHTML = '<div class="file-empty">No rows.</div>';
     } else {
-      const head = '<tr><th>UTC</th><th>Az</th><th>El</th><th>Comment</th><th>Mode</th><th>Event</th><th>Action/file</th><th>Result</th><th>User</th><th>Record dir</th><th>Session</th><th>Row</th><th>Temp C</th><th>Hum %</th><th>Pressure hPa</th><th>Weather</th></tr>';
-      const body = rows.map(r => `<tr><td>${escapeHtml(r.utc_iso)}</td><td>${escapeHtml(r.enc_az_deg)}</td><td>${escapeHtml(r.enc_el_deg)}</td><td>${escapeHtml(r.comment)}</td><td>${escapeHtml(r.mode)}</td><td>${escapeHtml(r.event)}</td><td>${escapeHtml(r.action_or_obsfile)}</td><td>${escapeHtml(r.result)}</td><td>${escapeHtml(r.user)}</td><td>${escapeHtml(r.record_dir)}</td><td>${escapeHtml(r.session_id)}</td><td>${escapeHtml(r.row_id)}</td><td>${escapeHtml(r.temp_C)}</td><td>${escapeHtml(r.humidity_pct)}</td><td>${escapeHtml(r.pressure_hPa)}</td><td>${escapeHtml(r.weather_source)}</td></tr>`).join('');
+      const head = '<tr><th></th><th>UTC</th><th>Az</th><th>El</th><th>Comment</th><th>Mode</th><th>Event</th><th>Action/file</th><th>Result</th><th>User</th><th>Record dir</th><th>Session</th><th>Row</th><th>Target row</th><th>Temp C</th><th>Hum %</th><th>Pressure hPa</th><th>Weather</th></tr>';
+      const body = rows.map(r => `<tr><td><button class="secondary obslog-select-button" type="button" title="Use this row as the comment target" onclick="selectObsLogRow('${escapeHtml(r.row_id)}')">Select</button></td><td>${escapeHtml(r.utc_iso)}</td><td>${escapeHtml(r.enc_az_deg)}</td><td>${escapeHtml(r.enc_el_deg)}</td><td>${escapeHtml(r.comment)}</td><td>${escapeHtml(r.mode)}</td><td>${escapeHtml(r.event)}</td><td>${escapeHtml(r.action_or_obsfile)}</td><td>${escapeHtml(r.result)}</td><td>${escapeHtml(r.user)}</td><td>${escapeHtml(r.record_dir)}</td><td>${escapeHtml(r.session_id)}</td><td>${escapeHtml(r.row_id)}</td><td>${escapeHtml(r.target_row_id)}</td><td>${escapeHtml(r.temp_C)}</td><td>${escapeHtml(r.humidity_pct)}</td><td>${escapeHtml(r.pressure_hPa)}</td><td>${escapeHtml(r.weather_source)}</td></tr>`).join('');
       qs('obsLogRecent').innerHTML = `<table>${head}${body}</table>`;
     }
   }
@@ -3056,8 +3205,16 @@ qs('runRsky').addEventListener('click', () => api('run_rsky', {n: qs('rskyN').va
 qs('runSkydip').addEventListener('click', () => runSkydipFromUi());
 qs('addObsLogComment').addEventListener('click', async () => {
   const comment = qs('obsLogComment').value;
-  const data = await api('obslog_comment', {comment});
-  if (data.ok) qs('obsLogComment').value = '';
+  const targetRowId = qs('obsLogTargetRow').value;
+  const data = await api('obslog_comment', {comment, target_row_id: targetRowId});
+  if (data.ok) {
+    qs('obsLogComment').value = '';
+    qs('obsLogTargetRow').value = '';
+    qs('addObsLogComment').textContent = 'Add comment';
+  }
+});
+qs('obsLogTargetRow').addEventListener('change', () => {
+  selectObsLogRow(qs('obsLogTargetRow').value);
 });
 qs('obsLogComment').addEventListener('keydown', async (ev) => {
   if (ev.key === 'Enter' && !ev.shiftKey) {
@@ -3067,17 +3224,35 @@ qs('obsLogComment').addEventListener('keydown', async (ev) => {
 });
 qs('newObsLog').addEventListener('click', async () => {
   await api('obslog_new', {prefix: qs('obsLogPrefix').value, user: qs('obsLogUser').value});
+  await refreshObservationLogFiles();
 });
 qs('openObsLog').addEventListener('click', async () => {
   const path = qs('obsLogOpenPath').value.trim();
-  if (!path) { alert('Enter a CSV filename or a full container path. Existing files are appended; missing files are created.'); return; }
+  if (!path) { alert('Enter a CSV filename or a full container path.'); return; }
   await api('obslog_open_existing', {path, user: qs('obsLogUser').value});
+  await refreshObservationLogFiles();
+});
+qs('obsLogFileSelect').addEventListener('change', () => {
+  qs('useSelectedObsLog').disabled = !qs('obsLogFileSelect').value;
+});
+qs('refreshObsLogFiles').addEventListener('click', refreshObservationLogFiles);
+qs('useSelectedObsLog').addEventListener('click', async () => {
+  const path = qs('obsLogFileSelect').value;
+  if (!path) return;
+  await api('obslog_open_existing', {path, user: qs('obsLogUser').value});
+  await refreshObservationLogFiles();
+});
+document.querySelector('.obslog-file-management')?.addEventListener('toggle', (ev) => {
+  if (ev.target.open) refreshObservationLogFiles();
 });
 qs('copyObsLogPath').addEventListener('click', async () => {
   const log = (state.lastStatus || {}).observation_log || {};
   const text = String(log.csv_path || qs('obsLogFile').title || '').split('\n')[0].replace(/^CSV:\s*/, '').trim();
   if (!text || text === 'loading' || text === 'not configured' || text === 'initializing...') return;
   try { await navigator.clipboard.writeText(text); qs('copyObsLogPath').textContent = 'Copied'; setTimeout(() => qs('copyObsLogPath').textContent = 'Copy path', 900); } catch (_) {}
+});
+qs('openObservationLog').addEventListener('click', () => {
+  window.open('/observation-log', '_blank', 'noopener');
 });
 qs('obsLogDirHelp').addEventListener('click', () => {
   const box = qs('obsLogHelpText');
@@ -3120,7 +3295,7 @@ qs('runtimeProcesses').addEventListener('click', async (ev) => {
   const pid = btn.dataset.pid;
   if (confirm(`Force-kill local launcher pid=${pid}?\n\nUse only when this local launcher is stuck and hardware is already confirmed safe.\n\nThis does NOT send telescope STOP, recorder STOP, or XFFTS STOP.`)) await api('terminate_process', {pid});
 });
-qs('openProgress').addEventListener('click', launchOrOpenProgress);
+  qs('openProgress').addEventListener('click', launchOrOpenProgress);
 function getStatusRefreshMs() {
   const cfg = window.NECST_CONSOLE_CONFIG || {};
   const raw = Number(cfg.statusRefreshMs ?? cfg.status_refresh_ms ?? 1000);
@@ -3194,7 +3369,9 @@ DEMO_CSV_HEADER = [
     "humidity_pct",
     "pressure_hPa",
     "weather_source",
+    "target_row_id",
 ]
+DEMO_RECENT_CSV_RESUME_WINDOW_SEC = 60 * 60
 
 
 def _utc_now() -> datetime:
@@ -3231,6 +3408,38 @@ def _safe_prefix(text: Any) -> str:
     return (out or "obslog")[:64]
 
 
+def _load_embedded_html_from_source(marker: str) -> str:
+    source = Path(__file__).read_text(encoding="utf-8")
+    start = source.find(marker)
+    if start < 0:
+        raise RuntimeError(f"failed to find HTML block: {marker}")
+    start += len(marker)
+    end = source.find('"""', start)
+    if end < 0:
+        raise RuntimeError(f"failed to find end of HTML block: {marker}")
+    return source[start:end]
+
+
+def _load_console_html_from_source() -> str:
+    return _load_embedded_html_from_source('HTML = r"""')
+
+
+def _load_progress_html_from_source() -> str:
+    return _load_embedded_html_from_source('PROGRESS_HTML = r"""')
+
+
+def _load_observation_log_page_html() -> str:
+    """Load the shared detail page without importing the ROS-backed package."""
+
+    module_path = Path(__file__).resolve().parents[1] / "necst" / "web" / "observation_log_page.py"
+    spec = importlib.util.spec_from_file_location("necst_observation_log_page", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"failed to load observation log page: {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.render_observation_log_page()
+
+
 class DemoObservationLog:
     """Small real CSV writer for the standalone demo.
 
@@ -3251,13 +3460,17 @@ class DemoObservationLog:
         self.last_rows: List[Dict[str, Any]] = []
         self.last_error = ""
         self.closed_utc: Optional[str] = None
-        self.csv_path = self._default_path(self.prefix, created)
-        self.meta_path = self.csv_path.with_suffix(self.csv_path.suffix + ".meta.json")
         self._fh: Any = None
         self._writer: Optional[csv.writer] = None
         self._lock = threading.RLock()
-        self._open(self.csv_path)
-        self.write_event(mode="Console", event="console_start", action_or_obsfile="demo console started", result="success")
+        recent_path = self._recent_csv_path(created)
+        self.csv_path = recent_path or self._default_path(self.prefix, created)
+        self.meta_path = self.csv_path.with_suffix(self.csv_path.suffix + ".meta.json")
+        if recent_path is not None:
+            self._open_existing_unlocked(recent_path, startup=True)
+        else:
+            self._open(self.csv_path)
+            self.write_event(mode="Console", event="console_start", action_or_obsfile="demo console started", result="success")
 
     def _default_path(self, prefix: str, created: Optional[datetime] = None) -> Path:
         stamp = _utc_stamp(created)
@@ -3269,6 +3482,23 @@ class DemoObservationLog:
             if not candidate.exists():
                 return candidate
         return self.log_dir / f"{_safe_prefix(prefix)}_{stamp}_{uuid.uuid4().hex[:6]}.csv"
+
+    def _recent_csv_path(self, now: Optional[datetime] = None) -> Optional[Path]:
+        now_timestamp = (now or _utc_now()).timestamp()
+        recent: List[Tuple[float, Path]] = []
+        try:
+            for path in self.log_dir.iterdir():
+                if not path.is_file() or path.suffix.lower() != ".csv":
+                    continue
+                try:
+                    modified = path.stat().st_mtime
+                except OSError:
+                    continue
+                if now_timestamp - modified < DEMO_RECENT_CSV_RESUME_WINDOW_SEC:
+                    recent.append((modified, path))
+        except OSError:
+            return None
+        return max(recent, key=lambda item: item[0])[1] if recent else None
 
     def _sync(self) -> None:
         if self._fh is None:
@@ -3445,7 +3675,7 @@ class DemoObservationLog:
         with self._lock:
             self._open_existing_unlocked(path_text, observer=observer)
 
-    def _open_existing_unlocked(self, path_text: Any, *, observer: Any = None) -> None:
+    def _open_existing_unlocked(self, path_text: Any, *, observer: Any = None, startup: bool = False) -> None:
         try:
             path = self._resolve_user_csv_path(path_text)
         except Exception as exc:
@@ -3462,8 +3692,9 @@ class DemoObservationLog:
             self.observer = old_observer
             self._record_open_failure(path, exc)
             raise
-        self.write_event(mode="Console", event="log_closed", action_or_obsfile=str(path), result="success")
-        self.close(write_log_closed=False)
+        if self._fh is not None:
+            self.write_event(mode="Console", event="log_closed", action_or_obsfile=str(path), result="success")
+            self.close(write_log_closed=False)
         self.closed_utc = None
         self.created_utc = _utc_iso()
         try:
@@ -3471,13 +3702,13 @@ class DemoObservationLog:
         except Exception as exc:
             self._restore_previous_after_switch_failure(previous, path, exc)
             raise
-        self.write_event(mode="Console", event="log_opened", action_or_obsfile=f"from {previous}", result="success")
+        self.write_event(mode="Console", event="console_start" if startup else "log_opened", action_or_obsfile=f"from {previous}" if previous else str(path), result="success")
 
-    def write_event(self, *, state: Optional["DemoState"] = None, comment: str = "", mode: str = "Console", event: str = "event", action_or_obsfile: str = "", result: str = "unknown", record_dir: str = "") -> bool:
+    def write_event(self, *, state: Optional["DemoState"] = None, comment: str = "", mode: str = "Console", event: str = "event", action_or_obsfile: str = "", result: str = "unknown", record_dir: str = "", target_row_id: Any = None) -> bool:
         with self._lock:
-            return self._write_event_unlocked(state=state, comment=comment, mode=mode, event=event, action_or_obsfile=action_or_obsfile, result=result, record_dir=record_dir)
+            return self._write_event_unlocked(state=state, comment=comment, mode=mode, event=event, action_or_obsfile=action_or_obsfile, result=result, record_dir=record_dir, target_row_id=target_row_id)
 
-    def _write_event_unlocked(self, *, state: Optional["DemoState"] = None, comment: str = "", mode: str = "Console", event: str = "event", action_or_obsfile: str = "", result: str = "unknown", record_dir: str = "") -> bool:
+    def _write_event_unlocked(self, *, state: Optional["DemoState"] = None, comment: str = "", mode: str = "Console", event: str = "event", action_or_obsfile: str = "", result: str = "unknown", record_dir: str = "", target_row_id: Any = None) -> bool:
         if self._writer is None:
             return False
         try:
@@ -3486,10 +3717,13 @@ class DemoObservationLog:
             if not record_dir and state is not None:
                 record_dir = state.local_recording_dir or state.recording_dir or state.progress_record_dir or ""
             record_dir = _demo_last_path_component(record_dir)
+            target = "" if target_row_id in (None, "") else str(int(str(target_row_id).strip()))
+            if target and int(target) <= 0:
+                raise ValueError("target_row_id must be greater than zero")
             next_row_id = self.row_id + 1
             row = [
                 _utc_iso(), az, el, str(comment or ""), str(mode or ""), str(event or ""), str(action_or_obsfile or ""), str(result or ""),
-                self.observer, str(record_dir or ""), self.session_id, next_row_id, "", "", "", "",
+                self.observer, str(record_dir or ""), self.session_id, next_row_id, "", "", "", "", target,
             ]
             self._writer.writerow(row)
             self._fh.flush()
@@ -3507,6 +3741,120 @@ class DemoObservationLog:
         except Exception as exc:
             self.last_error = str(exc)
             return False
+
+    def has_row_id(self, target_row_id: Any) -> bool:
+        try:
+            target = int(str(target_row_id).strip())
+        except (TypeError, ValueError):
+            return False
+        return any(str(row.get("row_id") or "") == str(target) for row in self.read_rows(limit=5000))
+
+    def _rewrite_comment(self, target_row_id: Any, comment: Any, *, append: bool) -> bool:
+        try:
+            target = int(str(target_row_id).strip())
+        except (TypeError, ValueError):
+            self.last_error = "target_row_id must be an integer"
+            return False
+        text = str(comment or "").strip()
+        if target <= 0 or not text:
+            self.last_error = "target_row_id and comment are required"
+            return False
+        with self._lock:
+            try:
+                with self.csv_path.open("r", encoding="utf-8", newline="") as fh:
+                    rows = list(csv.reader(fh))
+                header = rows[0]
+                row_id_index = header.index("row_id")
+                comment_index = header.index("comment")
+                target_row = next(
+                    row
+                    for row in rows[1:]
+                    if len(row) > row_id_index and str(row[row_id_index]) == str(target)
+                )
+                if len(target_row) < len(header):
+                    target_row.extend([""] * (len(header) - len(target_row)))
+                existing = str(target_row[comment_index] or "").strip()
+                target_row[comment_index] = f"{existing}; {text}" if append and existing else text
+                fd, temp_name = tempfile.mkstemp(
+                    prefix=f".{self.csv_path.name}.", suffix=".tmp", dir=str(self.csv_path.parent)
+                )
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as temp_fh:
+                        writer = csv.writer(temp_fh)
+                        writer.writerows(rows)
+                        temp_fh.flush()
+                        os.fsync(temp_fh.fileno())
+                    if self._fh is not None:
+                        self._fh.close()
+                    self._fh = None
+                    self._writer = None
+                    os.replace(temp_name, self.csv_path)
+                    self._open(self.csv_path)
+                    self.last_error = ""
+                    return True
+                finally:
+                    try:
+                        os.unlink(temp_name)
+                    except FileNotFoundError:
+                        pass
+            except (StopIteration, ValueError) as exc:
+                self.last_error = str(exc)
+                return False
+            except Exception as exc:
+                self.last_error = str(exc)
+                return False
+
+    def append_comment(self, target_row_id: Any, comment: Any) -> bool:
+        return self._rewrite_comment(target_row_id, comment, append=True)
+
+    def update_comment(self, target_row_id: Any, comment: Any) -> bool:
+        return self._rewrite_comment(target_row_id, comment, append=False)
+
+    def list_csv_files(self, *, limit: int = 100) -> List[Dict[str, Any]]:
+        try:
+            bounded_limit = max(1, min(int(limit), 500))
+        except (TypeError, ValueError):
+            bounded_limit = 100
+        files: List[Dict[str, Any]] = []
+        try:
+            for path in self.log_dir.iterdir():
+                if not path.is_file() or path.suffix.lower() != ".csv":
+                    continue
+                try:
+                    stat = path.stat()
+                    modified = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+                    files.append({
+                        "name": path.name,
+                        "path": str(path),
+                        "size": stat.st_size,
+                        "modified_utc": _utc_iso(modified),
+                        "active": path == self.csv_path,
+                    })
+                except OSError:
+                    continue
+        except OSError as exc:
+            self.last_error = str(exc)
+            return []
+        files.sort(key=lambda item: item["modified_utc"], reverse=True)
+        return files[:bounded_limit]
+
+    def read_rows(self, *, limit: int = 500) -> List[Dict[str, Any]]:
+        try:
+            bounded_limit = max(1, min(int(limit), 5000))
+        except (TypeError, ValueError):
+            bounded_limit = 500
+        recent: List[Dict[str, Any]] = []
+        try:
+            with self.csv_path.open("r", encoding="utf-8", newline="") as fh:
+                for row in csv.DictReader(fh):
+                    if row:
+                        recent.append(dict(row))
+                        if len(recent) > bounded_limit:
+                            del recent[0]
+        except Exception as exc:
+            self.last_error = str(exc)
+            return []
+        return list(reversed(recent))
 
     def close(self, *, write_log_closed: bool = True) -> None:
         with self._lock:
@@ -3552,14 +3900,14 @@ class DemoObservationLog:
             "observer": self.observer,
             "session_id": self.session_id,
             "row_id": self.row_id,
-            "schema_version": "demo-1.0",
+            "schema_version": "demo-1.1",
             "columns": list(DEMO_CSV_HEADER),
             "last_rows": list(self.last_rows),
             "last_error": self.last_error,
             "directory_warnings": [],
             "tooltips": {
                 "directory": "Log directory selection:\n1. NECST_OBSLOG_DIR, if set.\n2. <record root>/obslogs, if available.\n3. ~/.necst/observation_logs as fallback.\nThis path is inside the console container. Use a bind-mounted path if you need the log on the host.",
-                "file": "A new log file is created when the console server starts. Reloading the web page does not change the log file.",
+                "file": "On console startup, the newest CSV is resumed when it was updated less than one hour ago; otherwise a new CSV is created. Reloading the web page does not change the log file.",
                 "switch": "Close the current log file and continue writing to a new or selected CSV file. This does not rename the existing file.",
             },
         }
@@ -3698,6 +4046,7 @@ class DemoState:
         self.prune_exclusive_start_guard()
         return {
             "telescope": self.telescope,
+            "simulator": True,
             "progress_url": self.progress_url,
             "progress": {
                 "url": self.progress_url,
@@ -3773,6 +4122,7 @@ class ConsoleDemoServer(ThreadingHTTPServer):
         self.progress_port = int(progress_port)
         self._progress_server: Optional[ThreadingHTTPServer] = None
         self._progress_thread: Optional[threading.Thread] = None
+        self.html = _load_console_html_from_source()
         self.observation_log = DemoObservationLog(prefix=os.environ.get("NECST_OBSLOG_PREFIX", "obslog"), observer=os.environ.get("NECST_OBSLOG_USER", "User"))
         self.add_log(True, "console demo v7 started; no real telescope command is sent")
 
@@ -3794,6 +4144,7 @@ class ConsoleDemoServer(ThreadingHTTPServer):
             self.state.progress_owned_by_console = False
             return False, f"failed to start progress monitor demo: {exc}", self.state.progress_url
         progress_server.daemon_threads = True
+        progress_server.html = _load_progress_html_from_source()
         thread = threading.Thread(target=progress_server.serve_forever, name="console-demo-progress", daemon=True)
         thread.start()
         self._progress_server = progress_server
@@ -3833,7 +4184,7 @@ class ProgressHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(data)
             return
-        data = PROGRESS_HTML.encode("utf-8")
+        data = self.server.html.encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
@@ -3859,7 +4210,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def _send_html(self) -> None:
-        data = HTML.encode("utf-8")
+        data = self.server.html.encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
@@ -3870,6 +4221,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 - stdlib API name
         if self.path in {"/", "/index.html"}:
             self._send_html()
+            return
+        if urllib.parse.urlparse(self.path).path == "/observation-log":
+            data = _load_observation_log_page_html().encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(data)
             return
         if self.path == "/api/status":
             with self.server.lock:
@@ -3892,6 +4252,29 @@ class Handler(BaseHTTPRequestHandler):
                     "path": "demo://operator_console.jsonl",
                     "entries": entries,
                     "returned_count": len(entries),
+                })
+            return
+        if parsed.path == "/api/observation-log-rows":
+            query = urllib.parse.parse_qs(parsed.query)
+            try:
+                limit = int((query.get("limit") or [500])[0])
+            except (TypeError, ValueError):
+                limit = 500
+            with self.server.lock:
+                self._send_json(
+                    {"ok": True, "rows": self.server.observation_log.read_rows(limit=limit)}
+                )
+            return
+        if parsed.path == "/api/observation-log-files":
+            query = urllib.parse.parse_qs(parsed.query)
+            try:
+                limit = int((query.get("limit") or [100])[0])
+            except (TypeError, ValueError):
+                limit = 100
+            with self.server.lock:
+                self._send_json({
+                    "ok": True,
+                    "files": self.server.observation_log.list_csv_files(limit=limit),
                 })
             return
         if parsed.path == "/api/log-file":
@@ -4368,13 +4751,30 @@ def handle_action(
         if not comment:
             server.add_log(False, "observation-log comment not written: empty comment")
             return False, "comment is empty; no observation-log row was written"
-        written = server.observation_log.write_event(state=state, comment=comment, mode="Comment", event="comment", action_or_obsfile="manual comment", result="success")
+        raw_target = params.get("target_row_id")
+        if raw_target not in (None, ""):
+            try:
+                target = int(str(raw_target).strip())
+            except (TypeError, ValueError):
+                return False, "target_row_id must be an integer"
+            if target <= 0 or not server.observation_log.has_row_id(target):
+                return False, f"target observation-log row_id does not exist: {raw_target}"
+        else:
+            target = None
+        if target is not None:
+            written = server.observation_log.update_comment(target, comment)
+        else:
+            written = server.observation_log.write_event(state=state, comment=comment, mode="Comment", event="comment", action_or_obsfile="manual comment", result="success")
         if not written:
             reason = f"failed to append observation CSV log comment: {server.observation_log.last_error or 'unknown error'}"
             server.add_log(False, reason)
             return False, reason
         server.add_log(True, "observation-log comment appended")
-        return True, "comment appended to observation CSV log"
+        return True, (
+            "comment appended to existing observation CSV row"
+            if target is not None
+            else "comment appended to observation CSV log"
+        )
 
     if action == "obslog_new":
         server.observation_log.open_new(prefix=params.get("prefix") or server.observation_log.prefix, observer=params.get("user") or server.observation_log.observer)

@@ -12,6 +12,7 @@ import json
 import os
 import re
 import socket
+import tempfile
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -19,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path, PureWindowsPath
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-CSV_HEADER = [
+CSV_BASE_HEADER = [
     "utc_iso",
     "enc_az_deg",
     "enc_el_deg",
@@ -38,9 +39,13 @@ CSV_HEADER = [
     "weather_source",
 ]
 
-SCHEMA_VERSION = "1.0"
+CSV_HEADER = [*CSV_BASE_HEADER, "target_row_id"]
+LEGACY_CSV_HEADER = list(CSV_BASE_HEADER)
+SCHEMA_VERSION = "1.1"
 DEFAULT_PREFIX = "obslog"
 DEFAULT_OBSERVER = "User"
+RECENT_CSV_RESUME_WINDOW_SEC = 60 * 60
+_LEGACY_TARGET_RE = re.compile(r"(?:^|\s)target_row_id=(\d+)(?:\s|$)")
 
 
 def utc_now() -> datetime:
@@ -245,6 +250,25 @@ def record_dir_name_for_csv(value: Any) -> str:
     return _last_path_component(value)
 
 
+def normalize_target_row_id(value: Any) -> Optional[int]:
+    """Normalize an optional amendment target row id."""
+
+    if value in (None, ""):
+        return None
+    try:
+        target = int(str(value).strip())
+    except (TypeError, ValueError) as exc:
+        raise ValueError("target_row_id must be an integer") from exc
+    if target <= 0:
+        raise ValueError("target_row_id must be greater than zero")
+    return target
+
+
+def _legacy_target_row_id(action_or_obsfile: Any) -> str:
+    match = _LEGACY_TARGET_RE.search(str(action_or_obsfile or ""))
+    return match.group(1) if match else ""
+
+
 def _first_present(payload: Mapping[str, Any], keys: Tuple[str, ...]) -> Any:
     for key in keys:
         if key in payload and payload.get(key) is not None:
@@ -393,6 +417,9 @@ class ObservationLogManager:
     _pending_open_warning: str = field(default="", init=False, repr=False)
     _fh: Any = field(default=None, init=False, repr=False)
     _writer: Optional[csv.writer] = field(default=None, init=False, repr=False)
+    _active_header: List[str] = field(
+        default_factory=lambda: list(CSV_HEADER), init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         self.prefix = sanitize_prefix(self.prefix)
@@ -400,9 +427,17 @@ class ObservationLogManager:
         created = utc_now()
         self.created_utc = utc_iso(created)
         self.session_id = f"{utc_stamp(created)}-{uuid.uuid4().hex[:4]}"
-        self.open_new(
-            prefix=self.prefix, observer=self.observer, initial=True, created=created
-        )
+        recent_path = self._recent_csv_path(now=created)
+        if recent_path is not None:
+            self.open_existing(
+                recent_path,
+                observer=self.observer,
+                startup=True,
+            )
+        else:
+            self.open_new(
+                prefix=self.prefix, observer=self.observer, initial=True, created=created
+            )
 
     @classmethod
     def create(
@@ -443,6 +478,30 @@ class ObservationLogManager:
             self.log_dir
             / f"{sanitize_prefix(prefix)}_{stamp}_{uuid.uuid4().hex[:6]}.csv"
         )
+
+    def _recent_csv_path(self, *, now: Optional[datetime] = None) -> Optional[Path]:
+        """Return the newest CSV if it was updated within the resume window."""
+
+        now_timestamp = (now or utc_now()).timestamp()
+        recent: List[Tuple[float, Path]] = []
+        try:
+            candidates = (
+                path
+                for path in self.log_dir.iterdir()
+                if path.is_file() and path.suffix.lower() == ".csv"
+            )
+            for path in candidates:
+                try:
+                    modified = path.stat().st_mtime
+                except OSError:
+                    continue
+                if now_timestamp - modified < RECENT_CSV_RESUME_WINDOW_SEC:
+                    recent.append((modified, path))
+        except OSError:
+            return None
+        if not recent:
+            return None
+        return max(recent, key=lambda item: item[0])[1]
 
     def _write_meta(self) -> None:
         payload = {
@@ -487,6 +546,7 @@ class ObservationLogManager:
         self._writer = csv.writer(self._fh)
         if size == 0:
             self.row_id = 0
+            self._active_header = list(CSV_HEADER)
             self._writer.writerow(CSV_HEADER)
             self._sync()
         elif existed:
@@ -501,11 +561,15 @@ class ObservationLogManager:
                         if not row or not any(str(cell).strip() for cell in row):
                             continue
                         row_count += 1
-                        if header == CSV_HEADER:
-                            values = list(row)[: len(CSV_HEADER)]
-                            if len(values) < len(CSV_HEADER):
-                                values.extend([""] * (len(CSV_HEADER) - len(values)))
-                            row_dict = dict(zip(CSV_HEADER, values))
+                        if header in (CSV_HEADER, LEGACY_CSV_HEADER):
+                            values = list(row)[: len(header)]
+                            if len(values) < len(header):
+                                values.extend([""] * (len(header) - len(values)))
+                            row_dict = dict(zip(header, values))
+                            if "target_row_id" not in row_dict:
+                                row_dict["target_row_id"] = _legacy_target_row_id(
+                                    row_dict.get("action_or_obsfile")
+                                )
                             try:
                                 max_existing_row_id = max(
                                     max_existing_row_id,
@@ -518,10 +582,15 @@ class ObservationLogManager:
                                 del recent[0]
                 self.row_id = (
                     max_existing_row_id
-                    if header == CSV_HEADER and max_existing_row_id > 0
+                    if header in (CSV_HEADER, LEGACY_CSV_HEADER) and max_existing_row_id > 0
                     else row_count
                 )
-                if header != CSV_HEADER:
+                self._active_header = (
+                    list(header)
+                    if header in (CSV_HEADER, LEGACY_CSV_HEADER)
+                    else list(CSV_HEADER)
+                )
+                if header not in (CSV_HEADER, LEGACY_CSV_HEADER):
                     self._pending_open_warning = "CSV header differs from the current observation-log schema; appending anyway"
                     self.last_error = self._pending_open_warning
                 else:
@@ -696,11 +765,25 @@ class ObservationLogManager:
             result="success",
         )
 
-    def open_existing(self, path_text: Any, *, observer: Any = None) -> None:
+    def open_existing(
+        self,
+        path_text: Any,
+        *,
+        observer: Any = None,
+        startup: bool = False,
+    ) -> None:
         with self._lock:
-            self._open_existing_unlocked(path_text, observer=observer)
+            self._open_existing_unlocked(
+                path_text, observer=observer, startup=startup
+            )
 
-    def _open_existing_unlocked(self, path_text: Any, *, observer: Any = None) -> None:
+    def _open_existing_unlocked(
+        self,
+        path_text: Any,
+        *,
+        observer: Any = None,
+        startup: bool = False,
+    ) -> None:
         try:
             path = self._resolve_user_csv_path(path_text)
         except Exception as exc:
@@ -738,7 +821,7 @@ class ObservationLogManager:
         self.write_event(
             {},
             mode="Console",
-            event="log_opened",
+            event="console_start" if startup else "log_opened",
             action_or_obsfile=(f"from {previous}" if previous else str(path)),
             result="success",
         )
@@ -753,6 +836,7 @@ class ObservationLogManager:
         action_or_obsfile: Any = "",
         result: Any = "unknown",
         record_dir: Optional[Any] = None,
+        target_row_id: Any = None,
     ) -> bool:
         with self._lock:
             return self._write_event_unlocked(
@@ -763,6 +847,7 @@ class ObservationLogManager:
                 action_or_obsfile=action_or_obsfile,
                 result=result,
                 record_dir=record_dir,
+                target_row_id=target_row_id,
             )
 
     def _write_event_unlocked(
@@ -775,6 +860,7 @@ class ObservationLogManager:
         action_or_obsfile: Any = "",
         result: Any = "unknown",
         record_dir: Optional[Any] = None,
+        target_row_id: Any = None,
     ) -> bool:
         if self._writer is None:
             return False
@@ -797,25 +883,33 @@ class ObservationLogManager:
             if chosen_record_dir in (None, "") and isinstance(context, Mapping):
                 chosen_record_dir = context.get("record_dir")
             chosen_record_dir = record_dir_name_for_csv(chosen_record_dir)
+            target = normalize_target_row_id(target_row_id)
             next_row_id = self.row_id + 1
-            row = [
-                utc_iso(),
-                enc_az,
-                enc_el,
-                str(comment or ""),
-                str(mode or ""),
-                str(event or ""),
-                str(action_or_obsfile or ""),
-                str(result or ""),
-                self.observer,
-                str(chosen_record_dir or ""),
-                self.session_id,
-                next_row_id,
-                temp,
-                humidity,
-                pressure,
-                weather_source,
-            ]
+            row_values = {
+                "utc_iso": utc_iso(),
+                "enc_az_deg": enc_az,
+                "enc_el_deg": enc_el,
+                "comment": str(comment or ""),
+                "mode": str(mode or ""),
+                "event": str(event or ""),
+                "action_or_obsfile": str(action_or_obsfile or ""),
+                "result": str(result or ""),
+                "user": self.observer,
+                "record_dir": str(chosen_record_dir or ""),
+                "session_id": self.session_id,
+                "row_id": next_row_id,
+                "temp_C": temp,
+                "humidity_pct": humidity,
+                "pressure_hPa": pressure,
+                "weather_source": weather_source,
+                "target_row_id": str(target or ""),
+            }
+            # Preserve legacy CSVs without rewriting their append-only history.
+            if target is not None and "target_row_id" not in self._active_header:
+                row_values["action_or_obsfile"] = (
+                    f"{row_values['action_or_obsfile']} target_row_id={target}"
+                ).strip()
+            row = [row_values[column] for column in self._active_header]
             self._writer.writerow(row)
             self._fh.flush()
             fsync_error = ""
@@ -824,7 +918,7 @@ class ObservationLogManager:
             except Exception as exc:
                 fsync_error = str(exc)
             self.row_id = next_row_id
-            row_dict = dict(zip(CSV_HEADER, row))
+            row_dict = dict(row_values)
             self.last_rows.insert(0, row_dict)
             del self.last_rows[20:]
             self.last_error = fsync_error or self._pending_open_warning
@@ -832,6 +926,177 @@ class ObservationLogManager:
         except Exception as exc:
             self.last_error = str(exc)
             return False
+
+    def has_row_id(self, target_row_id: Any) -> bool:
+        """Return whether the active CSV contains the requested row id."""
+
+        target = normalize_target_row_id(target_row_id)
+        if target is None:
+            return False
+        with self._lock:
+            if self._writer is None or target > self.row_id:
+                return False
+            try:
+                with self.csv_path.open("r", encoding="utf-8", newline="") as fh:
+                    for row in csv.DictReader(fh):
+                        if str(row.get("row_id") or "").strip() == str(target):
+                            return True
+            except Exception as exc:
+                self.last_error = str(exc)
+            return False
+
+    def _rewrite_comment(
+        self, target_row_id: Any, comment: Any, *, append: bool
+    ) -> bool:
+        """Rewrite one row comment, optionally retaining its previous value."""
+
+        target = normalize_target_row_id(target_row_id)
+        text = str(comment or "").strip()
+        if target is None:
+            self.last_error = "target_row_id is required"
+            return False
+        if not text:
+            self.last_error = "comment is empty"
+            return False
+        with self._lock:
+            if self._writer is None:
+                self.last_error = "observation CSV log is not open"
+                return False
+            try:
+                with self.csv_path.open("r", encoding="utf-8", newline="") as fh:
+                    reader = csv.reader(fh)
+                    rows = list(reader)
+                if not rows:
+                    self.last_error = "observation CSV log has no header"
+                    return False
+                header = rows[0]
+                try:
+                    row_id_index = header.index("row_id")
+                    comment_index = header.index("comment")
+                except ValueError as exc:
+                    self.last_error = f"observation CSV header lacks row_id/comment: {exc}"
+                    return False
+                target_row = None
+                for row in rows[1:]:
+                    if len(row) > row_id_index and str(row[row_id_index]).strip() == str(target):
+                        target_row = row
+                        break
+                if target_row is None:
+                    self.last_error = f"target observation-log row_id does not exist: {target}"
+                    return False
+                if len(target_row) < len(header):
+                    target_row.extend([""] * (len(header) - len(target_row)))
+                existing = str(target_row[comment_index] or "").strip()
+                target_row[comment_index] = (
+                    f"{existing}; {text}" if append and existing else text
+                )
+
+                fd, temp_name = tempfile.mkstemp(
+                    prefix=f".{self.csv_path.name}.",
+                    suffix=".tmp",
+                    dir=str(self.csv_path.parent),
+                )
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as temp_fh:
+                        writer = csv.writer(temp_fh)
+                        writer.writerows(rows)
+                        temp_fh.flush()
+                        os.fsync(temp_fh.fileno())
+                    if self._fh is not None:
+                        self._fh.close()
+                    self._fh = None
+                    self._writer = None
+                    os.replace(temp_name, self.csv_path)
+                    self._open_path(self.csv_path)
+                    self.last_error = ""
+                    return True
+                finally:
+                    try:
+                        os.unlink(temp_name)
+                    except FileNotFoundError:
+                        pass
+            except Exception as exc:
+                self.last_error = str(exc)
+                return False
+
+    def append_comment(self, target_row_id: Any, comment: Any) -> bool:
+        """Append a comment directly to an existing row's comment column."""
+
+        return self._rewrite_comment(target_row_id, comment, append=True)
+
+    def update_comment(self, target_row_id: Any, comment: Any) -> bool:
+        """Replace an existing row's comment with the supplied text."""
+
+        return self._rewrite_comment(target_row_id, comment, append=False)
+
+    def list_csv_files(self, *, limit: int = 100) -> List[Dict[str, Any]]:
+        """List selectable CSV files inside the configured observation-log directory."""
+
+        with self._lock:
+            try:
+                bounded_limit = max(1, min(int(limit), 500))
+            except (TypeError, ValueError):
+                bounded_limit = 100
+            files: List[Dict[str, Any]] = []
+            try:
+                candidates = (
+                    path
+                    for path in self.log_dir.iterdir()
+                    if path.is_file() and path.suffix.lower() == ".csv"
+                )
+                for path in candidates:
+                    try:
+                        stat = path.stat()
+                        modified = datetime.fromtimestamp(
+                            stat.st_mtime, tz=timezone.utc
+                        )
+                        files.append(
+                            {
+                                "name": path.name,
+                                "path": str(path),
+                                "size": stat.st_size,
+                                "modified_utc": utc_iso(modified),
+                                "active": path == self.csv_path,
+                            }
+                        )
+                    except OSError:
+                        continue
+            except OSError as exc:
+                self.last_error = str(exc)
+                return []
+            files.sort(key=lambda item: item["modified_utc"], reverse=True)
+            return files[:bounded_limit]
+
+    def read_rows(self, *, limit: int = 500) -> List[Dict[str, Any]]:
+        """Read recent rows from the active CSV, newest first."""
+
+        with self._lock:
+            if self._writer is None:
+                return []
+            try:
+                bounded_limit = max(1, min(int(limit), 5000))
+            except (TypeError, ValueError):
+                bounded_limit = 500
+            recent: List[Dict[str, Any]] = []
+            try:
+                with self.csv_path.open("r", encoding="utf-8", newline="") as fh:
+                    for raw_row in csv.DictReader(fh):
+                        if not raw_row or not any(
+                            str(cell).strip() for cell in raw_row.values()
+                        ):
+                            continue
+                        row = dict(raw_row)
+                        if "target_row_id" not in row:
+                            row["target_row_id"] = _legacy_target_row_id(
+                                row.get("action_or_obsfile")
+                            )
+                        recent.append(row)
+                        if len(recent) > bounded_limit:
+                            del recent[0]
+            except Exception as exc:
+                self.last_error = str(exc)
+                return []
+            return list(reversed(recent))
 
     def close(self, *, write_log_closed: bool = True) -> None:
         with self._lock:
@@ -895,10 +1160,10 @@ class ObservationLogManager:
                     "2. NECST_OBSLOG_DIR, if set.\n"
                     "3. [console.observation_log].directory in site TOML, if set.\n"
                     "4. <record root>/obslogs, if available.\n"
-                    "3. ~/.necst/observation_logs as fallback.\n"
+                    "5. ~/.necst/observation_logs as fallback.\n"
                     "This path is inside the console container. Use a bind-mounted path if you need the log on the host."
                 ),
-                "file": "A new log file is created when the console server starts. Reloading the web page does not change the log file.",
+                "file": "On console startup, the newest CSV is resumed when it was updated less than one hour ago; otherwise a new CSV is created. Reloading the web page does not change the log file.",
                 "switch": "Close the current log file and continue writing to a new or selected CSV file. This does not rename the existing file.",
             },
         }

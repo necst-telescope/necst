@@ -20,6 +20,8 @@ python3 bin/console-check.py
 
 `console-check.py` は read-only の確認であり、望遠鏡・chopper・観測launcherを動かさない。
 
+開発用の `simulator=true` 設定では、画面上部に開発用ボタンが表示される。`Reload console UI` は `bin/console-demo.py` の最新HTML/CSS/JavaScriptをconsoleへ読み直してブラウザを再読み込みし、`Restart progress UI` はconsoleが管理するprogress.pyだけを再起動する。いずれもROSの望遠鏡ノードは起動しない。`operator_console.py` などPythonバックエンドの変更はconsoleプロセス自体の再起動が必要で、colcon buildだけでは実行中プロセスへ反映されない。
+
 ## 2. 用語と正方向
 
 ```text
@@ -142,6 +144,38 @@ Progress directory:
 ```
 
 RecorderControllerの既定値と同じく、`NECST_RECORD_ROOT` が未設定の場合のData directoryは `~/data/<record_name>` として表示する。これは表示用の推定であり、実際の保存先はRecorderControllerの設定に従う。
+
+## 5.3 Observation Log CSV の保存先
+
+Observation Log は Operator Console プロセスが書き込む append-only CSV であり、Recorder の保存先とは別に設定する。選択順は次の通りである。
+
+1. `--obslog-dir`
+2. 環境変数 `NECST_OBSLOG_DIR`
+3. site TOML の `[console.observation_log].directory`
+4. 利用可能な record root の `<record root>/obslogs`
+5. `~/.necst/observation_logs`
+
+通常の実機運用では、console ホストから確実に書ける共有ディレクトリを site TOML に指定する。
+
+```toml
+[console.observation_log]
+directory = "/data/necst/observation_logs"
+prefix = "obslog"
+user = "Observer"
+```
+
+一時的な上書きや確認には CLI または環境変数を使う。
+
+```bash
+python3 bin/console.py --obslog-dir /data/necst/observation_logs
+NECST_OBSLOG_DIR=/data/necst/observation_logs python3 bin/console.py
+```
+
+Docker 内で console を動かす場合、指定値はコンテナ内パスである。ホストへ残すには、そのディレクトリを bind mount し、コンテナ内の mount point を `directory` または `--obslog-dir` に指定する。`/api/status` の `observation_log.csv_path`、`log_dir`、`log_dir_source` で実際の選択結果を確認できる。
+
+コンソール起動時は、保存先ディレクトリ内で最終更新から1時間未満の最新CSVがあればそれを引き継ぐ。最新CSVの更新から1時間以上空いている場合だけ、新しいセッション用CSVを作成する。Webページの再読み込みでは新しいCSVは作られない。CSVの切り替え操作はUIの `CSV management` に折りたたまれており、`New CSV` で明示的に新規ファイルを作成できる。既存ファイルは保存先ディレクトリ内の一覧から選択して `Use selected` で開く。手入力の絶対パスが必要な場合は `Advanced: enter CSV path` を使う。
+
+UI で `Target row` または Recent CSV rows の `Select` を選ぶと、対象行の既存 `comment` が入力欄へ読み込まれる。`Save comment` で入力欄の内容を対象行の `comment` カラムへ直接保存し、`row_id` は変わらない。対象を選ばない `Add comment` は従来どおり単独の新規行として追記する。通常の観測イベントは CSV の末尾へ追記されるが、既存コメントの編集だけは同じ CSV を安全に置換する。
 
 ## 6. smoke test の判定
 
