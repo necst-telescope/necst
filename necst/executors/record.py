@@ -4,14 +4,24 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 
+from .. import config
 from ..core import RecorderController
 from ..rx.spectrometer import SpectralData
+
+
+def _spectral_data_node() -> SpectralData:
+    """Construct exactly one real or simulator spectrometer node at startup."""
+    if config.simulator:
+        from ..rx.spectrometer_simulator import SimulatedSpectralData
+
+        return SimulatedSpectralData()
+    return SpectralData()
 
 
 def configure_executor() -> Tuple[MultiThreadedExecutor, Node]:
     executor = MultiThreadedExecutor()
     nodes = [
-        SpectralData(),
+        _spectral_data_node(),
     ]
     _ = [executor.add_node(n) for n in nodes]
     return executor, RecorderController()
