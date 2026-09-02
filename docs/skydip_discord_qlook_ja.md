@@ -70,6 +70,13 @@ board_labels = [
 
 `board_labels`は`hosts`設定と同じinline table配列で指定する。
 
+R-SkyのTsys軸上限だけは、必要に応じて次の設定で変更できる。未設定時は`10000 K`。
+
+```toml
+[analysis.rsky]
+tsys_ylim = 10000
+```
+
 この設定は解析スクリプトへ`{board: label}`形式で渡され、グラフのタイトルや
 Discordの数値サマリーに使用できる。未設定のboardはtable名をそのまま表示する。
 
@@ -123,7 +130,8 @@ SkyDipのBoard解析自体の例外は、数値サマリーの後に`Analysis er
 | `DISCORD_BOT_TOKEN` | env-file内 | Discord Bot Token |
 | `DISCORD_CHANNEL_ID` | env-file内 | 投稿先チャンネルID |
 | `DISCORD_ATTACHMENT_LIMIT_MIB` | 任意 | 添付上限。未指定時は `10` MiB |
-| `[analysis].board_labels` | 任意 | board名とIF表示名の対応表 |
+| `[analysis].board_labels` | 任意 | SkyDipのboard名とIF表示名の対応表 |
+| `[analysis.rsky].tsys_ylim` | 任意 | R-SkyのTsys軸上限。未指定時は`10000 K` |
 | `environment.env_file` | 推奨 | Discord/telemetry共通のenv-fileを指定 |
 | `NECST_SKYDIP_SCRIPT` | 任意 | 外部スクリプトを使う場合のパス。通常は同梱v10を使用 |
 | `NECST_SKYDIP_BOARDS` | 任意 | 解析対象boardのカンマ区切り。未指定時はnecstdbから自動検出 |

@@ -9,6 +9,26 @@ import numpy as np
 
 from .skydip import AnalysisOutput
 
+DEFAULT_TSYS_YLIM = 10000.0
+
+
+def _tsys_ylim_from_config() -> float:
+    try:
+        from necst import config as necst_config
+
+        raw_limit = necst_config.get("analysis.rsky.tsys_ylim")
+    except (AttributeError, ImportError, KeyError):
+        raw_limit = None
+    if raw_limit is None:
+        return DEFAULT_TSYS_YLIM
+    try:
+        limit = float(raw_limit)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("analysis.rsky.tsys_ylim must be a number") from exc
+    if not np.isfinite(limit) or limit <= 0:
+        raise ValueError("analysis.rsky.tsys_ylim must be positive")
+    return limit
+
 
 def _spectral_tables(database: Any, telescope: str) -> Sequence[tuple[str, str]]:
     prefix = f"necst-{str(telescope).strip().upper()}-data-spectral-"
@@ -58,6 +78,7 @@ class RSkyAnalyzer:
     def __init__(self, telescope: str, logger: Optional[Any] = None) -> None:
         self.telescope = str(telescope).strip().upper()
         self.logger = logger
+        self.tsys_ylim = _tsys_ylim_from_config()
 
     def analyze(self, record_path: Path) -> AnalysisOutput:
         import matplotlib.pyplot as plt
@@ -93,7 +114,7 @@ class RSkyAnalyzer:
             axis.set_title(f"{record_path.name}\n{board}")
             twin = axis.twinx()
             twin.plot(freqs, tsys, color="green", alpha=0.5, label="Tsys")
-            twin.set_ylim(0, 10000)
+            twin.set_ylim(0, self.tsys_ylim)
             twin.set_ylabel("Tsys [K]")
             lines = axis.lines + twin.lines
             axis.legend(lines, [line.get_label() for line in lines], loc=0)
