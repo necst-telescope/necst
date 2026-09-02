@@ -286,6 +286,15 @@ class ObservationProgressReporter:
         self.snapshot_path = self.record_dir / "observation_progress.json"
         self.events_path = self.record_dir / "observation_events.jsonl"
         self.plan_path = self.record_dir / "observation_plan.json"
+        extra: Dict[str, Any] = {}
+        share_discord = os.environ.get("NECST_DISCORD_SHARE")
+        if share_discord is not None:
+            extra["share_discord"] = share_discord.strip().lower() not in {
+                "0",
+                "false",
+                "no",
+                "off",
+            }
         self.snapshot: Dict[str, Any] = {
             "schema_version": 1,
             "observation": {
@@ -317,7 +326,7 @@ class ObservationProgressReporter:
                 "remaining_sample_count": 0,
             },
             "recent_events": [],
-            "extra": {},
+            "extra": extra,
         }
         if self.enabled:
             self._ensure_dirs()
