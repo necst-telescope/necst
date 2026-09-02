@@ -5,12 +5,12 @@ from necst.utils.env_file import load
 from necst.telemetry import (
     MetricSample,
     TelemetryConfig,
+    TelemetryField,
+    TelemetryTopic,
     build_metric_payload,
     discover_topic_refs,
     scalar_fields,
-    unambiguous_topic_refs,
 )
-from necst.web.node_health import ExpectedNode
 
 
 class FakeMessage:
@@ -36,20 +36,16 @@ class FakeMessage:
 
 
 class FakeNode:
-    def get_publisher_names_and_types_by_node(self, node_name, namespace):
-        assert namespace == "/necst/OMU1P85M/ctrl"
-        assert node_name in {"antenna_a", "antenna_b"}
+    def get_topic_names_and_types(self):
         return [
             ("/necst/OMU1P85M/status/out", ["example/msg/Status"]),
             ("/necst/OMU1P85M/status/in", ["example/msg/Status"]),
         ]
 
 
-class FakeNodeWithMissingNode(FakeNode):
-    def get_publisher_names_and_types_by_node(self, node_name, namespace):
-        if node_name == "missing":
-            raise RuntimeError("node is not present")
-        return super().get_publisher_names_and_types_by_node(node_name, namespace)
+class FakeNodeWithCollision:
+    def get_topic_names_and_types(self):
+        return [("/status", ["a/msg/Status", "b/msg/Status"])]
 
 
 def test_scalar_fields_skip_sequences_strings_and_nonfinite_values():
@@ -60,57 +56,37 @@ def test_scalar_fields_skip_sequences_strings_and_nonfinite_values():
     )
 
 
-def test_discovery_keeps_nested_topics_and_deduplicates_parallel_publishers():
-    nodes = [
-        ExpectedNode("/necst/OMU1P85M/ctrl/antenna_a", "a"),
-        ExpectedNode("/necst/OMU1P85M/ctrl/antenna_b", "b"),
-    ]
-    refs = discover_topic_refs(FakeNode(), nodes)
-    assert [ref.name for ref in refs] == [
-        "/necst/OMU1P85M/status/in",
-        "/necst/OMU1P85M/status/out",
-    ]
-    assert refs[0].publisher_nodes == tuple(node.name for node in nodes)
-
-
-def test_discovery_skips_missing_nodes_and_keeps_available_nodes():
-    nodes = [
-        ExpectedNode("/necst/OMU1P85M/ctrl/missing", "missing"),
-        ExpectedNode("/necst/OMU1P85M/ctrl/antenna_a", "a"),
+def test_discovery_uses_only_configured_topics():
+    topics = [
+        TelemetryTopic(
+            "/necst/OMU1P85M/status/out",
+            (TelemetryField("nested.value", "necst.status.value"),),
+        )
     ]
 
-    refs = discover_topic_refs(FakeNodeWithMissingNode(), nodes)
+    refs = discover_topic_refs(FakeNode(), topics)
 
-    assert {ref.name for ref in refs} == {
-        "/necst/OMU1P85M/status/in",
-        "/necst/OMU1P85M/status/out",
-    }
-    assert all(ref.publisher_nodes == (nodes[1].name,) for ref in refs)
+    assert len(refs) == 1
+    assert refs[0].name == "/necst/OMU1P85M/status/out"
+    assert refs[0].message_type == "example/msg/Status"
 
 
-def test_type_collision_is_not_subscribed():
-    refs = (
-        SimpleNamespace(
-            name="/status", message_type="a/msg/Status", publisher_nodes=("/a",)
-        ),
-        SimpleNamespace(
-            name="/status", message_type="b/msg/Status", publisher_nodes=("/b",)
-        ),
-    )
-    assert unambiguous_topic_refs(refs) == ()
+def test_discovery_skips_topics_with_multiple_message_types():
+    topics = [TelemetryTopic("/status", (TelemetryField("value", "necst.status"),))]
+
+    assert discover_topic_refs(FakeNodeWithCollision(), topics) == ()
 
 
 def test_payload_uses_full_topic_and_telescope_attributes():
     payload = build_metric_payload(
         [
             MetricSample(
-                "/topic/out",
-                "example/msg/Status",
-                "nested.value",
-                3.0,
-                "int",
-                ("/node",),
-                1700000000,
+                metric_name="necst.status.value",
+                topic="/topic/out",
+                message_type="example/msg/Status",
+                field_path="nested.value",
+                value=3.0,
+                value_kind="int",
             )
         ],
         "NANTEN2",
@@ -118,18 +94,37 @@ def test_payload_uses_full_topic_and_telescope_attributes():
     assert len(payload) == 1
     batch = payload[0]
     metric = batch["metrics"][0]
+    assert "timestamp" not in metric
+    assert isinstance(batch["common"]["timestamp"], int)
     assert batch["common"]["attributes"]["telescope"] == "NANTEN2"
     assert metric["attributes"]["ros_topic"] == "/topic/out"
     assert metric["attributes"]["field_path"] == "nested.value"
-    assert metric["attributes"]["source_node"] == "/node"
+    assert metric["name"] == "necst.status.value"
 
 
-def test_config_defaults_to_disabled_and_clamps_intervals():
+def test_config_clamps_intervals_and_parses_topics():
     config = TelemetryConfig.from_mapping(
-        {"post_interval_sec": 0, "discovery_interval_sec": "bad"}
+        {
+            "post_interval_sec": 0,
+            "discovery_interval_sec": "bad",
+            "topics": [
+                {
+                    "topic": "status/out",
+                    "fields": [
+                        {"path": "value", "metric": "necst.status.value"}
+                    ],
+                }
+            ],
+        }
     )
     assert config.post_interval_sec == 0.5
     assert config.discovery_interval_sec == 10.0
+    assert config.topics == (
+        TelemetryTopic(
+            "/status/out",
+            (TelemetryField("value", "necst.status.value"),),
+        ),
+    )
 
 
 def test_env_file_does_not_override_existing_environment(tmp_path, monkeypatch):

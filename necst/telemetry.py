@@ -15,12 +15,30 @@ from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from .web import node_health, site_config
+from .web import site_config
 
 DEFAULT_METRIC_ENDPOINT = "https://metric-api.newrelic.com/metric/v1"
-METRIC_NAME = "necst.ros.topic"
 MAX_RETRIES = 3
 MAX_METRICS_PER_REQUEST = 500
+
+
+@dataclass(frozen=True)
+class TelemetryField:
+    path: str
+    metric_name: str
+
+
+@dataclass(frozen=True)
+class TelemetryTopic:
+    name: str
+    fields: Tuple[TelemetryField, ...]
+
+
+@dataclass(frozen=True)
+class TopicRef:
+    name: str
+    message_type: str
+    config: TelemetryTopic
 
 
 @dataclass(frozen=True)
@@ -28,6 +46,7 @@ class TelemetryConfig:
     post_interval_sec: float = 10.0
     discovery_interval_sec: float = 10.0
     metric_endpoint: str = DEFAULT_METRIC_ENDPOINT
+    topics: Sequence[TelemetryTopic] = ()
 
     @classmethod
     def from_mapping(cls, mapping: Mapping[str, Any] | None) -> "TelemetryConfig":
@@ -47,29 +66,42 @@ class TelemetryConfig:
             )
             or DEFAULT_METRIC_ENDPOINT
         ).strip()
+        topics: List[TelemetryTopic] = []
+        raw_topics = raw.get("topics", [])
+        if isinstance(raw_topics, list):
+            for raw_topic in raw_topics:
+                if not isinstance(raw_topic, Mapping):
+                    continue
+                topic_name = normalize_topic_name(raw_topic.get("topic"))
+                raw_fields = raw_topic.get("fields", [])
+                if not topic_name or not isinstance(raw_fields, list):
+                    continue
+                fields: List[TelemetryField] = []
+                for raw_field in raw_fields:
+                    if not isinstance(raw_field, Mapping):
+                        continue
+                    path = str(raw_field.get("path") or "").strip().strip(".")
+                    metric_name = str(raw_field.get("metric") or "").strip()
+                    if path and metric_name:
+                        fields.append(TelemetryField(path, metric_name))
+                if fields:
+                    topics.append(TelemetryTopic(topic_name, tuple(fields)))
         return cls(
             post_interval_sec=interval("post_interval_sec"),
             discovery_interval_sec=interval("discovery_interval_sec"),
             metric_endpoint=endpoint,
+            topics=tuple(topics),
         )
 
 
 @dataclass(frozen=True)
-class TopicRef:
-    name: str
-    message_type: str
-    publisher_nodes: Tuple[str, ...]
-
-
-@dataclass(frozen=True)
 class MetricSample:
+    metric_name: str
     topic: str
     message_type: str
     field_path: str
     value: float
     value_kind: str
-    publisher_nodes: Tuple[str, ...] = ()
-    timestamp: float = 0.0
 
 
 def normalize_topic_name(name: Any) -> str:
@@ -81,62 +113,19 @@ def normalize_topic_name(name: Any) -> str:
     return text.rstrip("/") or "/"
 
 
-def _split_node_name(name: str) -> Tuple[str, str]:
-    normalized = node_health.normalize_node_name(name)
-    namespace, separator, node = normalized.rpartition("/")
-    if not separator or not node:
-        raise ValueError(f"invalid fully qualified node name: {name!r}")
-    return namespace or "/", node
-
-
 def discover_topic_refs(
-    ros_node: Any, expected_nodes: Iterable[node_health.ExpectedNode]
+    ros_node: Any, configured_topics: Iterable[TelemetryTopic]
 ) -> Tuple[TopicRef, ...]:
-    """Discover publisher Topics for configured nodes."""
+    """Discover message types for explicitly configured Topics."""
 
-    publishers: Dict[Tuple[str, str], set[str]] = {}
-    for expected in expected_nodes:
-        try:
-            namespace, node_name = _split_node_name(expected.name)
-            topic_infos = ros_node.get_publisher_names_and_types_by_node(
-                node_name, namespace
-            )
-        except Exception:
-            continue
-        for topic_name, message_types in topic_infos:
-            full_topic = normalize_topic_name(topic_name)
-            for message_type in message_types:
-                message_type = str(message_type).strip()
-                if full_topic and message_type:
-                    publishers.setdefault((full_topic, message_type), set()).add(
-                        expected.name
-                    )
-    return tuple(
-        TopicRef(
-            name=name,
-            message_type=message_type,
-            publisher_nodes=tuple(sorted(nodes)),
-        )
-        for (name, message_type), nodes in sorted(publishers.items())
-    )
-
-
-def unambiguous_topic_refs(refs: Iterable[TopicRef]) -> Tuple[TopicRef, ...]:
-    by_name: Dict[str, Dict[str, set[str]]] = {}
-    for ref in refs:
-        by_name.setdefault(ref.name, {}).setdefault(ref.message_type, set()).update(
-            ref.publisher_nodes
-        )
-    return tuple(
-        TopicRef(
-            name=name,
-            message_type=message_type,
-            publisher_nodes=tuple(sorted(publishers)),
-        )
-        for name in sorted(by_name)
-        if len(by_name[name]) == 1
-        for message_type, publishers in sorted(by_name[name].items())
-    )
+    configured = {topic.name: topic for topic in configured_topics}
+    refs: List[TopicRef] = []
+    for topic_name, message_types in ros_node.get_topic_names_and_types():
+        topic = configured.get(normalize_topic_name(topic_name))
+        types = {str(message_type).strip() for message_type in message_types}
+        if topic is not None and len(types) == 1:
+            refs.append(TopicRef(topic.name, next(iter(types)), topic))
+    return tuple(sorted(refs, key=lambda ref: (ref.name, ref.message_type)))
 
 
 def scalar_fields(message: Any, prefix: str = "") -> Tuple[Tuple[str, float, str], ...]:
@@ -163,28 +152,25 @@ def build_metric_payload(
 ) -> List[Dict[str, Any]]:
     metrics = []
     for sample in samples:
-        publishers = sample.publisher_nodes
         metrics.append(
             {
-                "name": METRIC_NAME,
+                "name": sample.metric_name,
                 "type": "gauge",
                 "value": sample.value,
-                "timestamp": int(sample.timestamp or time.time()),
                 "attributes": {
                     "ros_topic": sample.topic,
                     "field_path": sample.field_path,
                     "ros_type": sample.message_type,
                     "value_kind": sample.value_kind,
-                    "source_node": (
-                        publishers[0] if len(publishers) == 1 else "multiple"
-                    ),
-                    "publisher_count": len(publishers),
                 },
             }
         )
     return [
         {
-            "common": {"attributes": {"telescope": telescope}},
+            "common": {
+                "timestamp": int(time.time()),
+                "attributes": {"telescope": telescope},
+            },
             "metrics": metrics,
         }
     ]
@@ -274,9 +260,7 @@ class _TelemetryNodeMixin:
 
     def _discover(self) -> None:
         try:
-            refs = unambiguous_topic_refs(
-                discover_topic_refs(self, self._summary.health.nodes)
-            )
+            refs = discover_topic_refs(self, self._settings.topics)
         except Exception as exc:
             self.get_logger().warning(f"telemetry Topic discovery failed: {exc}")
             return
@@ -310,19 +294,25 @@ class _TelemetryNodeMixin:
             )
             self._discovery_reported = True
 
-    def _record(self, ref: TopicRef, message: Any) -> None:
-        now = time.time()
+    def _record(
+        self,
+        ref: TopicRef,
+        message: Any,
+    ) -> None:
+        fields = {field.path: field for field in ref.config.fields}
         with self._latest_lock:
             for field_path, value, value_kind in scalar_fields(message):
+                field = fields.get(field_path)
+                if field is None:
+                    continue
                 key = (ref.name, ref.message_type, field_path)
                 self._latest[key] = MetricSample(
+                    metric_name=field.metric_name,
                     topic=ref.name,
                     message_type=ref.message_type,
                     field_path=field_path,
                     value=value,
                     value_kind=value_kind,
-                    publisher_nodes=ref.publisher_nodes,
-                    timestamp=now,
                 )
 
     def _send_loop(self) -> None:
@@ -381,8 +371,8 @@ def main(args: Sequence[str] | None = None) -> None:
 
         env_file.load(Path(os.path.expanduser(summary.env_file)))
     settings = TelemetryConfig.from_mapping(summary.telemetry)
-    if not summary.health.enabled or not summary.health.nodes:
-        raise RuntimeError("telemetry requires enabled [console.health].nodes")
+    if not settings.topics:
+        raise RuntimeError("telemetry requires [telemetry.topics]")
     telescope = os.environ.get("TELESCOPE", "").strip()
     if not telescope:
         raise RuntimeError("TELESCOPE is required for telemetry")

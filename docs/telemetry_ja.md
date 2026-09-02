@@ -1,8 +1,7 @@
 # NECST telemetry
 
-`necst-telemetry` は、`[console.health].nodes` に設定されたROSノードが
-publishするTopicを動的に発見し、数値スカラーの最新値をNew Relic Metric APIへ
-定期送信する。
+`necst-telemetry` は、`[telemetry.topics]` に明示したROS Topicの指定fieldだけを
+購読し、意味のあるMetric名で数値スカラーの最新値をNew Relic Metric APIへ定期送信する。
 
 ## 設定
 
@@ -20,6 +19,13 @@ env_file = "/root/necst_ws/.env"
 [telemetry]
 post_interval_sec = 10.0
 discovery_interval_sec = 10.0
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/status/out"
+fields = [
+  { path = "antenna.az", metric = "necst.antenna.az" },
+  { path = "antenna.el", metric = "necst.antenna.el" },
+]
 ```
 
 `telemetry` nodeを起動した時点でtelemetryは有効になる。
@@ -39,22 +45,24 @@ NEW_RELIC_LICENSE_KEY='...'
 ros2 run necst telemetry
 ```
 
-`TELESCOPE` はNew Relic上の望遠鏡識別に使う。対象ノードの一覧は
-`[console.health].nodes`だけを参照し、telemetry側では重複管理しない。
+`TELESCOPE` はNew Relic上の望遠鏡識別に使う。telemetryは
+`[console.health].nodes`を参照せず、`[telemetry.topics]`に指定されたTopicだけを対象にする。
+Topicのmessage型はROS graphから取得し、複数のmessage型が見つかったTopicは送信しない。
 
 ## Topicと値
 
-ROS graph introspectionで完全修飾Topic名とmessage型を取得するため、ネストした
-Topicや同一階層の並列Topicも別々に扱う。同じTopicを複数ノードがpublishする場合は
-subscribeを1つにまとめる。型が衝突するTopicは送信しない。
+`fields`には送信するfield pathとMetric名を明示する。field pathはネストした
+fieldを`.`でつなぐ。Topic名は完全修飾名で指定するため、ネストしたTopicや同一階層の
+並列Topicを混同しない。
 
-送信するのは有限な数値スカラーとboolのみで、配列・文字列・複雑なオブジェクトは
-送信しない。高頻度の生データはRecorderの責務とし、telemetryは最新値を10秒ごとに
-まとめて送信する。
+指定fieldが有限な数値スカラーまたはboolの場合だけ送信し、配列・文字列・複雑な
+オブジェクトは送信しない。高頻度の生データはRecorderの責務とし、telemetryは最新値を
+10秒ごとにまとめて送信する。
 
-Metric名は `necst.ros.topic` で固定し、`telescope`、`ros_topic`、`field_path`、
-`ros_type` を属性にする。HTTP通信はROS callbackとは別の送信スレッドで行い、
-1リクエストあたり最大500メトリクスに分割する。
+Metric名はfieldごとに設定し、`telescope`をcommon attribute、`ros_topic`、
+`field_path`、`ros_type`、`value_kind`をmetric attributeにする。Metric APIが要求する
+timestampはバッチ単位の`common.timestamp`としてPOST直前に付与し、各fieldへは重複して付けない。
+HTTP通信はROS callbackとは別の送信スレッドで行い、1リクエストあたり最大500メトリクスに分割する。
 
 ## 今後の拡張
 
