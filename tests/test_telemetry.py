@@ -86,12 +86,11 @@ def test_discovery_skips_topics_with_multiple_message_types():
     assert discover_topic_refs(FakeNodeWithCollision(), topics) == ()
 
 
-def test_discovery_expands_multi_topic_children():
+def test_discovery_expands_topic_prefix_children():
     topics = [
         TelemetryTopic(
-            "/weather/ambient",
+            "/weather/ambient/*",
             (TelemetryField("temperature", "necst.weather.temperature_k"),),
-            multi=True,
         )
     ]
 

@@ -34,8 +34,7 @@ fields = [
 
 # Weather stations (for example: /out and /in)
 [telemetry.topics.weather]
-topic = "/necst/OMU1P85M/weather/ambient"
-multi = true
+topic = "/necst/OMU1P85M/weather/ambient/*"
 fields = [
   { path = "temperature", metric = "necst.weather.temperature_k" },
   { path = "humidity", metric = "necst.weather.humidity_fraction" },
