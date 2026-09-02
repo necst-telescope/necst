@@ -35,7 +35,7 @@ NEW_RELIC_LICENSE_KEY='...'
 起動時にサイトTOMLの環境ファイルが読み込まれる。
 
 ```sh
-ros2 run necst necst-telemetry
+ros2 run necst telemetry
 ```
 
 `TELESCOPE` はNew Relic上の望遠鏡識別に使う。対象ノードの一覧は
