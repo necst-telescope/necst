@@ -32,6 +32,7 @@ class TelemetryField:
 class TelemetryTopic:
     name: str
     fields: Tuple[TelemetryField, ...]
+    multi: bool = False
 
 
 @dataclass(frozen=True)
@@ -87,7 +88,13 @@ class TelemetryConfig:
                     if path and metric_name:
                         fields.append(TelemetryField(path, metric_name))
                 if fields:
-                    topics.append(TelemetryTopic(topic_name, tuple(fields)))
+                    topics.append(
+                        TelemetryTopic(
+                            topic_name,
+                            tuple(fields),
+                            multi=raw_topic.get("multi", False) is True,
+                        )
+                    )
         return cls(
             post_interval_sec=interval("post_interval_sec"),
             discovery_interval_sec=interval("discovery_interval_sec"),
@@ -120,13 +127,21 @@ def discover_topic_refs(
 ) -> Tuple[TopicRef, ...]:
     """Discover message types for explicitly configured Topics."""
 
+    configured_topics = tuple(configured_topics)
     configured = {topic.name: topic for topic in configured_topics}
+    multi_topics = tuple(topic for topic in configured_topics if topic.multi)
     refs: List[TopicRef] = []
     for topic_name, message_types in ros_node.get_topic_names_and_types():
-        topic = configured.get(normalize_topic_name(topic_name))
+        topic_name = normalize_topic_name(topic_name)
+        topic = configured.get(topic_name)
+        if topic is None:
+            for candidate in multi_topics:
+                if topic_name.startswith(f"{candidate.name}/"):
+                    topic = candidate
+                    break
         types = {str(message_type).strip() for message_type in message_types}
         if topic is not None and len(types) == 1:
-            refs.append(TopicRef(topic.name, next(iter(types)), topic))
+            refs.append(TopicRef(topic_name, next(iter(types)), topic))
     return tuple(sorted(refs, key=lambda ref: (ref.name, ref.message_type)))
 
 

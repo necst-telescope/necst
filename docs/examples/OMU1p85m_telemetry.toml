@@ -32,6 +32,19 @@ fields = [
   { path = "value", metric = "necst.vacuum.pressure_torr" },
 ]
 
+# Weather stations (for example: /out and /in)
+[telemetry.topics.weather]
+topic = "/necst/OMU1P85M/weather/ambient"
+multi = true
+fields = [
+  { path = "temperature", metric = "necst.weather.temperature_k" },
+  { path = "humidity", metric = "necst.weather.humidity_fraction" },
+  { path = "pressure", metric = "necst.weather.pressure_hpa" },
+  { path = "wind_speed", metric = "necst.weather.wind_speed_mps" },
+  { path = "wind_direction", metric = "necst.weather.wind_direction_deg" },
+  { path = "rain_rate", metric = "necst.weather.rain_rate" },
+]
+
 # Signal generators
 [telemetry.topics.sg_band3_1st]
 topic = "/necst/OMU1P85M/rx/lo_signal/band3_1st"

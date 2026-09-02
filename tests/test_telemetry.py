@@ -48,6 +48,15 @@ class FakeNodeWithCollision:
         return [("/status", ["a/msg/Status", "b/msg/Status"])]
 
 
+class FakeWeatherNode:
+    def get_topic_names_and_types(self):
+        return [
+            ("/weather/ambient/out", ["example/msg/Weather"]),
+            ("/weather/ambient/in", ["example/msg/Weather"]),
+            ("/weather/ambiently/out", ["example/msg/Weather"]),
+        ]
+
+
 def test_scalar_fields_skip_sequences_strings_and_nonfinite_values():
     assert scalar_fields(FakeMessage()) == (
         ("ok", 1.0, "bool"),
@@ -75,6 +84,20 @@ def test_discovery_skips_topics_with_multiple_message_types():
     topics = [TelemetryTopic("/status", (TelemetryField("value", "necst.status"),))]
 
     assert discover_topic_refs(FakeNodeWithCollision(), topics) == ()
+
+
+def test_discovery_expands_multi_topic_children():
+    topics = [
+        TelemetryTopic(
+            "/weather/ambient",
+            (TelemetryField("temperature", "necst.weather.temperature_k"),),
+            multi=True,
+        )
+    ]
+
+    refs = discover_topic_refs(FakeWeatherNode(), topics)
+
+    assert [ref.name for ref in refs] == ["/weather/ambient/in", "/weather/ambient/out"]
 
 
 def test_payload_uses_full_topic_and_telescope_attributes():

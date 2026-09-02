@@ -50,6 +50,7 @@ ros2 run necst telemetry
 `TELESCOPE` はNew Relic上の望遠鏡識別に使う。telemetryは
 `[console.health].nodes`を参照せず、`[telemetry.topics.<name>]`に指定されたTopicだけを対象にする。
 Topic設定は名前付きのtableでまとめて記述する。既存の`[[telemetry.topics]]`形式も読み込める。
+複数の子Topicをまとめて購読する場合は`multi = true`を指定する。
 Topicのmessage型はROS graphから取得し、複数のmessage型が見つかったTopicは送信しない。
 
 ## Topicと値
