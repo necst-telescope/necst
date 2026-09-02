@@ -98,10 +98,14 @@ def discover_topic_refs(
 
     publishers: Dict[Tuple[str, str], set[str]] = {}
     for expected in expected_nodes:
-        namespace, node_name = _split_node_name(expected.name)
-        for topic_name, message_types in ros_node.get_publisher_names_and_types_by_node(
-            node_name, namespace
-        ):
+        try:
+            namespace, node_name = _split_node_name(expected.name)
+            topic_infos = ros_node.get_publisher_names_and_types_by_node(
+                node_name, namespace
+            )
+        except Exception:
+            continue
+        for topic_name, message_types in topic_infos:
             full_topic = normalize_topic_name(topic_name)
             for message_type in message_types:
                 message_type = str(message_type).strip()
@@ -248,7 +252,7 @@ class _TelemetryNodeMixin:
         self._telescope = telescope
         self._definitions = definitions
         self._import_msg = import_msg
-        self._subscriptions: Dict[Tuple[str, str], Any] = {}
+        self._telemetry_subscriptions: Dict[Tuple[str, str], Any] = {}
         self._latest: Dict[Tuple[str, str, str], MetricSample] = {}
         self._latest_lock = threading.Lock()
         self._stop_event = threading.Event()
@@ -271,12 +275,12 @@ class _TelemetryNodeMixin:
             return
 
         current = {(ref.name, ref.message_type): ref for ref in refs}
-        for key, subscription in list(self._subscriptions.items()):
+        for key, subscription in list(self._telemetry_subscriptions.items()):
             if key not in current:
                 self.destroy_subscription(subscription)
-                del self._subscriptions[key]
+                del self._telemetry_subscriptions[key]
         for key, ref in current.items():
-            if key in self._subscriptions:
+            if key in self._telemetry_subscriptions:
                 continue
             try:
                 message_type = self._import_msg(ref.message_type)
@@ -291,7 +295,7 @@ class _TelemetryNodeMixin:
                     f"telemetry subscription failed for {ref.name}: {exc}"
                 )
                 continue
-            self._subscriptions[key] = subscription
+            self._telemetry_subscriptions[key] = subscription
 
     def _record(self, ref: TopicRef, message: Any) -> None:
         now = time.time()

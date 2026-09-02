@@ -45,6 +45,13 @@ class FakeNode:
         ]
 
 
+class FakeNodeWithMissingNode(FakeNode):
+    def get_publisher_names_and_types_by_node(self, node_name, namespace):
+        if node_name == "missing":
+            raise RuntimeError("node is not present")
+        return super().get_publisher_names_and_types_by_node(node_name, namespace)
+
+
 def test_scalar_fields_skip_sequences_strings_and_nonfinite_values():
     assert scalar_fields(FakeMessage()) == (
         ("ok", 1.0, "bool"),
@@ -64,6 +71,21 @@ def test_discovery_keeps_nested_topics_and_deduplicates_parallel_publishers():
         "/necst/OMU1P85M/status/out",
     ]
     assert refs[0].publisher_nodes == tuple(node.name for node in nodes)
+
+
+def test_discovery_skips_missing_nodes_and_keeps_available_nodes():
+    nodes = [
+        ExpectedNode("/necst/OMU1P85M/ctrl/missing", "missing"),
+        ExpectedNode("/necst/OMU1P85M/ctrl/antenna_a", "a"),
+    ]
+
+    refs = discover_topic_refs(FakeNodeWithMissingNode(), nodes)
+
+    assert {ref.name for ref in refs} == {
+        "/necst/OMU1P85M/status/in",
+        "/necst/OMU1P85M/status/out",
+    }
+    assert all(ref.publisher_nodes == (nodes[1].name,) for ref in refs)
 
 
 def test_type_collision_is_not_subscribed():
