@@ -254,6 +254,8 @@ class _TelemetryNodeMixin:
         self._latest: Dict[Tuple[str, str, str], MetricSample] = {}
         self._latest_lock = threading.Lock()
         self._stop_event = threading.Event()
+        self._discovery_reported = False
+        self._send_success_reported = False
         self._sender = threading.Thread(
             target=self._send_loop,
             name="necst-telemetry-sender",
@@ -261,6 +263,11 @@ class _TelemetryNodeMixin:
         )
         self.create_timer(settings.discovery_interval_sec, self._discover)
         self._discover()
+        self.get_logger().info(
+            f"telemetry started: telescope={telescope}, "
+            f"subscriptions={len(self._telemetry_subscriptions)}, "
+            f"post_interval={settings.post_interval_sec}s"
+        )
         self._sender.start()
 
     def _discover(self) -> None:
@@ -295,6 +302,12 @@ class _TelemetryNodeMixin:
                 continue
             self._telemetry_subscriptions[key] = subscription
 
+        if not self._discovery_reported:
+            self.get_logger().info(
+                f"telemetry subscriptions ready: {len(self._telemetry_subscriptions)}"
+            )
+            self._discovery_reported = True
+
     def _record(self, ref: TopicRef, message: Any) -> None:
         now = time.time()
         with self._latest_lock:
@@ -317,9 +330,16 @@ class _TelemetryNodeMixin:
             if not samples:
                 continue
             try:
+                sent_count = 0
                 for start in range(0, len(samples), MAX_METRICS_PER_REQUEST):
                     batch = samples[start : start + MAX_METRICS_PER_REQUEST]
                     self._client.send(build_metric_payload(batch, self._telescope))
+                    sent_count += len(batch)
+                if not self._send_success_reported:
+                    self.get_logger().info(
+                        f"telemetry Metric API send succeeded: metrics={sent_count}"
+                    )
+                    self._send_success_reported = True
             except Exception as exc:
                 self.get_logger().error(f"telemetry Metric API send failed: {exc}")
 
