@@ -115,8 +115,10 @@ def test_payload_uses_full_topic_and_telescope_attributes():
         ],
         "NANTEN2",
     )
-    metric = payload["metrics"][0]
-    assert payload["common"]["attributes"]["telescope"] == "NANTEN2"
+    assert len(payload) == 1
+    batch = payload[0]
+    metric = batch["metrics"][0]
+    assert batch["common"]["attributes"]["telescope"] == "NANTEN2"
     assert metric["attributes"]["ros_topic"] == "/topic/out"
     assert metric["attributes"]["field_path"] == "nested.value"
     assert metric["attributes"]["source_node"] == "/node"

@@ -160,7 +160,7 @@ def scalar_fields(message: Any, prefix: str = "") -> Tuple[Tuple[str, float, str
 
 def build_metric_payload(
     samples: Iterable[MetricSample], telescope: str
-) -> Dict[str, Any]:
+) -> List[Dict[str, Any]]:
     metrics = []
     for sample in samples:
         publishers = sample.publisher_nodes
@@ -182,10 +182,12 @@ def build_metric_payload(
                 },
             }
         )
-    return {
-        "common": {"attributes": {"telescope": telescope}},
-        "metrics": metrics,
-    }
+    return [
+        {
+            "common": {"attributes": {"telescope": telescope}},
+            "metrics": metrics,
+        }
+    ]
 
 
 class NewRelicMetricClient:
@@ -196,7 +198,7 @@ class NewRelicMetricClient:
         self._endpoint = endpoint
         self._timeout_sec = timeout_sec
 
-    def send(self, payload: Mapping[str, Any]) -> None:
+    def send(self, payload: Sequence[Mapping[str, Any]]) -> None:
         body = gzip.compress(json.dumps(payload, separators=(",", ":")).encode())
         request = Request(
             self._endpoint,
