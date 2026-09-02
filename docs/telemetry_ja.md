@@ -18,10 +18,11 @@ env_file = "/root/necst_ws/.env"
 
 ```toml
 [telemetry]
-enabled = true
 post_interval_sec = 10.0
 discovery_interval_sec = 10.0
 ```
+
+`telemetry` nodeを起動した時点でtelemetryは有効になる。
 
 環境ファイルにはAPIキーを置く。プロセス環境に同じ変数が設定済みの場合は、
 プロセス環境を優先する。

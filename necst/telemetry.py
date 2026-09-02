@@ -25,7 +25,6 @@ MAX_METRICS_PER_REQUEST = 500
 
 @dataclass(frozen=True)
 class TelemetryConfig:
-    enabled: bool = False
     post_interval_sec: float = 10.0
     discovery_interval_sec: float = 10.0
     metric_endpoint: str = DEFAULT_METRIC_ENDPOINT
@@ -49,7 +48,6 @@ class TelemetryConfig:
             or DEFAULT_METRIC_ENDPOINT
         ).strip()
         return cls(
-            enabled=bool(raw.get("enabled", False)),
             post_interval_sec=interval("post_interval_sec"),
             discovery_interval_sec=interval("discovery_interval_sec"),
             metric_endpoint=endpoint,
@@ -361,8 +359,6 @@ def main(args: Sequence[str] | None = None) -> None:
 
         env_file.load(Path(os.path.expanduser(summary.env_file)))
     settings = TelemetryConfig.from_mapping(summary.telemetry)
-    if not settings.enabled:
-        return
     if not summary.health.enabled or not summary.health.nodes:
         raise RuntimeError("telemetry requires enabled [console.health].nodes")
     telescope = os.environ.get("TELESCOPE", "").strip()

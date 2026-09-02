@@ -124,9 +124,8 @@ def test_payload_uses_full_topic_and_telescope_attributes():
 
 def test_config_defaults_to_disabled_and_clamps_intervals():
     config = TelemetryConfig.from_mapping(
-        {"enabled": True, "post_interval_sec": 0, "discovery_interval_sec": "bad"}
+        {"post_interval_sec": 0, "discovery_interval_sec": "bad"}
     )
-    assert config.enabled is True
     assert config.post_interval_sec == 0.5
     assert config.discovery_interval_sec == 10.0
 
