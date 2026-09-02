@@ -1,5 +1,7 @@
+import os
 from types import SimpleNamespace
 
+from necst.utils.env_file import load
 from necst.telemetry import (
     MetricSample,
     TelemetryConfig,
@@ -105,3 +107,18 @@ def test_config_defaults_to_disabled_and_clamps_intervals():
     assert config.enabled is True
     assert config.post_interval_sec == 0.5
     assert config.discovery_interval_sec == 10.0
+
+
+def test_env_file_does_not_override_existing_environment(tmp_path, monkeypatch):
+    path = tmp_path / ".env"
+    path.write_text(
+        "NEW_RELIC_LICENSE_KEY='from-file'\nTELESCOPE=from-file\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("TELESCOPE", "from-process")
+    monkeypatch.delenv("NEW_RELIC_LICENSE_KEY", raising=False)
+
+    load(path)
+
+    assert os.environ["NEW_RELIC_LICENSE_KEY"] == "from-file"
+    assert os.environ["TELESCOPE"] == "from-process"

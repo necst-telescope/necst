@@ -10,6 +10,7 @@ import os
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -351,6 +352,10 @@ def main(args: Sequence[str] | None = None) -> None:
     options = parser.parse_args(args)
 
     summary = site_config.resolve_site_config(site_config_path=options.site_config)
+    if summary.env_file:
+        from .utils import env_file
+
+        env_file.load(Path(os.path.expanduser(summary.env_file)))
     settings = TelemetryConfig.from_mapping(summary.telemetry)
     if not settings.enabled:
         return

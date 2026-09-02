@@ -39,6 +39,7 @@ class SiteConfigSummary:
     )
     chopper: Dict[str, Any] = field(default_factory=dict)
     observation_log: Dict[str, Any] = field(default_factory=dict)
+    env_file: Optional[str] = None
     telemetry: Dict[str, Any] = field(default_factory=dict)
     health: node_health.NodeHealthConfig = field(
         default_factory=node_health.NodeHealthConfig
@@ -54,6 +55,7 @@ class SiteConfigSummary:
             "capabilities": dict(self.capabilities),
             "chopper": dict(self.chopper),
             "observation_log": dict(self.observation_log),
+            "env_file": self.env_file,
             "telemetry": dict(self.telemetry),
             "health": self.health.to_dict(),
             "warnings": list(self.warnings),
@@ -303,6 +305,14 @@ def _telemetry_from_config(config: Mapping[str, Any]) -> Dict[str, Any]:
     return dict(raw) if isinstance(raw, Mapping) else {}
 
 
+def _env_file_from_config(config: Mapping[str, Any]) -> Optional[str]:
+    raw = config.get("environment") if isinstance(config, Mapping) else None
+    if not isinstance(raw, Mapping):
+        return None
+    value = raw.get("env_file")
+    return str(value).strip() if value not in (None, "") else None
+
+
 def resolve_site_config(
     *,
     site_config_path: Optional[os.PathLike[str] | str] = None,
@@ -345,6 +355,7 @@ def resolve_site_config(
     chopper = _chopper_from_config(config)
     caps = _capabilities_from_config(config, chopper)
     obslog = _observation_log_from_config(config)
+    env_file = _env_file_from_config(config)
     telemetry = _telemetry_from_config(config)
     health = node_health.config_from_mapping(config)
     observatory = config.get("observatory") if isinstance(config, Mapping) else None
@@ -356,6 +367,7 @@ def resolve_site_config(
         capabilities=caps,
         chopper=chopper,
         observation_log=obslog,
+        env_file=env_file,
         telemetry=telemetry,
         health=health,
         warnings=warnings + list(obslog.get("warnings", [])) + list(health.warnings),

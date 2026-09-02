@@ -8,6 +8,14 @@ publishするTopicを動的に発見し、数値スカラーの最新値をNew R
 
 サイトTOMLに既存の `[console.health]` と、以下を追加する。
 
+Discordやtelemetryで共用する環境ファイルは、機能個別ではなく
+`[environment]` に指定する。
+
+```toml
+[environment]
+env_file = "/root/necst_ws/.env"
+```
+
 ```toml
 [telemetry]
 enabled = true
@@ -15,11 +23,18 @@ post_interval_sec = 10.0
 discovery_interval_sec = 10.0
 ```
 
-APIキーはファイルへ保存せず、環境変数から渡す。
+環境ファイルにはAPIキーを置く。プロセス環境に同じ変数が設定済みの場合は、
+プロセス環境を優先する。
 
 ```sh
-export TELESCOPE=OMU1P85M
-export NEW_RELIC_LICENSE_KEY='...'
+NEW_RELIC_LICENSE_KEY='...'
+```
+
+`TELESCOPE` は既存のプロセス環境変数を使用する。
+
+起動時にサイトTOMLの環境ファイルが読み込まれる。
+
+```sh
 ros2 run necst necst-telemetry
 ```
 
