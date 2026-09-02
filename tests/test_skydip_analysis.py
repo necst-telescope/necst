@@ -2,6 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from necst.analysis.node import (
@@ -15,6 +16,7 @@ from necst.analysis.skydip import (
     _normalize_board_labels,
     format_discord_summary,
 )
+from necst.analysis.rsky import _hot_sky_averages, format_rsky_summary
 from necst.notification import discord as discord_module
 from necst.notification.discord import DiscordAttachmentTooLarge, DiscordNotifier
 
@@ -456,6 +458,61 @@ def test_coordinator_notifies_normal_observation_completion(tmp_path):
     assert notifier.text_posts == [
         format_observation_completion("OTF", "otf_data", "OMU1P85M")
     ]
+    executor.shutdown()
+
+
+def test_rsky_averages_and_summary_follow_necbook_calculation():
+    hot, sky = _hot_sky_averages(
+        {
+            "position": np.array([b"HOT     ", b"SKY     ", b"HOT     "]),
+            "data": np.array([[4.0, 8.0], [2.0, 4.0], [6.0, 10.0]]),
+        }
+    )
+
+    assert np.allclose(hot, [5.0, 9.0])
+    assert np.allclose(sky, [2.0, 4.0])
+    assert "R-Sky Analysis Result" in format_rsky_summary(
+        "rsky_data",
+        {"board1": {"y_factor": hot / sky, "tsys_K": 290.0 / (hot / sky - 1.0)}},
+        "omu1p85m",
+    )
+
+
+def test_coordinator_analyzes_rsky_result(tmp_path):
+    record_name = "necst_rsky_20260811_153000"
+    (tmp_path / record_name).mkdir()
+
+    class FakeRSkyAnalyzer:
+        telescope = "omu1p85m"
+
+        def __init__(self):
+            self.paths = []
+
+        def analyze(self, path):
+            self.paths.append(path)
+            return AnalysisOutput(FakeFigure(), {"board1": {}}, "rsky-summary")
+
+    rsky_analyzer = FakeRSkyAnalyzer()
+    notifier = FakeNotifier()
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = SkyDipAnalysisCoordinator(
+        FakeAnalyzer(),
+        notifier,
+        tmp_path,
+        executor=executor,
+        rsky_analyzer=rsky_analyzer,
+    )
+
+    coordinator.on_recorder_status(False)
+    future = coordinator.on_progress(
+        progress(record_name, observation_type="RSky")
+    )
+    assert future is not None
+    future.result(timeout=2)
+
+    assert rsky_analyzer.paths == [tmp_path / record_name]
+    assert len(notifier.posts) == 1
+    assert notifier.posts[0][1:] == (record_name, "rsky-summary")
     executor.shutdown()
 
 

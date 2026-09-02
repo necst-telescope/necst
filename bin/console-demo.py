@@ -3090,7 +3090,7 @@ qs('chopperStatus').addEventListener('click', () => api('chopper_status'));
 qs('chopperAlarmReset').addEventListener('click', () => api('chopper_alarm_reset'));
 qs('chopperHome').addEventListener('click', () => api('chopper_home'));
 qs('chopperRecover').addEventListener('click', () => api('chopper_recover'));
-qs('runRsky').addEventListener('click', () => api('run_rsky', {n: qs('rskyN').value, integ: qs('rskyInteg').value, ch: qs('rskyCh').value}, 'rsky'));
+qs('runRsky').addEventListener('click', () => api('run_rsky', {n: qs('rskyN').value, integ: qs('rskyInteg').value, ch: qs('rskyCh').value, share_discord: state.discordShareEnabled}, 'rsky'));
 qs('runSkydip').addEventListener('click', () => runSkydipFromUi());
 qs('addObsLogComment').addEventListener('click', async () => {
   const comment = qs('obsLogComment').value;
@@ -4692,6 +4692,10 @@ def handle_action(
         if err:
             server.add_log(False, f"RSky not started: {err}")
             return False, err
+        share_discord = params.get("share_discord", state.discord_share_enabled)
+        if not isinstance(share_discord, bool):
+            server.add_log(False, "RSky not started: share_discord must be true or false")
+            return False, "share_discord must be true or false"
         authority_msg = _with_authority(server, session_id, "RSky")
         if "rejected" in authority_msg:
             server.add_log(False, authority_msg)
@@ -4702,8 +4706,13 @@ def handle_action(
         state.state = "calibrating"
         state.manual_state = "calibration"
         state.active_task = "RSky"
+        state.discord_share_enabled = share_discord
         _demo_set_record(state, f"necst_rsky_{time.strftime('%Y%m%d_%H%M%S')}")
-        server.add_log(True, f"{authority_msg}: n={n or 1}, integ={integ:g} s")
+        server.add_log(
+            True,
+            f"{authority_msg}: n={n or 1}, integ={integ:g} s; "
+            f"Discord share={'ON' if share_discord else 'OFF'}",
+        )
         return True, "RSky started"
 
     if action == "run_skydip":

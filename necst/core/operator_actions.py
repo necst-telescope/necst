@@ -1294,12 +1294,14 @@ def run_rsky(
     dry_run: bool = False,
     stdout_path: Any = None,
     stderr_path: Any = None,
+    share_discord: bool = True,
 ) -> OperatorActionResult:
     """Run an RSky calibration action through the existing launcher."""
 
     n_int = _positive_int_or_none(n, name="RSky n") or 1
     integ_sec = _positive_float(integ, name="RSky integ")
     ch = _positive_int_or_none(channel, name="RSky channel")
+    share_discord = _bool_value(share_discord, name="RSky Discord sharing")
     script = _script_path("rsky.py")
     argv = [sys.executable, str(script), "-n", str(n_int), "--integ", f"{integ_sec:g}"]
     if ch is not None:
@@ -1311,8 +1313,18 @@ def run_rsky(
         dry_run=dry_run,
         stdout_path=stdout_path,
         stderr_path=stderr_path,
+        env_overrides={
+            "NECST_DISCORD_SHARE": "1" if share_discord else "0",
+        },
     )
-    result.data.update({"n": n_int, "integ_sec": integ_sec, "channel": ch})
+    result.data.update(
+        {
+            "n": n_int,
+            "integ_sec": integ_sec,
+            "channel": ch,
+            "share_discord": share_discord,
+        }
+    )
     return result
 
 

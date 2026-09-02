@@ -2999,6 +2999,7 @@ def dispatch_action(
                 n=params.get("n", 1),
                 integ=params.get("integ", 2),
                 channel=params.get("ch"),
+                share_discord=state.discord_share_enabled,
                 background=True,
                 dry_run=True,
             )
@@ -3012,6 +3013,7 @@ def dispatch_action(
             n=params.get("n", 1),
             integ=params.get("integ", 2),
             channel=params.get("ch"),
+            share_discord=state.discord_share_enabled,
             background=True,
             dry_run=dry_run,
             stdout_path=stdout_path,

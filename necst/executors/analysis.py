@@ -13,16 +13,21 @@ from std_msgs.msg import String
 
 from .. import namespace, topic
 from ..analysis.node import SkyDipAnalysisCoordinator
+from ..analysis.rsky import RSkyAnalyzer
 from ..analysis.skydip import analyzer_from_environment
 from ..notification.discord import DiscordNotifier
 
 
 class AnalysisNode(Node):
-    """Observe completion events and schedule SkyDip qlook delivery."""
+    """Observe completion events and schedule calibration qlook delivery."""
 
     def __init__(self) -> None:
         super().__init__("analysis", namespace=namespace.core)
         analyzer = analyzer_from_environment(logger=self.get_logger())
+        rsky_analyzer = RSkyAnalyzer(
+            telescope=analyzer.telescope,
+            logger=self.get_logger(),
+        )
         notifier = DiscordNotifier.from_environment()
         record_root = Path(os.environ.get("NECST_RECORD_ROOT", Path.home() / "data"))
         self.coordinator = SkyDipAnalysisCoordinator(
@@ -30,6 +35,7 @@ class AnalysisNode(Node):
             notifier,
             record_root,
             logger=self.get_logger(),
+            rsky_analyzer=rsky_analyzer,
         )
         topic.observation_progress.subscription(self, self._on_progress)
         topic.record_status.subscription(self, self._on_record_status)

@@ -31,6 +31,10 @@ def _is_skydip(value: Any) -> bool:
     return str(value or "").strip().lower() in {"skydip", "sky_dip", "sky-dip"}
 
 
+def _is_rsky(value: Any) -> bool:
+    return str(value or "").strip().lower() in {"rsky", "r-sky", "r_sky"}
+
+
 def _finished_observation(
     payload: Mapping[str, Any], record_root: Path
 ) -> Optional[FinishedObservation]:
@@ -100,8 +104,10 @@ class SkyDipAnalysisCoordinator:
         *,
         executor: Optional[Executor] = None,
         logger: Optional[Any] = None,
+        rsky_analyzer: Optional[Any] = None,
     ) -> None:
         self.analyzer = analyzer
+        self.rsky_analyzer = rsky_analyzer
         self.notifier = notifier
         self.record_root = Path(record_root).expanduser()
         self.logger = logger or logging.getLogger(__name__)
@@ -136,7 +142,10 @@ class SkyDipAnalysisCoordinator:
                     completion_future = self._executor.submit(
                         self._notify_completion, candidate
                     )
-            if not _is_skydip(candidate.observation_type):
+            if not (
+                _is_skydip(candidate.observation_type)
+                or _is_rsky(candidate.observation_type)
+            ):
                 return completion_future
             if candidate.record_name in self._scheduled_records:
                 return None
@@ -181,7 +190,7 @@ class SkyDipAnalysisCoordinator:
         if candidate.record_name in self._scheduled_records:
             return None
         self._scheduled_records.add(candidate.record_name)
-        self.logger.info(f"Scheduling SkyDip analysis: {candidate.record_name}")
+        self.logger.info(f"Scheduling observation analysis: {candidate.record_name}")
         return self._executor.submit(self._analyze_and_notify, candidate)
 
     def on_recorder_status(self, recording: bool) -> Optional[Future]:
@@ -206,9 +215,14 @@ class SkyDipAnalysisCoordinator:
         try:
             if not observation.record_path.is_dir():
                 raise FileNotFoundError(
-                    f"SkyDip record directory does not exist: {observation.record_path}"
+                    f"Observation record directory does not exist: {observation.record_path}"
                 )
-            analysis_output = self.analyzer.analyze(observation.record_path)
+            analyzer = self.analyzer
+            if _is_rsky(observation.observation_type):
+                if self.rsky_analyzer is None:
+                    raise RuntimeError("R-Sky analyzer is not configured")
+                analyzer = self.rsky_analyzer
+            analysis_output = analyzer.analyze(observation.record_path)
             figure = getattr(analysis_output, "figure", analysis_output)
             discord_content = getattr(analysis_output, "discord_content", None)
             board_failures = getattr(analysis_output, "board_failures", {}) or {}

@@ -1,6 +1,6 @@
-# SkyDip解析結果のDiscord投稿
+# SkyDip / R-Sky解析結果のDiscord投稿
 
-SkyDip終了後の解析とDiscord投稿は、既存NECST Dockerコンテナ内の別ROS 2
+SkyDip / R-Sky終了後の解析とDiscord投稿は、既存NECST Dockerコンテナ内の別ROS 2
 `analysis` Nodeで実行する。Recorder Nodeは変更せず、`observation_progress` の
 `finished` スナップショットと `record_status` の停止通知を両方受け取った後に、
 解析をワーカースレッドへ渡す。
@@ -10,9 +10,11 @@ SkyDip終了後の解析とDiscord投稿は、既存NECST Dockerコンテナ内�
 RecorderとAnalysisが同じデータを見るように、ホストの保存先を `/data` へbind
 mountする。
 
-Analysis Nodeが使う `skydip_step_jupyter_necstdb_v10.py` を同じNECSTパッケージへ
-配置する。スクリプトの解析・グラフ生成処理は変更せず、Analysis Nodeから
-`analyze_skydip_boards()` を呼び出す接続層だけを追加する。実行時には
+Analysis Nodeが使うSkyDipスクリプトを同じNECSTパッケージへ配置する。SkyDipの解析・
+グラフ生成処理は変更せず、Analysis Nodeから`analyze_skydip_boards()`を呼び出す。
+[necbookの`rsky_20240817.ipynb`](https://github.com/necst-telescope/necbook/blob/main/calibration/rsky_20240817.ipynb)
+に合わせ、各spectral tableのHOT/SKY平均から
+`Y=HOT/SKY`、`Tsys=290/(Y-1)`を計算してIFごとのグラフとサマリーを生成する。実行時には
 `numpy`、`pandas`、`matplotlib`、`necstdb` が必要になる。
 
 ```bash
@@ -92,7 +94,7 @@ ros2 run necst analysis
 ```
 
 `analysis` Nodeは全観測モードの正常終了時に、望遠鏡名・観測モード・観測データ名を含む
-正常終了通知を送信する。SkyDipの場合はその後、録音停止を確認してから解析結果の通知も送信する。
+正常終了通知を送信する。SkyDip / R-Skyの場合はその後、録音停止を確認してから解析結果の通知も送信する。
 同梱したv10スクリプトの `analyze_skydip_boards()` が解析とグラフ生成を行い、
 返されたFigureを`BytesIO`へPNG化してDiscordへ直接添付する。同時に、同じ解析結果から
 board別の数値サマリーをMarkdown形式で生成して本文へ付ける。観測データ名はインライン
