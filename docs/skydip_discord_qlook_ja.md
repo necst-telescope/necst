@@ -19,6 +19,7 @@ Analysis Nodeが使う `skydip_step_jupyter_necstdb_v10.py` を同じNECSTパッ
 docker run --network=host \\
   -v /home/necst/data:/data \\
   -e NECST_RECORD_ROOT=/data \\
+  -e TELESCOPE=OMU1p85m \\
   necst:latest
 ```
 
@@ -27,11 +28,11 @@ docker run --network=host \\
 既存のNECST site configにenvファイルのパスだけを指定する。
 
 ```toml
-[notification.discord]
-env_file = "/root/.necst/discord.env"
+[environment]
+env_file = "/root/necst_ws/.env"
 ```
 
-`/root/.necst/discord.env` はGit管理外で、例えば次の項目を置く。
+`/root/necst_ws/.env` はGit管理外で、例えば次の項目を置く。
 
 ```dotenv
 DISCORD_BOT_TOKEN=...
@@ -40,12 +41,15 @@ DISCORD_CHANNEL_ID=...
 DISCORD_ATTACHMENT_LIMIT_MIB=10
 ```
 
+`TELESCOPE`は共有env-fileではなく、Analysis Nodeを起動するコンテナの環境変数として設定する。
+値は通知内で大文字化される（例: `OMU1p85m` → `OMU1P85M`）。
+
 Analysis Nodeはsite configの`env_file`を起動時に読み込む。
 `DISCORD_BOT_TOKEN`の値をtelescope configやリポジトリへ書く必要はない。
 env-fileはGit管理外に置き、所有者だけが読めるようにする。
 
 ```bash
-chmod 600 /root/.necst/discord.env
+chmod 600 /root/necst_ws/.env
 ```
 
 Board番号とIF表示名は、NECST site configの1項目で対応付ける。
@@ -87,7 +91,8 @@ ros2 run necst record
 ros2 run necst analysis
 ```
 
-`analysis` NodeはSkyDipだけを対象にし、SkyDip以外の観測終了は無視する。
+`analysis` Nodeは全観測モードの正常終了時に、望遠鏡名・観測モード・観測データ名を含む
+正常終了通知を送信する。SkyDipの場合はその後、録音停止を確認してから解析結果の通知も送信する。
 同梱したv10スクリプトの `analyze_skydip_boards()` が解析とグラフ生成を行い、
 返されたFigureを`BytesIO`へPNG化してDiscordへ直接添付する。同時に、同じ解析結果から
 board別の数値サマリーをMarkdown形式で生成して本文へ付ける。観測データ名はインライン
@@ -120,14 +125,15 @@ Board解析自体の例外は表の後に`Analysis errors:`として、例外種
 | 変数 | 必須 | 用途 |
 | --- | --- | --- |
 | `NECST_RECORD_ROOT` | 推奨 | コンテナ内の共通データルート。例 `/data` |
+| `TELESCOPE` | 必須 | 望遠鏡名。通知には大文字で表示 |
 | `DISCORD_BOT_TOKEN` | env-file内 | Discord Bot Token |
 | `DISCORD_CHANNEL_ID` | env-file内 | 投稿先チャンネルID |
 | `DISCORD_ATTACHMENT_LIMIT_MIB` | 任意 | 添付上限。未指定時は `10` MiB |
 | `[analysis].board_labels` | 任意 | board名とIF表示名の対応表 |
-| `notification.discord.env_file` | 推奨 | site configからenv-fileを指定 |
+| `environment.env_file` | 推奨 | Discord/telemetry共通のenv-fileを指定 |
 | `NECST_SKYDIP_SCRIPT` | 任意 | 外部スクリプトを使う場合のパス。通常は同梱v10を使用 |
 | `NECST_SKYDIP_BOARDS` | 任意 | 解析対象boardのカンマ区切り。未指定時はnecstdbから自動検出 |
-| `NECST_SKYDIP_TELESCOPE` | 任意 | スクリプトへ渡す望遠鏡名。既定値 `OMU1P85M` |
+| `NECST_DISCORD_SHARE` | 内部 | Consoleの共有トグルから観測プロセスへ渡す。通常は手動設定不要 |
 
 Analysis Nodeは、指定されたDiscord設定が不足している場合は起動時に失敗する。
 これにより、通知が無効なまま運用されることを防ぐ。

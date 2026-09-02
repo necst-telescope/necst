@@ -170,6 +170,7 @@ class OperatorConsoleState:
     progress_monitor: Optional[progress_manager.ProgressMonitorManager] = None
     action_mode: str = "live"
     live_actions_enabled: bool = True
+    discord_share_enabled: bool = True
     status_refresh_ms: int = 1000
     status_no_ros: bool = False
     quiet: bool = False
@@ -2473,6 +2474,17 @@ def dispatch_action(
             {"action": action, "observation_log": manager.status()},
         )
 
+    if action == "set_discord_share":
+        enabled = params.get("enabled")
+        if not isinstance(enabled, bool):
+            raise ValueError("enabled must be true or false")
+        state.discord_share_enabled = enabled
+        return (
+            True,
+            f"Discord sharing {'enabled' if enabled else 'disabled'}",
+            {"action": action, "enabled": enabled},
+        )
+
     if action == "launch_progress":
         if state.progress_monitor is None:
             return (
@@ -2928,6 +2940,7 @@ def dispatch_action(
                 background=True,
                 dry_run=True,
                 check_exists=True,
+                share_discord=state.discord_share_enabled,
             )
             pre_ok, pre_message, pre_data = _result_to_response(preflight)
             if not pre_ok:
@@ -2944,6 +2957,7 @@ def dispatch_action(
             check_exists=not dry_run,
             stdout_path=stdout_path,
             stderr_path=stderr_path,
+            share_discord=state.discord_share_enabled,
         )
         ok, message, data = _result_to_response(result)
         if isinstance(data, dict):
@@ -3033,12 +3047,16 @@ def dispatch_action(
         validate_site_capability(state, "skydip", action_label="SkyDip")
         dry_run = state.action_mode == "dry-run"
         skydip_tp_range = _normalize_skydip_tp_range(params.get("tp_range"))
+        share_discord = params.get("share_discord", state.discord_share_enabled)
+        if not isinstance(share_discord, bool):
+            raise ValueError("share_discord must be true or false")
         actions = _load_operator_actions()
         if not dry_run:
             preflight = actions.run_skydip(
                 integ=params.get("integ", 2),
                 channel=params.get("ch"),
                 tp_range=skydip_tp_range,
+                share_discord=share_discord,
                 background=True,
                 dry_run=True,
             )
@@ -3052,6 +3070,7 @@ def dispatch_action(
             integ=params.get("integ", 2),
             channel=params.get("ch"),
             tp_range=skydip_tp_range,
+            share_discord=share_discord,
             background=True,
             dry_run=dry_run,
             stdout_path=stdout_path,
@@ -3393,6 +3412,7 @@ def _operator_status_to_v7_status(
 
     return {
         "telescope": state.telescope,
+        "discord_share_enabled": bool(state.discord_share_enabled),
         "state": sys_state,
         "manual_state": manual_state,
         "active_task": active_task,
@@ -3711,6 +3731,9 @@ def build_minimal_rescue_status(
     ]
     payload: JsonDict = {
         "telescope": state.telescope,
+        "discord_share_enabled": bool(
+            getattr(state, "discord_share_enabled", True)
+        ),
         "progress_url": state.progress_url,
         "progress": {
             "url": state.progress_url,

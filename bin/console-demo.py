@@ -156,6 +156,14 @@ small { color: var(--faint); }
 .node-health-row .name { overflow-wrap: anywhere; word-break: break-word; color: var(--faint); }
 .node-health-note { color: var(--faint); overflow-wrap: anywhere; word-break: break-word; }
 .header-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.discord-share-control { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); white-space: nowrap; }
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; margin: 0; }
+.switch input { width: 0; height: 0; margin: 0; opacity: 0; }
+.slider { position: absolute; inset: 0; cursor: pointer; border: 1px solid var(--line); border-radius: 999px; background: #28324a; transition: background 0.2s, border-color 0.2s; }
+.slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; border-radius: 50%; background: var(--text); transition: transform 0.2s; }
+.switch input:checked + .slider { border-color: rgba(86,211,100,0.8); background: rgba(86,211,100,0.55); }
+.switch input:checked + .slider::before { transform: translateX(20px); }
+.switch input:focus-visible + .slider { outline: 2px solid var(--accent); outline-offset: 2px; }
 .badge {
   display: inline-flex;
   align-items: center;
@@ -720,6 +728,13 @@ summary { cursor: pointer; color: var(--muted); }
       <div class="status-line" id="statusBadges"></div>
     </div>
     <div class="header-actions">
+      <div class="discord-share-control">
+        <span>Discord share</span>
+        <label class="switch" title="Toggle whether analysis results from this console are posted to Discord.">
+          <input id="discordShareToggle" type="checkbox" checked aria-label="Share analysis results to Discord">
+          <span class="slider"></span>
+        </label>
+      </div>
       <button id="openProgress" class="secondary" title="Start or open the progress-monitor server managed by this console. If this console exits, only a console-owned progress server stops.">Launch progress monitor</button>
       <button id="authorityButton" class="secondary">Acquire authority</button>
       <button id="stopButton" class="stop-button">STOP</button>
@@ -1233,6 +1248,7 @@ const state = {
   siteLimits: {az_min: 5, az_max: 355, el_min: 5, el_max: 85},
   capabilities: {},
   liveActions: {guarded: false, enabled: false},
+  discordShareEnabled: true,
   lastSelfCheck: null,
   lastStatus: null,
   pendingOperation: null,
@@ -1340,7 +1356,7 @@ function skydipParamsFromUi() {
     qs('skydipTpRange').value = parsed.value;
     saveFormField('skydipTpRange');
   }
-  return {ok: true, params: {integ: qs('skydipInteg').value, ch: qs('skydipCh').value, tp_range: parsed.value}};
+  return {ok: true, params: {integ: qs('skydipInteg').value, ch: qs('skydipCh').value, tp_range: parsed.value, share_discord: state.discordShareEnabled}};
 }
 function runSkydipFromUi() {
   const prepared = skydipParamsFromUi();
@@ -1353,6 +1369,24 @@ function runSkydipFromUi() {
     return Promise.resolve({ok: false, action: 'run_skydip', reason: msg, local_validation: true});
   }
   return api('run_skydip', prepared.params, 'skydip');
+}
+
+function updateDiscordShareButton() {
+  const toggle = qs('discordShareToggle');
+  if (!toggle) return;
+  const enabled = Boolean(state.discordShareEnabled);
+  toggle.checked = enabled;
+}
+
+async function toggleDiscordShare(enabled) {
+  const previous = state.discordShareEnabled;
+  state.discordShareEnabled = Boolean(enabled);
+  updateDiscordShareButton();
+  const result = await api('set_discord_share', {enabled: state.discordShareEnabled});
+  if (!result.ok) {
+    state.discordShareEnabled = previous;
+    updateDiscordShareButton();
+  }
 }
 
 function parseSexagesimalAngle(value, isRa) {
@@ -2572,6 +2606,10 @@ function renderStatus(data) {
   state.siteLimits = data.mount_limits || state.siteLimits;
   state.capabilities = data.capabilities || state.capabilities || {};
   state.liveActions = data.live_actions || state.liveActions || {guarded: false, enabled: false};
+  if (typeof data.discord_share_enabled === 'boolean') {
+    state.discordShareEnabled = data.discord_share_enabled;
+    updateDiscordShareButton();
+  }
   const site = data.site || {};
   const siteName = site.observatory || 'unknown site';
   const siteSource = site.source || 'unknown source';
@@ -2995,7 +3033,7 @@ qs('dryRunObs').addEventListener('click', async () => {
 });
 qs('startObs').addEventListener('click', async () => {
   if (!validateObs()) return;
-  await api('start_observation', {mode: qs('obsMode').value, file: qs('obsPath').value, channel: qs('obsChannel').value}, 'observation');
+  await api('start_observation', {mode: qs('obsMode').value, file: qs('obsPath').value, channel: qs('obsChannel').value, share_discord: state.discordShareEnabled}, 'observation');
 });
 qs('abortObs').addEventListener('click', async () => {
   if (confirm('Abort current observation and request recorder/gate/progress cleanup?')) await api('abort_observation', {}, 'abort');
@@ -3120,6 +3158,7 @@ qs('runtimeProcesses').addEventListener('click', async (ev) => {
   const pid = btn.dataset.pid;
   if (confirm(`Force-kill local launcher pid=${pid}?\n\nUse only when this local launcher is stuck and hardware is already confirmed safe.\n\nThis does NOT send telescope STOP, recorder STOP, or XFFTS STOP.`)) await api('terminate_process', {pid});
 });
+qs('discordShareToggle').addEventListener('change', (ev) => toggleDiscordShare(ev.target.checked));
 qs('openProgress').addEventListener('click', launchOrOpenProgress);
 function getStatusRefreshMs() {
   const cfg = window.NECST_CONSOLE_CONFIG || {};
@@ -3128,6 +3167,7 @@ function getStatusRefreshMs() {
   return Math.max(200, Math.round(raw));
 }
 const statusRefreshMs = getStatusRefreshMs();
+updateDiscordShareButton();
 setupFormPersistence(); loadServerObsRoots(); validateObs(); updatePreviewInfo(); validateMount(); updateTargetFields(); refresh(); setInterval(refresh, statusRefreshMs);
 </script>
 </body>
@@ -3651,6 +3691,7 @@ def demo_node_health_payload() -> Dict[str, Any]:
 @dataclass
 class DemoState:
     telescope: str = "OMU1.85m demo"
+    discord_share_enabled: bool = True
     progress_url: str = "http://127.0.0.1:8091/"
     progress_running: bool = False
     progress_owned_by_console: bool = False
@@ -3698,6 +3739,7 @@ class DemoState:
         self.prune_exclusive_start_guard()
         return {
             "telescope": self.telescope,
+            "discord_share_enabled": self.discord_share_enabled,
             "progress_url": self.progress_url,
             "progress": {
                 "url": self.progress_url,
@@ -4358,6 +4400,17 @@ def handle_action(
 ) -> Tuple[bool, str]:
     state = server.state
 
+    if action == "set_discord_share":
+        enabled = params.get("enabled")
+        if not isinstance(enabled, bool):
+            server.add_log(False, "Discord sharing setting must be true or false")
+            return False, "enabled must be true or false"
+        state.discord_share_enabled = enabled
+        server.add_log(
+            True, f"Discord sharing {'enabled' if enabled else 'disabled'}"
+        )
+        return True, "Discord sharing setting updated"
+
     active_reason = _demo_active_operation_reason(state, action)
     if active_reason is not None:
         server.add_log(False, active_reason)
@@ -4525,6 +4578,11 @@ def handle_action(
         state.active_task = "observation"
         mode = str(params.get("mode") or "")
         path = str(params.get("file") or "").strip()
+        share_discord = params.get("share_discord", state.discord_share_enabled)
+        if not isinstance(share_discord, bool):
+            server.add_log(False, "observation share_discord must be true or false")
+            return False, "share_discord must be true or false"
+        state.discord_share_enabled = share_discord
         stem = Path(path).name.rsplit('.', 1)[0] if path else 'demo_observation'
         _demo_set_record(state, f"{stem}_{int(time.time())}")
         if "fail" in path.lower() or "sgfail" in path.lower():
@@ -4550,7 +4608,11 @@ def handle_action(
             server.add_log(False, "demo observation launcher failed: output_required=true but readback output is off")
             return False, "demo observation launcher failed; see Last observation error"
         state.last_launcher_failure = {}
-        server.add_log(True, f"{authority_msg}: mode={mode}, file={path}")
+        server.add_log(
+            True,
+            f"{authority_msg}: mode={mode}, file={path}, "
+            f"Discord share={'ON' if share_discord else 'OFF'}",
+        )
         return True, "observation started"
 
     if action == "abort_observation":
@@ -4657,6 +4719,10 @@ def handle_action(
         if not tp_ok:
             server.add_log(False, f"SkyDip not started: {tp_reason}")
             return False, tp_reason
+        share_discord = params.get("share_discord", state.discord_share_enabled)
+        if not isinstance(share_discord, bool):
+            server.add_log(False, "SkyDip not started: share_discord must be true or false")
+            return False, "share_discord must be true or false"
         authority_msg = _with_authority(server, session_id, "SkyDip")
         if "rejected" in authority_msg:
             server.add_log(False, authority_msg)
@@ -4667,8 +4733,13 @@ def handle_action(
         state.state = "calibrating"
         state.manual_state = "calibration"
         state.active_task = "SkyDip"
+        state.discord_share_enabled = share_discord
         _demo_set_record(state, f"necst_skydip_{time.strftime('%Y%m%d_%H%M%S')}")
-        server.add_log(True, f"{authority_msg}: integ={integ:g} s")
+        server.add_log(
+            True,
+            f"{authority_msg}: integ={integ:g} s; "
+            f"Discord share={'ON' if share_discord else 'OFF'}",
+        )
         return True, "SkyDip started"
 
     reason = f"unknown action: {action!r}"

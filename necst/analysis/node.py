@@ -1,8 +1,9 @@
-"""Post-observation SkyDip analysis coordinator."""
+"""Post-observation analysis and notification coordinator."""
 
 from __future__ import annotations
 
 import logging
+import os
 import time
 import traceback
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
@@ -18,6 +19,8 @@ from ..notification.discord import DiscordAttachmentTooLarge
 class FinishedObservation:
     record_name: str
     record_root: Path
+    share_discord: bool = True
+    observation_type: str = "Skydip"
 
     @property
     def record_path(self) -> Path:
@@ -35,9 +38,12 @@ def _finished_observation(
     lifecycle = payload.get("lifecycle")
     if not isinstance(observation, Mapping) or not isinstance(lifecycle, Mapping):
         return None
-    if not _is_skydip(observation.get("type")):
+    if str(lifecycle.get("state", "")).strip().lower() != "finished":
         return None
-    if str(lifecycle.get("state", "")).lower() != "finished":
+    observation_type = str(
+        observation.get("type") or observation.get("mode") or ""
+    ).strip()
+    if not observation_type:
         return None
     raw_record_name = str(observation.get("record_name") or "").strip()
     if not raw_record_name:
@@ -46,11 +52,45 @@ def _finished_observation(
     if record_path.is_absolute() or ".." in record_path.parts:
         return None
     record_name = raw_record_name.lstrip("/")
-    return FinishedObservation(record_name, record_root)
+    extra = payload.get("extra")
+    share_discord = True
+    if isinstance(extra, Mapping) and "share_discord" in extra:
+        value = extra["share_discord"]
+        if isinstance(value, bool):
+            share_discord = value
+        elif isinstance(value, str):
+            share_discord = value.strip().lower() not in {
+                "0",
+                "false",
+                "no",
+                "off",
+            }
+    return FinishedObservation(
+        record_name,
+        record_root,
+        share_discord,
+        observation_type,
+    )
+
+
+def format_observation_completion(
+    observation_type: str, observation_name: str, telescope: str
+) -> str:
+    """Format the normal-completion message sent for every observation mode."""
+
+    safe_type = str(observation_type or "unknown").replace("`", "'").strip()
+    safe_name = str(observation_name or "unknown").replace("`", "'").strip()
+    safe_telescope = str(telescope or "unknown").replace("`", "'").strip().upper()
+    return (
+        "✅ Observation completed successfully\n\n"
+        f"Telescope: `{safe_telescope}`\n"
+        f"Mode: `{safe_type}`\n"
+        f"Data: `{safe_name}`"
+    )
 
 
 class SkyDipAnalysisCoordinator:
-    """Join progress and Recorder events, then run analysis off the ROS thread."""
+    """Notify normal completion and run SkyDip analysis off the ROS thread."""
 
     def __init__(
         self,
@@ -74,12 +114,30 @@ class SkyDipAnalysisCoordinator:
         self._recording = False
         self._recording_state_seen = False
         self._scheduled_records = set()
+        self._completion_scheduled_records = set()
+        self.telescope = str(
+            getattr(analyzer, "telescope", os.environ.get("TELESCOPE", "unknown"))
+            or "unknown"
+        ).strip().upper()
 
     def on_progress(self, payload: Mapping[str, Any]) -> Optional[Future]:
         candidate = _finished_observation(payload, self.record_root)
         if candidate is None:
             return
         with self._lock:
+            completion_future = None
+            if candidate.record_name not in self._completion_scheduled_records:
+                self._completion_scheduled_records.add(candidate.record_name)
+                if candidate.share_discord:
+                    self.logger.info(
+                        "Scheduling observation completion notification: "
+                        f"record={candidate.record_name}"
+                    )
+                    completion_future = self._executor.submit(
+                        self._notify_completion, candidate
+                    )
+            if not _is_skydip(candidate.observation_type):
+                return completion_future
             if candidate.record_name in self._scheduled_records:
                 return None
             should_log = (
@@ -93,6 +151,25 @@ class SkyDipAnalysisCoordinator:
                     f"record={candidate.record_name}, path={candidate.record_path}"
                 )
             return self._schedule_pending_locked()
+
+    def _notify_completion(self, observation: FinishedObservation) -> None:
+        try:
+            self.notifier.send_text(
+                format_observation_completion(
+                    observation.observation_type,
+                    observation.record_name,
+                    self.telescope,
+                )
+            )
+            self.logger.info(
+                "Observation completion notification sent: "
+                f"record={observation.record_name}"
+            )
+        except Exception:
+            self.logger.error(
+                "Observation completion notification failed: "
+                f"record={observation.record_name}\n{traceback.format_exc()}"
+            )
 
     def _schedule_pending_locked(self) -> Optional[Future]:
         """Schedule once both final progress and recorder-stop are known."""
@@ -142,6 +219,11 @@ class SkyDipAnalysisCoordinator:
                 f"figure={'generated' if figure is not None else 'not_generated'}, "
                 f"elapsed_sec={time.monotonic() - started_at:.2f}"
             )
+            if not observation.share_discord:
+                self.logger.info(
+                    f"Discord sharing skipped: record={observation.record_name}"
+                )
+                return
             stage = "discord"
             self.logger.info(
                 f"Discord upload started: record={observation.record_name}"

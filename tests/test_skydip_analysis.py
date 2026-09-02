@@ -4,7 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from necst.analysis.node import FinishedObservation, SkyDipAnalysisCoordinator
+from necst.analysis.node import (
+    FinishedObservation,
+    SkyDipAnalysisCoordinator,
+    format_observation_completion,
+)
 from necst.analysis.skydip import (
     AnalysisOutput,
     ScriptSkyDipAnalyzer,
@@ -76,8 +80,10 @@ def test_discord_summary_uses_backticks_labels_and_markdown_matrix():
     summary = format_discord_summary(
         "necst_skydip_test",
         {"xffts-board1": Result()},
+        telescope="omu1p85m",
     )
 
+    assert "Telescope: `OMU1P85M`" in summary
     assert "Observation: `necst_skydip_test`" in summary
     assert "**📡 Skydip Analysis Result**" in summary
     assert "Band 6 USB" in summary
@@ -289,6 +295,7 @@ def test_analyzer_returns_text_only_result_when_all_boards_fail(tmp_path):
 class FakeAnalyzer:
     def __init__(self):
         self.paths = []
+        self.telescope = "omu1p85m"
 
     def analyze(self, path):
         self.paths.append(path)
@@ -330,9 +337,13 @@ class FakeLogger:
         pass
 
 
-def progress(record_name="necst_skydip_20260811_153000", state="finished"):
+def progress(
+    record_name="necst_skydip_20260811_153000",
+    state="finished",
+    observation_type="Skydip",
+):
     return {
-        "observation": {"type": "Skydip", "record_name": record_name},
+        "observation": {"type": observation_type, "record_name": record_name},
         "lifecycle": {"state": state},
     }
 
@@ -403,6 +414,48 @@ def test_coordinator_ignores_duplicate_finished_progress_after_scheduling(tmp_pa
         )
         == 1
     )
+    assert len(notifier.text_posts) == 1
+    executor.shutdown()
+
+
+def test_coordinator_skips_only_discord_when_sharing_is_disabled(tmp_path):
+    record_name = "necst_skydip_20260811_153000"
+    (tmp_path / record_name).mkdir()
+    analyzer = FakeAnalyzer()
+    notifier = FakeNotifier()
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = SkyDipAnalysisCoordinator(
+        analyzer, notifier, tmp_path, executor=executor
+    )
+
+    coordinator.on_recorder_status(False)
+    future = coordinator.on_progress(
+        {**progress(record_name), "extra": {"share_discord": False}}
+    )
+    assert future is not None
+    future.result(timeout=2)
+
+    assert analyzer.paths == [tmp_path / record_name]
+    assert notifier.posts == []
+    executor.shutdown()
+
+
+def test_coordinator_notifies_normal_observation_completion(tmp_path):
+    notifier = FakeNotifier()
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = SkyDipAnalysisCoordinator(
+        FakeAnalyzer(), notifier, tmp_path, executor=executor
+    )
+
+    future = coordinator.on_progress(
+        progress("otf_data", observation_type="OTF")
+    )
+    assert future is not None
+    future.result(timeout=2)
+
+    assert notifier.text_posts == [
+        format_observation_completion("OTF", "otf_data", "OMU1P85M")
+    ]
     executor.shutdown()
 
 

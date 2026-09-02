@@ -15,7 +15,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional, Sequence
+from typing import Any, Dict, Literal, Mapping, Optional, Sequence
 
 from .. import config
 from .commander import Commander
@@ -1052,6 +1052,7 @@ def _run_launcher_command(
     dry_run: bool,
     stdout_path: Any = None,
     stderr_path: Any = None,
+    env_overrides: Optional[Mapping[str, Any]] = None,
 ) -> OperatorActionResult:
     command = [str(x) for x in argv]
     stdout_file = str(stdout_path) if stdout_path not in (None, "") else None
@@ -1082,10 +1083,15 @@ def _run_launcher_command(
             if stderr_file is not None:
                 Path(stderr_file).parent.mkdir(parents=True, exist_ok=True)
                 stderr_handle = open(stderr_file, "ab", buffering=0)
+            env = _python_env_for_source_tree()
+            if env_overrides:
+                env.update(
+                    {str(key): str(value) for key, value in env_overrides.items()}
+                )
             proc = subprocess.Popen(
                 command,
                 cwd=str(_repo_root()),
-                env=_python_env_for_source_tree(),
+                env=env,
                 stdout=stdout_handle if stdout_handle is not None else None,
                 stderr=stderr_handle if stderr_handle is not None else None,
                 start_new_session=True,
@@ -1118,10 +1124,15 @@ def _run_launcher_command(
             Path(stderr_file).parent.mkdir(parents=True, exist_ok=True)
             stderr_handle = open(stderr_file, "ab", buffering=0)
             run_kwargs["stderr"] = stderr_handle
+        env = _python_env_for_source_tree()
+        if env_overrides:
+            env.update(
+                {str(key): str(value) for key, value in env_overrides.items()}
+            )
         completed = subprocess.run(
             command,
             cwd=str(_repo_root()),
-            env=_python_env_for_source_tree(),
+            env=env,
             check=False,
             **run_kwargs,
         )
@@ -1211,6 +1222,7 @@ def start_observation(
     check_exists: bool = True,
     stdout_path: Any = None,
     stderr_path: Any = None,
+    share_discord: bool = True,
 ) -> OperatorActionResult:
     """Start a file-based observation through the existing NECST launcher.
 
@@ -1246,6 +1258,7 @@ def start_observation(
         name="obs file",
     )
     ch = _positive_int_or_none(channel, name="channel override")
+    share_discord = _bool_value(share_discord, name="observation Discord sharing")
     script = _script_path(_OBSERVATION_MODE_SCRIPTS[normalized_mode])
     argv = [sys.executable, str(script), "--file", obs_path]
     if ch is not None:
@@ -1257,8 +1270,18 @@ def start_observation(
         dry_run=dry_run,
         stdout_path=stdout_path,
         stderr_path=stderr_path,
+        env_overrides={
+            "NECST_DISCORD_SHARE": "1" if share_discord else "0",
+        },
     )
-    result.data.update({"mode": normalized_mode, "file": obs_path, "channel": ch})
+    result.data.update(
+        {
+            "mode": normalized_mode,
+            "file": obs_path,
+            "channel": ch,
+            "share_discord": share_discord,
+        }
+    )
     return result
 
 
@@ -1323,12 +1346,14 @@ def run_skydip(
     dry_run: bool = False,
     stdout_path: Any = None,
     stderr_path: Any = None,
+    share_discord: bool = True,
 ) -> OperatorActionResult:
     """Run a SkyDip calibration action through the existing launcher."""
 
     integ_sec = _positive_float(integ, name="SkyDip integ")
     ch = _positive_int_or_none(channel, name="SkyDip channel")
     tp_values = _parse_tp_range(tp_range)
+    share_discord = _bool_value(share_discord, name="SkyDip Discord sharing")
     script = _script_path("skydip.py")
     argv = [sys.executable, str(script), "--integ", f"{integ_sec:g}"]
     if ch is not None:
@@ -1343,6 +1368,16 @@ def run_skydip(
         dry_run=dry_run,
         stdout_path=stdout_path,
         stderr_path=stderr_path,
+        env_overrides={
+            "NECST_DISCORD_SHARE": "1" if share_discord else "0",
+        },
     )
-    result.data.update({"integ_sec": integ_sec, "channel": ch, "tp_range": tp_values})
+    result.data.update(
+        {
+            "integ_sec": integ_sec,
+            "channel": ch,
+            "tp_range": tp_values,
+            "share_discord": share_discord,
+        }
+    )
     return result

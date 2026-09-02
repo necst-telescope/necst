@@ -38,7 +38,7 @@ class ScriptSkyDipAnalyzer:
         script_path: Optional[Path] = None,
         logger: Optional[Any] = None,
     ) -> None:
-        self.telescope = telescope
+        self.telescope = str(telescope).strip().upper()
         self.boards = tuple(boards or ())
         self.board_labels = {
             str(board): str(label)
@@ -97,6 +97,7 @@ class ScriptSkyDipAnalyzer:
                 record_path.name,
                 results,
                 self.board_labels,
+                telescope=self.telescope,
                 board_failures=board_failures,
             ),
             board_failures=board_failures,
@@ -250,7 +251,7 @@ def analyzer_from_environment(*, logger: Optional[Any] = None) -> ScriptSkyDipAn
     script_path = os.environ.get("NECST_SKYDIP_SCRIPT", "").strip()
     board_labels = _board_labels_from_config()
     return ScriptSkyDipAnalyzer(
-        telescope=os.environ.get("NECST_SKYDIP_TELESCOPE", "OMU1P85M"),
+        telescope=os.environ["TELESCOPE"],
         boards=boards,
         board_labels=board_labels,
         script_path=Path(script_path) if script_path else None,
@@ -301,6 +302,7 @@ def format_discord_summary(
     results: Mapping[str, Any],
     board_labels: Optional[Mapping[str, str]] = None,
     *,
+    telescope: Optional[str] = None,
     board_failures: Optional[Mapping[str, str]] = None,
 ) -> str:
     """Format the compact Markdown summary sent with the analysis image."""
@@ -386,8 +388,10 @@ def format_discord_summary(
     ]
     lines.extend(markdown_row(row) for row in rows)
     safe_name = str(observation_name).replace("`", "'")
+    safe_telescope = str(telescope or "unknown").replace("`", "'").strip().upper()
     return (
         "**📡 Skydip Analysis Result**\n\n"
+        f"Telescope: `{safe_telescope}`\n"
         f"Observation: `{safe_name}`\n"
         f"Overall: `{overall}`\n\n"
         + "```text\n"
