@@ -16,7 +16,7 @@ from necst.analysis.skydip import (
     _normalize_board_labels,
     format_discord_summary,
 )
-from necst.analysis.rsky import _hot_sky_averages, format_rsky_summary
+from necst.analysis.rsky import _hot_sky_averages
 from necst.notification import discord as discord_module
 from necst.notification.discord import DiscordAttachmentTooLarge, DiscordNotifier
 
@@ -461,7 +461,7 @@ def test_coordinator_notifies_normal_observation_completion(tmp_path):
     executor.shutdown()
 
 
-def test_rsky_averages_and_summary_follow_necbook_calculation():
+def test_rsky_averages_follow_necbook_calculation():
     hot, sky = _hot_sky_averages(
         {
             "position": np.array([b"HOT     ", b"SKY     ", b"HOT     "]),
@@ -471,11 +471,6 @@ def test_rsky_averages_and_summary_follow_necbook_calculation():
 
     assert np.allclose(hot, [5.0, 9.0])
     assert np.allclose(sky, [2.0, 4.0])
-    assert "R-Sky Analysis Result" in format_rsky_summary(
-        "rsky_data",
-        {"board1": {"y_factor": hot / sky, "tsys_K": 290.0 / (hot / sky - 1.0)}},
-        "omu1p85m",
-    )
 
 
 def test_coordinator_analyzes_rsky_result(tmp_path):

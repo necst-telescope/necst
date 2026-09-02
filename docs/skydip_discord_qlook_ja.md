@@ -12,9 +12,10 @@ mountする。
 
 Analysis Nodeが使うSkyDipスクリプトを同じNECSTパッケージへ配置する。SkyDipの解析・
 グラフ生成処理は変更せず、Analysis Nodeから`analyze_skydip_boards()`を呼び出す。
-[necbookの`rsky_20240817.ipynb`](https://github.com/necst-telescope/necbook/blob/main/calibration/rsky_20240817.ipynb)
+添付の`rsky_20241209.ipynb`
 に合わせ、各spectral tableのHOT/SKY平均から
-`Y=HOT/SKY`、`Tsys=290/(Y-1)`を計算してIFごとのグラフとサマリーを生成する。実行時には
+`Y=HOT/SKY`、`Tsys=290/(Y-1)`を計算してIFごとのグラフを生成する。数値マトリクスは
+共有しない。実行時には
 `numpy`、`pandas`、`matplotlib`、`necstdb` が必要になる。
 
 ```bash
@@ -96,11 +97,8 @@ ros2 run necst analysis
 `analysis` Nodeは全観測モードの正常終了時に、望遠鏡名・観測モード・観測データ名を含む
 正常終了通知を送信する。SkyDip / R-Skyの場合はその後、録音停止を確認してから解析結果の通知も送信する。
 同梱したv10スクリプトの `analyze_skydip_boards()` が解析とグラフ生成を行い、
-返されたFigureを`BytesIO`へPNG化してDiscordへ直接添付する。同時に、同じ解析結果から
-board別の数値サマリーをMarkdown形式で生成して本文へ付ける。観測データ名はインライン
-コードで表示し、数値マトリクスは`text`コードブロック内に置く。Markdown表の記法は保持しつつ、
-DiscordのMarkdownシンタックスハイライトによる斜体化を避ける。`tau`と`Trx`は値と誤差を
-別列（`tau`/`e_tau`、`Trx`/`e_Trx`）で表示し、Tsys0は値だけを表示する。
+返されたFigureを`BytesIO`へPNG化してDiscordへ直接添付する。SkyDipでは従来どおり、
+board別の数値サマリーと解析エラーを本文へ付ける。
 解析失敗やDiscord通信失敗はAnalysis Node側で記録し、Recorderのデータ保存処理へ例外を返さない。
 PNGが添付上限を超えた場合は画像を送信せず、Analysis Nodeへ`WARNING`を出し、
 Discordには容量超過で画像を送信できなかった旨をテキストで投稿する。
@@ -114,13 +112,7 @@ Board解析に失敗した場合は、`ERROR`ログにBoard名、例外種別、
 `ERROR`行を同じDiscord投稿へ付ける。全Boardが失敗した場合も、グラフなしのテキスト
 投稿として失敗内容をDiscordへ送信する。
 
-```text
-| Board | IF | Q | tau | e_tau | Tsys0 | Trx | e_Trx | chi2red | Nfit |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| xffts-board1 | Band 6 USB | WARN | 0.308 | 0.327 | 29466.300 | 21578.300 | 123.400 | 8.750 | 5 |
-```
-
-Board解析自体の例外は表の後に`Analysis errors:`として、例外種別とメッセージをそのまま表示する。
+SkyDipのBoard解析自体の例外は、数値サマリーの後に`Analysis errors:`として表示する。
 
 ## 環境変数
 

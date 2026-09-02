@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 import numpy as np
 
@@ -52,34 +52,6 @@ def _hot_sky_averages(table_data: Any) -> tuple[np.ndarray, np.ndarray]:
     return np.nanmean(hot, axis=0), np.nanmean(sky, axis=0)
 
 
-def _finite_median(values: Any) -> float:
-    values = np.asarray(values, dtype=float)
-    valid = values[np.isfinite(values)]
-    return float(np.median(valid)) if valid.size else float("nan")
-
-
-def format_rsky_summary(
-    observation_name: str,
-    results: Mapping[str, Mapping[str, Any]],
-    telescope: str,
-) -> str:
-    safe_name = str(observation_name or "unknown").replace("`", "'")
-    lines = [
-        "**📡 R-Sky Analysis Result**",
-        f"Telescope: `{str(telescope or 'unknown').strip().upper()}`",
-        f"Observation: `{safe_name}`",
-        "",
-        "| Board | Y-factor median | Tsys median [K] |",
-        "| --- | ---: | ---: |",
-    ]
-    for board, result in results.items():
-        lines.append(
-            f"| {board} | {_finite_median(result['y_factor']):.3f} | "
-            f"{_finite_median(result['tsys_K']):.3f} |"
-        )
-    return "\n".join(lines)
-
-
 class RSkyAnalyzer:
     """Calculate and plot R-Sky HOT/SKY calibration products."""
 
@@ -112,15 +84,20 @@ class RSkyAnalyzer:
             results[board] = result
 
             axis = axes_flat[index]
-            axis.plot(sky, label="SKY")
-            axis.plot(hot, label="HOT")
+            freqs = np.arange(sky.size) * (2500.0 / 32768.0)
+            axis.plot(freqs, sky, label="SKY")
+            axis.plot(freqs, hot, label="HOT")
+            axis.set_xlabel("freq [MHz]")
+            axis.set_ylabel("power")
             axis.set_yscale("log")
-            axis.set_title(board)
+            axis.set_title(f"{record_path.name}\n{board}")
             twin = axis.twinx()
-            twin.plot(tsys, color="green", label="Tsys")
+            twin.plot(freqs, tsys, color="green", alpha=0.5, label="Tsys")
+            twin.set_ylim(0, 10000)
             twin.set_ylabel("Tsys [K]")
             lines = axis.lines + twin.lines
             axis.legend(lines, [line.get_label() for line in lines], loc=0)
+            axis.grid()
 
         for axis in axes_flat[len(tables) :]:
             axis.set_visible(False)
@@ -128,9 +105,5 @@ class RSkyAnalyzer:
         return AnalysisOutput(
             figure=figure,
             results=results,
-            discord_content=format_rsky_summary(
-                record_path.name,
-                results,
-                self.telescope,
-            ),
+            discord_content=None,
         )

@@ -17,7 +17,7 @@ class AnalysisOutput:
 
     figure: Any
     results: Mapping[str, Any]
-    discord_content: str
+    discord_content: Optional[str]
     board_failures: Mapping[str, str] = field(default_factory=dict)
 
 
