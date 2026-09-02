@@ -1,6 +1,6 @@
 # NECST telemetry
 
-`necst-telemetry` は、`[telemetry.topics]` に明示したROS Topicの指定fieldだけを
+`necst-telemetry` は、`[telemetry.topics.<name>]` に明示したROS Topicの指定fieldだけを
 購読し、意味のあるMetric名で数値スカラーの最新値をNew Relic Metric APIへ定期送信する。
 
 ## 設定
@@ -21,7 +21,7 @@ env_file = "/root/necst_ws/.env"
 post_interval_sec = 10.0
 discovery_interval_sec = 10.0
 
-[[telemetry.topics]]
+[telemetry.topics.encoder]
 topic = "/necst/OMU1P85M/ctrl/antenna/pointing_status"
 fields = [
   { path = "enc_az_deg", metric = "necst.antenna.encoder.az_deg" },
@@ -48,7 +48,8 @@ ros2 run necst telemetry
 ```
 
 `TELESCOPE` はNew Relic上の望遠鏡識別に使う。telemetryは
-`[console.health].nodes`を参照せず、`[telemetry.topics]`に指定されたTopicだけを対象にする。
+`[console.health].nodes`を参照せず、`[telemetry.topics.<name>]`に指定されたTopicだけを対象にする。
+Topic設定は名前付きのtableでまとめて記述する。既存の`[[telemetry.topics]]`形式も読み込める。
 Topicのmessage型はROS graphから取得し、複数のmessage型が見つかったTopicは送信しない。
 
 ## Topicと値

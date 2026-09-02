@@ -68,7 +68,9 @@ class TelemetryConfig:
         ).strip()
         topics: List[TelemetryTopic] = []
         raw_topics = raw.get("topics", [])
-        if isinstance(raw_topics, list):
+        if isinstance(raw_topics, Mapping):
+            raw_topics = tuple(raw_topics.values())
+        if isinstance(raw_topics, (list, tuple)):
             for raw_topic in raw_topics:
                 if not isinstance(raw_topic, Mapping):
                     continue

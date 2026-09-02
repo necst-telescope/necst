@@ -127,6 +127,25 @@ def test_config_clamps_intervals_and_parses_topics():
     )
 
 
+def test_config_parses_grouped_topics():
+    config = TelemetryConfig.from_mapping(
+        {
+            "topics": {
+                "encoder": {
+                    "topic": "/encoder",
+                    "fields": [{"path": "lon", "metric": "necst.encoder.az_deg"}],
+                }
+            }
+        }
+    )
+    assert config.topics == (
+        TelemetryTopic(
+            "/encoder",
+            (TelemetryField("lon", "necst.encoder.az_deg"),),
+        ),
+    )
+
+
 def test_env_file_does_not_override_existing_environment(tmp_path, monkeypatch):
     path = tmp_path / ".env"
     path.write_text(

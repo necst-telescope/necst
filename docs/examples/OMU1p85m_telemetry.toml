@@ -9,14 +9,15 @@ env_file = "/root/necst_ws/.env"
 post_interval_sec = 1.0
 discovery_interval_sec = 10.0
 
-[[telemetry.topics]]
+# Antenna
+[telemetry.topics.antenna_encoder]
 topic = "/necst/OMU1P85M/ctrl/antenna/encoder"
 fields = [
   { path = "lon", metric = "necst.antenna.encoder.az_deg" },
   { path = "lat", metric = "necst.antenna.encoder.el_deg" },
 ]
 
-[[telemetry.topics]]
+[telemetry.topics.antenna_command]
 topic = "/necst/OMU1P85M/ctrl/antenna/altaz"
 fields = [
   { path = "lon", metric = "necst.antenna.command.az_deg" },
@@ -25,13 +26,14 @@ fields = [
   { path = "dlat", metric = "necst.antenna.command.offset_el_deg" },
 ]
 
-[[telemetry.topics]]
+[telemetry.topics.vacuum]
 topic = "/necst/OMU1P85M/rx/vacuum_gauge"
 fields = [
   { path = "value", metric = "necst.vacuum.pressure_torr" },
 ]
 
-[[telemetry.topics]]
+# Signal generators
+[telemetry.topics.sg_band3_1st]
 topic = "/necst/OMU1P85M/rx/lo_signal/band3_1st"
 fields = [
   { path = "freq", metric = "necst.signal_generator.frequency_ghz" },
@@ -39,7 +41,7 @@ fields = [
   { path = "output_status", metric = "necst.signal_generator.output" },
 ]
 
-[[telemetry.topics]]
+[telemetry.topics.sg_band3_2nd]
 topic = "/necst/OMU1P85M/rx/lo_signal/band3_2nd"
 fields = [
   { path = "freq", metric = "necst.signal_generator.frequency_ghz" },
@@ -47,18 +49,19 @@ fields = [
   { path = "output_status", metric = "necst.signal_generator.output" },
 ]
 
-[[telemetry.topics]]
+# Thermometers
+[telemetry.topics.thermometer_stage4k1]
 topic = "/necst/OMU1P85M/rx/thermometer/Stage4K1"
 fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
 
-[[telemetry.topics]]
+[telemetry.topics.thermometer_stage4k2]
 topic = "/necst/OMU1P85M/rx/thermometer/Stage4K2"
 fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
 
-[[telemetry.topics]]
+[telemetry.topics.thermometer_shield40k1]
 topic = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
 fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
 
-[[telemetry.topics]]
+[telemetry.topics.thermometer_shield40k2]
 topic = "/necst/OMU1P85M/rx/thermometer/Shield40K2"
 fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
