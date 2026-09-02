@@ -1,0 +1,76 @@
+# Telemetry settings for OMU 1.85 m.
+# Add these sections to /root/.necst/OMU1p85m_config.toml,
+# or copy the entries into the site TOML used by the telemetry node.
+
+[environment]
+env_file = "/root/necst_ws/.env"
+
+[telemetry]
+post_interval_sec = 1.0
+discovery_interval_sec = 10.0
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/ctrl/antenna/pointing_status"
+fields = [
+  { path = "valid", metric = "necst.antenna.pointing.valid" },
+  { path = "cmd_az_deg", metric = "necst.antenna.command.az_deg" },
+  { path = "cmd_el_deg", metric = "necst.antenna.command.el_deg" },
+  { path = "enc_az_deg", metric = "necst.antenna.encoder.az_deg" },
+  { path = "enc_el_deg", metric = "necst.antenna.encoder.el_deg" },
+  { path = "delta_az_deg", metric = "necst.antenna.tracking.delta_az_deg" },
+  { path = "delta_el_deg", metric = "necst.antenna.tracking.delta_el_deg" },
+  { path = "tracking_error_deg", metric = "necst.antenna.tracking.error_deg" },
+  { path = "tracking_ok", metric = "necst.antenna.tracking.ok" },
+  { path = "cmd_age_sec", metric = "necst.antenna.command.age_sec" },
+  { path = "enc_age_sec", metric = "necst.antenna.encoder.age_sec" },
+  { path = "command_stale", metric = "necst.antenna.command.stale" },
+  { path = "encoder_stale", metric = "necst.antenna.encoder.stale" },
+]
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/ctrl/antenna/controlled"
+fields = [
+  { path = "controlled", metric = "necst.antenna.controlled" },
+  { path = "tight", metric = "necst.antenna.control.tight" },
+  { path = "remote", metric = "necst.antenna.control.remote" },
+  { path = "interrupt_ok", metric = "necst.antenna.control.interrupt_ok" },
+  { path = "line_index", metric = "necst.antenna.control.line_index" },
+]
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/ctrl/calib/chopper_status"
+fields = [
+  { path = "insert", metric = "necst.calibrator.chopper.insert" },
+  { path = "position", metric = "necst.calibrator.chopper.position" },
+]
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/rx/spectrometer_status"
+fields = [
+  { path = "valid", metric = "necst.spectrometer.valid" },
+  { path = "recorder_active", metric = "necst.spectrometer.recorder_active" },
+  { path = "saving_enabled", metric = "necst.spectrometer.saving_enabled" },
+  { path = "acquiring", metric = "necst.spectrometer.acquiring" },
+  { path = "last_dump_age_sec", metric = "necst.spectrometer.last_dump_age_sec" },
+  { path = "data_queue_size_max", metric = "necst.spectrometer.data_queue_size_max" },
+  { path = "n_streams", metric = "necst.spectrometer.n_streams" },
+  { path = "n_boards", metric = "necst.spectrometer.n_boards" },
+  { path = "missing_board_count", metric = "necst.spectrometer.missing_board_count" },
+  { path = "tp_mode", metric = "necst.spectrometer.tp_mode" },
+]
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/rx/thermometer/Stage4K1"
+fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/rx/thermometer/Stage4K2"
+fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
+fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
+
+[[telemetry.topics]]
+topic = "/necst/OMU1P85M/rx/thermometer/Shield40K2"
+fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]

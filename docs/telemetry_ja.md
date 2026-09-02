@@ -5,7 +5,8 @@
 
 ## 設定
 
-サイトTOMLに既存の `[console.health]` と、以下を追加する。
+サイトTOMLに以下を追加する。OMU 1.85mの具体例は
+[`docs/examples/OMU1p85m_telemetry.toml`](examples/OMU1p85m_telemetry.toml)にある。
 
 Discordやtelemetryで共用する環境ファイルは、機能個別ではなく
 `[environment]` に指定する。
@@ -21,10 +22,11 @@ post_interval_sec = 10.0
 discovery_interval_sec = 10.0
 
 [[telemetry.topics]]
-topic = "/necst/OMU1P85M/status/out"
+topic = "/necst/OMU1P85M/ctrl/antenna/pointing_status"
 fields = [
-  { path = "antenna.az", metric = "necst.antenna.az" },
-  { path = "antenna.el", metric = "necst.antenna.el" },
+  { path = "enc_az_deg", metric = "necst.antenna.encoder.az_deg" },
+  { path = "enc_el_deg", metric = "necst.antenna.encoder.el_deg" },
+  { path = "tracking_error_deg", metric = "necst.antenna.tracking.error_deg" },
 ]
 ```
 
