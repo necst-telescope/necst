@@ -7,8 +7,10 @@ from necst.telemetry import (
     TelemetryConfig,
     TelemetryField,
     TelemetryTopic,
+    TopicRef,
     build_metric_payload,
     discover_topic_refs,
+    metric_name_for_topic,
     scalar_fields,
 )
 
@@ -97,6 +99,17 @@ def test_discovery_expands_topic_prefix_children():
     refs = discover_topic_refs(FakeWeatherNode(), topics)
 
     assert [ref.name for ref in refs] == ["/weather/ambient/in", "/weather/ambient/out"]
+
+
+def test_wildcard_topic_suffix_is_added_to_metric_name():
+    field = TelemetryField("temperature", "necst.weather.temperature_k")
+    ref = TopicRef(
+        "/weather/ambient/out",
+        "example/msg/Weather",
+        TelemetryTopic("/weather/ambient/*", (field,)),
+    )
+
+    assert metric_name_for_topic(field, ref) == "necst.weather.temperature_k.out"
 
 
 def test_payload_uses_full_topic_and_telescope_attributes():

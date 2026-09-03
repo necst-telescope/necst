@@ -36,6 +36,7 @@ fields = [
 [telemetry.topics.weather]
 topic = "/necst/OMU1P85M/weather/ambient/*"
 fields = [
+  # The child topic name (for example, "in" or "out") is appended automatically.
   { path = "temperature", metric = "necst.weather.temperature_k" },
   { path = "humidity", metric = "necst.weather.humidity_fraction" },
   { path = "pressure", metric = "necst.weather.pressure_hpa" },

@@ -50,7 +50,9 @@ ros2 run necst telemetry
 `TELESCOPE` はNew Relic上の望遠鏡識別に使う。telemetryは
 `[console.health].nodes`を参照せず、`[telemetry.topics.<name>]`に指定されたTopicだけを対象にする。
 Topic設定は名前付きのtableでまとめて記述する。既存の`[[telemetry.topics]]`形式も読み込める。
-複数の子Topicをまとめて購読する場合はTopic末尾に`/*`を指定する。
+複数の子Topicをまとめて購読する場合はTopic末尾に`/*`を指定する。この場合、実際の子Topic名を
+Metric名の末尾へ自動的に追加する。例えば`/weather/ambient/*`の`out`は
+`necst.weather.temperature_k.out`になるため、`in`と混ざらない。
 Topicのmessage型はROS graphから取得し、複数のmessage型が見つかったTopicは送信しない。
 
 ## Topicと値
@@ -63,7 +65,7 @@ fieldを`.`でつなぐ。Topic名は完全修飾名で指定するため、ネ�
 オブジェクトは送信しない。高頻度の生データはRecorderの責務とし、telemetryは最新値を
 10秒ごとにまとめて送信する。
 
-Metric名はfieldごとに設定し、`telescope`をcommon attribute、`ros_topic`、
+Metric名はfieldごとに設定し、wildcard Topicでは子Topic名を自動追加する。`telescope`をcommon attribute、`ros_topic`、
 `field_path`、`ros_type`、`value_kind`をmetric attributeにする。Metric APIが要求する
 timestampはバッチ単位の`common.timestamp`としてPOST直前に付与し、各fieldへは重複して付けない。
 HTTP通信はROS callbackとは別の送信スレッドで行い、1リクエストあたり最大500メトリクスに分割する。

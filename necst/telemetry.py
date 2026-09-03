@@ -106,6 +106,18 @@ class MetricSample:
     value_kind: str
 
 
+def metric_name_for_topic(field: TelemetryField, ref: TopicRef) -> str:
+    if not ref.config.name.endswith("/*"):
+        return field.metric_name
+    prefix = ref.config.name[:-2].rstrip("/")
+    suffix = ref.name[len(prefix) :].strip("/")
+    return (
+        f"{field.metric_name}.{suffix.replace('/', '.')}"
+        if suffix
+        else field.metric_name
+    )
+
+
 def normalize_topic_name(name: Any) -> str:
     text = str(name or "").strip()
     while "//" in text:
@@ -324,7 +336,7 @@ class _TelemetryNodeMixin:
                     continue
                 key = (ref.name, ref.message_type, field_path)
                 self._latest[key] = MetricSample(
-                    metric_name=field.metric_name,
+                    metric_name=metric_name_for_topic(field, ref),
                     topic=ref.name,
                     message_type=ref.message_type,
                     field_path=field_path,
