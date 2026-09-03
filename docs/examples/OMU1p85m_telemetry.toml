@@ -1,0 +1,80 @@
+# Telemetry settings for OMU 1.85 m.
+# Add these sections to /root/.necst/OMU1p85m_config.toml,
+# or copy the entries into the site TOML used by the telemetry node.
+
+[environment]
+env_file = "/root/necst_ws/.env"
+
+[telemetry]
+post_interval_sec = 1.0
+discovery_interval_sec = 10.0
+
+# Antenna
+[telemetry.topics.antenna_encoder]
+topic = "/necst/OMU1P85M/ctrl/antenna/encoder"
+fields = [
+  { path = "lon", metric = "necst.antenna.encoder.az_deg" },
+  { path = "lat", metric = "necst.antenna.encoder.el_deg" },
+]
+
+[telemetry.topics.antenna_command]
+topic = "/necst/OMU1P85M/ctrl/antenna/altaz"
+fields = [
+  { path = "lon", metric = "necst.antenna.command.az_deg" },
+  { path = "lat", metric = "necst.antenna.command.el_deg" },
+  { path = "dlon", metric = "necst.antenna.command.offset_az_deg" },
+  { path = "dlat", metric = "necst.antenna.command.offset_el_deg" },
+]
+
+[telemetry.topics.vacuum]
+topic = "/necst/OMU1P85M/rx/vacuum_gauge"
+fields = [
+  { path = "value", metric = "necst.vacuum.pressure_torr" },
+]
+
+# Weather stations (for example: /out and /in)
+[telemetry.topics.weather]
+topic = "/necst/OMU1P85M/weather/ambient/*"
+fields = [
+  # The child topic name (for example, "in" or "out") is appended automatically.
+  { path = "temperature", metric = "necst.weather.temperature_k" },
+  { path = "humidity", metric = "necst.weather.humidity_fraction" },
+  { path = "pressure", metric = "necst.weather.pressure_hpa" },
+  { path = "wind_speed", metric = "necst.weather.wind_speed_mps" },
+  { path = "wind_direction", metric = "necst.weather.wind_direction_deg" },
+  { path = "rain_rate", metric = "necst.weather.rain_rate" },
+]
+
+# Signal generators
+[telemetry.topics.sg_band3_1st]
+topic = "/necst/OMU1P85M/rx/lo_signal/band3_1st"
+fields = [
+  { path = "freq", metric = "necst.signal_generator.frequency_ghz" },
+  { path = "power", metric = "necst.signal_generator.power_dbm" },
+  { path = "output_status", metric = "necst.signal_generator.output" },
+]
+
+[telemetry.topics.sg_band3_2nd]
+topic = "/necst/OMU1P85M/rx/lo_signal/band3_2nd"
+fields = [
+  { path = "freq", metric = "necst.signal_generator.frequency_ghz" },
+  { path = "power", metric = "necst.signal_generator.power_dbm" },
+  { path = "output_status", metric = "necst.signal_generator.output" },
+]
+
+# Thermometers
+[telemetry.topics.thermometer_stage4k1]
+topic = "/necst/OMU1P85M/rx/thermometer/Stage4K1"
+fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
+
+[telemetry.topics.thermometer_stage4k2]
+topic = "/necst/OMU1P85M/rx/thermometer/Stage4K2"
+fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
+
+[telemetry.topics.thermometer_shield40k1]
+topic = "/necst/OMU1P85M/rx/thermometer/Shield40K1"
+fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
+
+[telemetry.topics.thermometer_shield40k2]
+topic = "/necst/OMU1P85M/rx/thermometer/Shield40K2"
+fields = [{ path = "value", metric = "necst.thermometer.temperature_k" }]
