@@ -111,11 +111,12 @@ def metric_name_for_topic(field: TelemetryField, ref: TopicRef) -> str:
         return field.metric_name
     prefix = ref.config.name[:-2].rstrip("/")
     suffix = ref.name[len(prefix) :].strip("/")
-    return (
-        f"{field.metric_name}.{suffix.replace('/', '.')}"
-        if suffix
-        else field.metric_name
-    )
+    if not suffix:
+        return field.metric_name
+    metric_prefix, separator, metric_leaf = field.metric_name.rpartition(".")
+    if not separator:
+        return f"{field.metric_name}.{suffix.replace('/', '.')}"
+    return f"{metric_prefix}.{suffix.replace('/', '.')}.{metric_leaf}"
 
 
 def normalize_topic_name(name: Any) -> str:

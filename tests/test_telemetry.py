@@ -109,7 +109,7 @@ def test_wildcard_topic_suffix_is_added_to_metric_name():
         TelemetryTopic("/weather/ambient/*", (field,)),
     )
 
-    assert metric_name_for_topic(field, ref) == "necst.weather.temperature_k.out"
+    assert metric_name_for_topic(field, ref) == "necst.weather.out.temperature_k"
 
 
 def test_payload_uses_full_topic_and_telescope_attributes():

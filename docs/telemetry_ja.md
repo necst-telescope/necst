@@ -51,8 +51,8 @@ ros2 run necst telemetry
 `[console.health].nodes`を参照せず、`[telemetry.topics.<name>]`に指定されたTopicだけを対象にする。
 Topic設定は名前付きのtableでまとめて記述する。既存の`[[telemetry.topics]]`形式も読み込める。
 複数の子Topicをまとめて購読する場合はTopic末尾に`/*`を指定する。この場合、実際の子Topic名を
-Metric名の末尾へ自動的に追加する。例えば`/weather/ambient/*`の`out`は
-`necst.weather.temperature_k.out`になるため、`in`と混ざらない。
+Metric名のfield名の前へ自動的に挿入する。例えば`/weather/ambient/*`の`out`は
+`necst.weather.out.temperature_k`になるため、`in`と混ざらない。
 Topicのmessage型はROS graphから取得し、複数のmessage型が見つかったTopicは送信しない。
 
 ## Topicと値
